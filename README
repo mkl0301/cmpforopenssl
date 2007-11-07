@@ -1,0 +1,105 @@
+README file for openssl with CMP package, including an CA using cryptlib.
+
+Written by Martin Peylo <martin.peylo@nsn.com>
+
+
+LICENSE
+
+OpenSSL uses a BSD style license
+ - There are some restrictions on using the library in a product.
+   Check this first, before using!
+Cryplib uses a Sleepycat style license
+ - This is payware for commercial use!
+All additional scripting etc. can be used freely within NSN.
+
+
+PREREQUISITES
+
+The CA using cryptlib needs a ODBC database to be set a in order to
+store information about the PKI users. 
+
+The ODBC database has to be named "myodbc" - this may be changed in
+the source of the server.
+
+The /etc/unixODBC/odbc.ini file on OpenSuSE 10.2 might look like this:
+
+	[myodbc]
+	Driver       = /usr/lib/unixODBC/libmyodbc3.so
+	Description  = MySQL ODBC 2.50 Driver DSN
+	SERVER       = localhost
+	PORT         = 3306
+	USER         = odbc
+	Password     = CqRXRKm39uQUrN:2
+	Database     = odbc
+	OPTION       = 3
+	SOCKET       =
+
+Here the MySQL database has the name "odbc".
+
+
+INSTALLATION
+
+Copy this directory to a random location.
+The software is build and prepared completely with
+
+	cd src && make
+
+Check the Makefiles for more info!
+
+
+USAGE
+
+It might be a nice idea to run the CA on a different host than the client,
+this enables you to trace the network traffic with Wireshark. Take the SVN
+version since there you have a dissector for CMP verysion 2!
+
+In the /scripting directory are some examles how to use the applications.
+* You HAVE to adjust the "settings.sh" file to your needs! *
+
+A complete session showing an "Initial Initialization" and then a
+"Key Update" would look like this:
+	
+
+Create a CA certificate (and key):
+	./srv_create_ca_cert.sh
+
+Now copy the CA certificate to the certs directory of your client.
+
+	./srv_add_pki_usr.sh      # This can be done ony ONCE - then the DB has to be PURGED
+
+Now there is output like:
+SUCCESS init
+SUCCESS add random
+SUCCESS open certstore
+SUCCESS creating certificate
+SUCCESS storing the PKI User
+User= XZ6XE-DHTBC-VGWAV
+Password= CP9GR-4R88S-KHDLX-W3JNW
+RevPW= X8LYV-45E4X-J2CV3-LH3VQ
+DECODED, HEX: User= F9520CF108A66A0260
+Password= 7E67E9FEF41271AAB4CA1940
+RevPW= 9569EB64D551814F2A3E66E0
+SUCCESS destroying certificate
+SUCCESS close certstore
+SUCCESS shutting down cryptlib
+
+Remember the Values from the "DECODED, HEX: User="- and the following "Password="-line,
+don't use the Values above "DECODED"!
+	
+Start the CA as daemon:
+
+	./srv_run_daemon.sh
+	
+On the client side we do an "Initial Request", using the user and password value from
+above:
+
+	./do_ossl_ir.sh USER PASSWORD
+
+Then we can do a "Key Update":
+	
+	./do_ossl_kur.sh
+
+
+TODO
+
+Other CMP messages will follow...

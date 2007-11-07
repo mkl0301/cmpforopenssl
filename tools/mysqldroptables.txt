@@ -1,0 +1,6 @@
+DROP TABLE certificates;
+DROP TABLE certLog;
+DROP TABLE certRequests;
+DROP TABLE CRLs;
+DROP TABLE pkiUsers;
+quit
