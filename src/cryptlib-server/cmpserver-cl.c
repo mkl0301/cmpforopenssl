@@ -603,7 +603,8 @@ int main (int argc, char **argv) {
 
 /* INITIALIZING PKI USERS */
 	if (opt_doCreateUser) {
-		if( (status = cryptKeysetOpen( &myCertStore, CRYPT_UNUSED, CRYPT_KEYSET_ODBC_STORE, MY_DB, CRYPT_KEYOPT_CREATE)) == -44) {
+		status = cryptKeysetOpen( &myCertStore, CRYPT_UNUSED, CRYPT_KEYSET_ODBC_STORE, MY_DB, CRYPT_KEYOPT_CREATE);
+		if( status  != CRYPT_OK ) {
 			STAT(create and open certstore);
 			/* might be already created */
 			status = cryptKeysetOpen( &myCertStore, CRYPT_UNUSED, CRYPT_KEYSET_ODBC_STORE, MY_DB, CRYPT_KEYOPT_NONE );
