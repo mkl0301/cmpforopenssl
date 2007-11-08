@@ -186,7 +186,8 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (ir = CMP_ir_new(ctx))) goto err;
 
 	printf("INFO: Sending Initialization Request\n");
-	CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, ir);	
+	if (! CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, ctx->serverPort, ir))
+		goto err;
 
 	/* receive Initialization Response - ip */
 	printf("INFO: Attempting to receive IP\n");
@@ -250,7 +251,7 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
 	printf("INFO: Sending Certificate Confirm\n");
-	if (! CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, certConf))
+	if (! CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, ctx->serverPort, certConf))
 		goto err;
 
 	/* receive PKIconf - PKIconf */
@@ -322,7 +323,8 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (kur = CMP_kur_new(ctx))) goto err;
 
 	printf("INFO: Sending Key Update Request\n");
-	CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, kur);	
+	if (! CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, ctx->serverPort, kur))
+		goto err;
 
 	/* receive Key Update Response - kup */
 	printf("INFO: Attempting to receive KUP\n");
@@ -382,7 +384,8 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
 	printf("INFO: Sending Certificate Confirm\n");
-	CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, certConf);	
+	if (! CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, ctx->serverPort, certConf))
+		goto err;
 
 	/* receive PKI confirmation - PKIconf */
 	printf("INFO: Attempting to receive PKIconf\n");
@@ -447,7 +450,8 @@ int CMP_doPKIInfoReqSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (genm = CMP_genm_new(ctx))) goto err;
 
 	printf("INFO: Sending General Message\n");
-	CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, genm);	
+	if (! CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, ctx->serverPort, genm))
+		goto err;
 
 	/* receive GenRepContent - genp */
 	printf("INFO: Attempting to receive General Response\n");

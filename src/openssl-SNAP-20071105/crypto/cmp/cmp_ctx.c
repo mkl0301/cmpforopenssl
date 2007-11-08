@@ -481,6 +481,18 @@ printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
 
 /* ################################################################ */
 /* ################################################################ */
+int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port) {
+	if (!ctx) goto err;
+
+	ctx->serverPort = port;
+	return 1;
+err:
+printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
 int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algID) {
 	int nid;
 

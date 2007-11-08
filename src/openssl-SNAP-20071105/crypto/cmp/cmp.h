@@ -1227,7 +1227,7 @@ typedef struct cmp_ctx_st
 #define CMP_COMPAT_CRYPTLIB	2
 	int	   compatibility;
 	char      *serverName;
-	int       *serverPort;
+	int       serverPort;
 #define CMP_TRANSPORT_HTTP	1
 #define CMP_TRANSPORT_TCP	2
 	int	   transport;
@@ -1364,7 +1364,8 @@ void CMP_INFOTYPEANDVALUE_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval, C
 
 /* from cmp_http.c */
 int CMP_new_bio(BIO **cbio, const char* serverName, const int port);
-int CMP_PKIMESSAGE_bio_send(BIO *cbio, const char* serverName, const CMP_PKIMESSAGE *msg);
+int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
+int CMP_PKIMESSAGE_bio_send(BIO *cbio, const char* serverName, const int serverPort, const CMP_PKIMESSAGE *msg);
 int CMP_PKIMESSAGE_bio_recv(BIO *cbio, CMP_PKIMESSAGE **ip);
 
 /* from cmp_ses.c */
