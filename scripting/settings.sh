@@ -6,7 +6,7 @@ CERTDIR="${myDir}/../certs"
 CMPCLIENT="${BINDIR}/cmpclient"
 CMPSERVER="${BINDIR}/cmpserver-cl"
 
-SERVER="172.16.0.101"
+SERVER="izac.de"
 PORT="4711"
 CACERT="${CERTDIR}/ca_cert.der"
 CAKEY="${CERTDIR}/ca_key.p15"
