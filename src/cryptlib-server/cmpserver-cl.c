@@ -248,6 +248,10 @@ int createCACertificate (const char *caCertFile, const CRYPT_KEYSET *myKeyset_p,
 	status = cryptAddPrivateKey( *myKeyset_p, *cryptContext_p, MY_CA_KEYSET_PASSWORD);
 	STAT(storing the private key);
 
+	/* enable PKI-Booting this certificate  */
+	status = cryptSetAttribute( myCertificate, CRYPT_CERTINFO_TRUSTED_IMPLICIT, 1 );
+	STAT(setting Certificat to be trusted);
+
 	status = cryptAddPublicKey( *myKeyset_p, myCertificate);
 	STAT(storing the public key);
 
