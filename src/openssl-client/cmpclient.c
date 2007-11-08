@@ -182,6 +182,9 @@
 static int verbose_flag;
 static int   opt_serverPort=0;
 static char* opt_serverName=NULL;
+static char* opt_httpProxy=NULL;
+static char* opt_httpProxyName=NULL;
+int opt_httpProxyPort=0;
 static char* opt_caCertFile=NULL;
 static char* opt_clCertFile=NULL;
 static char* opt_newClCertFile=NULL;
@@ -257,6 +260,7 @@ void doIr() {
 	/* XXX this is not freed yet */
 	cmp_ctx = CMP_CTX_create();
 	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+	CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
 	CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
 	CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
 	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
@@ -267,7 +271,7 @@ void doIr() {
 	 * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
 	 */
 
-	if (!CMP_new_bio( &cbio, opt_serverName, opt_serverPort)) {
+	if (!CMP_new_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
 		printf( "ERROR: setting up connection to server");
 		exit(1);
 	}
@@ -307,13 +311,14 @@ void doKur() {
 	/* XXX this is not freed yet */
 	cmp_ctx = CMP_CTX_create();
 	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+	CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
 	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
 	CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
 	CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
 	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
 
-	if (!CMP_new_bio( &cbio, opt_serverName, opt_serverPort)) {
+	if (!CMP_new_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
 		printf( "ERROR: setting up connection to server");
 		exit(1);
 	}
@@ -341,12 +346,13 @@ void doInfo() {
 	/* XXX this is not freed yet */
 	cmp_ctx = CMP_CTX_create();
 	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+	CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
 	CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
 	CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
 	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
 
-	if (!CMP_new_bio( &cbio, opt_serverName, opt_serverPort)) {
+	if (!CMP_new_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
 		printf( "ERROR: setting up connection to server");
 		exit(1);
 	}
@@ -534,11 +540,55 @@ void parseCLA( int argc, char **argv) {
 	return;
 }
 
+int getHttpProxy( char **name, int *port) {
+	char *proxy=NULL;
+	char *colon=NULL;
+
+	if( opt_httpProxy) {
+		proxy = opt_httpProxy;
+	} else {
+		if( getenv("http_proxy")) {
+			proxy = strdup(getenv("http_proxy"));
+		} else {
+			/* no proxy setting found */
+			return 0;
+		}
+	}
+
+	/* convert all colons to space */
+	while( (colon = strchr(proxy, ':'))) {
+		*colon = ' ';
+	}
+
+	/* this will be long enough */
+	*name = malloc(strlen(proxy)+1);
+
+	if( (sscanf( proxy, "http //%s %d", *name, port) < 1)) {
+		/* maybe it is set without leading http:// */
+		if( (sscanf( proxy, "%s %d", *name, port) < 1)) {
+			printf("ERROR: Failed to determine proxy from \"%s\"\n", proxy);
+			return 0;
+		}
+	}
+	printf("INFO: found proxy setting, Name=%s, Port=%d\n", *name, *port);
+	return 1;
+}
+
 /* ############################################################################ */
 /* ############################################################################ */
 int main(int argc, char **argv) {
+	char *httpProxyName;
+	int httpProxyPort;
 
 	parseCLA(argc, argv);
+
+	if (getHttpProxy( &httpProxyName, &httpProxyPort)) {
+		opt_httpProxyName = httpProxyName;
+		opt_httpProxyPort = httpProxyPort;
+	} else {
+		opt_httpProxyName = opt_serverName;
+		opt_httpProxyPort = opt_serverPort;
+	}
 
 	/* read CA certificate */
 	caCert = HELP_read_der_cert(opt_caCertFile);
