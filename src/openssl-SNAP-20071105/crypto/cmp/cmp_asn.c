@@ -1,5 +1,5 @@
 /* cmp_asn.c
- * 
+ *
  * OpenSSL ASN.1 definitions for CMP (RFC 4210)
  *
  * Written by Martin Peylo <martin.peylo@nsn.com>
@@ -48,7 +48,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -103,21 +103,21 @@
  * This package is an SSL implementation written
  * by Eric Young (eay@cryptsoft.com).
  * The implementation was written so as to conform with Netscapes SSL.
- * 
+ *
  * This library is free for commercial and non-commercial use as long as
  * the following conditions are aheared to.  The following conditions
  * apply to all code found in this distribution, be it the RC4, RSA,
  * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
  * included with this distribution is covered by the same copyright terms
  * except that the holder is Tim Hudson (tjh@cryptsoft.com).
- * 
+ *
  * Copyright remains Eric Young's, and as such any Copyright notices in
  * the code are not to be removed.
  * If this package is used in a product, Eric Young should be given attribution
  * as the author of the parts of the library used.
  * This can be in the form of a textual message at program startup or
  * in documentation (online or textual) provided with the package.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -132,10 +132,10 @@
  *     Eric Young (eay@cryptsoft.com)"
  *    The word 'cryptographic' can be left out if the rouines from the library
  *    being used are not cryptographic related :-).
- * 4. If you include any Windows specific code (or a derivative thereof) from 
+ * 4. If you include any Windows specific code (or a derivative thereof) from
  *    the apps directory (application code) you must include an acknowledgement:
  *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -147,7 +147,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * 
+ *
  * The licence and distribution terms for any publically available version or
  * derivative of this code cannot be changed.  i.e. this code cannot simply be
  * copied and put under another distribution licence
@@ -336,7 +336,7 @@ ASN1_EXP(CMP_PKIBODY, value.crlann, ASN1_INTEGER, 18),
 	/* ASN1_EXP(CMP_PKIBODY, value.pkiconf, CMP_PKICONFIRMCONTENT, 19), */
 	/* XXX it should be the following according to the RFC but CL puts it in a struct */
 	ASN1_EXP(CMP_PKIBODY, value.pkiconf, ASN1_NULL, 19),
-#endif 
+#endif
 	ASN1_EXP(CMP_PKIBODY, value.pkiconf, ASN1_ANY, 19),
 	ASN1_EXP_SEQUENCE_OF(CMP_PKIBODY, value.nested, CMP_PKIMESSAGE, 20),
 	ASN1_EXP_SEQUENCE_OF(CMP_PKIBODY, value.genm, CMP_INFOTYPEANDVALUE, 21),
@@ -398,7 +398,7 @@ IMPLEMENT_ASN1_FUNCTIONS(CMP_PROTECTEDPART);
 XXX this does not work
 /* XXX this comes from just a typedef */
 IMPLEMENT_ASN1_FUNCTIONS(CMP_PKIPROTECTION)
-#endif 
+#endif
 
 
 ASN1_SEQUENCE(CMP_PKIMESSAGE) = {

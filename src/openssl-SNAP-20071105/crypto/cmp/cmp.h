@@ -1,5 +1,5 @@
 /* cmp.h
- * 
+ *
  * CMP (RFC 4210) header file for OpenSSL
  *
  * Written by Martin Peylo <martin.peylo@nsn.com>
@@ -48,7 +48,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -103,21 +103,21 @@
  * This package is an SSL implementation written
  * by Eric Young (eay@cryptsoft.com).
  * The implementation was written so as to conform with Netscapes SSL.
- * 
+ *
  * This library is free for commercial and non-commercial use as long as
  * the following conditions are aheared to.  The following conditions
  * apply to all code found in this distribution, be it the RC4, RSA,
  * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
  * included with this distribution is covered by the same copyright terms
  * except that the holder is Tim Hudson (tjh@cryptsoft.com).
- * 
+ *
  * Copyright remains Eric Young's, and as such any Copyright notices in
  * the code are not to be removed.
  * If this package is used in a product, Eric Young should be given attribution
  * as the author of the parts of the library used.
  * This can be in the form of a textual message at program startup or
  * in documentation (online or textual) provided with the package.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -132,10 +132,10 @@
  *     Eric Young (eay@cryptsoft.com)"
  *    The word 'cryptographic' can be left out if the rouines from the library
  *    being used are not cryptographic related :-).
- * 4. If you include any Windows specific code (or a derivative thereof) from 
+ * 4. If you include any Windows specific code (or a derivative thereof) from
  *    the apps directory (application code) you must include an acknowledgement:
  *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -147,7 +147,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * 
+ *
  * The licence and distribution terms for any publically available version or
  * derivative of this code cannot be changed.  i.e. this code cannot simply be
  * copied and put under another distribution licence
@@ -484,7 +484,7 @@ DECLARE_ASN1_FUNCTIONS(CMP_CERTIFIEDKEYPAIR)
 
 typedef struct cmp_pkistatusinfo_st
 {
-/* XXX XXX this should actually be 
+/* XXX XXX this should actually be
 	CMP_PKISTATUS      *status;
 	*/
 	ASN1_INTEGER       *status;
@@ -492,7 +492,7 @@ typedef struct cmp_pkistatusinfo_st
 	CMP_PKIFREETEXT    *statusString;
 #endif
 	STACK_OF(ASN1_UTF8STRING)    *statusString;
-/* XXX XXX this should actually be 
+/* XXX XXX this should actually be
 	CMP_PKIFAILUREINFO *failInfo;
 	*/
 	ASN1_BIT_STRING    *failInfo;
@@ -737,7 +737,7 @@ ASN1_INTEGER *crlann; /* 18 */
 	/* XXX it should be the following according to the RFC but there might be a struct in it */
 #if 0
 	ASN1_NULL *pkiconf; /* 19 */
-#endif 
+#endif
 		ASN1_TYPE                       *pkiconf; /* 19 */
         /* nested   [20] NestedMessageContent,   --Nested Message */
         /* NestedMessageContent ::= PKIMessages */
@@ -1147,8 +1147,8 @@ RFC 4210                          CMP                     September 2005
 #endif /* 0 */
 
      /* XXX HELPERS - where should they actually be? */
-#if 0 
-	id-aa-signingCertificate OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs9(9) smime(16) id-aa(2) 12 } 
+#if 0
+	id-aa-signingCertificate OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs9(9) smime(16) id-aa(2) 12 }
 
 	SigningCertificate ::=  SEQUENCE {
 		certs        SEQUENCE OF ESSCertID,
@@ -1196,8 +1196,8 @@ DECLARE_ASN1_FUNCTIONS(ESS_SIGNINGCERTIFICATE)
 /* partly in ASN.1 syntax in order to ease storing it in the future */
 typedef struct cmp_ctx_st
 {
-	/* "reference and secret" as described in 
-	 * 4.2.1.2.  End Entity Message Origin Authentication 
+	/* "reference and secret" as described in
+	 * 4.2.1.2.  End Entity Message Origin Authentication
 	 * this is used for IR Sequence
 	 */
 	ASN1_OCTET_STRING    *referenceValue;
@@ -1256,9 +1256,14 @@ CMP_PKIMESSAGE *CMP_ir_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_certConf_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_kur_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx);
+#if 0
+CMP_PKIMESSAGE *CMP_ckuann_new( CMP_CTX *ctx);
+#endif
+CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey);
 
 /* cmp_lib.c */
 
+int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version);
 int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
@@ -1319,7 +1324,7 @@ int CMP_PKIMESSAGE_get_bodytype( CMP_PKIMESSAGE *msg);
 int CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg);
 
 /* cmp_vfy.c */
-int CMP_protection_verify(CMP_PKIMESSAGE *msg, 
+int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 			    X509_ALGOR *algor,
 			    EVP_PKEY *pkey,
 			    const ASN1_OCTET_STRING *secret);
@@ -1405,6 +1410,8 @@ int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
 #define i2d_CMP_PKIMESSAGE_bio(bp,o) ASN1_i2d_bio_of(CMP_PKIMESSAGE,i2d_CMP_PKIMESSAGE,bp,o)
 #define d2i_CMP_PROTECTEDPART_bio(bp,p) ASN1_d2i_bio_of(CMP_PROTECTEDPART,CMP_PROTECTEDPART_new,d2i_CMP_PROTECTEDPART,bp,p)
 #define i2d_CMP_PROTECTEDPART_bio(bp,o) ASN1_i2d_bio_of(CMP_PROTECTEDPART,i2d_CMP_PROTECTEDPART,bp,o)
+
+#define CMP_VERSION 2L
 
 #ifdef  __cplusplus
 }

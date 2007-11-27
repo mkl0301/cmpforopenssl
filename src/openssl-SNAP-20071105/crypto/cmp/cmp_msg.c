@@ -1,5 +1,5 @@
 /* crypto/cmp/cmp_msg.c
- * 
+ *
  * Functions for creating CMP (RFC 4210) messages for OpenSSL
  *
  * Written by Martin Peylo <martin.peylo@nsn.com>
@@ -48,7 +48,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -103,21 +103,21 @@
  * This package is an SSL implementation written
  * by Eric Young (eay@cryptsoft.com).
  * The implementation was written so as to conform with Netscapes SSL.
- * 
+ *
  * This library is free for commercial and non-commercial use as long as
  * the following conditions are aheared to.  The following conditions
  * apply to all code found in this distribution, be it the RC4, RSA,
  * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
  * included with this distribution is covered by the same copyright terms
  * except that the holder is Tim Hudson (tjh@cryptsoft.com).
- * 
+ *
  * Copyright remains Eric Young's, and as such any Copyright notices in
  * the code are not to be removed.
  * If this package is used in a product, Eric Young should be given attribution
  * as the author of the parts of the library used.
  * This can be in the form of a textual message at program startup or
  * in documentation (online or textual) provided with the package.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -132,10 +132,10 @@
  *     Eric Young (eay@cryptsoft.com)"
  *    The word 'cryptographic' can be left out if the rouines from the library
  *    being used are not cryptographic related :-).
- * 4. If you include any Windows specific code (or a derivative thereof) from 
+ * 4. If you include any Windows specific code (or a derivative thereof) from
  *    the apps directory (application code) you must include an acknowledgement:
  *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -147,7 +147,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * 
+ *
  * The licence and distribution terms for any publically available version or
  * derivative of this code cannot be changed.  i.e. this code cannot simply be
  * copied and put under another distribution licence
@@ -302,7 +302,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 			const unsigned char *subjKeyIDStrDer = NULL;
 
 			ex=sk_X509_EXTENSION_value( ctx->clCert->cert_info->extensions, subjKeyIDLoc);
-			
+
 			subjKeyIDStrDer = (const unsigned char *) ex->value->data;
 			subjKeyIDStr = d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
 
@@ -327,7 +327,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 	/* identify our cert */
 
-	/* this is like it is described in the RFC: 
+	/* this is like it is described in the RFC:
 	 * set oldCertId in "controls" of the CRMF cr message
 	 * CL does not like this to be set */
 	if( ctx->compatibility != CMP_COMPAT_CRYPTLIB) {
@@ -503,6 +503,73 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
 	return msg;
 err:
 printf( "ERROR: in CMP_genm_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	if (msg) CMP_PKIMESSAGE_free(msg);
+	return NULL;
+}
+
+/* ############################################################################ */
+/* XXX this is untested and work in progress */
+/* The sanity of this kind of message is not without controversy */
+	/* CKUANN looks like:
+	 * ckuann message:
+	 *
+	 * Field        Value                        Comment
+	 * --------------------------------------------------------------
+	 * sender       CA name CA name
+	 * body         ckuann(CAKeyUpdAnnContent)
+	 * oldWithNew   present                  see Appendix E.3 above
+	 * newWithOld   present                  see Appendix E.3 above
+	 * newWithNew   present                  see Appendix E.3 above
+	 * extraCerts   optionally present       can be used to "publish"
+	 * 					 certificates (e.g.,
+	 * 					 certificates signed using
+	 * 					 the new private key)
+	 */
+/* ############################################################################ */
+CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey) {
+	CMP_PKIMESSAGE *msg=NULL;
+	X509_NAME *oldCaName=NULL;
+	X509_NAME *newCaName=NULL;
+	X509 *newWithNew=NULL;
+	X509 *newWithOld=NULL;
+	X509 *oldWithNew=NULL;
+
+#if 0
+	if (!ctx) goto err;
+#endif
+
+	/* get and compare the subject Names of the certificates */
+	if (!(oldCaName = X509_get_subject_name( (X509*) oldCaCert))) goto err;
+	if (!(newCaName = X509_get_subject_name( (X509*) newCaCert))) goto err;
+	/* the subjects of old and new CaCerts have to be equal */
+	if (! X509_NAME_cmp( oldCaName, newCaName)) goto err;
+
+	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
+
+	CMP_PKIHEADER_set_version(msg->header, CMP_VERSION);
+	if( !CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*) oldCaCert))) goto err;
+
+	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CKUANN);
+	msg->body->value.ckuann = CMP_CAKEYUPDANNCONTENT_new();
+
+	/* as I understand the newWithNew is the same as the newCaCert */
+	newWithNew = X509_dup( (X509*) newCaCert);
+	msg->body->value.ckuann->newWithNew = newWithNew;
+
+	/* create the newWithOld and oldWithNew certificates */
+	newWithOld = X509_dup( (X509*) newCaCert);
+	/* XXX Do I have to check what digest to use? */
+	X509_sign( newWithOld, (EVP_PKEY*) oldPkey, EVP_sha1());
+	msg->body->value.ckuann->newWithOld = newWithOld;
+
+	oldWithNew = X509_dup( (X509*) oldCaCert);
+	/* XXX Do I have to check what digest to use? */
+	X509_sign( oldWithNew, (EVP_PKEY*) newPkey, EVP_sha1());
+	msg->body->value.ckuann->oldWithNew = oldWithNew;
+
+	return msg;
+err:
+printf( "ERROR: in CMP_ckuann_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;
 }

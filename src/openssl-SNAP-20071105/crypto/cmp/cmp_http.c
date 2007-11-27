@@ -181,6 +181,7 @@ int CMP_PKIMESSAGE_bio_send(BIO *cbio, const char* serverName, const int serverP
 		"Host: %s:%d\r\n"
 		"Content-type: application/pkixcmp\r\n"
 		"Content-Length: %d\r\n"
+		"Connection: Keep-Alive\r\n" /* this is actually HTTP 1.0 but might be necessary for proxies */
 		"Cache-Control: no-cache\r\n\r\n";
 
 	if (!cbio)

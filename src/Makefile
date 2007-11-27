@@ -36,14 +36,14 @@ $(CLSRC)/libcl.a:
 	cd $(CLSRC) && \
 	make
 
-$(CLIENTSRC)/cmpclient:
+$(CLIENTSRC)/cmpclient: $(LIBOSSL)
 	cd $(CLIENTSRC) && \
 	make && \
 	make install
 
 cmpclient: $(CLIENTSRC)/cmpclient
 
-$(SERVERSRC)/cmpserver-cl:
+$(SERVERSRC)/cmpserver-cl: $(LIBCRYPTO)
 	cd $(SERVERSRC) && \
 	make && \
 	make install

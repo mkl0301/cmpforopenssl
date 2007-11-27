@@ -1,5 +1,5 @@
 /* crypto/cmp/cmp_lib.c
- * 
+ *
  * CMP (RFC 4210) library functions for OpenSSL
  *
  * Written by Martin Peylo <martin.peylo@nsn.com>
@@ -48,7 +48,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -103,21 +103,21 @@
  * This package is an SSL implementation written
  * by Eric Young (eay@cryptsoft.com).
  * The implementation was written so as to conform with Netscapes SSL.
- * 
+ *
  * This library is free for commercial and non-commercial use as long as
  * the following conditions are aheared to.  The following conditions
  * apply to all code found in this distribution, be it the RC4, RSA,
  * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
  * included with this distribution is covered by the same copyright terms
  * except that the holder is Tim Hudson (tjh@cryptsoft.com).
- * 
+ *
  * Copyright remains Eric Young's, and as such any Copyright notices in
  * the code are not to be removed.
  * If this package is used in a product, Eric Young should be given attribution
  * as the author of the parts of the library used.
  * This can be in the form of a textual message at program startup or
  * in documentation (online or textual) provided with the package.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -132,10 +132,10 @@
  *     Eric Young (eay@cryptsoft.com)"
  *    The word 'cryptographic' can be left out if the rouines from the library
  *    being used are not cryptographic related :-).
- * 4. If you include any Windows specific code (or a derivative thereof) from 
+ * 4. If you include any Windows specific code (or a derivative thereof) from
  *    the apps directory (application code) you must include an acknowledgement:
  *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -147,7 +147,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * 
+ *
  * The licence and distribution terms for any publically available version or
  * derivative of this code cannot be changed.  i.e. this code cannot simply be
  * copied and put under another distribution licence
@@ -185,7 +185,6 @@
 
 #include <time.h>
 
-#define CMP_VERSION 2L
 
 #if 0
 /* ############################################################################ */
@@ -209,14 +208,26 @@ unsigned char *StrToHexStr(unsigned char *str, int length)
 }
 #endif
 
+/* ############################################################################ */
+/* ############################################################################ */
+int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version) {
+	if( !hdr) return 0;
 
+	ASN1_INTEGER_set(hdr->pvno, version);
+
+	return 1;
+}
+
+/* ############################################################################ */
 /* ############################################################################ */
 int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 {
-	GENERAL_NAME *gen;
+	GENERAL_NAME *gen=NULL;
+
+	if( !hdr) return 0;
+
 	gen = GENERAL_NAME_new();
-	if (gen == NULL)
-		return 0;
+	if( !gen) return 0;
 
 	if (!X509_NAME_set(&gen->d.directoryName, (X509_NAME*) nm))
 	{
@@ -236,6 +247,8 @@ int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 	X509_NAME *nmDup=NULL;
 	int ret;
 
+	if( !hdr) return 0;
+
 	if(nm)
 		nmDup = X509_NAME_dup( (X509_NAME*) nm);
 
@@ -249,10 +262,11 @@ int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 /* ############################################################################ */
 int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 {
-	GENERAL_NAME *gen;
+	GENERAL_NAME *gen=NULL;
+	if( !hdr) return 0;
+
 	gen = GENERAL_NAME_new();
-	if (gen == NULL)
-		return 0;
+	if( !gen) return 0;
 
 	/* if nm is not set an empty dirname will be set */
 	if (nm == NULL) {
@@ -278,6 +292,8 @@ int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 	X509_NAME *nmDup=NULL;
 	int ret;
 
+	if( !hdr) return 0;
+
 	if(nm)
 		nmDup = X509_NAME_dup( (X509_NAME*) nm);
 
@@ -291,7 +307,7 @@ int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 #if 0
 /* ############################################################################ */
 int CMP_PKIHEADER_set_protectionAlg_dsa(CMP_PKIHEADER *hdr) {
-	if (!hdr->protectionAlg) 
+	if (!hdr->protectionAlg)
 		if (!(hdr->protectionAlg = X509_ALGOR_new())) goto err;
 	X509_ALGOR_set0( hdr->protectionAlg, OBJ_nid2obj(NID_dsaWithSHA1), V_ASN1_NULL, NULL);
 	return 1;
@@ -301,7 +317,7 @@ err:
 
 /* ############################################################################ */
 int CMP_PKIHEADER_set_protectionAlg_rsa(CMP_PKIHEADER *hdr) {
-	if (!hdr->protectionAlg) 
+	if (!hdr->protectionAlg)
 		if (!(hdr->protectionAlg = X509_ALGOR_new())) goto err;
 	X509_ALGOR_set0( hdr->protectionAlg, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
 	return 1;
@@ -342,7 +358,7 @@ int CMP_PKIHEADER_set_protectionAlg_pbmac(CMP_PKIHEADER *hdr) {
 	/* CRMF_pbm_new allocates and initializes */
 	if (!(pbm = CRMF_pbm_new())) goto err;
 
-	if (!hdr->protectionAlg) 
+	if (!hdr->protectionAlg)
 		if (!(hdr->protectionAlg = X509_ALGOR_new())) goto err;
 
 	if (!(pbmStr = ASN1_STRING_new())) goto err;
@@ -415,7 +431,6 @@ int CMP_PKIHEADER_set1_transactionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING
 		if (!(hdr->transactionID = ASN1_OCTET_STRING_dup(transactionID))) goto err;
 	}
 
-
 	if(transactionIDuchar)
 		OPENSSL_free(transactionIDuchar);
 	return 1;
@@ -466,7 +481,7 @@ int CMP_PKIHEADER_set1_recipNonce(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *r
 	if( !hdr) goto err;
 	if( !recipNonce) goto err;
 
-	if (hdr->recipNonce != NULL) 
+	if (hdr->recipNonce != NULL)
 		ASN1_OCTET_STRING_free(hdr->recipNonce);
 
 	if (!(hdr->recipNonce = ASN1_OCTET_STRING_dup( recipNonce))) goto err;
@@ -556,10 +571,10 @@ err:
 /* ############################################################################ */
 int CMP_PKIHEADER_push1_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text) {
 	ASN1_UTF8STRING *textDup=NULL;
-	
+
 	if (!hdr) goto err;
 	if (!text) goto err;
-	
+
 	/* XXX there is no function ASN1_UTF8STRING_dup()? */
 	if( !(textDup = ASN1_UTF8STRING_new())) goto err;
 	if( !ASN1_UTF8STRING_set( textDup, text->data, text->length)) goto err;
@@ -575,10 +590,10 @@ err:
 /* ############################################################################ */
 int CMP_PKIHEADER_set1_freeText( CMP_PKIHEADER *hdr, STACK_OF(ASN1_UTF8STRING) *text) {
 	STACK_OF(ASN1_UTF8STRING) *textDup;
-	
+
 	if (!hdr) goto err;
 	if (!text) goto err;
-	
+
 	if (!hdr->freeText)
 		sk_ASN1_UTF8STRING_free(hdr->freeText);
 
@@ -594,10 +609,10 @@ err:
 /* ############################################################################ */
 int CMP_PKIHEADER_set0_freeText( CMP_PKIHEADER *hdr, STACK_OF(ASN1_UTF8STRING) *text) {
 	STACK_OF(ASN1_UTF8STRING) *textDup;
-	
+
 	if (!hdr) goto err;
 	if (!text) goto err;
-	
+
 	if (!textDup = sk_ASN1_UTF8STRING_dup(text)) goto err;
 	return CMP_PKIHEADER_set0_freeText( hdr, textDup);
 err:
@@ -615,7 +630,7 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 	if( !ctx) goto err;
 
 	/* set the CMP version */
-	ASN1_INTEGER_set(hdr->pvno, CMP_VERSION);
+	CMP_PKIHEADER_set_version( hdr, CMP_VERSION);
 
 	/* in case there is no OLD client cert, the subject name is not set */
 	if( ctx->clCert) {
@@ -709,7 +724,7 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 	X509_ALGOR *algor=NULL;
 	ASN1_OBJECT *algorOID=NULL;
 
-	CRMF_PBMPARAMETER *pbm=NULL; 
+	CRMF_PBMPARAMETER *pbm=NULL;
 
 	size_t protPartDerLen;
 	size_t macLen;
@@ -797,7 +812,7 @@ int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 	if (!certStatus) goto err;
 	if (!cert) goto err;
 
-	/* this works but TODO: does this comply with the RFC? 
+	/* this works but TODO: does this comply with the RFC?
 	        -- the hash of the certificate, using the same hash algorithm
 		-- as is used to create and verify the certificate signature
 		*/
@@ -821,7 +836,7 @@ printf("Error in file: %s, line: %d\n", __FILE__, __LINE__);
 
 /* ############################################################################ */
 /* sets implicitConfirm in the generalInfo field of the header
- * returns 1 on success, 0 on error 
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg) {
 	CMP_INFOTYPEANDVALUE *itav=NULL;
@@ -989,7 +1004,7 @@ int CMP_PKISTATUSINFO_PKIstatus_print( CMP_PKISTATUSINFO *statusInfo) {
 		case CMP_PKISTATUS_keyUpdateWarning:
 			printf("PKIStatus: key update warning\n");
 			break;
-		case -1:	
+		case -1:
 		default:
 printf("ERROR: parsing PKIStatus\n");
 			/* return 0; */
@@ -1173,7 +1188,7 @@ CMP_CERTRESPONSE *CMP_CERTREPMESSAGE_certResponse_get0( CMP_CERTREPMESSAGE *cert
 	for( i=0; i < certRespCount; i++) {
 		/* is it the right certReqId */
 		if( certReqId == ASN1_INTEGER_get(sk_CMP_CERTRESPONSE_value(certRep->response,i)->certReqId) ) {
-			certResponse = sk_CMP_CERTRESPONSE_value(certRep->response,i); 
+			certResponse = sk_CMP_CERTRESPONSE_value(certRep->response,i);
 			break;
 		}
 	}
