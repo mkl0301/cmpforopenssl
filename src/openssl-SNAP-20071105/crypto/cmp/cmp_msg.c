@@ -466,9 +466,14 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
 	if( !CMP_PKIHEADER_set1(msg->header, ctx)) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_GENM);
+
+	/* create an empty message body */
+	if( CMP_PKIMESSAGE_genm_item_push0( msg, NULL)) {
+		printf( "INFO: created message body\n");
+	}
 #if 0
 	itav = CMP_INFOTYPEANDVALUE_new();
-	if( CMP_INFOTYPEANDVALUE_set0( itav, OBJ_txt2obj("1.3.6.1.5.5.7.4.4",1), V_ASN1_NULL, NULL)) {
+	if( CMP_INFOTYPEANDVALUE_set0( itav, OBJ_txt2obj("1.3.6.1.5.5.7.4.4",1), V_ASN1_UNDEF, NULL)) {
 		printf( "INFO: setting itav\n");
 	} /* Preferred Symmetric Algorithm */
 	if( CMP_PKIMESSAGE_genm_item_push0( msg, itav)) {
@@ -493,10 +498,12 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
 		printf( "INFO: pushing itav\n");
 	}
 #endif
+#if 0
 	itav = CMP_INFOTYPEANDVALUE_new_by_def_noVal( CMP_ITAV_CRYPTLIB_PKIBOOT);
 	if( CMP_PKIMESSAGE_genm_item_push0( msg, itav)) {
 		printf( "INFO: pushing itav\n");
 	}
+#endif
 
 	/* TODO catch errors */
 	msg->protection = CMP_protection_new( msg, NULL, NULL, ctx->secretValue);
