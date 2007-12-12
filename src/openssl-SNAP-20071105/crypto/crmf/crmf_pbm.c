@@ -244,13 +244,13 @@ err:
 int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 			   const unsigned char* msg, size_t msgLen, 
 			   const unsigned char* secret, size_t secretLen,
-			   unsigned char** mac, size_t* macLen
+			   unsigned char** mac, unsigned int* macLen
 			) {
 
         const EVP_MD *m=NULL;
         EVP_MD_CTX *ctx=NULL;
         unsigned char basekey[EVP_MAX_MD_SIZE];
-        size_t basekeyLen;
+        unsigned int basekeyLen;
         long iterations;
 
 	if (!pbm) goto err;

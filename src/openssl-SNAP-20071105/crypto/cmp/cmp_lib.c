@@ -727,7 +727,7 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 	CRMF_PBMPARAMETER *pbm=NULL;
 
 	size_t protPartDerLen;
-	size_t macLen;
+	unsigned int macLen;
 	size_t maxMacLen;
 	unsigned char *protPartDer=NULL;
 	unsigned char *mac=NULL;
@@ -806,7 +806,7 @@ err:
 	*/
 int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 	ASN1_OCTET_STRING *certHash=NULL;
-	size_t hashLen;
+	unsigned int hashLen;
 	unsigned char hash[EVP_MAX_MD_SIZE];
 
 	if (!certStatus) goto err;

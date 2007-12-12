@@ -18,7 +18,8 @@ all: openssl cryptlib cmpclient cmpserver
 $(OSSLSRC)/Makefile: 
 	cd $(OSSLSRC) && \
 	./config --prefix=$(ROOT) $(OPENSSLCFGOPT) && \
-	make depend
+	make depend && \
+	make update
 
 $(LIBOSSL): $(OSSLSRC)/Makefile
 	cd $(OSSLSRC) && \

@@ -677,7 +677,7 @@ CRMF_PBMPARAMETER * CRMF_pbm_new();
 int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
                            const unsigned char* msg, size_t msgLen,
                            const unsigned char* secret, size_t secretLen,
-                           unsigned char** mac, size_t* macLen);
+                           unsigned char** mac, unsigned int* macLen);
 
 
 /* crmf_lib.c */

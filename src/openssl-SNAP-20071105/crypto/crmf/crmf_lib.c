@@ -462,7 +462,8 @@ printf("ERROR in FILE %s, LINE %d\n", __FILE__, __LINE__);
  */
 CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const EVP_PKEY *pkey) {
 	CRMF_POPOSIGNINGKEY *poposig=NULL;
-	size_t certReqSize, maxSignatureSize, sigLen;
+	size_t certReqSize, maxSignatureSize;
+	unsigned int sigLen;
 	unsigned char *certReqDer=NULL;
 	unsigned char *signature=NULL;
 

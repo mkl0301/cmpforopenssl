@@ -272,7 +272,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	ASN1_INTEGER *serialASN=NULL;
 
 	/* for setting the id-aa-signingCertificate for CL */
-	size_t hashLen;
+	unsigned int hashLen;
 	unsigned char hash[EVP_MAX_MD_SIZE];
 	ESS_ESSCERTID *essCertId=NULL;
 	ESS_SIGNINGCERTIFICATE *signingCert;
