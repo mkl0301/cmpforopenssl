@@ -15,7 +15,7 @@ LIBCRYPTO = $(OSSLSRC)/libcrypto.a
 
 all: openssl cryptlib cmpclient cmpserver
 
-$(OSSLSRC)/Makefile: 
+$(OSSLSRC)/Makefile: FORCE
 	cd $(OSSLSRC) && \
 	./config --prefix=$(ROOT) $(OPENSSLCFGOPT) && \
 	make depend && \
@@ -51,4 +51,8 @@ $(SERVERSRC)/cmpserver-cl: $(LIBCRYPTO)
 
 cmpserver: $(SERVERSRC)/cmpserver-cl
 
-.PHONY: openssl cryptlib cmpclient cmpserver
+FORCE:
+
+update: $(OSSLSRC)/Makefile all
+
+.PHONY: openssl cryptlib cmpclient cmpserver update

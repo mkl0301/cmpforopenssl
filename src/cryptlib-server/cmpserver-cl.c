@@ -3,7 +3,7 @@
  * A very simple CMP CA using cryptlib
  *
  * Written by Martin Peylo <martin.peylo@nsn.com>
- * 
+ *
  * Cryptlib can be obtained from:
  * http://www.cs.auckland.ac.nz/~pgut001/cryptlib/
  */
@@ -188,7 +188,7 @@ int readUserAndPwd( CRYPT_CERTIFICATE *myPKIUser_p) {
 		decRPWlen = decodePKIUserValue( decodedRevPW, 64, revPW, revPWlength );
 
 		printf( "User= %s\nPassword= %s\nRevPW= %s\n", userID, issuePW, revPW);
-		printf( "DECODED, HEX: User= %s\nPassword= %s\nRevPW= %s\n", aux1=StrToHexStr(decodedUserID, decUIDlen), 
+		printf( "DECODED, HEX: User= %s\nPassword= %s\nRevPW= %s\n", aux1=StrToHexStr(decodedUserID, decUIDlen),
 			aux2=StrToHexStr(decodedPW, decPWlen), aux3=StrToHexStr(decodedRevPW, decRPWlen));
 
 		free(aux1);
@@ -268,7 +268,7 @@ int createCACertificate (const char *caCertFile, const CRYPT_KEYSET *myKeyset_p,
 
 /* ########################################################################## */
 /* ########################################################################## */
-int prepareCACert (const char *caCertFile, 
+int prepareCACert (const char *caCertFile,
                    const CRYPT_KEYSET *myCertStore_p,
 		   const char *country,
 		   const char *organization,

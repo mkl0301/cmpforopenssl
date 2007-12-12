@@ -21,7 +21,7 @@ strip: all
 $(BIN): $(OBJ) $(OPENSSLDIR)/libcrypto.a
 	$(CC) -Wall -o $(BIN) $(OBJ) $(LFLAGS) $(INCDIR) $(LIBDIR)
 
-cmpclient.o: cmpclient.c cmpclient.h cmpclient_help.h 
+cmpclient.o: cmpclient.c cmpclient.h cmpclient_help.h
 	$(CC) -Wall -c $(INCDIR) $(CFLAGS) -o cmpclient.o cmpclient.c
 
 cmpclient_help.o: cmpclient_help.c cmpclient_help.h

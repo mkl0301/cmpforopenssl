@@ -1,5 +1,5 @@
 /* cmpclient.c
- * 
+ *
  * A simple CMP client utilizing OpenSSL
  *
  * Written by Martin Peylo <martin.peylo@nsn.com>
@@ -51,7 +51,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -106,21 +106,21 @@
  * This package is an SSL implementation written
  * by Eric Young (eay@cryptsoft.com).
  * The implementation was written so as to conform with Netscapes SSL.
- * 
+ *
  * This library is free for commercial and non-commercial use as long as
  * the following conditions are aheared to.  The following conditions
  * apply to all code found in this distribution, be it the RC4, RSA,
  * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
  * included with this distribution is covered by the same copyright terms
  * except that the holder is Tim Hudson (tjh@cryptsoft.com).
- * 
+ *
  * Copyright remains Eric Young's, and as such any Copyright notices in
  * the code are not to be removed.
  * If this package is used in a product, Eric Young should be given attribution
  * as the author of the parts of the library used.
  * This can be in the form of a textual message at program startup or
  * in documentation (online or textual) provided with the package.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -135,10 +135,10 @@
  *     Eric Young (eay@cryptsoft.com)"
  *    The word 'cryptographic' can be left out if the rouines from the library
  *    being used are not cryptographic related :-).
- * 4. If you include any Windows specific code (or a derivative thereof) from 
+ * 4. If you include any Windows specific code (or a derivative thereof) from
  *    the apps directory (application code) you must include an acknowledgement:
  *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -150,7 +150,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * 
+ *
  * The licence and distribution terms for any publically available version or
  * derivative of this code cannot be changed.  i.e. this code cannot simply be
  * copied and put under another distribution licence
@@ -177,11 +177,12 @@
 
 /* ############################################################################ */
 /* ############################################################################ */
-     
+
 /* set by CLA */
 static int verbose_flag;
 static int   opt_serverPort=0;
 static char* opt_serverName=NULL;
+static char* opt_serverPath=NULL;
 static char* opt_httpProxy=NULL;
 static char* opt_httpProxyName=NULL;
 int opt_httpProxyPort=0;
@@ -193,6 +194,7 @@ static char* opt_newClKeyFile=NULL;
 static char* opt_user=NULL;
 static char* opt_password=NULL;
 static int opt_hex=0;
+static int opt_proxy=0;
 static int opt_sequenceSet=0;
 static int opt_doIr=0;
 static int opt_doKur=0;
@@ -214,8 +216,10 @@ void printUsage( const char* cmdName) {
 	printf("Written by Martin Peylo <martin.peylo@nsn.com>\n");
 	printf("\n");
 	printf("The COMMON OPTIONS have to be set for each CMD:\n");
-	printf(" --server SERVER    the address of the CMP server\n");
+	printf(" --server SERVER    the IP address of the CMP server\n");
 	printf(" --port PORT        the port of the CMP server\n");
+	printf(" --path PATH        the path location inside the HTTP CMP server\n");
+	printf("                    as in e.g. SERVER:PORT/PATH\n");
 	printf(" --cacert           location of the CA's certificate\n");
 	printf("\n");
 	printf("One of the following can be used as CMD:\n");
@@ -237,6 +241,7 @@ void printUsage( const char* cmdName) {
 	printf("                       this is overwritten at KUR\n");
 	printf("\n");
 	printf("Other options are:\n");
+	printf(" --proxy    set proxy from $http_proxy environment variable if available\n");
 	printf(" --verbose  ignored so far\n");
 	printf(" --brief    ignored so far\n");
 	printf(" --help     shows this help\n");
@@ -260,6 +265,7 @@ void doIr() {
 	/* XXX this is not freed yet */
 	cmp_ctx = CMP_CTX_create();
 	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+	CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
 	CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
 	CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
 	CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
@@ -271,7 +277,7 @@ void doIr() {
 	 * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
 	 */
 
-	if (!CMP_new_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
+	if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
 		printf( "ERROR: setting up connection to server");
 		exit(1);
 	}
@@ -283,6 +289,7 @@ void doIr() {
 		printf( "SUCCESS: received initial Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
 	} else {
 		printf( "ERROR: received no initial Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
+		exit(1);
 	}
 	HELP_write_der_cert(initialClCert, opt_clCertFile);
 
@@ -311,6 +318,7 @@ void doKur() {
 	/* XXX this is not freed yet */
 	cmp_ctx = CMP_CTX_create();
 	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+	CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
 	CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
 	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
 	CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
@@ -318,7 +326,7 @@ void doKur() {
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
 	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
 
-	if (!CMP_new_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
+	if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
 		printf( "ERROR: setting up connection to server");
 		exit(1);
 	}
@@ -330,6 +338,7 @@ void doKur() {
 		printf( "SUCCESS: received updated Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
 	} else {
 		printf( "ERROR: received no updated Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
+		exit(1);
 	}
 	HELP_write_der_cert( updatedClCert, opt_newClCertFile);
 
@@ -346,13 +355,14 @@ void doInfo() {
 	/* XXX this is not freed yet */
 	cmp_ctx = CMP_CTX_create();
 	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+	CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
 	CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
 	CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
 	CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
 	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
 
-	if (!CMP_new_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
+	if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
 		printf( "ERROR: setting up connection to server");
 		exit(1);
 	}
@@ -364,6 +374,7 @@ void doInfo() {
 		printf( "SUCCESS: Doing PKI Information Request/Response. FILE %s, LINE %d\n", __FILE__, __LINE__);
 	} else {
 		printf( "ERROR: Doing PKI Information Request/Response. FILE %s, LINE %d\n", __FILE__, __LINE__);
+		exit(1);
 	}
 
 	return;
@@ -385,7 +396,6 @@ void parseCLA( int argc, char **argv) {
 		{"port",     required_argument,    0, 'b'},
 		{"ir",       no_argument,          0, 'c'},
 		{"kur",      no_argument,          0, 'd'},
-		{"info",     no_argument,          0, 'n'},
 		{"user",     required_argument,    0, 'e'},
 		{"password", required_argument,    0, 'f'},
 		{"cacert",   required_argument,    0, 'g'},
@@ -395,12 +405,15 @@ void parseCLA( int argc, char **argv) {
 		{"newkey",   required_argument,    0, 'k'},
 		{"newclcert",required_argument,    0, 'l'},
 		{"hex",      no_argument,          0, 'm'},
+		{"info",     no_argument,          0, 'n'},
+		{"path",     required_argument,    0, 'o'},
+		{"proxy",    no_argument,          0, 'p'},
 		{0, 0, 0, 0}
 	};
 
 	while (1)
 	{
-		c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mn", long_options, &option_index);
+		c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:p", long_options, &option_index);
 
 		/* Detect the end of the options. */
 		if (c == -1)
@@ -488,6 +501,13 @@ void parseCLA( int argc, char **argv) {
 			case 'm':
 				opt_hex = 1;
 				break;
+			case 'o':
+				opt_serverPath = (char*) malloc(strlen(optarg)+1);
+				strcpy(opt_serverPath, optarg);
+				break;
+			case 'p':
+				opt_proxy = 1;
+				break;
 			case '?':
 				/* getopt_long already printed an error message. */
 				break;
@@ -536,7 +556,6 @@ void parseCLA( int argc, char **argv) {
 		}
 	}
 
-
 	return;
 }
 
@@ -547,6 +566,7 @@ int getHttpProxy( char **name, int *port) {
 	if( opt_httpProxy) {
 		proxy = opt_httpProxy;
 	} else {
+		if( !opt_proxy) return 0;
 		if( getenv("http_proxy")) {
 			proxy = strdup(getenv("http_proxy"));
 		} else {

@@ -1,19 +1,19 @@
 =pod
 
 =head1 NAME
- CMP_new_bio
+ CMP_new_http_bio
 
 =head1 SYNOPSIS
 
  #include <openssl/cmp.h>
 
- int CMP_new_bio(BIO **cbio, const char* serverName, const int port);
+ int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port);
 
 =head1 DESCRIPTION
 
 This is the API for creating a BIO for CMP (Certificate Management Protocol) over HTTP with OpenSSL.
 
-CMP_new_bio() opens a OpenSSL BIO to communicate with the server.
+CMP_new_http_bio() opens a OpenSSL BIO to communicate with the server.
 
 =head1 NOTES
 
@@ -23,7 +23,7 @@ The implementaion of CMP for OpenSSL is still work in progress. The API might ch
 
 =head1 RETURN VALUES
 
-CMP_new_bio() returns 0 on error, 1 on success.
+CMP_new_http_bio() returns 0 on error, 1 on success.
 
 =head1 EXAMPLE
 
@@ -37,7 +37,7 @@ The following code does an Initial Request:
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
 	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
 
-	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
+	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
 
 	initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
 	BIO_free(cbio);
@@ -53,7 +53,7 @@ The following code does an Key Update Request:
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
 	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
 
-	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
+	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
 
 	updatedClCert = CMP_doKeyUpdateRequestSeq( cbio, cmp_ctx);
 	BIO_free(cbio);

@@ -1,5 +1,5 @@
 /* defines.h
- * 
+ *
  * Definitions and macros for cmpserver-cl.c
  *
  * Written by Martin Peylo <martin.peylo@nsn.com>

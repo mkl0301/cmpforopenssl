@@ -214,6 +214,10 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->newPkey         = NULL;
 	ctx->compatibility   = CMP_COMPAT_RFC;
 	ctx->serverName      = NULL;
+	/* serverPath has to be an empty sting if not set since it is not mandatory */
+	/* XXX TODO this should be freed somewhere */
+	ctx->serverPath      = OPENSSL_malloc(1);
+	ctx->serverPath[0]   = 0;
 	ctx->serverPort      = 0;
 	ctx->transport       = CMP_TRANSPORT_HTTP;
 	ctx->implicitConfirm = 0;
@@ -485,6 +489,26 @@ int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port) {
 	if (!ctx) goto err;
 
 	ctx->serverPort = port;
+	return 1;
+err:
+printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path) {
+	if (!ctx) goto err;
+	if (!path) goto err;
+
+	if (ctx->serverPath) {
+		OPENSSL_free( ctx->serverPath);
+		ctx->serverPath = NULL;
+	}
+
+	ctx->serverPath = OPENSSL_malloc( strlen(path)+1);
+	strcpy( ctx->serverPath, path);
+
 	return 1;
 err:
 printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);

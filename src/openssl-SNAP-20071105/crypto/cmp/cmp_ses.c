@@ -186,12 +186,12 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (ir = CMP_ir_new(ctx))) goto err;
 
 	printf("INFO: Sending Initialization Request\n");
-	if (! CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, ctx->serverPort, ir))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ir))
 		goto err;
 
 	/* receive Initialization Response - ip */
 	printf("INFO: Attempting to receive IP\n");
-	CMP_PKIMESSAGE_bio_recv(cbio, &ip);
+	CMP_PKIMESSAGE_http_bio_recv(cbio, &ip);
 
 	if (CMP_protection_verify( ip, ctx->protectionAlgor, NULL, ctx->secretValue))
 		printf( "SUCCESS: validating protection of incoming message\n");
@@ -251,12 +251,12 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
 	printf("INFO: Sending Certificate Confirm\n");
-	if (! CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, ctx->serverPort, certConf))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, certConf))
 		goto err;
 
 	/* receive PKIconf - PKIconf */
 	printf("INFO: Attempting to receive PKIconf\n");
-	if (! CMP_PKIMESSAGE_bio_recv(cbio, &PKIconf))
+	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &PKIconf))
 		goto err;
 
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, NULL, ctx->secretValue))
@@ -323,12 +323,12 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (kur = CMP_kur_new(ctx))) goto err;
 
 	printf("INFO: Sending Key Update Request\n");
-	if (! CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, ctx->serverPort, kur))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, kur))
 		goto err;
 
 	/* receive Key Update Response - kup */
 	printf("INFO: Attempting to receive KUP\n");
-	CMP_PKIMESSAGE_bio_recv(cbio, &kup);
+	CMP_PKIMESSAGE_http_bio_recv(cbio, &kup);
 	switch (CMP_PKIMESSAGE_get_bodytype( kup)) {
 		case V_CMP_PKIBODY_KUP: 
 			break;
@@ -384,12 +384,12 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
 	printf("INFO: Sending Certificate Confirm\n");
-	if (! CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, ctx->serverPort, certConf))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, certConf))
 		goto err;
 
 	/* receive PKI confirmation - PKIconf */
 	printf("INFO: Attempting to receive PKIconf\n");
-	CMP_PKIMESSAGE_bio_recv(cbio, &PKIconf);
+	CMP_PKIMESSAGE_http_bio_recv(cbio, &PKIconf);
 
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
 		printf( "SUCCESS: validating protection of incoming message\n");
@@ -450,12 +450,12 @@ int CMP_doPKIInfoReqSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (genm = CMP_genm_new(ctx))) goto err;
 
 	printf("INFO: Sending General Message\n");
-	if (! CMP_PKIMESSAGE_bio_send(cbio, ctx->serverName, ctx->serverPort, genm))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, genm))
 		goto err;
 
 	/* receive GenRepContent - genp */
 	printf("INFO: Attempting to receive General Response\n");
-	CMP_PKIMESSAGE_bio_recv(cbio, &genp);
+	CMP_PKIMESSAGE_http_bio_recv(cbio, &genp);
 
 	if (CMP_protection_verify( genp, ctx->protectionAlgor, NULL, ctx->secretValue))
 		printf( "SUCCESS: validating protection of incoming message\n");

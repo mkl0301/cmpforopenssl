@@ -1225,9 +1225,11 @@ typedef struct cmp_ctx_st
 	/* compatibility mode */
 #define CMP_COMPAT_RFC		1
 #define CMP_COMPAT_CRYPTLIB	2
+#define CMP_COMPAT_INSTA	3
 	int	   compatibility;
-	char      *serverName;
-	int       serverPort;
+	char	  *serverName;
+	int	   serverPort;
+	char	  *serverPath;
 #define CMP_TRANSPORT_HTTP	1
 #define CMP_TRANSPORT_TCP	2
 	int	   transport;
@@ -1368,10 +1370,10 @@ int CMP_INFOTYPEANDVALUE_set0(CMP_INFOTYPEANDVALUE *itav, ASN1_OBJECT *aobj, int
 void CMP_INFOTYPEANDVALUE_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval, CMP_INFOTYPEANDVALUE *itav);
 
 /* from cmp_http.c */
-int CMP_new_bio(BIO **cbio, const char* serverName, const int port);
-int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
-int CMP_PKIMESSAGE_bio_send(BIO *cbio, const char* serverName, const int serverPort, const CMP_PKIMESSAGE *msg);
-int CMP_PKIMESSAGE_bio_recv(BIO *cbio, CMP_PKIMESSAGE **ip);
+int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port);
+/* int CMP_PKIMESSAGE_http_bio_send(BIO *cbio, const char* serverName, const int serverPort, const CMP_PKIMESSAGE *msg); */
+int CMP_PKIMESSAGE_http_bio_send(BIO *cbio, const char *serverName, const int serverPort, const char *serverPath, const CMP_PKIMESSAGE *msg);
+int CMP_PKIMESSAGE_http_bio_recv(BIO *cbio, CMP_PKIMESSAGE **ip);
 
 /* from cmp_ses.c */
 X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx);
@@ -1394,6 +1396,8 @@ int CMP_CTX_set1_recipNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
 int CMP_CTX_set1_protectionAlgor( CMP_CTX *ctx, const X509_ALGOR *algor);
 int CMP_CTX_set_compatibility( CMP_CTX *ctx, const int mode);
 int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
+int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
+int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path);
 #define CMP_ALG_PBMAC 1
 #define CMP_ALG_SIG   2
 int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algId);

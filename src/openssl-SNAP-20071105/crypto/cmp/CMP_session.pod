@@ -41,7 +41,7 @@ The following code does an Initial Request:
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
 	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
 
-	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
+	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
 
 	initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
 	BIO_free(cbio);
@@ -57,7 +57,7 @@ The following code does an Key Update Request:
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
 	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
 
-	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
+	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
 
 	updatedClCert = CMP_doKeyUpdateRequestSeq( cbio, cmp_ctx);
 	BIO_free(cbio);

@@ -40,7 +40,7 @@ dbclean:
 clean:
 	-rm -f $(CA) $(CAOBJ) $(FUNCOBJ)
 
-distclean: clean dbclean 
+distclean: clean dbclean
 
 install:
 	cp $(CA) $(BINDIR)

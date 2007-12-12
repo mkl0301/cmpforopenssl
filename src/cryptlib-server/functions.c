@@ -1,5 +1,5 @@
 /* functions.c
- * 
+ *
  * Functions for cmpserver-cl.c
  *
  * Written by Martin Peylo <martin.peylo@nsn.com>
