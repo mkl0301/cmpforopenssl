@@ -181,7 +181,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 				 const CMP_PKIMESSAGE *msg)
 {
 	char http_hdr[] =
-		"POST /%s HTTP/1.1\r\n"
+		"POST http://%s:%d/%s HTTP/1.1\r\n"
 		"Host: %s:%d\r\n"
 		"Content-type: application/pkixcmp\r\n"
 		"Content-Length: %d\r\n"
@@ -191,7 +191,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 	if (!cbio)
 		return 0;
 
-	BIO_printf(cbio, http_hdr, serverPath, serverName, serverPort, i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, NULL));
+	BIO_printf(cbio, http_hdr, serverName, serverPort, serverPath, serverName, serverPort, i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, NULL));
 	i2d_CMP_PKIMESSAGE_bio(cbio, msg);
 
 	(void) BIO_flush(cbio);
