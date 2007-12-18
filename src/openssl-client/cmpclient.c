@@ -199,6 +199,7 @@ static int opt_sequenceSet=0;
 static int opt_doIr=0;
 static int opt_doKur=0;
 static int opt_doInfo=0;
+static int opt_compatibility=CMP_COMPAT_RFC;
 
 /* calculated from CLA */
 static unsigned char *idString=NULL;
@@ -241,10 +242,12 @@ void printUsage( const char* cmdName) {
 	printf("                       this is overwritten at KUR\n");
 	printf("\n");
 	printf("Other options are:\n");
-	printf(" --proxy    set proxy from $http_proxy environment variable if available\n");
-	printf(" --verbose  ignored so far\n");
-	printf(" --brief    ignored so far\n");
-	printf(" --help     shows this help\n");
+	printf(" --cryptlib    be compatible to Cryptlib\n");
+	printf(" --insta       be compatible to Insta Certifier\n");
+	printf(" --proxy       set proxy from $http_proxy environment variable if available\n");
+	printf(" --verbose     ignored so far\n");
+	printf(" --brief       ignored so far\n");
+	printf(" --help        shows this help\n");
 	printf("\n");
 	exit(1);
 }
@@ -271,7 +274,7 @@ void doIr() {
 	CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
 	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
-	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
+	CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
 	/* CL does not support this, it just ignores it.
 	 * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
@@ -324,7 +327,7 @@ void doKur() {
 	CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
 	CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
-	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
+	CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
 	if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
 		printf( "ERROR: setting up connection to server");
@@ -360,7 +363,7 @@ void doInfo() {
 	CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
 	CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
-	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
+	CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
 	if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
 		printf( "ERROR: setting up connection to server");
@@ -408,12 +411,14 @@ void parseCLA( int argc, char **argv) {
 		{"info",     no_argument,          0, 'n'},
 		{"path",     required_argument,    0, 'o'},
 		{"proxy",    no_argument,          0, 'p'},
+		{"cryptlib", no_argument,          0, 'q'},
+		{"insta",    no_argument,          0, 'r'},
 		{0, 0, 0, 0}
 	};
 
 	while (1)
 	{
-		c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:p", long_options, &option_index);
+		c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqr", long_options, &option_index);
 
 		/* Detect the end of the options. */
 		if (c == -1)
@@ -507,6 +512,12 @@ void parseCLA( int argc, char **argv) {
 				break;
 			case 'p':
 				opt_proxy = 1;
+				break;
+			case 'q':
+				opt_compatibility = CMP_COMPAT_CRYPTLIB;
+				break;
+			case 'r':
+				opt_compatibility = CMP_COMPAT_INSTA;
 				break;
 			case '?':
 				/* getopt_long already printed an error message. */
