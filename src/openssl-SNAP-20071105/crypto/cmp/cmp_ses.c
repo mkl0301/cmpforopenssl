@@ -186,7 +186,7 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (ir = CMP_ir_new(ctx))) goto err;
 
 	printf("INFO: Sending Initialization Request\n");
-	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ir))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, ir))
 		goto err;
 
 	/* receive Initialization Response - ip */
@@ -251,7 +251,7 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
 	printf("INFO: Sending Certificate Confirm\n");
-	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, certConf))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, certConf))
 		goto err;
 
 	/* receive PKIconf - PKIconf */
@@ -323,7 +323,7 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (kur = CMP_kur_new(ctx))) goto err;
 
 	printf("INFO: Sending Key Update Request\n");
-	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, kur))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, kur))
 		goto err;
 
 	/* receive Key Update Response - kup */
@@ -384,7 +384,7 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
 	printf("INFO: Sending Certificate Confirm\n");
-	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, certConf))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, certConf))
 		goto err;
 
 	/* receive PKI confirmation - PKIconf */
@@ -450,7 +450,7 @@ int CMP_doPKIInfoReqSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! (genm = CMP_genm_new(ctx))) goto err;
 
 	printf("INFO: Sending General Message\n");
-	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, genm))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, genm))
 		goto err;
 
 	/* receive GenRepContent - genp */

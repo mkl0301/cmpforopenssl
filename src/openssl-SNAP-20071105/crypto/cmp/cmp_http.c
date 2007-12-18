@@ -178,12 +178,20 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 				 const char *serverName,
 				 const int   serverPort,
 				 const char *serverPath,
+				 const int   compatibility,
 				 const CMP_PKIMESSAGE *msg)
 {
+	int derLen;
+	unsigned int derLenUint;
+	size_t derLenUintSize;
+	unsigned char instaHeader[7] ;
+
 	char http_hdr[] =
 		"POST http://%s:%d/%s HTTP/1.1\r\n"
+		/* "POST /%s HTTP/1.1\r\n" */ /* XXX INSTA TEST XXX */
 		"Host: %s:%d\r\n"
 		"Content-type: application/pkixcmp\r\n"
+		/* "Content-type: application/pkixcmp-poll\r\n" */ /* XXX INSTA TEST XXX */
 		"Content-Length: %d\r\n"
 		"Connection: Keep-Alive\r\n" /* this is actually HTTP 1.0 but might be necessary for proxies */
 		"Cache-Control: no-cache\r\n\r\n";
@@ -191,7 +199,50 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 	if (!cbio)
 		return 0;
 
-	BIO_printf(cbio, http_hdr, serverName, serverPort, serverPath, serverName, serverPort, i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, NULL));
+	derLen = i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, NULL);
+
+	/* Insta prepends a proprietary header before the CMP msg */
+	if (compatibility == CMP_COMPAT_INSTA) {
+		/* this will be used for the msg length in the proprietary header */
+		derLenUint = (unsigned int) derLen + 3; /* +3 are the following 3 octets */
+		/* this will be used for the HTTP Content-Length */
+		derLen += 7;
+	}
+
+	/* print HTTP header */
+	BIO_printf(cbio, http_hdr, serverName, serverPort, serverPath, serverName, serverPort, derLen);
+	/* BIO_printf(cbio, http_hdr, serverPath, serverName, serverPort, derLen); */ /* XXX INSTA TEST */
+
+	/* Insta prepends a proprietary header before the CMP msg */
+	if (compatibility == CMP_COMPAT_INSTA) {
+		derLenUintSize = sizeof(derLenUint);
+#ifdef L_ENDIAN
+		if(derLenUint >= 4)
+			instaHeader[0] = (unsigned char) (derLenUint>>(3*8)) & 0xff;
+		else
+			instaHeader[0] = 0x0;
+		if(derLenUint >= 3)
+			instaHeader[1] = (unsigned char) (derLenUint>>(2*8)) & 0xff;
+		else
+			instaHeader[1] = 0x0;
+		if(derLenUint >= 2)
+			instaHeader[2] = (unsigned char) (derLenUint>>(1*8)) & 0xff;
+		else
+			instaHeader[2] = 0x0;
+		/* it should be at least one byte... */
+		instaHeader[3] = (unsigned char) (derLenUint>>(0*8)) & 0xff;
+#elif defined B_ENDIAN
+#error No code for Big endian available so far
+#else
+#error Endianess is not defined
+#endif /* endianess */
+		instaHeader[4] = 0x0a;
+		instaHeader[5] = 0x01;
+		instaHeader[6] = 0x0; /* XXX this is only for IR so far XXX */
+
+		BIO_write(cbio, instaHeader, 7);
+	}
+
 	i2d_CMP_PKIMESSAGE_bio(cbio, msg);
 
 	(void) BIO_flush(cbio);

@@ -239,7 +239,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);
 
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, NULL))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, NULL, ctx->compatibility))) goto err;
 
 	msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null();
 	sk_CRMF_CERTREQMSG_push( msg->body->value.ir, certReq0);
@@ -320,7 +320,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of kur and is freed there */
 	/* XXX setting the sender in a KUR message is not really required by the RFC */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, X509_get_subject_name( (X509*) ctx->clCert)))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, X509_get_subject_name( (X509*) ctx->clCert), ctx->compatibility))) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);
 	msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null();

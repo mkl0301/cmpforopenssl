@@ -223,16 +223,21 @@ int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version) {
 int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 {
 	GENERAL_NAME *gen=NULL;
-
 	if( !hdr) return 0;
 
 	gen = GENERAL_NAME_new();
 	if( !gen) return 0;
 
-	if (!X509_NAME_set(&gen->d.directoryName, (X509_NAME*) nm))
-	{
-		GENERAL_NAME_free(gen);
-		return 0;
+	/* if nm is not set an empty dirname will be set */
+	if (nm == NULL) {
+		if(gen->d.directoryName) X509_NAME_free(gen->d.directoryName);
+		gen->d.directoryName = X509_NAME_new();
+	} else {
+		if (!X509_NAME_set(&gen->d.directoryName, (X509_NAME*) nm))
+		{
+			GENERAL_NAME_free(gen);
+			return 0;
+		}
 	}
 	gen->type = GEN_DIRNAME;
 	if (hdr->recipient)
@@ -639,13 +644,16 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 		if( !CMP_PKIHEADER_set1_sender( hdr, NULL)) goto err;
 	}
 
-	if( ctx->caCert) {
+	if( ctx->caCert && ctx->compatibility) {
 		if( !CMP_PKIHEADER_set1_recipient( hdr, X509_get_subject_name( (X509*) ctx->caCert))) goto err;
 	} else {
 		if( !CMP_PKIHEADER_set1_recipient( hdr, NULL)) goto err;
 	}
 
-	if( !CMP_PKIHEADER_set_messageTime(hdr)) goto err;
+	/* INSTA replies with a very strange message when the time is set */
+	if( ctx->compatibility != CMP_COMPAT_INSTA) {
+		if( !CMP_PKIHEADER_set_messageTime(hdr)) goto err;
+	}
 
 	if( ctx->protectionAlgor) {
 		if( !CMP_PKIHEADER_set1_protectionAlgor( hdr, ctx->protectionAlgor)) goto err;

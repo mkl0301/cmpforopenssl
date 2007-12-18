@@ -1,5 +1,5 @@
 /* crypto/crmf/crmf_msg.c
- * 
+ *
  * Functions for creating CRMF (RFC 4211) messages for OpenSSL
  *
  * Written by Martin Peylo <martin.peylo@nsn.com>
@@ -48,7 +48,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -103,21 +103,21 @@
  * This package is an SSL implementation written
  * by Eric Young (eay@cryptsoft.com).
  * The implementation was written so as to conform with Netscapes SSL.
- * 
+ *
  * This library is free for commercial and non-commercial use as long as
  * the following conditions are aheared to.  The following conditions
  * apply to all code found in this distribution, be it the RC4, RSA,
  * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
  * included with this distribution is covered by the same copyright terms
  * except that the holder is Tim Hudson (tjh@cryptsoft.com).
- * 
+ *
  * Copyright remains Eric Young's, and as such any Copyright notices in
  * the code are not to be removed.
  * If this package is used in a product, Eric Young should be given attribution
  * as the author of the parts of the library used.
  * This can be in the form of a textual message at program startup or
  * in documentation (online or textual) provided with the package.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -132,10 +132,10 @@
  *     Eric Young (eay@cryptsoft.com)"
  *    The word 'cryptographic' can be left out if the rouines from the library
  *    being used are not cryptographic related :-).
- * 4. If you include any Windows specific code (or a derivative thereof) from 
+ * 4. If you include any Windows specific code (or a derivative thereof) from
  *    the apps directory (application code) you must include an acknowledgement:
  *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -147,7 +147,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * 
+ *
  * The licence and distribution terms for any publically available version or
  * derivative of this code cannot be changed.  i.e. this code cannot simply be
  * copied and put under another distribution licence
@@ -155,34 +155,37 @@
  */
 
 /* ############################################################################ */
-/* In this file are the functions which build and evaluate the CRMF messages    */ 
+/* In this file are the functions which build and evaluate the CRMF messages    */
 /* ############################################################################ */
 
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
 #include <openssl/crmf.h>
 #include <openssl/evp.h>
+#include <openssl/cmp.h> /* for the CMP_COMPAT_* flags */
 
 
 /* ############################################################################ */
 /* XXX is the naming of this function sane? Is it too connected to CMP? */
 /* TODO there are some optional settings which are not cared for right now */
-CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject) {
+CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, const int compatibility) {
 	CRMF_CERTREQMSG *certReqMsg;
 
 	if( !(certReqMsg = CRMF_CERTREQMSG_new())) goto err;
 
-#if 0
-	/* version MUST be 2 if supplied.  It SHOULD be omitted. */
-	int CRMF_CERTREQMSG_set_version2( CRMF_CERTREQMSG *certReqMsg);
-#endif
+	/* This SHOULD be ommited - INSTA requires this */
+	/* it answers with a "timeNotAvailable" Error if this is not present */
+	if( compatibility == CMP_COMPAT_INSTA) {
+		/* version MUST be 2 if supplied.  It SHOULD be omitted. */
+		CRMF_CERTREQMSG_set_version2( certReqMsg);
+	}
 
 	CRMF_CERTREQMSG_set_certReqId( certReqMsg, certReqId);
-	if (!CRMF_CERTREQMSG_set1_publicKey( certReqMsg, pkey)) 
+	if (!CRMF_CERTREQMSG_set1_publicKey( certReqMsg, pkey))
 printf("ERROR: setting public key, FILE %s, LINE %d\n", __FILE__, __LINE__);
 #if 0
 	/* CL supports this (for client certificates) for up to 3 years in the future for both dates
-	 * in case the notBefore date is in the past it will be set to the current date without any comment */	
+	 * in case the notBefore date is in the past it will be set to the current date without any comment */
 	int CRMF_CERTREQMSG_set_validity( CRMF_CERTREQMSG *certReqMsg, time_t notBefore, time_t notAfter);
 #endif
 	CRMF_CERTREQMSG_set1_subject( certReqMsg, subject);

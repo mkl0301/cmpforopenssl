@@ -8,8 +8,10 @@ if [ -z $1 ] || [ -z $2 ] || [ "$1" == "-help" ] || [ "$1" == "--help" ] || [ "$
 fi
 
 echo "${CMPCLIENT} --ir --server ${SERVER} --port ${PORT} --cacert ${CACERT} --key ${CLKEY} --clcert ${CLCERT} --hex --user $1 --password $2"
-
+set -x
 ${CMPCLIENT} --ir --server ${SERVER} --port ${PORT} \
+		--path ${SERVERPATH} \
+		--proxy \
              --cacert ${CACERT} \
 	     --key ${CLKEY} --clcert ${CLCERT} \
-	     --hex --user $1 --password $2
+	     --user $1 --password $2
