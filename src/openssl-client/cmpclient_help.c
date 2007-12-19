@@ -212,8 +212,10 @@ printf("INFO: Reading Certificate from File %s\n", file);
 	if ((bio=BIO_new(BIO_s_file())) != NULL)
 		IFSTAT(BIO_new)
 
-	if (BIO_read_filename(bio,file) > 0)
-		IFSTAT(BIO_read_filename)
+	if (!BIO_read_filename(bio,file)) {
+		printf("ERROR: could not open file \"%s\" for reading.\n", file);
+		return NULL;
+	}
 
 	x=d2i_X509_bio(bio,NULL);
 
@@ -230,8 +232,10 @@ printf("INFO: Saving Certificate to File %s\n", file);
 	if ((bio=BIO_new(BIO_s_file())) != NULL)
 		IFSTAT(BIO_new)
 
-	if (BIO_write_filename(bio,(char *)file) > 0)
-		IFSTAT(BIO_write_filename)
+	if (!BIO_write_filename(bio,(char *)file)) {
+		printf("ERROR: could not open file \"%s\" for writing.\n", file);
+		return 0;
+	}
 
 	if (i2d_X509_bio(bio, cert))
 		IFSTAT(write X509)
@@ -283,7 +287,10 @@ int HELP_savePrivKey(EVP_PKEY *pkey, const char * filename) {
 
 printf("INFO: Writing Public Key to File %s\n", filename);
 printf("INFO: the passphrase is \"password\"\n");
-	fp = fopen(filename, "w");
+	if( !(fp = fopen(filename, "w"))) {
+		printf("ERROR: could not open file \"%s\" for writing.\n", filename);
+		return 0;
+	}
 	PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, 0, "password");
 printf("INFO: private Key written\n");
 	fclose(fp);
@@ -298,9 +305,12 @@ EVP_PKEY *HELP_readPrivKey(const char * filename) {
 
 printf("INFO: Reading Public Key from File %s\n", filename);
 printf("INFO: the passphrase is \"password\"...\n");
-	fp = fopen(filename, "r");
+	if( !(fp = fopen(filename, "r"))) {
+		printf("ERROR: could not open file \"%s\" for reading.\n", filename);
+		return NULL;
+	}
 	/* XXX this is NOT encrypted */
-	pkey = PEM_read_PrivateKey(fp, NULL, NULL, "passoword");
+	pkey = PEM_read_PrivateKey(fp, NULL, NULL, "password");
 	if( pkey)
 		IFSTAT( Reading PKEY)
 	fclose(fp);

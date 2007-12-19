@@ -294,7 +294,10 @@ void doIr() {
 		printf( "ERROR: received no initial Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
 		exit(1);
 	}
-	HELP_write_der_cert(initialClCert, opt_clCertFile);
+	if(!HELP_write_der_cert(initialClCert, opt_clCertFile)) {
+		printf("FATAL: could not write client certificate!\n");
+		exit(1);
+	}
 
 	return;
 }
@@ -311,12 +314,21 @@ void doKur() {
 
 	CMP_CTX *cmp_ctx=NULL;
 
-	initialPkey = HELP_readPrivKey(opt_clKeyFile);
-	initialClCert = HELP_read_der_cert(opt_clCertFile);
+	if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile))) {
+		printf("FATAL: could not read private client key!\n");
+		exit(1);
+	}
+	if(!(initialClCert = HELP_read_der_cert(opt_clCertFile))) {
+		printf("FATAL: could not read client certificate!\n");
+		exit(1);
+	}
 
 	/* generate RSA key */
 	updatedPkey = HELP_generateRSAKey();
-	HELP_savePrivKey( updatedPkey, opt_newClKeyFile);
+	if(!HELP_savePrivKey( updatedPkey, opt_newClKeyFile)) {
+		printf("FATAL: could not save private client key!");
+		exit(1);
+	}
 
 	/* XXX this is not freed yet */
 	cmp_ctx = CMP_CTX_create();
@@ -343,7 +355,10 @@ void doKur() {
 		printf( "ERROR: received no updated Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
 		exit(1);
 	}
-	HELP_write_der_cert( updatedClCert, opt_newClCertFile);
+	if(!HELP_write_der_cert( updatedClCert, opt_newClCertFile)) {
+		printf("FATAL: could not write new client certificate!\n");
+		exit(1);
+	}
 
 	return;
 }
@@ -622,7 +637,10 @@ int main(int argc, char **argv) {
 	}
 
 	/* read CA certificate */
-	caCert = HELP_read_der_cert(opt_caCertFile);
+	if( !(caCert = HELP_read_der_cert(opt_caCertFile))) {
+		printf("FATAL: could not read CA certificate!\n");
+		exit(1);
+	}
 
 	if( opt_doIr) {
 		if (opt_hex) {
