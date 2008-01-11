@@ -17,5 +17,6 @@ ${CMPCLIENT} --ir \
 	     --key ${CLKEY} \
 	     --clcert ${CLCERT} \
 	     --user $1 \
+	     --hex \
 	     --password $2
 set +x

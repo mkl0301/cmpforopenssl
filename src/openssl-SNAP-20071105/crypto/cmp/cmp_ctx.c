@@ -499,12 +499,13 @@ printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
 /* ################################################################ */
 int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path) {
 	if (!ctx) goto err;
-	if (!path) goto err;
 
 	if (ctx->serverPath) {
 		OPENSSL_free( ctx->serverPath);
 		ctx->serverPath = NULL;
 	}
+
+	if (!path) return 1;
 
 	ctx->serverPath = OPENSSL_malloc( strlen(path)+1);
 	strcpy( ctx->serverPath, path);

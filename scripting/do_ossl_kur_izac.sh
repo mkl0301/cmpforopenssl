@@ -10,10 +10,11 @@ fi
 set -x
 
 ${CMPCLIENT} --kur \
+             --cryptlib \
              --server ${IZAC_SERVER} \
-						 --cacert ${IZAC_CACERT} \
-						 --key ${CLKEY} \
-						 --newkey ${NEWCLKEY} \
-						 --clcert ${CLCERT} \
-						 --newclcert ${NEWCLCERT}
+	     --cacert ${IZAC_CACERT} \
+	     --key ${CLKEY} \
+	     --newkey ${NEWCLKEY} \
+	     --clcert ${CLCERT} \
+             --newclcert ${NEWCLCERT}
 set +x
