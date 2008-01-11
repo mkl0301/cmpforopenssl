@@ -213,7 +213,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 	BIO_printf(cbio, http_hdr, serverName, serverPort, serverPath, serverName, serverPort, derLen);
 	/* BIO_printf(cbio, http_hdr, serverPath, serverName, serverPort, derLen); */ /* XXX INSTA TEST */
 
-	/* Insta prepends a proprietary header before the CMP msg */
+	/* Insta prepends a proprietary header to the CMP message */
 	if (compatibility == CMP_COMPAT_INSTA) {
 		derLenUintSize = sizeof(derLenUint);
 #ifdef L_ENDIAN
@@ -232,7 +232,20 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 		/* it should be at least one byte... */
 		instaHeader[3] = (unsigned char) (derLenUint>>(0*8)) & 0xff;
 #elif defined B_ENDIAN
-#error No code for Big endian available so far
+		if(derLenUint >= 4)
+			instaHeader[0] = (unsigned char) (derLenUint>>(0*8)) & 0xff;
+		else
+			instaHeader[0] = 0x0;
+		if(derLenUint >= 3)
+			instaHeader[1] = (unsigned char) (derLenUint>>(1*8)) & 0xff;
+		else
+			instaHeader[1] = 0x0;
+		if(derLenUint >= 2)
+			instaHeader[2] = (unsigned char) (derLenUint>>(2*8)) & 0xff;
+		else
+			instaHeader[2] = 0x0;
+		/* it should be at least one byte... */
+		instaHeader[3] = (unsigned char) (derLenUint>>(3*8)) & 0xff;
 #else
 #error Endianess is not defined
 #endif /* endianess */
