@@ -12,6 +12,8 @@ set -x
 ${CMPCLIENT} --kur \
              --cryptlib \
              --server ${IZAC_SERVER} \
+	     --port ${IZAC_PORT} \
+	     --proxy \
 	     --cacert ${IZAC_CACERT} \
 	     --key ${CLKEY} \
 	     --newkey ${NEWCLKEY} \
