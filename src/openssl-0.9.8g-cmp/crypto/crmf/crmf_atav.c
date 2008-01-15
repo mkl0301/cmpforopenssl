@@ -1,9 +1,14 @@
-/* x_algor.c */
-/* Written by Dr Stephen N Henson (shenson@bigfoot.com) for the OpenSSL
+/* crypto/crmf/crmf_itav.c */
+
+/* Adjusted by Martin Peylo <martin.peylo@nsn.com> */
+
+/* this file is derived from x_algor.c,
+ * written by Dr Stephen N Henson (shenson@bigfoot.com) for the OpenSSL
  * project 2000.
  */
+
 /* ====================================================================
- * Copyright (c) 2000 The OpenSSL Project.  All rights reserved.
+ * Copyright (c) 1998-2000 The OpenSSL Project.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -20,12 +25,12 @@
  * 3. All advertising materials mentioning features or use of this
  *    software must display the following acknowledgment:
  *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.OpenSSL.org/)"
+ *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
  *    endorse or promote products derived from this software without
  *    prior written permission. For written permission, please contact
- *    licensing@OpenSSL.org.
+ *    openssl-core@openssl.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
  *    nor may "OpenSSL" appear in their names without prior written
@@ -34,7 +39,7 @@
  * 6. Redistributions of any form whatsoever must retain the following
  *    acknowledgment:
  *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.OpenSSL.org/)"
+ *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -53,73 +58,82 @@
  * This product includes cryptographic software written by Eric Young
  * (eay@cryptsoft.com).  This product includes software written by Tim
  * Hudson (tjh@cryptsoft.com).
- *
  */
 
 #include <stddef.h>
-#include <openssl/x509.h>
+#include <openssl/crmf.h>
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
 
-ASN1_SEQUENCE(X509_ALGOR) = {
-	ASN1_SIMPLE(X509_ALGOR, algorithm, ASN1_OBJECT),
-	ASN1_OPT(X509_ALGOR, parameter, ASN1_ANY)
-} ASN1_SEQUENCE_END(X509_ALGOR)
-
-IMPLEMENT_ASN1_FUNCTIONS(X509_ALGOR)
-IMPLEMENT_ASN1_DUP_FUNCTION(X509_ALGOR)
-
-IMPLEMENT_STACK_OF(X509_ALGOR)
-IMPLEMENT_ASN1_SET_OF(X509_ALGOR)
-
-int X509_ALGOR_set0(X509_ALGOR *alg, ASN1_OBJECT *aobj, int ptype, void *pval)
+/* ############################################################################ */
+/* ############################################################################ */
+int CRMF_ATTRIBUTETYPEANDVALUE_set0(CRMF_ATTRIBUTETYPEANDVALUE *atav, ASN1_OBJECT *aobj, int ptype, void *pval)
 	{
-	if (!alg)
+	if (!atav)
 		return 0;
-	if (ptype != V_ASN1_UNDEF)
-		{
-		if (alg->parameter == NULL)
-			alg->parameter = ASN1_TYPE_new();
-		if (alg->parameter == NULL)
+	if (ptype != V_ASN1_UNDEF) {
+		if (atav->value == NULL)
+			atav->value = ASN1_TYPE_new();
+		if (atav->value == NULL)
 			return 0;
-		}
-	if (alg)
-		{
-		if (alg->algorithm)
-			ASN1_OBJECT_free(alg->algorithm);
-		alg->algorithm = aobj;
-		}
+	}
+	if (atav) {
+		if (atav->type)
+			ASN1_OBJECT_free(atav->type);
+		atav->type = aobj;
+	}
 	if (ptype == 0)
 		return 1;	
-	if (ptype == V_ASN1_UNDEF)
-		{
-		if (alg->parameter)
-			{
-			ASN1_TYPE_free(alg->parameter);
-			alg->parameter = NULL;
-			}
+	if (ptype == V_ASN1_UNDEF) {
+		if (atav->value) {
+			ASN1_TYPE_free(atav->value);
+			atav->value = NULL;
 		}
-	else
-		ASN1_TYPE_set(alg->parameter, ptype, pval);
-	return 1;
 	}
+	else
+		ASN1_TYPE_set(atav->value, ptype, pval);
+	return 1;
+}
 
-void X509_ALGOR_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval,
-						X509_ALGOR *algor)
-	{
+
+/* ############################################################################ */
+/* ############################################################################ */
+void CRMF_ATTRIBUTETYPEANDVALUE_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval, CRMF_ATTRIBUTETYPEANDVALUE *atav) {
 	if (paobj)
-		*paobj = algor->algorithm;
-	if (pptype)
-		{
-		if (algor->parameter == NULL)
-			{
+		*paobj = atav->type;
+	if (pptype) {
+		if (atav->value == NULL) {
 			*pptype = V_ASN1_UNDEF;
 			return;
-			}
-		else
-			*pptype = algor->parameter->type;
+		} else
+			*pptype = atav->value->type;
 		if (ppval)
-			*ppval = algor->parameter->value.ptr;
+			*ppval = atav->value->value.ptr;
 		}
-	}
+}
 
+/* ############################################################################ */
+/* TODO: check */
+/* ############################################################################ */
+int CRMF_ATTRIBUTETYPEANDVALUE_set0_nid_utf8string( CRMF_ATTRIBUTETYPEANDVALUE *atav, int nid, ASN1_UTF8STRING *utf8str) {
+	unsigned char *utf8strDer=NULL;
+	int utf8strDerLen;
+	ASN1_STRING *utf8strStr=NULL;
+
+	if (!atav) goto err;
+	if (!utf8str) goto err;
+
+	utf8strDerLen = i2d_ASN1_UTF8STRING( utf8str, &utf8strDer);
+	if (!(utf8strStr = ASN1_STRING_new())) goto err;
+	ASN1_STRING_set( utf8strStr, utf8strDer, utf8strDerLen);
+	utf8strDer = NULL;
+
+	if( !CRMF_ATTRIBUTETYPEANDVALUE_set0( atav, OBJ_nid2obj(nid), V_ASN1_UTF8STRING, utf8strStr)) goto err;
+	utf8strStr = NULL;
+
+	return 1;
+err:	
+	if (utf8strStr) ASN1_STRING_free( utf8strStr);
+	if (utf8strDer) OPENSSL_free( utf8strDer);
+	return 0;
+}

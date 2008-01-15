@@ -51,7 +51,7 @@ $(OSSLSRC)/config-stamp: FORCE
 	cd $(OSSLSRC) && \
 	./config --prefix=$(ROOT) $(OPENSSLCFGOPT) && \
 	make update
-	touch $(OSSLSRC)\config-stamp
+	touch $(OSSLSRC)/config-stamp
 
 openssl: $(OSSLSRC)/config-stamp FORCE
 	cd $(OSSLSRC) && \
