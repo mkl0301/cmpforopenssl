@@ -42,16 +42,18 @@ $(CLSRC)/unzip-stamp: $(DLDIR)/cl$(CRYPTLIB_VERSION).zip
 	ln -s --force cryptlib-$(CRYPTLIB_VERSION) $(CLSRC)
 	touch $(CLSRC)/unzip-stamp
 
-.PHONY: openssl_src cryptlib_src
+.PHONY: openssl_src
 
 # this is forced to be sure it is rebuilt if any file in it was changed
-$(OSSLSRC)/Makefile: FORCE
+$(OSSLSRC)/config-stamp: FORCE
+	# force the objects to be updated
+	touch $(OSSLSRC)/crypto/objects/objects.txt
 	cd $(OSSLSRC) && \
 	./config --prefix=$(ROOT) $(OPENSSLCFGOPT) && \
-	make depend && \
 	make update
+	touch $(OSSLSRC)\config-stamp
 
-openssl: $(OSSLSRC)/Makefile FORCE
+openssl: $(OSSLSRC)/config-stamp FORCE
 	cd $(OSSLSRC) && \
 	make
 
@@ -61,7 +63,7 @@ $(CLSRC)/libcl.a: $(CLSRC)/unzip-stamp
 	cd $(CLSRC) && \
 	make
 
-$(CLIENTSRC)/cmpclient: $(LIBOSSL)
+$(CLIENTSRC)/cmpclient: openssl
 	cd $(CLIENTSRC) && \
 	make && \
 	make install
