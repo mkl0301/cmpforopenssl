@@ -21,7 +21,10 @@ LIBCRYPTO = $(CLSRC)/libcrypto.a
 
 all: openssl cryptlib cmpclient cmpserver
 
+.PHONY: cryptlib all
+
 world: openssl_src cryptlib_src
+
 .PHONY: world
 
 $(DLDIR)/openssl-$(OPENSSL_VERSION).tar.gz:
@@ -57,7 +60,11 @@ openssl: $(OSSLSRC)/config-stamp FORCE
 	cd $(OSSLSRC) && \
 	make
 
+.PHONY: openssl
+
 cryptlib: $(CLSRC)/libcl.a
+
+.PHONY: cryptlib
 
 $(CLSRC)/libcl.a: $(CLSRC)/unzip-stamp
 	cd $(CLSRC) && \
@@ -70,6 +77,8 @@ $(CLIENTSRC)/cmpclient: openssl
 
 cmpclient: $(CLIENTSRC)/cmpclient
 
+.PHONY: cmpclient
+
 $(SERVERSRC)/cmpserver-cl: cryptlib
 	cd $(SERVERSRC) && \
 	make && \
@@ -77,8 +86,18 @@ $(SERVERSRC)/cmpserver-cl: cryptlib
 
 cmpserver: $(SERVERSRC)/cmpserver-cl
 
-FORCE:
+.PHONY: cmpserver
 
 update: $(OSSLSRC)/Makefile all
 
-.PHONY: openssl cryptlib cmpclient cmpserver update all
+.PHONY: update
+
+openssl_patch_0.9.8g:
+	-mkdir patches
+	cd $(SRCDIR) && \
+	svn diff -r 26:HEAD openssl-0.9.8g-cmp > patches/openssl-0.9.8.g_cmp.diff
+
+.PHONY: openssl_patch_0.9.8.g
+
+FORCE:
+
