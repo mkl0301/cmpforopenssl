@@ -558,7 +558,7 @@ CRMF_ATTRIBUTETYPEANDVALUE * CRMF_ATAV_OldCertId_new( GENERAL_NAME *issuer, ASN1
 	certIdDerLen = i2d_CRMF_CERTID( certId, &certIdDer);
 
 	if (!(certIdStr = ASN1_STRING_new())) goto err;
-	ASN1_STRING_set0( certIdStr, certIdDer, certIdDerLen);
+	ASN1_STRING_set( certIdStr, certIdDer, certIdDerLen);
 	certIdDer = NULL;
 
 	CRMF_CERTID_free( certId);

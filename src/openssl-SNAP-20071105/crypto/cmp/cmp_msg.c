@@ -180,7 +180,7 @@ void pretend_to_be_cl(CMP_PKIMESSAGE *msg) {
 	emptySetDer[0] = 0x31;
 	emptySetDer[1] = 0x0;
 	emptySetDer[2] = 0x0;
-	ASN1_STRING_set0( emptySetStr, emptySetDer, 2);
+	ASN1_STRING_set( emptySetStr, emptySetDer, 2);
 	clNid = OBJ_txt2obj("1.3.6.1.4.1.3029.3.1.1",1);
 	itavLie = CMP_INFOTYPEANDVALUE_new();
 	CMP_INFOTYPEANDVALUE_set0(itavLie, clNid, V_ASN1_SET, emptySetStr);
@@ -367,9 +367,9 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 		itavValueStr = ASN1_STRING_new();
 #if 0
-		ASN1_STRING_set0( itavValueStr, itavValueDer, itavValueDerLen);
+		ASN1_STRING_set( itavValueStr, itavValueDer, itavValueDerLen);
 #endif
-		ASN1_STRING_set0( itavValueStr, itavValueDerSet, itavValueDerLen+2);
+		ASN1_STRING_set( itavValueStr, itavValueDerSet, itavValueDerLen+2);
 
 		itav = CMP_INFOTYPEANDVALUE_new();
 #if 0

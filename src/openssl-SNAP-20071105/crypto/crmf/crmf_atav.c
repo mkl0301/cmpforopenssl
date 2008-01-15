@@ -125,7 +125,7 @@ int CRMF_ATTRIBUTETYPEANDVALUE_set0_nid_utf8string( CRMF_ATTRIBUTETYPEANDVALUE *
 
 	utf8strDerLen = i2d_ASN1_UTF8STRING( utf8str, &utf8strDer);
 	if (!(utf8strStr = ASN1_STRING_new())) goto err;
-	ASN1_STRING_set0( utf8strStr, utf8strDer, utf8strDerLen);
+	ASN1_STRING_set( utf8strStr, utf8strDer, utf8strDerLen);
 	utf8strDer = NULL;
 
 	if( !CRMF_ATTRIBUTETYPEANDVALUE_set0( atav, OBJ_nid2obj(nid), V_ASN1_UTF8STRING, utf8strStr)) goto err;

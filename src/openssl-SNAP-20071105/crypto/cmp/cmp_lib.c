@@ -368,7 +368,7 @@ int CMP_PKIHEADER_set_protectionAlg_pbmac(CMP_PKIHEADER *hdr) {
 
 	if (!(pbmStr = ASN1_STRING_new())) goto err;
 	pbmDerLen = i2d_CRMF_PBMPARAMETER( pbm, &pbmDer);
-	ASN1_STRING_set0( pbmStr, pbmDer, pbmDerLen);
+	ASN1_STRING_set( pbmStr, pbmDer, pbmDerLen);
 	X509_ALGOR_set0( hdr->protectionAlg, OBJ_nid2obj(NID_id_PasswordBasedMAC), V_ASN1_SEQUENCE, pbmStr);
 	CRMF_PBMPARAMETER_free( pbm);
 
@@ -395,7 +395,7 @@ X509_ALGOR *CMP_get_protectionAlgor_pbmac() {
 
 	pbmDerLen = i2d_CRMF_PBMPARAMETER( pbm, &pbmDer);
 
-	ASN1_STRING_set0( pbmStr, pbmDer, pbmDerLen);
+	ASN1_STRING_set( pbmStr, pbmDer, pbmDerLen);
 	pbmDer = NULL;
 	X509_ALGOR_set0( alg, OBJ_nid2obj(NID_id_PasswordBasedMAC), V_ASN1_SEQUENCE, pbmStr);
 	pbmStr = NULL;
