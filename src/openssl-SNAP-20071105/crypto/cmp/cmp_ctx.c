@@ -501,11 +501,17 @@ int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path) {
 	if (!ctx) goto err;
 
 	if (ctx->serverPath) {
+		/* clear the old value */
 		OPENSSL_free( ctx->serverPath);
-		ctx->serverPath = NULL;
+		ctx->serverPath = 0;
 	}
 
-	if (!path) return 1;
+	if (!path) {
+		/* clear the serverPath */
+		ctx->serverPath = OPENSSL_malloc(1);
+		ctx->serverPath[0] = 0;
+		return 1;
+	}
 
 	ctx->serverPath = OPENSSL_malloc( strlen(path)+1);
 	strcpy( ctx->serverPath, path);
