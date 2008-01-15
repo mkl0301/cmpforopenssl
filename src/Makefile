@@ -17,7 +17,7 @@ CRYPTLIB_VERSION = SNAP-20070922
 LIBOSSL       = $(OSSLSRC)/libssl.a
 OPENSSLCFGOPT = -g no-asm no-idea no-fips no-rc5 no-mdc2 no-camellia -fomit-frame-pointer -fno-strict-aliasing
 
-LIBCRYPTO = $(OSSLSRC)/libcrypto.a
+LIBCRYPTO = $(CLSRC)/libcrypto.a
 
 all: openssl cryptlib cmpclient cmpserver
 
@@ -68,7 +68,7 @@ $(CLIENTSRC)/cmpclient: $(LIBOSSL)
 
 cmpclient: $(CLIENTSRC)/cmpclient
 
-$(SERVERSRC)/cmpserver-cl: $(LIBCRYPTO)
+$(SERVERSRC)/cmpserver-cl: cryptlib
 	cd $(SERVERSRC) && \
 	make && \
 	make install
