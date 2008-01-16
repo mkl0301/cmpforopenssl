@@ -3,17 +3,22 @@ README file for openssl with CMP package, including an CA using cryptlib.
 Written by Martin Peylo <martin.peylo@nsn.com>
 
 
-LICENSE
+################################################################################
+LICENSES
+################################################################################
 
+The CMP for OpenSSL extension uses the same BSD style license as OpenSSL.
 OpenSSL uses a BSD style license
  - There are some restrictions on using the library in a product.
    Check this first, before using!
+
 Cryplib uses a Sleepycat style license
  - This is payware for commercial use!
-All additional scripting etc. can be used freely within NSN.
 
 
+################################################################################
 PREREQUISITES
+################################################################################
 
 The CA using cryptlib needs a ODBC database to be set a in order to
 store information about the PKI users. 
@@ -36,21 +41,33 @@ The /etc/unixODBC/odbc.ini file on OpenSuSE 10.2 might look like this:
 
 Here the MySQL database has the name "odbc".
 
-
+################################################################################
 INSTALLATION
+################################################################################
 
-Copy this directory to a random location.
-The software is build and prepared completely with
+Change into the 'src' directory and launch 'make' to build everything.
 
-	cd src && make
+The Makefile has several handy targets:
+
+- 'all' (default):  download, extract, configure and build everything.
+- 'openssl': configure and build the OpenSSL libaries with CMP
+- 'cryptlib': (not yet download), unzip and build the Cryptlib libary
+- 'cmpclient': make openssl, build and install cmpclient
+- 'cmpserver': make cryptlib, build and install cmpserver-cl
+- 'openssl_patch_0.9.8g': calculate a CMP extension patch against the offical
+                          OpenSSL release version 0.9.8g source.
+
+You need to have the utilities 'unzip' and 'svn' installed. Soon, 'wget' will
+be needed to download the most recent version of the Cryptlib source.
 
 Check the Makefiles for more info!
 
 
+################################################################################
 USAGE
+################################################################################
 
-It might be a nice idea to run the CA on a different host than the client,
-this enables you to trace the network traffic with Wireshark. Take the SVN
+You can trace the network traffic with Wireshark. Take the SVN
 version since there you have a dissector for CMP verysion 2!
 
 In the /scripting directory are some examles how to use the applications.

@@ -19,8 +19,7 @@ OPENSSLCFGOPT = -g no-asm no-idea no-fips no-rc5 no-mdc2 no-camellia -fomit-fram
 
 LIBCRYPTO = $(CLSRC)/libcrypto.a
 
-all: openssl cryptlib cmpclient cmpserver
-
+all: openssl_patch_0.9.8g openssl cmpclient cryptlib cmpserver 
 .PHONY: cryptlib all
 
 world: openssl_src cryptlib_src
