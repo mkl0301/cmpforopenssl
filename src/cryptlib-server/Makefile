@@ -22,15 +22,12 @@ OBJECTS=$(FUNCOBJ)
 all: $(CA)
 
 $(CA): $(CAOBJ) $(FUNCOBJ)
-	@echo '######## CA ##LINK###'
 	$(CC) -g -o $(CA) -ldl $(CAOBJ) $(LDFL) $(OBJECTS)
 
 $(CAOBJ): $(CASRC) $(FUNCHDR) $(DEFINES)
-	@echo '######## CA ##BUILD##'
 	$(CC) $(INCLUDEPATH) -g -c $(CASRC) -o $(CAOBJ)
 
 $(FUNCOBJ): $(FUNCSRC) $(FUNCHDR) $(DEFINES)
-	@echo '######## FUNCTIONS ##BUILD###'
 	$(CC) $(INCLUDEPATH) -g -c $(FUNCSRC) -o $(FUNCOBJ)
 
 dbclean:
