@@ -1,4 +1,4 @@
-README file for openssl with CMP package, including an CA using cryptlib.
+README file for OpenSSL with CMP package, including an CA using Cryptlib.
 
 Written by Martin Peylo <martin.peylo@nsn.com>
 
@@ -8,23 +8,24 @@ LICENSES
 ################################################################################
 
 The CMP for OpenSSL extension uses the same BSD style license as OpenSSL.
+
 OpenSSL uses a BSD style license
  - There are some restrictions on using the library in a product.
-   Check this first, before using!
+   Check this first, before shipping it to your customers!
 
 Cryplib uses a Sleepycat style license
- - This is payware for commercial use!
+ - This makes it payware for commercial use!
 
 
 ################################################################################
 PREREQUISITES
 ################################################################################
 
-The CA using cryptlib needs a ODBC database to be set a in order to
-store information about the PKI users. 
+The CA using Cryptlib needs a ODBC database to store information about the PKI
+users.
 
-The ODBC database has to be named "myodbc" - this may be changed in
-the source of the server.
+The ODBC database has to be named "myodbc". This can be changed in the source of
+cmpserver.
 
 The /etc/unixODBC/odbc.ini file on OpenSuSE 10.2 might look like this:
 
@@ -50,15 +51,15 @@ Change into the 'src' directory and launch 'make' to build everything.
 The Makefile has several handy targets:
 
 - 'all' (default):  download, extract, configure and build everything.
-- 'openssl': configure and build the OpenSSL libaries with CMP
+- 'openssl': configure and build the OpenSSL libraries with CMP
 - 'cryptlib': (not yet download), unzip and build the Cryptlib libary
 - 'cmpclient': make openssl, build and install cmpclient
 - 'cmpserver': make cryptlib, build and install cmpserver-cl
 - 'openssl_patch_0.9.8g': calculate a CMP extension patch against the offical
                           OpenSSL release version 0.9.8g source.
 
-You need to have the utilities 'unzip' and 'svn' installed. Soon, 'wget' will
-be needed to download the most recent version of the Cryptlib source.
+You need to have the utilities 'unzip' and 'svn' installed. Soon, 'wget' will be
+needed to download the most recent version of the Cryptlib source.
 
 Check the Makefiles for more info!
 
@@ -67,53 +68,56 @@ Check the Makefiles for more info!
 USAGE
 ################################################################################
 
-You can trace the network traffic with Wireshark. Take the SVN
-version since there you have a dissector for CMP verysion 2!
+You can trace the network traffic with Wireshark. Take the SVN version since
+there you have a dissector for CMP verysion 2!
 
 In the /scripting directory are some examles how to use the applications.
-* You HAVE to adjust the "settings.sh" file to your needs! *
 
-A complete session showing an "Initial Initialization" and then a
-"Key Update" would look like this:
-	
+	* You HAVE to adjust the "settings.sh" file to your needs! *
+
+
+A complete session showing an "Initial Initialization" and a "Key Update" would
+look like this:
 
 Create a CA certificate (and key):
 	./srv_create_ca_cert.sh
 
-Now copy the CA certificate to the certs directory of your client.
+Now copy the CA certificate to the certs directory of your client. This can be
+done only once, then the DB has to be purged.
 
-	./srv_add_pki_usr.sh      # This can be done ony ONCE - then the DB has to be PURGED
+	./srv_add_pki_usr.sh
 
-Now there is output like:
-SUCCESS init
-SUCCESS add random
-SUCCESS open certstore
-SUCCESS creating certificate
-SUCCESS storing the PKI User
-User= XZ6XE-DHTBC-VGWAV
-Password= CP9GR-4R88S-KHDLX-W3JNW
-RevPW= X8LYV-45E4X-J2CV3-LH3VQ
-DECODED, HEX: User= F9520CF108A66A0260
-Password= 7E67E9FEF41271AAB4CA1940
-RevPW= 9569EB64D551814F2A3E66E0
-SUCCESS destroying certificate
-SUCCESS close certstore
-SUCCESS shutting down cryptlib
+This produces output like:
 
-Remember the Values from the "DECODED, HEX: User="- and the following "Password="-line,
-don't use the Values above "DECODED"!
-	
+	SUCCESS init
+	SUCCESS add random
+	SUCCESS open certstore
+	SUCCESS creating certificate
+	SUCCESS storing the PKI User
+	User= XZ6XE-DHTBC-VGWAV
+	Password= CP9GR-4R88S-KHDLX-W3JNW
+	RevPW= X8LYV-45E4X-J2CV3-LH3VQ
+	DECODED, HEX: User= F9520CF108A66A0260
+	Password= 7E67E9FEF41271AAB4CA1940
+	RevPW= 9569EB64D551814F2A3E66E0
+	SUCCESS destroying certificate
+	SUCCESS close certstore
+	SUCCESS shutting down cryptlib
+
+Remember the Values from the "DECODED, HEX: User="- and the following
+"Password="-line, don't use the "DECODED" values!
+
 Start the CA as daemon:
 
 	./srv_run_daemon.sh
-	
-On the client side we do an "Initial Request", using the user and password value from
-above:
+
+On the client side we do an "Initial Request", using the user and password value
+from above:
 
 	./do_ossl_ir.sh USER PASSWORD
 
 Then we can do a "Key Update":
-	
+
 	./do_ossl_kur.sh
 
 
