@@ -186,15 +186,29 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 	size_t derLenUintSize;
 	unsigned char instaHeader[7] ;
 
+	/* for receiving the INSTA continue message... */
+	size_t recvLen=0;
+	char recvBuf[101];
+	int respCode;
+
 	char http_hdr[] =
-		"POST http://%s:%d/%s HTTP/1.1\r\n"
-		/* "POST /%s HTTP/1.1\r\n" */ /* XXX INSTA TEST XXX */
+		"POST http://%s:%d/%s HTTP/1.1\r\n" /* TODO: check HTTP standard if that's right */
 		"Host: %s:%d\r\n"
 		"Content-type: application/pkixcmp\r\n"
-		/* "Content-type: application/pkixcmp-poll\r\n" */ /* XXX INSTA TEST XXX */
 		"Content-Length: %d\r\n"
 		"Connection: Keep-Alive\r\n" /* this is actually HTTP 1.0 but might be necessary for proxies */
 		"Cache-Control: no-cache\r\n\r\n";
+
+	char insta_http_hdr[] =
+		/* "POST http://%s:%d/%s HTTP/1.1\r\n" */
+		"POST /%s HTTP/1.1\r\n" /* XXX INSTA 3.2.1 likes it like this XXX */
+		"Host: %s:%d\r\n"
+		/* "Content-type: application/pkixcmp\r\n" */
+		"Content-type: application/pkixcmp-poll\r\n" /* XXX This is not necessary... but INSTA's client does it XXX */
+		"Content-Length: %d\r\n"
+		"Connection: Keep-Alive\r\n" /* this is actually HTTP 1.0 but might be necessary for proxies */
+		"Cache-Control: no-cache\r\n"
+		"Expect: 100-continue\r\n\r\n"; /* XXX don't understand why they do that */
 
 	if (!cbio)
 		return 0;
@@ -210,8 +224,25 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 	}
 
 	/* print HTTP header */
-	BIO_printf(cbio, http_hdr, serverName, serverPort, serverPath, serverName, serverPort, derLen);
-	/* BIO_printf(cbio, http_hdr, serverPath, serverName, serverPort, derLen); */ /* XXX INSTA TEST */
+	if( compatibility != CMP_COMPAT_INSTA) {
+		BIO_printf(cbio, http_hdr, serverName, serverPort, serverPath, serverName, serverPort, derLen);
+	} else {
+		/* XXX INSTA 3.2.1 likes it like this */
+		BIO_printf(cbio, insta_http_hdr, serverPath, serverName, serverPort, derLen);
+		(void) BIO_flush(cbio);
+		while( recvLen < 20) {
+#warning this will fail in many cases...
+			recvLen = BIO_read(cbio, recvBuf, 100); /* 100 should be enough */
+		}
+		if( sscanf(recvBuf, "HTTP/1.1 %d Continue", &respCode) < 1) {
+			fprintf( stderr, "ERROR: Did not receive HTTP/1.1 Continue message. FILE %s, LINE %d\n", __FILE__, __LINE__);
+			return -1;
+		}
+		if( respCode != 100) {
+			fprintf( stderr, "ERROR: \"Response Code\" != 100. FILE %s, LINE %d\n", __FILE__, __LINE__);
+			return -1;
+		}
+	}
 
 	/* Insta prepends a proprietary header to the CMP message */
 	if (compatibility == CMP_COMPAT_INSTA) {
@@ -262,18 +293,21 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 	return 1;
 }
 
-
-#warning RECEIVING HTTP MESSGES SHOULD BE DONE BETTER!
+#warning RECEIVING HTTP MESSGES SHOULD BE IMPROVED!
 /* ############################################################################ */
 /* for sure this could be done better */
 /* ############################################################################ */
-int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio, CMP_PKIMESSAGE **ip) {
+int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
+				  CMP_PKIMESSAGE **ip,
+				  const int compatibility
+				  ) {
 #define MAX_RECV_BYTE 10240
 	char tmpbuf[1024];
 	/* XXX this is not nice */
 	char recvMsg[MAX_RECV_BYTE];
 	char *recvPtr=NULL;
 	int hits=0;
+	int chunkedHTTP=0;
 
 	int retID;
 	char retSTR[10];
@@ -281,12 +315,12 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio, CMP_PKIMESSAGE **ip) {
 	const unsigned char *derMessage=NULL;
 
 	size_t recvLen=0;
-	size_t headerLen=0;
+	size_t totalMsgLen=0;
 	size_t contentLen=0;
-	size_t totalLen=0;
+	size_t totalRecvdLen=0;
+	size_t chunkLen=0;
 
 	recvPtr = recvMsg;
-
 	/* receive at least the http header */
 	for(;;) {
 		recvLen = BIO_read(cbio, tmpbuf, 1024);
@@ -294,12 +328,12 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio, CMP_PKIMESSAGE **ip) {
 			fprintf( stderr, "ERROR: receiving message. FILE %s, LINE %d\n", __FILE__, __LINE__);
 			return 0;
 		}
-		if( (totalLen+recvLen) > MAX_RECV_BYTE) {
+		if( (totalRecvdLen+recvLen) > MAX_RECV_BYTE) {
 			fprintf( stderr, "ERROR: message received is bigger than %d Bytes. FILE %s, LINE %d\n", MAX_RECV_BYTE, __FILE__, __LINE__);
 			return 0;
 		}
 
-		totalLen += recvLen;
+		totalRecvdLen += recvLen;
 		memcpy(recvPtr, tmpbuf, recvLen);
 		recvPtr += recvLen;
 		/* does it start with HTTP? */
@@ -312,7 +346,7 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio, CMP_PKIMESSAGE **ip) {
 		/* is the HTTP header complete? */
 		if( (derMessage = (unsigned char*) strstr(recvMsg, "\r\n\r\n"))) break;
 	}
-	/* go to the beginning of the der Message */
+	/* remember the end of the HTTP header */
 	derMessage += 4;
 
 	/* analyze HTTP header */
@@ -329,28 +363,58 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio, CMP_PKIMESSAGE **ip) {
 
 	/* determine the Content-Length */
 	contLenBeg = strstr(recvMsg, "Content-Length:");
-	hits = sscanf(contLenBeg, "Content-Length:%d\r\n", &contentLen);
+	if( contLenBeg)
+		hits = sscanf(contLenBeg, "Content-Length:%d\r\n", &contentLen);
 	if( hits != 1) {
-		fprintf( stderr, "ERROR: received malformed HTTP message. Could not determine Content-Length. FILE: %s, LINE %d\n", __FILE__, __LINE__);
-		return 0;
+		/* is it a chunked HTTP message as INSTA sends them? */
+		if( strstr(recvMsg, "Transfer-Encoding: chunked\r\n")) {
+			chunkedHTTP = 1;
+		} else {
+			fprintf( stderr, "ERROR: received malformed HTTP message. Could not determine Content-Length. FILE: %s, LINE %d\n", __FILE__, __LINE__);
+			return 0;
+		}
 	}
 
-	/* determine the HeaderLength */
-	headerLen = derMessage - (unsigned char*) recvMsg;
-	while( totalLen < (headerLen+contentLen)) {
+	/* determine chunkLen if chunked */
+	if( chunkedHTTP) {
+		/* TODO: make sure we received the whole header of the chunk */
+		/* the first hex shall be the lenght of the chunk */
+		hits = sscanf(derMessage, "%x", &chunkLen); /* the hex could be followed by a ; and other stuff */
+		/* jump to the beginning of the DER message inside the chunk */
+		derMessage = (unsigned char *) strstr((char*)derMessage, "\r\n")+2;
+		/* TODO: handle if there is more than one chunk */
+		/* "7" is actually the minimum extra length of the "chunked" footer... */
+		totalMsgLen = (derMessage - (unsigned char*) recvMsg) + chunkLen + 7;
+		contentLen = chunkLen;
+	} else {
+		/* determine the HeaderLength */
+		totalMsgLen = (derMessage - (unsigned char*) recvMsg) + contentLen;
+	}
+
+	/* skip proprietary INSTA header */
+	if( compatibility == CMP_COMPAT_INSTA) {
+		derMessage += 7;
+	}
+
+printf("totalRecvdLen %d, totalMsgLen %d, chunkLen %d\n", totalRecvdLen, totalMsgLen, chunkLen);
+	/* if not already done, receive the rest of the message */
+	while( totalRecvdLen < totalMsgLen) {
+		/* TODO: make sure we don't receive too much */
 		recvLen = BIO_read(cbio, tmpbuf, 1024);
 		if(recvLen <= 0) {
 			fprintf( stderr, "ERROR: receiving message. FILE %s, LINE %d\n", __FILE__, __LINE__);
 			return 0;
 		}
-		if( (totalLen+recvLen) > MAX_RECV_BYTE) {
+		if( (totalRecvdLen+recvLen) > MAX_RECV_BYTE) {
 			fprintf( stderr, "ERROR: message received is bigger than %d Bytes. FILE %s, LINE %d\n", MAX_RECV_BYTE, __FILE__, __LINE__);
 			return 0;
 		}
-		totalLen += recvLen;
+		totalRecvdLen += recvLen;
 		memcpy(recvPtr, tmpbuf, recvLen);
 		recvPtr += recvLen;
 	}
+
+	/* TODO XXX - make sure we received the whole message */
 
 	/* transform DER message to OPENSSL internal format */
 	if( (*ip = d2i_CMP_PKIMESSAGE( NULL, &derMessage, contentLen))) {

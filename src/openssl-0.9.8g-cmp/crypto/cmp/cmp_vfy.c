@@ -204,12 +204,15 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 	if (!msg->protection) 
 		return 0;
 
-	if (_algor) {
-		/* algorithm is given with the arguments */
-		algor = _algor;
-	} else {
-		/* algorithm is taken from the message */
-		algor = msg->header->protectionAlg;
+	/* is the algorithm included in the  message? */
+	if (!(algor = msg->header->protectionAlg)) {
+		if (_algor) {
+			/* algorithm is given with the arguments */
+			algor = _algor;
+		} else {
+			printf("ERROR: failed to determine protection algorithm\n");
+			return 0;
+		}
 	}
 
         X509_ALGOR_get0( &algorOID, NULL, NULL, algor);

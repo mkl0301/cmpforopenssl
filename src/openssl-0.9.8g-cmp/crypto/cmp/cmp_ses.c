@@ -191,7 +191,7 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 
 	/* receive Initialization Response - ip */
 	printf("INFO: Attempting to receive IP\n");
-	CMP_PKIMESSAGE_http_bio_recv(cbio, &ip);
+	CMP_PKIMESSAGE_http_bio_recv(cbio, &ip, ctx->compatibility);
 
 	if (CMP_protection_verify( ip, ctx->protectionAlgor, NULL, ctx->secretValue))
 		printf( "SUCCESS: validating protection of incoming message\n");
@@ -256,7 +256,7 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 
 	/* receive PKIconf - PKIconf */
 	printf("INFO: Attempting to receive PKIconf\n");
-	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &PKIconf))
+	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &PKIconf, ctx->compatibility))
 		goto err;
 
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, NULL, ctx->secretValue))
@@ -328,7 +328,7 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 
 	/* receive Key Update Response - kup */
 	printf("INFO: Attempting to receive KUP\n");
-	CMP_PKIMESSAGE_http_bio_recv(cbio, &kup);
+	CMP_PKIMESSAGE_http_bio_recv(cbio, &kup, ctx->compatibility);
 	switch (CMP_PKIMESSAGE_get_bodytype( kup)) {
 		case V_CMP_PKIBODY_KUP: 
 			break;
@@ -389,7 +389,7 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 
 	/* receive PKI confirmation - PKIconf */
 	printf("INFO: Attempting to receive PKIconf\n");
-	CMP_PKIMESSAGE_http_bio_recv(cbio, &PKIconf);
+	CMP_PKIMESSAGE_http_bio_recv(cbio, &PKIconf, ctx->compatibility);
 
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
 		printf( "SUCCESS: validating protection of incoming message\n");
@@ -455,7 +455,7 @@ int CMP_doPKIInfoReqSeq( BIO *cbio, CMP_CTX *ctx) {
 
 	/* receive GenRepContent - genp */
 	printf("INFO: Attempting to receive General Response\n");
-	CMP_PKIMESSAGE_http_bio_recv(cbio, &genp);
+	CMP_PKIMESSAGE_http_bio_recv(cbio, &genp, ctx->compatibility);
 
 	if (CMP_protection_verify( genp, ctx->protectionAlgor, NULL, ctx->secretValue))
 		printf( "SUCCESS: validating protection of incoming message\n");

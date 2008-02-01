@@ -222,6 +222,8 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE  *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
 
+	X509_NAME *subject=NULL; /* needed for COMPAT_INSTA */
+
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
 	if (!ctx->caCert) goto err;
@@ -238,8 +240,16 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);
 
+	/* XXX TODO This might be always needed for RFC conformity CHECK ME */
+	if( ctx->compatibility == CMP_COMPAT_INSTA ) {
+		/* XXX do I have to free that? */
+		subject = X509_NAME_new();
+		if (!X509_NAME_add_entry_by_txt(subject, "CN", MBSTRING_ASC, (unsigned char*) "Martin Peylo", -1, -1, 0));
+#warning CN for INSTA is hardcoded
+	}
+
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, NULL, ctx->compatibility))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility))) goto err;
 
 	msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null();
 	sk_CRMF_CERTREQMSG_push( msg->body->value.ir, certReq0);

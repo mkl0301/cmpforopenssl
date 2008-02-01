@@ -1373,7 +1373,7 @@ void CMP_INFOTYPEANDVALUE_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval, C
 int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port);
 /* int CMP_PKIMESSAGE_http_bio_send(BIO *cbio, const char* serverName, const int serverPort, const CMP_PKIMESSAGE *msg); */
 int CMP_PKIMESSAGE_http_bio_send(BIO *cbio, const char *serverName, const int serverPort, const char *serverPath, const int compatibility, const CMP_PKIMESSAGE *msg);
-int CMP_PKIMESSAGE_http_bio_recv(BIO *cbio, CMP_PKIMESSAGE **ip);
+int CMP_PKIMESSAGE_http_bio_recv(BIO *cbio, CMP_PKIMESSAGE **ip, const int compatibility);
 
 /* from cmp_ses.c */
 X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx);
