@@ -11,6 +11,8 @@ INSTA_SERVER="pki.certificate.fi"
 INSTA_PORT="8700"
 INSTA_SERVERPATH="pkix/"
 INSTA_CACERT="${CERTDIR}/insta_ca_cert.der"
+INSTA_USER="3078"
+INSTA_PASS="insta"
 
 # for Cryptlib demo CA
 IZAC_SERVER="izac.de"
