@@ -379,7 +379,7 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
 	if( chunkedHTTP) {
 		/* TODO: make sure we received the whole header of the chunk */
 		/* the first hex shall be the lenght of the chunk */
-		hits = sscanf(derMessage, "%x", &chunkLen); /* the hex could be followed by a ; and other stuff */
+		hits = sscanf((char *)derMessage, "%x", &chunkLen); /* the hex could be followed by a ; and other stuff */
 		/* jump to the beginning of the DER message inside the chunk */
 		derMessage = (unsigned char *) strstr((char*)derMessage, "\r\n")+2;
 		/* TODO: handle if there is more than one chunk */

@@ -407,7 +407,7 @@ int CMP_CTX_set1_transactionID( CMP_CTX *ctx, const ASN1_OCTET_STRING *id) {
 		ctx->transactionID = NULL;
 	}
 
-	if (!(ctx->transactionID = ASN1_OCTET_STRING_dup(id))) goto err;
+	if (!(ctx->transactionID = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)id))) goto err;
 	return 1;
 err:
 printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
@@ -426,7 +426,7 @@ int CMP_CTX_set1_recipNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce) {
 		ctx->recipNonce = NULL;
 	}
 
-	if (!(ctx->recipNonce = ASN1_OCTET_STRING_dup(nonce))) goto err;
+	if (!(ctx->recipNonce = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)nonce))) goto err;
 	return 1;
 err:
 printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);

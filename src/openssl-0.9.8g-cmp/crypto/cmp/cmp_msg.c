@@ -461,7 +461,9 @@ printf( "ERROR: in CMP_certConf_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
 /* ############################################################################ */
 CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *msg=NULL;
+#if 0
 	CMP_INFOTYPEANDVALUE *itav=NULL;
+#endif
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
