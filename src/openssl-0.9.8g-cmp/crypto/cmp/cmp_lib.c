@@ -433,7 +433,7 @@ int CMP_PKIHEADER_set1_transactionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING
 		RAND_pseudo_bytes(transactionIDuchar, TRANSACTIONID_LENGTH);
 		if (!(ASN1_OCTET_STRING_set(hdr->transactionID, transactionIDuchar, TRANSACTIONID_LENGTH))) goto err;
 	} else {
-		if (!(hdr->transactionID = ASN1_OCTET_STRING_dup(transactionID))) goto err;
+		if (!(hdr->transactionID = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)transactionID))) goto err;
 	}
 
 	if(transactionIDuchar)
@@ -489,7 +489,7 @@ int CMP_PKIHEADER_set1_recipNonce(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *r
 	if (hdr->recipNonce != NULL)
 		ASN1_OCTET_STRING_free(hdr->recipNonce);
 
-	if (!(hdr->recipNonce = ASN1_OCTET_STRING_dup( recipNonce))) goto err;
+	if (!(hdr->recipNonce = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)recipNonce))) goto err;
 
 	return 1;
 err:
@@ -510,7 +510,7 @@ int CMP_PKIHEADER_set1_senderKID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *se
 	if (hdr->senderKID)
 		 ASN1_OCTET_STRING_free(hdr->senderKID);
 
-	if (!(hdr->senderKID = ASN1_OCTET_STRING_dup(senderKID))) goto err;
+	if (!(hdr->senderKID = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)senderKID))) goto err;
 
 	return 1;
 err:
