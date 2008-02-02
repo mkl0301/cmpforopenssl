@@ -159,10 +159,11 @@
 #include <openssl/crmf.h>
 #include <openssl/cmp.h>
 
-/* ############################################################################ */
-/* validate a sha1+RSA/DSA protected message */
-/* tested */
-/* ############################################################################ */
+/* ############################################################################ *
+ * validate a sha1+RSA/DSA protected message
+ * tested
+ * TODO: enhance this to accept md5 etc.
+ * ############################################################################ */
 int CMP_verify_sha( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKEY *senderPkey) {
 	EVP_MD_CTX *ctx=NULL;
 	CMP_PROTECTEDPART protPart;
@@ -205,9 +206,25 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 		return 0;
 
 	/* is the algorithm included in the  message? */
-	if (!(algor = msg->header->protectionAlg)) {
+	if ((algor = msg->header->protectionAlg)) {
+		int algorType=0;
+		int _algorType=0;
+
+		algorType = ASN1_TYPE_get(algor->parameter);
+		_algorType = ASN1_TYPE_get(_algor->parameter);
+
+		/* Cryplib 3.2.1 sends back the right algorithm but not the parameters in pkiconf messages */
+		if (    ((algorType == V_ASN1_UNDEF) || (algorType == V_ASN1_NULL))
+			&& _algor
+			&& (algor->algorithm->nid == _algor->algorithm->nid)
+			&& !((_algorType == V_ASN1_UNDEF) || (_algorType == V_ASN1_NULL))
+		) {
+			/* algorithm is taken from the arguments */
+			algor = _algor;
+		}
+	} else {
 		if (_algor) {
-			/* algorithm is given with the arguments */
+			/* algorithm is taken from the arguments */
 			algor = _algor;
 		} else {
 			printf("ERROR: failed to determine protection algorithm\n");
@@ -218,13 +235,13 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
         X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
 	usedAlgorNid = OBJ_obj2nid(algorOID);
 
+	/* TODO: enhance this to accept md5 etc. */
 	switch (usedAlgorNid) {
 		case NID_sha1WithRSAEncryption:
 		case NID_dsaWithSHA1:
 		/* sha-1 public key based algorithms */
 			return CMP_verify_sha( msg, algor, senderPkey);
 			break;
-
 		case NID_id_PasswordBasedMAC:
 			/* password based Mac */
 			if (!(protection = CMP_protection_new( msg, algor, NULL, secret)))
@@ -233,7 +250,6 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 				/* strings are not equal */
 				return 0;
 			}
-
 			break;
 		default:
 printf("FILE: %s, LINE %d, why did I hit default?\n", __FILE__, __LINE__);
