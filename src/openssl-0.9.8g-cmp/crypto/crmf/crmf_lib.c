@@ -487,6 +487,10 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 	/* set the signature value */
 	if (!(ASN1_BIT_STRING_set( poposig->signature, signature, sigLen))) goto err;
 
+	/* Actually this should not be needed but OpenSSL defaults all bitstrings to be a NamedBitList */
+	poposig->signature->flags &= ~0x07;
+	poposig->signature->flags |= ASN1_STRING_FLAG_BITS_LEFT;
+
 	/* set the type of the algorithm */
 	/* TODO: this should be set according to the used key */
 	X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);

@@ -797,6 +797,10 @@ printf("FILE: %s, LINE %d, why did I hit default?\n", __FILE__, __LINE__);
 	if(!(prot = ASN1_BIT_STRING_new())) goto err;
 	ASN1_BIT_STRING_set(prot, mac, macLen);
 
+	/* Actually this should not be needed but OpenSSL defaults all bitstrings to be a NamedBitList */
+	prot->flags &= ~0x07;
+	prot->flags |= ASN1_STRING_FLAG_BITS_LEFT;
+
 	/* cleanup */
 	// XXX why does this produce an segfault?
 	// EVP_MD_CTX_destroy(ctx);
