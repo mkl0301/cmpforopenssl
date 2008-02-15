@@ -285,7 +285,7 @@ EVP_PKEY *HELP_generateRSAKey() {
 int HELP_savePrivKey(EVP_PKEY *pkey, const char * filename) {
 	FILE *fp;
 
-printf("INFO: Writing Public Key to File %s\n", filename);
+printf("INFO: Writing Private Key to File %s\n", filename);
 printf("INFO: the passphrase is \"password\"\n");
 	if( !(fp = fopen(filename, "w"))) {
 		printf("ERROR: could not open file \"%s\" for writing.\n", filename);
@@ -293,6 +293,22 @@ printf("INFO: the passphrase is \"password\"\n");
 	}
 	PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, 0, "password");
 printf("INFO: private Key written\n");
+	fclose(fp);
+
+	return 1;
+}
+
+/* ############################################################################ */
+int HELP_saveRSAPublicKey(EVP_PKEY *pkey, const char * filename) {
+	FILE *fp;
+
+printf("INFO: Writing Public Key to File %s\n", filename);
+	if( !(fp = fopen(filename, "w"))) {
+		printf("ERROR: could not open file \"%s\" for writing.\n", filename);
+		return 0;
+	}
+	PEM_write_RSAPublicKey(fp, pkey->pkey.rsa);
+printf("INFO: public Key written\n");
 	fclose(fp);
 
 	return 1;
