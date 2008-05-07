@@ -217,7 +217,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 
 	/* Insta prepends a proprietary header before the CMP msg */
 	if (compatibility == CMP_COMPAT_INSTA) {
-		/* this will be used for the msg length in the proprietary header */
+		/* this will be used for the msg length in TCP style transport */
 		derLenUint = (unsigned int) derLen + 3; /* +3 are the following 3 octets */
 		/* this will be used for the HTTP Content-Length */
 		derLen += 7;
@@ -225,11 +225,14 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 
 	/* print HTTP header */
 	if( compatibility != CMP_COMPAT_INSTA) {
-		BIO_printf(cbio, http_hdr, serverName, serverPort, serverPath, serverName, serverPort, derLen);
+		if (BIO_printf(cbio, http_hdr, serverName, serverPort, serverPath, serverName, serverPort, derLen) <= 0)
+			return 0;
 	} else {
 		/* XXX INSTA 3.2.1 likes it like this */
-		BIO_printf(cbio, insta_http_hdr, serverPath, serverName, serverPort, derLen);
-		(void) BIO_flush(cbio);
+		if (BIO_printf(cbio, insta_http_hdr, serverPath, serverName, serverPort, derLen) <= 0)
+			return 0;
+		if (BIO_flush(cbio) <= 0)
+			return 0;
 		while( recvLen < 20) {
 #warning this will fail in many cases...
 			recvLen = BIO_read(cbio, recvBuf, 100); /* 100 should be enough */
@@ -284,12 +287,14 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 		instaHeader[5] = 0x01;
 		instaHeader[6] = 0x0; /* XXX this is only for IR so far XXX */
 
-		BIO_write(cbio, instaHeader, 7);
+		if (BIO_write(cbio, instaHeader, 7) != 7)
+			return 0;
 	}
 
 	i2d_CMP_PKIMESSAGE_bio(cbio, msg);
 
-	(void) BIO_flush(cbio);
+	if (BIO_flush(cbio) <= 0)
+		return 0;
 	return 1;
 }
 
