@@ -215,7 +215,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 
 	derLen = i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, NULL);
 
-	/* Insta prepends a proprietary header before the CMP msg */
+	/* Insta < 3.3 prepends the TCP header to the CMP message (Content-Type: pkixcmp-poll) */
 	if (compatibility == CMP_COMPAT_INSTA) {
 		/* this will be used for the msg length in TCP style transport */
 		derLenUint = (unsigned int) derLen + 3; /* +3 are the following 3 octets */
@@ -247,7 +247,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 		}
 	}
 
-	/* Insta prepends a proprietary header to the CMP message */
+	/* Insta < 3.3 prepends the TCP header to the CMP message (Content-Type: pkixcmp-poll) */
 	if (compatibility == CMP_COMPAT_INSTA) {
 		derLenUintSize = sizeof(derLenUint);
 #ifdef L_ENDIAN
@@ -396,7 +396,7 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
 		totalMsgLen = (derMessage - (unsigned char*) recvMsg) + contentLen;
 	}
 
-	/* skip proprietary INSTA header */
+	/* skip TCP-Style INSTA < 3.3 header */
 	if( compatibility == CMP_COMPAT_INSTA) {
 		derMessage += 7;
 	}

@@ -175,7 +175,7 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 
 	/* This SHOULD be omitted - INSTA requires this */
 	/* it answers with a "timeNotAvailable" Error if this is not present */
-	if( compatibility == CMP_COMPAT_INSTA) {
+	if( (compatibility == CMP_COMPAT_INSTA) || (compatibility == CMP_COMPAT_INSTA_3_3)) {
 		/* version MUST be 2 if supplied.  It SHOULD be omitted. */
 		CRMF_CERTREQMSG_set_version2( certReqMsg);
 	}
@@ -183,7 +183,7 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 #if 0
 	/* serialNumber MUST be ommited - INSTA does it but it does *NOT require* it */
 	/* XXX just for figuring out how they calculate the protection */
-	if( compatibility == CMP_COMPAT_INSTA) {
+	if( (compatibility == CMP_COMPAT_INSTA) || (compatibility == CMP_COMPAT_INSTA_3_3)) {
 		certReqMsg->certReq->certTemplate->serialNumber = ASN1_INTEGER_new();
 		ASN1_INTEGER_set( certReqMsg->certReq->certTemplate->serialNumber, 0L);
 #warning serialNumber for INSTA is hardcoded
@@ -191,7 +191,7 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 
 	/* signingAlg MUST be ommited - INSTA does it but it does *NOT require* it */
 	/* XXX just for figuring out how they calculate the protection */
-	if( compatibility == CMP_COMPAT_INSTA) {
+	if( (compatibility == CMP_COMPAT_INSTA) || (compatibility == CMP_COMPAT_INSTA_3_3)) {
 		certReqMsg->certReq->certTemplate->signingAlg = X509_ALGOR_new();
 		X509_ALGOR_set0( certReqMsg->certReq->certTemplate->signingAlg, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
 #warning signingAlg for INSTA is hardcoded
@@ -201,13 +201,6 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 	CRMF_CERTREQMSG_set_certReqId( certReqMsg, certReqId);
 	if (!CRMF_CERTREQMSG_set1_publicKey( certReqMsg, pkey))
 		printf("ERROR: setting public key, FILE %s, LINE %d\n", __FILE__, __LINE__);
-
-#if 0
-	if( compatibility == CMP_COMPAT_INSTA) {
-		M_ASN1_BIT_STRING_set(certReqMsg->certReq->certTemplate->publicKey->public_key,XXX_public_key,140);
-#warning pubKey for INSTA is hardcoded
-	}
-#endif
 
 #if 0
 	/* CL supports this (for client certificates) for up to 3 years in the future for both dates
