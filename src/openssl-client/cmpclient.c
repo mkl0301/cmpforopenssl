@@ -243,7 +243,8 @@ void printUsage( const char* cmdName) {
 	printf("\n");
 	printf("Other options are:\n");
 	printf(" --cryptlib    be compatible to Cryptlib\n");
-	printf(" --insta       be compatible to Insta Certifier\n");
+	printf(" --insta       be compatible to Insta Certifier < 3.3\n");
+	printf(" --insta3.3    be compatible to Insta Certifier >= 3.3\n");
 	printf(" --proxy       set proxy from $http_proxy environment variable if available\n");
 	printf(" --verbose     ignored so far\n");
 	printf(" --brief       ignored so far\n");
@@ -428,12 +429,13 @@ void parseCLA( int argc, char **argv) {
 		{"proxy",    no_argument,          0, 'p'},
 		{"cryptlib", no_argument,          0, 'q'},
 		{"insta",    no_argument,          0, 'r'},
+		{"insta3.3", no_argument,          0, 's'},
 		{0, 0, 0, 0}
 	};
 
 	while (1)
 	{
-		c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqr", long_options, &option_index);
+		c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqrs", long_options, &option_index);
 
 		/* Detect the end of the options. */
 		if (c == -1)
@@ -533,6 +535,9 @@ void parseCLA( int argc, char **argv) {
 				break;
 			case 'r':
 				opt_compatibility = CMP_COMPAT_INSTA;
+				break;
+			case 's':
+				opt_compatibility = CMP_COMPAT_INSTA_3_3;
 				break;
 			case '?':
 				/* getopt_long already printed an error message. */
