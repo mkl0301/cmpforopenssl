@@ -7,14 +7,8 @@
 #ifndef OPENSSL_NO_CAMELLIA
 # define OPENSSL_NO_CAMELLIA
 #endif
-#ifndef OPENSSL_NO_FIPS
-# define OPENSSL_NO_FIPS
-#endif
 #ifndef OPENSSL_NO_GMP
 # define OPENSSL_NO_GMP
-#endif
-#ifndef OPENSSL_NO_IDEA
-# define OPENSSL_NO_IDEA
 #endif
 #ifndef OPENSSL_NO_KRB5
 # define OPENSSL_NO_KRB5
@@ -36,12 +30,6 @@
 #endif
 
 #endif /* OPENSSL_DOING_MAKEDEPEND */
-#ifndef OPENSSL_THREADS
-# define OPENSSL_THREADS
-#endif
-#ifndef OPENSSL_NO_ASM
-# define OPENSSL_NO_ASM
-#endif
 #ifndef OPENSSL_NO_DYNAMIC_ENGINE
 # define OPENSSL_NO_DYNAMIC_ENGINE
 #endif
@@ -54,14 +42,8 @@
 # if defined(OPENSSL_NO_CAMELLIA) && !defined(NO_CAMELLIA)
 #  define NO_CAMELLIA
 # endif
-# if defined(OPENSSL_NO_FIPS) && !defined(NO_FIPS)
-#  define NO_FIPS
-# endif
 # if defined(OPENSSL_NO_GMP) && !defined(NO_GMP)
 #  define NO_GMP
-# endif
-# if defined(OPENSSL_NO_IDEA) && !defined(NO_IDEA)
-#  define NO_IDEA
 # endif
 # if defined(OPENSSL_NO_KRB5) && !defined(NO_KRB5)
 #  define NO_KRB5
@@ -90,8 +72,8 @@
 
 #if !(defined(VMS) || defined(__VMS)) /* VMS uses logical names instead */
 #if defined(HEADER_CRYPTLIB_H) && !defined(OPENSSLDIR)
-#define ENGINESDIR "/user/pmx00000/SVN/cmp/src/../lib/engines"
-#define OPENSSLDIR "/user/pmx00000/SVN/cmp/src/../ssl"
+#define ENGINESDIR "/usr/local/ssl/lib/engines"
+#define OPENSSLDIR "/usr/local/ssl"
 #endif
 #endif
 
@@ -143,7 +125,7 @@
 
 #if defined(HEADER_BN_H) && !defined(CONFIG_HEADER_BN_H)
 #define CONFIG_HEADER_BN_H
-#define BN_LLONG
+#undef BN_LLONG
 
 /* Should we define BN_DIV2W here? */
 
@@ -162,7 +144,7 @@
 #define CONFIG_HEADER_RC4_LOCL_H
 /* if this is defined data[i] is used instead of *data, this is a %20
  * speedup on x86 */
-#define RC4_INDEX
+#undef RC4_INDEX
 #endif
 
 #if defined(HEADER_BF_LOCL_H) && !defined(CONFIG_HEADER_BF_LOCL_H)
@@ -176,14 +158,14 @@
 /* the following is tweaked from a config script, that is why it is a
  * protected undef/define */
 #ifndef DES_PTR
-#define DES_PTR
+#undef DES_PTR
 #endif
 
 /* This helps C compiler generate the correct code for multiple functional
  * units.  It reduces register dependancies at the expense of 2 more
  * registers */
 #ifndef DES_RISC1
-#define DES_RISC1
+#undef DES_RISC1
 #endif
 
 #ifndef DES_RISC2
@@ -197,7 +179,7 @@ YOU SHOULD NOT HAVE BOTH DES_RISC1 AND DES_RISC2 DEFINED!!!!!
 /* Unroll the inner loop, this sometimes helps, sometimes hinders.
  * Very mucy CPU dependant */
 #ifndef DES_UNROLL
-#define DES_UNROLL
+#undef DES_UNROLL
 #endif
 
 /* These default values were supplied by
