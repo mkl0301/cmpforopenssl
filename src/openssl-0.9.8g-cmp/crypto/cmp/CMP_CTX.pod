@@ -35,6 +35,7 @@
  int CMP_CTX_set1_senderNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
  int CMP_CTX_set1_recipNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
  int CMP_CTX_set1_protectionAlgor( CMP_CTX *ctx, const X509_ALGOR *algor);
+ int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
 
  #define CMP_ALG_PBMAC 1
  #define CMP_ALG_SIG   2
@@ -42,8 +43,9 @@
 
  #define CMP_COMPAT_RFC		1
  #define CMP_COMPAT_CRYPTLIB	2
+ #define CMP_COMPAT_INSTA	3
+ #define CMP_COMPAT_INSTA_3_3	4
  int CMP_CTX_set_compatibility( CMP_CTX *ctx, const int mode);
- int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
 
  #define CMP_CTX_OPT_UNSET           0
  #define CMP_CTX_OPT_SET             1
@@ -78,11 +80,11 @@ CMP_CTX_set1_recipNonce() sets the given recip nonce  in the given CMP_CTX struc
 
 CMP_CTX_set1_protectionAlgor() sets the protection algorithm, which shall be used for the CMP conversation, in the given CMP_CTX structure.
 
-CMP_CTX_set_protectionAlgor() sets the given definition (CMP_ALG_PBMAG or CMP_ALG_SIG) of the algorithm to use in the given CMP_CTX structure. 
-
-CMP_CTX_set_compatibility() sets the given compatibility in the given CMP_CTX structure. This is needed since the CMP RFC can be interpreted in different ways so certain implementations may react different than others.
-
 CMP_CTX_set1_serverName() sets the given server Address (as IP or name) in the given CMP_CTX structure.
+
+CMP_CTX_set_protectionAlgor() sets the given definition (CMP_ALG_PBMAG or CMP_ALG_SIG) of the algorithm to use in the given CMP_CTX structure.
+
+CMP_CTX_set_compatibility() sets the given compatibility in the given CMP_CTX structure. This is needed since the CMP RFC can be interpreted in different ways so certain implementations may react different than others. Available Options are CMP_COMPAT_RFC for strict RFC conformace, CMP_COMPAT_CRYPTLIB for Cryptlib adaption, CMP_COMPAT_INSTA for Insta Certifier version < 3.3 adaption and CMP_COMPAT_INSTA_3_3 for Insta Certifier version => 3.3 adaption.
 
 CMP_CTX_set_option() sets the given values to the options (e.g. CMP_CTX_OPT_IMPLICITCONFIRM) in the given CMP_CTX structure. The values can be CMP_CTX_OPT_UNSET or CMP_CTX_OPT_SET. Options are always set to UNSET when the CMP_CTX structure is initialized.
 
@@ -100,7 +102,7 @@ All other functions return 0 on error, 1 on success.
 
 =head1 EXAMPLE
 
-The following code does an Initial Request:
+The following code does an Initial Request with a Cryptlib CA:
 
 	cmp_ctx = CMP_CTX_create();
 	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
@@ -116,7 +118,7 @@ The following code does an Initial Request:
 	BIO_free(cbio);
 
 
-The following code does an Key Update Request:
+The following code does an Key Update Request with an Insta Certifier CA:
 
 	cmp_ctx = CMP_CTX_create();
 	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
@@ -124,7 +126,7 @@ The following code does an Key Update Request:
 	CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
 	CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
-	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
+	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_INSTA);
 
 	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
 
