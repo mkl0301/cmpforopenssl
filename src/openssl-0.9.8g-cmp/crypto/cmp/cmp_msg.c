@@ -226,7 +226,9 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
+#if 0
 	if (!ctx->caCert) goto err;
+#endif
 	if (!ctx->referenceValue) goto err;
 	if (!ctx->secretValue) goto err;
 	if (!ctx->pkey) goto err;
