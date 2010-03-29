@@ -102,7 +102,7 @@ openssl_patch_0.9.8g:
 openssl_patch_0.9.8n:
 	-mkdir patches
 	cd $(SRCDIR) && \
-	svn diff -r 26:BASE openssl-0.9.8n-cmp > patches/openssl-0.9.8.n_cmp.diff
+	svn diff -r 51:BASE openssl-0.9.8n-cmp > patches/openssl-0.9.8.n_cmp.diff
 
 .PHONY: openssl_patch_0.9.8.n
 
