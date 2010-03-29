@@ -90,8 +90,8 @@
 
 #if !(defined(VMS) || defined(__VMS)) /* VMS uses logical names instead */
 #if defined(HEADER_CRYPTLIB_H) && !defined(OPENSSLDIR)
-#define ENGINESDIR "/user/pmx00000/SVN/cmp/src/../lib/engines"
-#define OPENSSLDIR "/user/pmx00000/SVN/cmp/src/../ssl"
+#define ENGINESDIR "/home/dems5uk4/SVN/cmp/src/../lib/engines"
+#define OPENSSLDIR "/home/dems5uk4/SVN/cmp/src/../ssl"
 #endif
 #endif
 

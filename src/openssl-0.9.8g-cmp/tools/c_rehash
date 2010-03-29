@@ -6,7 +6,7 @@
 
 my $openssl;
 
-my $dir = "/usr/local/ssl";
+my $dir = "/home/dems5uk4/SVN/cmp/src/../ssl";
 
 if(defined $ENV{OPENSSL}) {
 	$openssl = $ENV{OPENSSL};
