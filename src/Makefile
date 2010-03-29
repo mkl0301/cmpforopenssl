@@ -9,7 +9,7 @@ CLSRC     = $(SRCDIR)/cryptlib
 CLIENTSRC = $(SRCDIR)/cmpclient
 SERVERSRC = $(SRCDIR)/cmpserver
 
-OPENSSL_VERSION = 0.9.8g
+OPENSSL_VERSION = 0.9.8n
 # as >331 is not released yet...
 # CRYPTLIB_VERSION = 332
 CRYPTLIB_VERSION = SNAP-20070922
@@ -19,8 +19,9 @@ OPENSSLCFGOPT = -g no-asm no-idea no-fips no-rc5 no-mdc2 no-camellia -fomit-fram
 
 LIBCRYPTO = $(CLSRC)/libcrypto.a
 
-all: openssl_patch_0.9.8g openssl cmpclient cryptlib cmpserver 
-.PHONY: cryptlib all
+all: openssl_patch_$(OPENSSL_VERSION) openssl cmpclient cryptlib cmpserver 
+
+.PHONY: all
 
 world: openssl_src cryptlib_src
 
@@ -97,6 +98,13 @@ openssl_patch_0.9.8g:
 	svn diff -r 26:BASE openssl-0.9.8g-cmp > patches/openssl-0.9.8.g_cmp.diff
 
 .PHONY: openssl_patch_0.9.8.g
+
+openssl_patch_0.9.8n:
+	-mkdir patches
+	cd $(SRCDIR) && \
+	svn diff -r 26:BASE openssl-0.9.8n-cmp > patches/openssl-0.9.8.n_cmp.diff
+
+.PHONY: openssl_patch_0.9.8.n
 
 FORCE:
 
