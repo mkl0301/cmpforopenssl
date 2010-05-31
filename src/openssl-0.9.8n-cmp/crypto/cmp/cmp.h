@@ -66,6 +66,8 @@
 
 /* =========================== CHANGE LOG =============================
  * 2007 - Martin Peylo - Initial Creation
+ * 2008 - Sami Lehtonen - added CMP_cr_new() and CMP_doCertificateRequestSeq()
+ *                        declarations
  */
 
 #ifndef HEADER_CMP_H
@@ -1170,6 +1172,7 @@ DECLARE_ASN1_FUNCTIONS(CMP_CTX)
 
 /* cmp_msg.c */
 CMP_PKIMESSAGE *CMP_ir_new( CMP_CTX *ctx);
+CMP_PKIMESSAGE *CMP_cr_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_certConf_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_kur_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx);
@@ -1292,6 +1295,7 @@ int CMP_PKIMESSAGE_http_bio_recv(BIO *cbio, CMP_PKIMESSAGE **ip, const int compa
 
 /* from cmp_ses.c */
 X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx);
+X509 *CMP_doCertificateRequestSeq( BIO *cbio, CMP_CTX *ctx);
 X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx);
 int CMP_doPKIInfoReqSeq( BIO *cbio, CMP_CTX *ctx);
 

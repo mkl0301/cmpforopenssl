@@ -66,6 +66,8 @@
 
 /* =========================== CHANGE LOG =============================
  * 2007 - Martin Peylo - Initial Creation
+ * 2008 - Sami Lehtonen - added CMP_cr_new()
+ *                      - bugfix in CMP_certConf_new(): pkey or ref/secret pair is enough
  */
 
 #include <openssl/asn1.h>
@@ -164,6 +166,11 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 #warning CN for INSTA is hardcoded
 	}
 
+	if (ctx->clCert)
+	{
+		subject = X509_get_subject_name(ctx->clCert);
+	}
+
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility))) goto err;
 
@@ -184,6 +191,60 @@ printf( "ERROR: in CMP_ir_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;
 }
+
+/* ############################################################################ */
+/* ############################################################################ */
+CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
+        CMP_PKIMESSAGE  *msg=NULL;
+        CRMF_CERTREQMSG *certReq0=NULL;
+
+        X509_NAME *subject=NULL; /* needed for COMPAT_INSTA */
+
+        /* check if all necessary options are set */
+        if (!ctx) goto err;
+#if 0
+        if (!ctx->caCert) goto err;
+#endif
+        if (!ctx->clCert) goto err;
+        if (!ctx->pkey) goto err;
+
+        if (!(msg = CMP_PKIMESSAGE_new())) goto err;
+
+        if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
+
+        if (ctx->implicitConfirm)
+                if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
+
+        CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CR);
+
+	/* Set the subject from the previous certificate */
+        subject = X509_get_subject_name(ctx->clCert);
+       
+
+
+        /* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
+        if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility))) goto err;
+
+        msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null();
+        sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
+
+        /* XXX what about setting the optional 2nd certreqmsg? */
+
+        /* TODO catch errors */
+        msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
+
+        /* XXX - should this be done somewhere else? */
+        CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
+
+        return msg;
+err:
+printf( "ERROR: in CMP_cr_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+        if (msg) CMP_PKIMESSAGE_free(msg);
+        return NULL;
+
+
+}
+
 
 /* ############################################################################ */
 /* ############################################################################ */
@@ -334,7 +395,10 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 	if (!ctx) goto err;
 	if (!ctx->caCert) goto err;
 	if (!ctx->newClCert) goto err;
-	if ( (!ctx->pkey) || ((!ctx->referenceValue) && (!ctx->secretValue)) ) goto err;
+  // TODO: verify the following
+	// To my understanding - either the pkey or ref/secret pair is enough
+	//	if ( (!ctx->pkey) || ((!ctx->referenceValue) && (!ctx->secretValue)) ) goto err;
+	if ( (!ctx->pkey) && ((!ctx->referenceValue) && (!ctx->secretValue)) ) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 

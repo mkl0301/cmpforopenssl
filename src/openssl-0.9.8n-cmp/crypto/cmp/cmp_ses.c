@@ -66,6 +66,7 @@
 
 /* =========================== CHANGE LOG =============================
  * 2007 - Martin Peylo - Initial Creation
+ * 2008 - Sami Lehtonen - added CMP_doCertificateRequestSeq()
  */
 
 #include <openssl/cmp.h>
@@ -211,6 +212,138 @@ printf( "ERROR: in CMP_doInitialRequestSeq, FILE: %s, LINE: %d\n", __FILE__, __L
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 	return NULL;
+}
+/* ############################################################################ */
+/* ############################################################################ */
+X509 *CMP_doCertificateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
+        CMP_PKIMESSAGE *cr=NULL;
+        CMP_PKIMESSAGE *cp=NULL;
+        CMP_PKIMESSAGE *certConf=NULL;
+        CMP_PKIMESSAGE *PKIconf=NULL;
+
+        /* check if all necessary options are set */
+        if (!cbio) goto err;
+        if (!ctx) goto err;
+        if (!ctx->serverName) goto err;
+        if (!ctx->pkey) goto err;
+        if (!ctx->clCert) goto err;
+        if (!ctx->caCert) goto err;
+
+        /* set the protection Algor which will be used during the whole session */
+        CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG);
+
+        /* create Certificate Request - cr */
+        if (! (cr = CMP_cr_new(ctx))) goto err;
+
+        printf("INFO: Sending Certificate Request\n");
+        if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, cr))
+                goto err;
+
+        /* receive Certificate Response - cp */
+        printf("INFO: Attempting to receive CP\n");
+        if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &cp, ctx->compatibility))
+                goto err;
+
+        switch (CMP_PKIMESSAGE_get_bodytype( cp)) {
+                case V_CMP_PKIBODY_CP:
+                        break;
+                case V_CMP_PKIBODY_ERROR:
+                        printf( "ERROR: received an ERROR: %d Message\n", CMP_PKIMESSAGE_get_bodytype( cp));
+                        CMP_PKIMESSAGE_parse_error_msg( cp);
+                        goto err;
+                        break;
+                case -1:
+                        printf( "ERROR: received NO message, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+                        exit(0);
+                default:
+                        printf( "ERROR: received no CP message, but %d, FILE: %s, LINE: %d\n", CMP_PKIMESSAGE_get_bodytype( cp),__FILE__, __LINE__);
+                        break;
+        }
+        if (CMP_protection_verify( cp, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
+                printf( "SUCCESS: validating protection of incoming message\n");
+        } else {
+                printf( "ERROR: validating protection of incoming message\n");
+                goto err;
+        }
+
+        switch (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0)) {
+                case CMP_PKISTATUS_grantedWithMods:
+                        printf( "WARNING: got \"grantedWithMods\"");
+                case CMP_PKISTATUS_accepted:
+                        if( !(ctx->newClCert = CMP_CERTREPMESSAGE_cert_get1(cp->body->value.cp,0))) {
+                                printf( "ERROR: could not find the certificate with certReqId=0\nFILE %s, LINE %d\n", __FILE__, __LINE__);
+                                goto err;
+                        }
+                        break;
+                case CMP_PKISTATUS_rejection:
+                case CMP_PKISTATUS_waiting:
+                case CMP_PKISTATUS_revocationWarning:
+                case CMP_PKISTATUS_revocationNotification:
+                case CMP_PKISTATUS_keyUpdateWarning:
+                        printf( "ERROR: didn't get a certificate");
+                        goto err;
+                        break;
+                default:
+                        printf( "ERROR: got an unknown PKIStatus");
+                        goto err;
+                        break;
+        }
+
+        /* check if implicit confirm is set in generalInfo */
+        /* TODO should I check if that was requested?
+         * What happens if this is set here while it was not requested?
+         */
+        if (CMP_PKIMESSAGE_check_implicitConfirm(cp)) goto cleanup;
+
+        /* crate Certificate Confirmation - certConf */
+        if (! (certConf = CMP_certConf_new(ctx))) goto err;
+
+        printf("INFO: Sending Certificate Confirm\n");
+        if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, certConf))
+                goto err;
+
+        /* receive PKI confirmation - PKIconf */
+        printf("INFO: Attempting to receive PKIconf\n");
+        if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &PKIconf, ctx->compatibility))
+                goto err;
+
+        if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
+                printf( "SUCCESS: validating protection of incoming message\n");
+        } else {
+                printf( "ERROR: validating protection of incoming message\n");
+                goto err;
+        }
+
+        /* make sure the received messagetype indicates an PKIconf message */
+        switch (CMP_PKIMESSAGE_get_bodytype(PKIconf)) {
+                case V_CMP_PKIBODY_PKICONF:
+                        break;
+                case V_CMP_PKIBODY_ERROR:
+                        printf( "ERROR: received an ERROR: %d Message\n", CMP_PKIMESSAGE_get_bodytype( PKIconf));
+                        CMP_PKIMESSAGE_parse_error_msg( PKIconf);
+                        goto err;
+                        break;
+                default:
+                        printf( "ERROR: received neither an PKIconf nor an ERROR: but a %d Message\n", CMP_PKIMESSAGE_get_bodytype( PKIconf));
+                        goto err;
+                        break;
+        }
+
+cleanup:
+        /* clean up */
+        CMP_PKIMESSAGE_free(cr);
+        CMP_PKIMESSAGE_free(cp);
+        /* those are not set in case of implicitConfirm */
+        if (certConf) CMP_PKIMESSAGE_free(certConf);
+        if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
+        return ctx->newClCert;
+err:
+printf( "ERROR: in CMP_doCertificateRequestSeq, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+        if (cr) CMP_PKIMESSAGE_free(cr);
+        if (cp) CMP_PKIMESSAGE_free(cp);
+        if (certConf) CMP_PKIMESSAGE_free(certConf);
+        if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
+        return NULL;
 }
 
 
