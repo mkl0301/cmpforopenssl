@@ -136,12 +136,14 @@ void printUsage( const char* cmdName) {
   printf("Written by Martin Peylo <martin.peylo@nsn.com>\n");
   printf("\n");
   printf("The COMMON OPTIONS have to be set for each CMD:\n");
-  printf(" --engine ENGINE    the OpenSSL engine\n");
   printf(" --server SERVER    the IP address of the CMP server\n");
   printf(" --port PORT        the port of the CMP server\n");
   printf(" --path PATH        the path location inside the HTTP CMP server\n");
   printf("                    as in e.g. SERVER:PORT/PATH\n");
   printf(" --cacert           location of the CA's certificate\n");
+  printf("\n");
+  printf("The OPTIONAL COMMON OPTIONS may to be set:\n");
+  printf(" --engine ENGINE    the OpenSSL engine\n");
   printf("\n");
   printf("One of the following can be used as CMD:\n");
   printf(" --ir   do initial certificate request sequence\n");
@@ -150,8 +152,8 @@ void printUsage( const char* cmdName) {
   printf(" --info do PKI Information request sequence\n");
   printf("\n");
   printf("The following OPTIONS have to be set when needed by CMD:\n");
-  printf(" --user USER           the user for an IR message\n");
-  printf(" --password PASSWORD   the password for an IR message\n");
+  printf(" --user USER           the user (reference) for an IR message\n");
+  printf(" --password PASSWORD   the password (secret) for an IR message\n");
   printf(" --hex                 user and password are HEX, not ASCII\n");
   printf(" --clcert FILE         location of the client's certificate\n");
   printf("                       this is overwritten at IR\n");
@@ -173,7 +175,6 @@ void printUsage( const char* cmdName) {
   printf("\n");
   exit(1);
 }
-
 
 /* ############################################################################ */
 /* ############################################################################ */
@@ -235,14 +236,11 @@ void doCr() {
 
   // ENGINE_load_private_key(e, path, NULL, "password"); 
 
-  if (opt_engine)
-  {
-    if (!(initialPkey = ENGINE_load_private_key (engine, 
-            opt_clKeyFile, NULL, "password"))) {
+  if (opt_engine) {
+    if (!(initialPkey = ENGINE_load_private_key (engine, opt_clKeyFile, NULL, "password"))) {
       printf("FATAL: could not read private key /w engine\n");
       exit(1);
     }
-
   } else { // no engine specified reading private key from file
     if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile))) {
       printf("FATAL: could not read private client key!\n");
@@ -288,7 +286,6 @@ void doCr() {
   }
 
   return;
-
 }
 
 /* ############################################################################ */
@@ -539,8 +536,7 @@ void parseCLA( int argc, char **argv) {
         opt_compatibility = CMP_COMPAT_INSTA_3_3;
         break;
       case 'u':
-        opt_engine = (char*) malloc(strlen(optarg)+1
-            );
+        opt_engine = (char*) malloc(strlen(optarg)+1);
         strcpy(opt_engine, optarg);
         break;
       case '?':
@@ -591,7 +587,6 @@ void parseCLA( int argc, char **argv) {
     }
   }
 
-
   if( opt_doInfo) {
     if (!(opt_user && opt_password )) {
       printf("ERROR: setting user and password is mandatory for PKIInfo\n\n");
@@ -602,6 +597,8 @@ void parseCLA( int argc, char **argv) {
   return;
 }
 
+/* ############################################################################ */
+/* ############################################################################ */
 int getHttpProxy( char **name, int *port) {
   char *proxy=NULL;
   char *colon=NULL;
@@ -637,10 +634,8 @@ int getHttpProxy( char **name, int *port) {
   return 1;
 }
 
-/* ############################################################################
-*/
-/* ############################################################################
-*/
+/* ############################################################################ */
+/* ############################################################################ */
 int set_engine (const char* e)
 {
   engine = ENGINE_by_id(e);
