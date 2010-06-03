@@ -14,4 +14,4 @@ ${CMPCLIENT} --ir --server ${SERVER} --port ${PORT} \
 		--proxy \
              --cacert ${CACERT} \
 	     --key ${CLKEY} --clcert ${CLCERT} \
-	     --user $1 --password $2
+	     --hex --user $1 --password $2

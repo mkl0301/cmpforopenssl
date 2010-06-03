@@ -9,10 +9,10 @@ CLSRC     = $(SRCDIR)/cryptlib
 CLIENTSRC = $(SRCDIR)/cmpclient
 SERVERSRC = $(SRCDIR)/cmpserver
 
-OPENSSL_VERSION = 0.9.8n
+OPENSSL_VERSION = 1.0.0
 # as >331 is not released yet...
 # CRYPTLIB_VERSION = 332
-CRYPTLIB_VERSION = SNAP-20070922
+CRYPTLIB_VERSION = 333
 
 LIBOSSL       = $(OSSLSRC)/libssl.a
 OPENSSLCFGOPT = -g no-asm no-idea no-fips no-rc5 no-mdc2 no-camellia -fomit-frame-pointer -fno-strict-aliasing
@@ -91,6 +91,9 @@ cmpserver: $(SERVERSRC)/cmpserver-cl
 update: $(OSSLSRC)/Makefile all
 
 .PHONY: update
+
+openssl_patch_1.0.0:
+	echo TODO: generate patch for openssl-1.0.0
 
 openssl_patch_0.9.8g:
 	-mkdir patches

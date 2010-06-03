@@ -183,9 +183,9 @@ int readUserAndPwd( CRYPT_CERTIFICATE *myPKIUser_p) {
 	if( userIDlength>0) {
 		/* if there is a user set */
 		/* XXX let's try this */
-		decUIDlen = decodePKIUserValue( decodedUserID, 64, userID, userIDlength );
-		decPWlen  = decodePKIUserValue( decodedPW, 64, issuePW, issuePWlength );
-		decRPWlen = decodePKIUserValue( decodedRevPW, 64, revPW, revPWlength );
+		decodePKIUserValue( decodedUserID, 64, &decUIDlen, userID,  userIDlength  );
+		decodePKIUserValue( decodedPW,     64, &decPWlen,  issuePW, issuePWlength );
+		decodePKIUserValue( decodedRevPW,  64, &decRPWlen, revPW,   revPWlength   );
 
 		printf( "User= %s\nPassword= %s\nRevPW= %s\n", userID, issuePW, revPW);
 		printf( "DECODED, HEX: User= %s\nPassword= %s\nRevPW= %s\n", aux1=StrToHexStr(decodedUserID, decUIDlen),
