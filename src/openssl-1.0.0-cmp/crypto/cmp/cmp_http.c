@@ -72,6 +72,7 @@
 #include <openssl/asn1t.h>
 #include <string.h>
 #include <openssl/bio.h>
+#include <openssl/err.h>
 #include <openssl/cmp.h>
 
 /* ############################################################################ */
@@ -148,7 +149,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 		if (BIO_flush(cbio) <= 0)
 			return 0;
 		while( recvLen < 20) {
-// #warning this will fail in many cases...
+// WARNING: this will fail in many cases...
 			recvLen = BIO_read(cbio, recvBuf, 100); /* 100 should be enough */
 		}
 		if( sscanf(recvBuf, "HTTP/1.1 %d Continue", &respCode) < 1) {
@@ -212,7 +213,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 	return 1;
 }
 
-// #warning RECEIVING HTTP MESSGES SHOULD BE IMPROVED!
+// TODO RECEIVING HTTP MESSGES SHOULD BE IMPROVED!
 /* ############################################################################ */
 /* for sure this could be done better */
 /* ############################################################################ */

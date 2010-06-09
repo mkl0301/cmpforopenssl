@@ -72,6 +72,7 @@
 #include <openssl/asn1t.h>
 #include <openssl/crmf.h>
 #include <openssl/cmp.h>
+#include <openssl/err.h>
 
 /* ############################################################################ *
  * validate a sha1+RSA/DSA protected message
@@ -141,12 +142,13 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 			/* algorithm is taken from the arguments */
 			algor = _algor;
 		} else {
-			printf("ERROR: failed to determine protection algorithm\n");
+			/* old: "ERROR: failed to determine protection algorithm\n" */
+			CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
 			return 0;
 		}
 	}
 
-        X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
+	X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
 	usedAlgorNid = OBJ_obj2nid(algorOID);
 
 	/* TODO: enhance this to accept md5 etc. */
@@ -166,7 +168,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 			}
 			break;
 		default:
-printf("FILE: %s, LINE %d, why did I hit default?\n", __FILE__, __LINE__);
+			CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_UNKNOWN_ALGORITHM_ID);
 			return 0;
 			break;
 	}

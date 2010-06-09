@@ -76,6 +76,7 @@
 #include <openssl/cmp.h>
 #include <openssl/x509.h>
 #include <openssl/safestack.h>
+#include <openssl/err.h>
 
 #include <string.h>
 
@@ -163,7 +164,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 		/* XXX do I have to free that? */
 		subject = X509_NAME_new();
 		if (!X509_NAME_add_entry_by_txt(subject, "CN", MBSTRING_ASC, (unsigned char*) "My Common Name", -1, -1, 0));
-// #warning CN for INSTA is hardcoded
+// WARNING: CN for INSTA is hardcoded
 	}
 
 	if (ctx->clCert)
@@ -181,13 +182,15 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	/* TODO catch errors */
 	msg->protection = CMP_protection_new( msg, NULL, NULL, ctx->secretValue);
+	if (!msg->protection) goto err;
 
 	/* XXX - should this be done somewhere else? */
 	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
 
 	return msg;
+
 err:
-printf( "ERROR: in CMP_ir_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_IR_NEW, CMP_R_CMPERROR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;
 }
@@ -195,54 +198,54 @@ printf( "ERROR: in CMP_ir_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
 /* ############################################################################ */
 /* ############################################################################ */
 CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
-        CMP_PKIMESSAGE  *msg=NULL;
-        CRMF_CERTREQMSG *certReq0=NULL;
+	CMP_PKIMESSAGE  *msg=NULL;
+	CRMF_CERTREQMSG *certReq0=NULL;
 
-        X509_NAME *subject=NULL; /* needed for COMPAT_INSTA */
+	X509_NAME *subject=NULL; /* needed for COMPAT_INSTA */
 
-        /* check if all necessary options are set */
-        if (!ctx) goto err;
+	/* check if all necessary options are set */
+	if (!ctx) goto err;
 #if 0
-        if (!ctx->caCert) goto err;
+	if (!ctx->caCert) goto err;
 #endif
-        if (!ctx->clCert) goto err;
-        if (!ctx->pkey) goto err;
+	if (!ctx->clCert) goto err;
+	if (!ctx->pkey) goto err;
 
-        if (!(msg = CMP_PKIMESSAGE_new())) goto err;
+	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-        if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
+	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
 
-        if (ctx->implicitConfirm)
-                if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
+	if (ctx->implicitConfirm)
+		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
 
-        CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CR);
+	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CR);
 
 	/* Set the subject from the previous certificate */
-        subject = X509_get_subject_name(ctx->clCert);
-       
+	subject = X509_get_subject_name(ctx->clCert);
 
 
-        /* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
-        if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility))) goto err;
 
-        msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null();
-        sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
+	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility))) goto err;
 
-        /* XXX what about setting the optional 2nd certreqmsg? */
+	msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null();
+	sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
 
-        /* TODO catch errors */
-        msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
+	/* XXX what about setting the optional 2nd certreqmsg? */
 
-        /* XXX - should this be done somewhere else? */
-        CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
+	/* TODO catch errors */
+	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
+	if (!msg->protection) goto err;
 
-        return msg;
+	/* XXX - should this be done somewhere else? */
+	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
+
+	return msg;
+
 err:
-printf( "ERROR: in CMP_cr_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
-        if (msg) CMP_PKIMESSAGE_free(msg);
-        return NULL;
-
-
+	CMPerr(CMP_F_CMP_CR_NEW, CMP_R_CMPERROR);
+	if (msg) CMP_PKIMESSAGE_free(msg);
+	return NULL;
 }
 
 
@@ -372,13 +375,15 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 	/* TODO catch errors */
 	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
+	if (!msg->protection) goto err;
 
 	/* XXX - should this be done somewhere else? */
 	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
 
 	return msg;
+
 err:
-printf( "ERROR: in CMP_kur_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_KUR_NEW, CMP_R_CMPERROR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;
 }
@@ -428,10 +433,12 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 	/* TODO catch errors */
 	msg->protection = CMP_protection_new( msg, NULL, ctx->pkey, ctx->secretValue);
+	if (!msg->protection) goto err;
 
 	return msg;
+
 err:
-printf( "ERROR: in CMP_certConf_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CERTCONF_NEW, CMP_R_CMPERROR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;
 }
@@ -499,9 +506,12 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
 
 	/* TODO catch errors */
 	msg->protection = CMP_protection_new( msg, NULL, NULL, ctx->secretValue);
+	if (msg->protection) goto err;
+
 	return msg;
+
 err:
-printf( "ERROR: in CMP_genm_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_GENM_NEW, CMP_R_CMPERROR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;
 }
@@ -568,7 +578,8 @@ CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, 
 
 	return msg;
 err:
-printf( "ERROR: in CMP_ckuann_new, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CKUANN_NEW, CMP_R_CMPERROR);
+
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;
 }

@@ -73,6 +73,7 @@
 #include <openssl/cmp.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
+#include <openssl/err.h>
 #include <string.h>
 
  /* NAMING
@@ -121,7 +122,10 @@ IMPLEMENT_ASN1_FUNCTIONS(CMP_CTX)
 /* ################################################################ */
 /* ################################################################ */
 int CMP_CTX_init( CMP_CTX *ctx) {
-	if (!ctx) goto err;
+	if (!ctx) {
+		CMPerr(CMP_F_CMP_CTX_INIT, CMP_R_INVALID_CONTEXT);
+		goto err;
+	}
 
 	/* all other elements are initialized through ASN1 macros */
 	ctx->pkey            = NULL;
@@ -154,8 +158,9 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 #endif
 
 	return 1;
+
 err:
-printf( "ERROR in CMP_CTX_init, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_INIT, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -172,7 +177,8 @@ CMP_CTX *CMP_CTX_create() {
 
 	return ctx;
 err:
-printf( "ERROR in CMP_CTX_create, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_CREATE, CMP_R_CMPERROR);
+
 	if (ctx) CMP_CTX_free(ctx);
 	return NULL;
 }
@@ -188,7 +194,7 @@ int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t 
 
 	return (ASN1_OCTET_STRING_set(ctx->referenceValue, ref, len));
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET1_REFERENCEVALUE, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -203,7 +209,7 @@ int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size
 
 	return (ASN1_OCTET_STRING_set(ctx->secretValue, sec, len));
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET1_SECRETVALUE, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -221,7 +227,7 @@ int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert) {
 	if (!(ctx->caCert = X509_dup( (X509*)cert))) goto err;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET1_CACERT, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -239,7 +245,7 @@ int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert) {
 	if (!(ctx->clCert = X509_dup( (X509*)cert))) goto err;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET1_CLCERT, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -257,7 +263,7 @@ int CMP_CTX_set1_newClCert( CMP_CTX *ctx, const X509 *cert) {
 	if (!(ctx->newClCert = X509_dup( (X509*)cert))) goto err;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET1_NEWCLCERT, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -272,7 +278,7 @@ int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 		ctx->pkey = NULL;
 	}
 
-// #warning SETTING CTX->PKEY SHOULD NOT CONSUME THE POINTER
+// XXX SETTING CTX->PKEY SHOULD NOT CONSUME THE POINTER
 #if 0
 /* XXX this is NOT sufficient to copy everything! */
 	ctx->pkey = EVP_PKEY_new();
@@ -282,7 +288,7 @@ int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 	ctx->pkey = (EVP_PKEY*) pkey;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET0_PKEY, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -297,7 +303,7 @@ int CMP_CTX_set0_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 		ctx->newPkey = NULL;
 	}
 
-// #warning SETTING CTX->NEWPKEY SHOULD NOT CONSUME THE POINTER
+// XXX SETTING CTX->NEWPKEY SHOULD NOT CONSUME THE POINTER
 #if 0
 	ctx->newPkey = EVP_PKEY_new();
 
@@ -306,7 +312,7 @@ int CMP_CTX_set0_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 	ctx->newPkey = (EVP_PKEY*) pkey;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET0_NEWPKEY, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -324,7 +330,7 @@ int CMP_CTX_set1_transactionID( CMP_CTX *ctx, const ASN1_OCTET_STRING *id) {
 	if (!(ctx->transactionID = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)id))) goto err;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET1_TRANSACTIONID, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -343,7 +349,7 @@ int CMP_CTX_set1_recipNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce) {
 	if (!(ctx->recipNonce = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)nonce))) goto err;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET1_RECIPNONCE, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -361,7 +367,7 @@ int CMP_CTX_set1_protectionAlgor( CMP_CTX *ctx, const X509_ALGOR *algor) {
 	if (!(ctx->protectionAlgor = X509_ALGOR_dup( (X509_ALGOR*)algor))) goto err;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET1_PROTECTIONALGOR, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -373,7 +379,7 @@ int CMP_CTX_set_compatibility( CMP_CTX *ctx, const int mode) {
 	ctx->compatibility = mode;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET_COMPATIBILITY, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -393,7 +399,7 @@ int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name) {
 
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET1_SERVERNAME, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -405,7 +411,7 @@ int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port) {
 	ctx->serverPort = port;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET1_SERVERPORT, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -432,7 +438,7 @@ int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path) {
 
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET1_SERVERPATH, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -475,7 +481,7 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algID) {
 	if (!(ctx->protectionAlgor = CMP_get_protectionAlgor_by_nid(nid))) goto err;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CTX_SET_PROTECTIONALGOR, CMP_R_CMPERROR);
 	return 0;
 }
 

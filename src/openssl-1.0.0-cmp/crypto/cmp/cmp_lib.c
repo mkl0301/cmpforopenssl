@@ -704,7 +704,8 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 			if(!(CRMF_passwordBasedMac_new(pbm, protPartDer, protPartDerLen, secret->data, secret->length, &mac, &macLen))) goto err;
 			break;
 		default:
-printf("FILE: %s, LINE %d, why did I hit default?\n", __FILE__, __LINE__);
+			/* why did i hit default !? */
+			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_UNKNOWN_ALGORITHM_ID);
 			break;
 	}
 
@@ -719,7 +720,9 @@ printf("FILE: %s, LINE %d, why did I hit default?\n", __FILE__, __LINE__);
 	// XXX why does this produce an segfault?
 	// EVP_MD_CTX_destroy(ctx);
 	return prot;
+
 err:
+	CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_CMPERROR);
 	if(prot) ASN1_BIT_STRING_free(prot);
 	return NULL;
 }
@@ -745,7 +748,7 @@ int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 
 	/* XXX Do I have to check what algorithm to use? */
 	if (!X509_digest(cert, EVP_sha1(), hash, &hashLen)) goto err;
-certHash=ASN1_OCTET_STRING_new();
+	certHash=ASN1_OCTET_STRING_new();
 	if (!ASN1_OCTET_STRING_set(certHash, hash, hashLen)) goto err;
 
 	if (certStatus->certHash)
@@ -754,7 +757,7 @@ certHash=ASN1_OCTET_STRING_new();
 
 	return 1;
 err:
-printf("Error in file: %s, line: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CERTSTATUS_SET_CERTHASH, CMP_R_CMPERROR);
 	if( certHash) ASN1_OCTET_STRING_free(certHash);
 	return 0;
 }
@@ -898,11 +901,10 @@ long CMP_ERRORMSGCONTENT_PKIStatus_get( CMP_ERRORMSGCONTENT *error) {
 }
 
 /* ############################################################################ */
-/* prints the PKIStatus of the given PKIStatusInfo */
-/* returns 1 on success */
-/* returns 0 on error */
+/* returns the PKIStatus of the given PKIStatusInfo */
+/* or NULL on error */
 /* ############################################################################ */
-int CMP_PKISTATUSINFO_PKIstatus_print( CMP_PKISTATUSINFO *statusInfo) {
+char *CMP_PKISTATUSINFO_PKIstatus_print( CMP_PKISTATUSINFO *statusInfo) {
 	long PKIstatus;
 
 	if (!statusInfo) return 0;
@@ -910,33 +912,25 @@ int CMP_PKISTATUSINFO_PKIstatus_print( CMP_PKISTATUSINFO *statusInfo) {
 	PKIstatus = CMP_PKISTATUSINFO_PKIstatus_get(statusInfo);
 	switch (PKIstatus) {
 		case CMP_PKISTATUS_accepted:
-			printf("PKIStatus: accepted\n");
-			break;
+			return "PKIStatus: accepted";
 		case CMP_PKISTATUS_grantedWithMods:
-			printf("PKIStatus: granded with mods\n");
-			break;
+			return "PKIStatus: granded with mods";
 		case CMP_PKISTATUS_rejection:
-			printf("PKIStatus: rejection\n");
-			break;
+			return "PKIStatus: rejection";
 		case CMP_PKISTATUS_waiting:
-			printf("PKIStatus: waiting\n");
-			break;
+			return "PKIStatus: waiting";
 		case CMP_PKISTATUS_revocationWarning:
-			printf("PKIStatus: revocation warning\n");
-			break;
+			return "PKIStatus: revocation warning";
 		case CMP_PKISTATUS_revocationNotification:
-			printf("PKIStatus: revocation notification\n");
-			break;
+			return "PKIStatus: revocation notification";
 		case CMP_PKISTATUS_keyUpdateWarning:
-			printf("PKIStatus: key update warning\n");
-			break;
+			return "PKIStatus: key update warning";
 		case -1:
 		default:
-printf("ERROR: parsing PKIStatus\n");
-			/* return 0; */
-			break;
+			CMPerr(CMP_F_CMP_PKISTATUSINFO_PKISTATUS_PRINT, CMP_R_ERROR_PARSING_PKISTATUS);
+			return 0;
 	}
-	return 1;
+	return 0;
 }
 
 /* ############################################################################ */
@@ -944,7 +938,7 @@ printf("ERROR: parsing PKIStatus\n");
 /* returns 1 on success */
 /* returns 0 on error */
 /* ############################################################################ */
-int CMP_ERRORMSGCONTENT_PKIStatus_print( CMP_ERRORMSGCONTENT *error) {
+char *CMP_ERRORMSGCONTENT_PKIStatus_print( CMP_ERRORMSGCONTENT *error) {
 	if (!error) return 0;
 	return CMP_PKISTATUSINFO_PKIstatus_print(error->pKIStatusInfo);
 }
@@ -959,11 +953,10 @@ long CMP_CERTRESPONSE_PKIStatus_get( CMP_CERTRESPONSE *resp) {
 }
 
 /* ############################################################################ */
-/* prints the PKIFailureInfo to stdout */
-/* returns 1 on success */
+/* returns the PKIFailureInfo */
 /* returns 0 on error */
 /* ############################################################################ */
-int CMP_PKISTATUSINFO_PKIFailureInfo_print( CMP_PKISTATUSINFO *statusInfo) {
+char *CMP_PKISTATUSINFO_PKIFailureInfo_print( CMP_PKISTATUSINFO *statusInfo) {
 	int i;
 
 	if (!statusInfo) return 0;
@@ -971,90 +964,63 @@ int CMP_PKISTATUSINFO_PKIFailureInfo_print( CMP_PKISTATUSINFO *statusInfo) {
 		if( ASN1_BIT_STRING_get_bit(statusInfo->failInfo, i)) {
 			switch (i) {
 				case CMP_PKIFAILUREINFO_badAlg:
-					printf("PKIFailureInfo: badAlg\n");
-					break;
+					return "PKIFailureInfo: badAlg";
 				case CMP_PKIFAILUREINFO_badMessageCheck:
-					printf("PKIFailureInfo: badMessageCheck\n");
-					break;
+					return "PKIFailureInfo: badMessageCheck";
 				case CMP_PKIFAILUREINFO_badRequest:
-					printf("PKIFailureInfo: badRequest\n");
-					break;
+					return "PKIFailureInfo: badRequest";
 				case CMP_PKIFAILUREINFO_badTime:
-					printf("PKIFailureInfo: badTime\n");
-					break;
+					return "PKIFailureInfo: badTime";
 				case CMP_PKIFAILUREINFO_badCertId:
-					printf("PKIFailureInfo: badCertId\n");
-					break;
+					return "PKIFailureInfo: badCertId";
 				case CMP_PKIFAILUREINFO_badDataFormat:
-					printf("PKIFailureInfo: badDataFormat\n");
-					break;
+					return "PKIFailureInfo: badDataFormat";
 				case CMP_PKIFAILUREINFO_wrongAuthority:
-					printf("PKIFailureInfo: wrongAuthority\n");
-					break;
+					return "PKIFailureInfo: wrongAuthority";
 				case CMP_PKIFAILUREINFO_incorrectData:
-					printf("PKIFailureInfo: incorrectData\n");
-					break;
+					return "PKIFailureInfo: incorrectData";
 				case CMP_PKIFAILUREINFO_missingTimeStamp:
-					printf("PKIFailureInfo: missingTimeStamp\n");
-					break;
+					return "PKIFailureInfo: missingTimeStamp";
 				case CMP_PKIFAILUREINFO_badPOP:
-					printf("PKIFailureInfo: badPOP\n");
-					break;
+					return "PKIFailureInfo: badPOP";
 				case CMP_PKIFAILUREINFO_certRevoked:
-					printf("PKIFailureInfo: certRevoked\n");
-					break;
+					return "PKIFailureInfo: certRevoked";
 				case CMP_PKIFAILUREINFO_certConfirmed:
-					printf("PKIFailureInfo: certConfirmed\n");
-					break;
+					return "PKIFailureInfo: certConfirmed";
 				case CMP_PKIFAILUREINFO_wrongIntegrity:
-					printf("PKIFailureInfo: wrongIntegrity\n");
-					break;
+					return "PKIFailureInfo: wrongIntegrity";
 				case CMP_PKIFAILUREINFO_badRecipientNonce:
-					printf("PKIFailureInfo: badRecipientNonce\n");
-					break;
+					return "PKIFailureInfo: badRecipientNonce";
 				case CMP_PKIFAILUREINFO_timeNotAvailable:
-					printf("PKIFailureInfo: timeNotAvailable\n");
-					break;
+					return "PKIFailureInfo: timeNotAvailable";
 				case CMP_PKIFAILUREINFO_unacceptedPolicy:
-					printf("PKIFailureInfo: unacceptedPolicy\n");
-					break;
+					return "PKIFailureInfo: unacceptedPolicy";
 				case CMP_PKIFAILUREINFO_unacceptedExtension:
-					printf("PKIFailureInfo: unacceptedExtension\n");
-					break;
+					return "PKIFailureInfo: unacceptedExtension";
 				case CMP_PKIFAILUREINFO_addInfoNotAvailable:
-					printf("PKIFailureInfo: addInfoNotAvailable\n");
-					break;
+					return "PKIFailureInfo: addInfoNotAvailable";
 				case CMP_PKIFAILUREINFO_badSenderNonce:
-					printf("PKIFailureInfo: badSenderNonce\n");
-					break;
+					return "PKIFailureInfo: badSenderNonce";
 				case CMP_PKIFAILUREINFO_badCertTemplate:
-					printf("PKIFailureInfo: badCertTemplate\n");
-					break;
+					return "PKIFailureInfo: badCertTemplate";
 				case CMP_PKIFAILUREINFO_signerNotTrusted:
-					printf("PKIFailureInfo: signerNotTrusted\n");
-					break;
+					return "PKIFailureInfo: signerNotTrusted";
 				case CMP_PKIFAILUREINFO_transactionIdInUse:
-					printf("PKIFailureInfo: transactionIdInUse\n");
-					break;
+					return "PKIFailureInfo: transactionIdInUse";
 				case CMP_PKIFAILUREINFO_unsupportedVersion:
-					printf("PKIFailureInfo: unsupportedVersion\n");
-					break;
+					return "PKIFailureInfo: unsupportedVersion";
 				case CMP_PKIFAILUREINFO_notAuthorized:
-					printf("PKIFailureInfo: notAuthorized\n");
-					break;
+					return "PKIFailureInfo: notAuthorized";
 				case CMP_PKIFAILUREINFO_systemUnavail:
-					printf("PKIFailureInfo: systemUnavail\n");
-					break;
+					return "PKIFailureInfo: systemUnavail";
 				case CMP_PKIFAILUREINFO_systemFailure:
-					printf("PKIFailureInfo: systemFailure\n");
-					break;
+					return "PKIFailureInfo: systemFailure";
 				case CMP_PKIFAILUREINFO_duplicateCertReq:
-					printf("PKIFailureInfo: duplicateCertReq\n");
-					break;
+					return "PKIFailureInfo: duplicateCertReq";
 			}
 		}
 	}
-	return 1;
+	return 0;
 }
 
 /* ############################################################################ */
@@ -1062,7 +1028,7 @@ int CMP_PKISTATUSINFO_PKIFailureInfo_print( CMP_PKISTATUSINFO *statusInfo) {
 /* returns 1 on success */
 /* returns 0 on error */
 /* ############################################################################ */
-int CMP_ERRORMSGCONTENT_PKIFailureInfo_print( CMP_ERRORMSGCONTENT *error) {
+char *CMP_ERRORMSGCONTENT_PKIFailureInfo_print( CMP_ERRORMSGCONTENT *error) {
 	if (!error) return 0;
 	return CMP_PKISTATUSINFO_PKIFailureInfo_print(error->pKIStatusInfo);
 }
@@ -1179,19 +1145,28 @@ int CMP_PKIMESSAGE_get_bodytype( CMP_PKIMESSAGE *msg) {
 }
 
 /* ############################################################################ */
-/* returns 1 on success */
-/* returns 0 on error */
-/* TODO: work in progress */
+/* return error message string or NULL on error */
 /* ############################################################################ */
-int CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg) {
+char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int bufsize) {
+	char *status, *failureinfo;
+
 	if( !msg) return 0;
 	if( CMP_PKIMESSAGE_get_bodytype(msg) != V_CMP_PKIBODY_ERROR) return 0;
 
-	CMP_ERRORMSGCONTENT_PKIStatus_print(msg->body->value.error);
+	status = CMP_ERRORMSGCONTENT_PKIStatus_print(msg->body->value.error);
+	if (!status) {
+		BIO_snprintf(errormsg, bufsize, "failed to parse error message");
+		return errormsg;
+	}
 
 	/* PKIFailureInfo is optional */
-	CMP_ERRORMSGCONTENT_PKIFailureInfo_print(msg->body->value.error);
+	failureinfo = CMP_ERRORMSGCONTENT_PKIFailureInfo_print(msg->body->value.error);
 
-	return 1;
+	if (failureinfo)
+		BIO_snprintf(errormsg, bufsize, "Status: %s, Failureinfo: %s", status, failureinfo);
+	else
+		BIO_snprintf(errormsg, bufsize, "Status: %s", status);
+
+	return errormsg;
 }
 

@@ -77,6 +77,7 @@
 #include <openssl/crmf.h>
 #include <openssl/evp.h>
 #include <openssl/cmp.h> /* for the CMP_COMPAT_* flags */
+#include <openssl/err.h>
 
 
 /* ############################################################################ */
@@ -114,7 +115,8 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 
 	CRMF_CERTREQMSG_set_certReqId( certReqMsg, certReqId);
 	if (!CRMF_CERTREQMSG_set1_publicKey( certReqMsg, pkey))
-		printf("ERROR: setting public key, FILE %s, LINE %d\n", __FILE__, __LINE__);
+		/* should i return here? -mv */
+		CRMFerr(CRMF_F_CRMF_CR_NEW, CRMF_R_ERROR_SETTING_PUBLIC_KEY);
 
 #if 0
 	/* CL supports this (for client certificates) for up to 3 years in the future for both dates
@@ -130,6 +132,7 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 
 	return certReqMsg;
 err:
+	CRMFerr(CRMF_F_CRMF_CR_NEW, CRMF_R_CRMFERROR);
 	if( certReqMsg)
 		CRMF_CERTREQMSG_free( certReqMsg);
 	return NULL;

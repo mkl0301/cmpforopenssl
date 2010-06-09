@@ -87,6 +87,7 @@
 #include <openssl/asn1t.h>
 #include <openssl/crmf.h>
 #include <openssl/evp.h>
+#include <openssl/err.h>
 
 /* ############################################################################ */
 /* TODO: check */
@@ -107,6 +108,8 @@ int CRMF_CERTREQMSG_push0_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETY
 printf("FILE %s, LINE %d :Success setting control\n", __FILE__, __LINE__);
 	return 1;
 err:
+	CRMFerr(CRMF_F_CRMF_CERTREQMSG_PUSH0_CONTROL, CRMF_R_CRMFERROR);
+
 	if( newControls) {
 		sk_CRMF_ATTRIBUTETYPEANDVALUE_free(certReqMsg->certReq->controls);
 		certReqMsg->certReq->controls = NULL;
@@ -271,7 +274,8 @@ int CRMF_CERTREQMSG_set_validity( CRMF_CERTREQMSG *certReqMsg, time_t notBefore,
 
 	return 1;
 err:
-printf("ERROR in FILE %s, LINE %d\n", __FILE__, __LINE__);
+    CRMFerr(CRMF_F_CRMF_CERTREQMSG_SET_VALIDITY, CRMF_R_CRMFERROR);
+
 	if (validity) CRMF_OPTIONALVALIDITY_free(validity);
 	if (notBeforeAsn) ASN1_TIME_free(notBeforeAsn);
 	if (notAfterAsn) ASN1_TIME_free(notAfterAsn);
@@ -301,8 +305,9 @@ int CRMF_CERTREQMSG_set1_publicKey( CRMF_CERTREQMSG *certReqMsg, const EVP_PKEY 
 
 	/* this function is *not* consuming the pointer */
 	return X509_PUBKEY_set(&(certReqMsg->certReq->certTemplate->publicKey), (EVP_PKEY*) pkey);
+
 err:
-printf("ERROR in FILE %s, LINE %d\n", __FILE__, __LINE__);
+	CRMFerr(CRMF_F_CRMF_CERTREQMSG_SET1_PUBLICKEY, CRMF_R_CRMFERROR);
 	return 0;
 }
 
@@ -336,7 +341,8 @@ int CRMF_CERTREQMSG_push0_extension( CRMF_CERTREQMSG *certReqMsg, X509_EXTENSION
 	if( !sk_X509_EXTENSION_push(certReqMsg->certReq->certTemplate->extensions, ext)) goto err;
 	return 1;
 err:
-printf("ERROR in FILE %s, LINE %d\n", __FILE__, __LINE__);
+	CRMFerr(CRMF_F_CRMF_CERTREQMSG_PUSH0_EXTENSION, CRMF_R_CRMFERROR);
+
 	if (createdStack) {
 		sk_X509_EXTENSION_free( certReqMsg->certReq->certTemplate->extensions);
 		certReqMsg->certReq->certTemplate->extensions = NULL;
@@ -483,11 +489,11 @@ CRMF_ATTRIBUTETYPEANDVALUE * CRMF_ATAV_OldCertId_new( GENERAL_NAME *issuer, ASN1
 
 	CRMF_ATTRIBUTETYPEANDVALUE_set0( atav, OBJ_nid2obj(NID_id_regCtrl_oldCertID), V_ASN1_SEQUENCE, certIdStr);
 	certIdStr = NULL;
-printf("FIle %s, Line %d\n", __FILE__, __LINE__);
 
 	return atav;
 err:
-printf("GOT ERROR IN %s, %d\n", __FILE__, __LINE__);
+	CRMFerr(CRMF_F_CRMF_ATAV_OLDCERTID_NEW, CRMF_R_CRMFERROR);
+
 	if (certIdDer) OPENSSL_free(certIdDer);
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free(atav);
 	if (certIdStr) ASN1_STRING_free(certIdStr);

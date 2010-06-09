@@ -10,15 +10,15 @@ CFLAG=
 MAKEFILE=	Makefile
 AR=		ar r
 
-CFLAGS= $(INCLUDES) $(CFLAG)
+CFLAGS= $(INCLUDES) $(CFLAG) -Wall -Werror
 
 GENERAL=Makefile README
 TEST=
 APPS=
 
 LIB=$(TOP)/libcrypto.a
-LIBSRC= cmp_asn.c cmp_lib.c cmp_msg.c cmp_vfy.c cmp_itav.c cmp_http.c cmp_ses.c cmp_ctx.c
-LIBOBJ= cmp_asn.o cmp_lib.o cmp_msg.o cmp_vfy.o cmp_itav.o cmp_http.o cmp_ses.o cmp_ctx.o
+LIBSRC= cmp_asn.c cmp_lib.c cmp_msg.c cmp_vfy.c cmp_itav.c cmp_http.c cmp_ses.c cmp_ctx.c cmp_err.c
+LIBOBJ= cmp_asn.o cmp_lib.o cmp_msg.o cmp_vfy.o cmp_itav.o cmp_http.o cmp_ses.o cmp_ctx.o cmp_err.o
 
 SRC= $(LIBSRC)
 

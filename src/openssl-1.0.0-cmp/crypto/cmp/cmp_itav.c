@@ -64,6 +64,7 @@
 #include <openssl/cmp.h>
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
+#include <openssl/err.h>
 
 int CMP_INFOTYPEANDVALUE_set0(CMP_INFOTYPEANDVALUE *itav, ASN1_OBJECT *aobj, int ptype, void *pval) {
 	if (!itav)
@@ -185,7 +186,8 @@ CMP_INFOTYPEANDVALUE *CMP_INFOTYPEANDVALUE_new_by_def_noVal(int def) {
 	if (!CMP_INFOTYPEANDVALUE_set0( itav, obj, V_ASN1_UNDEF, NULL)) goto err;
 	return itav;
 err:
-printf( "ERROR in %s, Line %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_CMP_INFOTYPEANDVALUE_NEW_BY_DEF_NOVAL, CMP_R_CMPERROR);
+
 	if (itav) CMP_INFOTYPEANDVALUE_free(itav);
 	return NULL;
 }

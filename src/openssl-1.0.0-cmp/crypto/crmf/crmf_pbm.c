@@ -74,6 +74,7 @@
 #include <openssl/rand.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include <openssl/err.h>
 
 #define SALT_LEN         16
 #define ITERATION_COUNT 500
@@ -214,7 +215,7 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 			break;
 		/* optional TODO: DES-MAC, Triple DES-MAC */
 		default:
-			printf("ERROR, algorithm not supported. FILE %s, LINE %d\n", __FILE__, __LINE__);
+			CRMFerr(CRMF_F_CRMF_PASSWORDBASEDMAC_NEW, CRMF_R_UNSUPPORTED_ALGORITHM);
 			exit(1);
 	}
 

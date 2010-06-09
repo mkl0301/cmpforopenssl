@@ -10,15 +10,15 @@ CFLAG=-g
 MAKEFILE=	Makefile
 AR=		ar r
 
-CFLAGS= $(INCLUDES) $(CFLAG)
+CFLAGS= $(INCLUDES) $(CFLAG) -Wall -Werror
 
 GENERAL=Makefile README
 TEST=
 APPS=
 
 LIB=$(TOP)/libcrypto.a
-LIBSRC= crmf_asn.c crmf_lib.c crmf_pbm.c crmf_msg.c crmf_atav.c
-LIBOBJ= crmf_asn.o crmf_lib.o crmf_pbm.o crmf_msg.o crmf_atav.o
+LIBSRC= crmf_asn.c crmf_lib.c crmf_pbm.c crmf_msg.c crmf_atav.c crmf_err.c
+LIBOBJ= crmf_asn.o crmf_lib.o crmf_pbm.o crmf_msg.o crmf_atav.o crmf_err.o
 
 SRC= $(LIBSRC)
 

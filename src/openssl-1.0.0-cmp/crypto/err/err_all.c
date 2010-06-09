@@ -157,4 +157,9 @@ void ERR_load_crypto_strings(void)
 #endif
 	ERR_load_COMP_strings();
 #endif
+
+    /* TODO: add macros for conditional compilation of CMP and CRMF */
+    ERR_load_CMP_strings();
+    ERR_load_CRMF_strings();
+    
 	}

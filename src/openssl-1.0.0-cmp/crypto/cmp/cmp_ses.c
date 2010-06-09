@@ -73,7 +73,30 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include <openssl/bio.h>
+#include <openssl/err.h>
 
+/* ############################################################################ */
+/* Prints error data of the given CMP_PKIMESSAGE into a buffer specified by out */
+/* and returns pointer to the buffer.                                           */
+/* ############################################################################ */
+static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
+	char tempbuf[256];
+	switch (CMP_PKIMESSAGE_get_bodytype(msg)) {
+		case V_CMP_PKIBODY_ERROR:
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
+			BIO_snprintf(out, outsize, "message=%d, error=\"%s\"",
+					CMP_PKIMESSAGE_get_bodytype( msg),
+					CMP_PKIMESSAGE_parse_error_msg( msg, tempbuf, sizeof(tempbuf)));
+			break;
+		case -1:
+			BIO_snprintf(out, outsize, "received NO message");
+			break;
+		default:
+			BIO_snprintf(out, outsize, "received neither IP nor ERROR, but message=%d", CMP_PKIMESSAGE_get_bodytype( msg));
+			break;
+	}
+	return out;
+}
 
 /* ############################################################################ */
 /* ############################################################################ */
@@ -112,24 +135,16 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (CMP_protection_verify( ip, ctx->protectionAlgor, NULL, ctx->secretValue))
 		printf( "SUCCESS: validating protection of incoming message\n");
 	else {
-		printf( "ERROR: validating protection of incoming message\n");
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
 	/* make sure the received messagetype indicates an IP message */
-	switch (CMP_PKIMESSAGE_get_bodytype(ip)) {
-		case V_CMP_PKIBODY_IP:
-			/* this is the expected outcome at SUCCESS: */
-			break;
-		case V_CMP_PKIBODY_ERROR:
-			printf( "ERROR: received an ERROR: %d Message\n", CMP_PKIMESSAGE_get_bodytype( ip));
-			CMP_PKIMESSAGE_parse_error_msg( ip);
-			goto err;
-			break;
-		default:
-			printf( "ERROR: received neither an IP nor an ERROR: but %d Message\n", CMP_PKIMESSAGE_get_bodytype( ip));
-			goto err;
-			break;
+	if (CMP_PKIMESSAGE_get_bodytype(ip) != V_CMP_PKIBODY_IP) {
+		char errmsg[256];
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
+		ERR_add_error_data(1, PKIError_data(ip, errmsg, sizeof(errmsg)));
+		goto err;
 	}
 
 	/* make sure the PKIStatus for the *first* CERTrepmessage indicates a certificate was granted */
@@ -139,7 +154,8 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 			printf( "WARNING: got \"grantedWithMods\"\n");
 		case CMP_PKISTATUS_accepted:
 			if( !(ctx->newClCert = CMP_CERTREPMESSAGE_cert_get1(ip->body->value.ip,0))) {
-				printf( "ERROR: could not find the certificate with certReqId=0\nFILE %s, LINE %d\n", __FILE__, __LINE__);
+				// old: "ERROR: could not find the certificate with certReqId=0"
+				CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
 				goto err;
 			}
 			break;
@@ -148,11 +164,11 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 		case CMP_PKISTATUS_revocationWarning:
 		case CMP_PKISTATUS_revocationNotification:
 		case CMP_PKISTATUS_keyUpdateWarning:
-			printf( "ERROR: didn't get a certificate\n");
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_NO_CERTIFICATE_RECEIVED);
 			goto err;
 			break;
 		default:
-			printf( "ERROR: got an unknown PKIStatus\n");
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
 			goto err;
 			break;
 	}
@@ -178,24 +194,18 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, NULL, ctx->secretValue))
 		printf( "SUCCESS: validating protection of incoming message\n");
 	else {
-		printf( "ERROR: validating protection of incoming message\n");
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
 	/* make sure the received messagetype indicates an PKIconf message */
-	switch (CMP_PKIMESSAGE_get_bodytype(PKIconf)) {
-		case V_CMP_PKIBODY_PKICONF:
-			break;
-		case V_CMP_PKIBODY_ERROR:
-			printf( "ERROR: received an ERROR: %d Message\n", CMP_PKIMESSAGE_get_bodytype( PKIconf));
-			CMP_PKIMESSAGE_parse_error_msg( PKIconf);
-			goto err;
-			break;
-		default:
-			printf( "ERROR: received neither an PKIconf nor an ERROR: but a %d Message\n", CMP_PKIMESSAGE_get_bodytype( PKIconf));
-			goto err;
-			break;
+	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
+		char errmsg[256];
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
+		ERR_add_error_data(1, PKIError_data(PKIconf, errmsg, sizeof(errmsg)));
+		goto err;
 	}
+
 
 cleanup:
 	/* clean up */
@@ -205,8 +215,10 @@ cleanup:
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 	return ctx->newClCert;
+
 err:
-printf( "ERROR: in CMP_doInitialRequestSeq, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CMPERROR);
+
 	if (ir) CMP_PKIMESSAGE_free(ir);
 	if (ip) CMP_PKIMESSAGE_free(ip);
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
@@ -216,134 +228,124 @@ printf( "ERROR: in CMP_doInitialRequestSeq, FILE: %s, LINE: %d\n", __FILE__, __L
 /* ############################################################################ */
 /* ############################################################################ */
 X509 *CMP_doCertificateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
-        CMP_PKIMESSAGE *cr=NULL;
-        CMP_PKIMESSAGE *cp=NULL;
-        CMP_PKIMESSAGE *certConf=NULL;
-        CMP_PKIMESSAGE *PKIconf=NULL;
+	CMP_PKIMESSAGE *cr=NULL;
+	CMP_PKIMESSAGE *cp=NULL;
+	CMP_PKIMESSAGE *certConf=NULL;
+	CMP_PKIMESSAGE *PKIconf=NULL;
 
-        /* check if all necessary options are set */
-        if (!cbio) goto err;
-        if (!ctx) goto err;
-        if (!ctx->serverName) goto err;
-        if (!ctx->pkey) goto err;
-        if (!ctx->clCert) goto err;
-        if (!ctx->caCert) goto err;
+	/* check if all necessary options are set */
+	if (!cbio) goto err;
+	if (!ctx) goto err;
+	if (!ctx->serverName) goto err;
+	if (!ctx->pkey) goto err;
+	if (!ctx->clCert) goto err;
+	if (!ctx->caCert) goto err;
 
-        /* set the protection Algor which will be used during the whole session */
-        CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG);
+	/* set the protection Algor which will be used during the whole session */
+	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG);
 
-        /* create Certificate Request - cr */
-        if (! (cr = CMP_cr_new(ctx))) goto err;
+	/* create Certificate Request - cr */
+	if (! (cr = CMP_cr_new(ctx))) goto err;
 
-        printf("INFO: Sending Certificate Request\n");
-        if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, cr))
-                goto err;
+	printf("INFO: Sending Certificate Request\n");
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, cr))
+		goto err;
 
-        /* receive Certificate Response - cp */
-        printf("INFO: Attempting to receive CP\n");
-        if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &cp, ctx->compatibility))
-                goto err;
+	/* receive Certificate Response - cp */
+	printf("INFO: Attempting to receive CP\n");
+	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &cp, ctx->compatibility))
+		goto err;
 
-        switch (CMP_PKIMESSAGE_get_bodytype( cp)) {
-                case V_CMP_PKIBODY_CP:
-                        break;
-                case V_CMP_PKIBODY_ERROR:
-                        printf( "ERROR: received an ERROR: %d Message\n", CMP_PKIMESSAGE_get_bodytype( cp));
-                        CMP_PKIMESSAGE_parse_error_msg( cp);
-                        goto err;
-                        break;
-                case -1:
-                        printf( "ERROR: received NO message, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
-                        exit(0);
-                default:
-                        printf( "ERROR: received no CP message, but %d, FILE: %s, LINE: %d\n", CMP_PKIMESSAGE_get_bodytype( cp),__FILE__, __LINE__);
-                        break;
-        }
-        if (CMP_protection_verify( cp, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
-                printf( "SUCCESS: validating protection of incoming message\n");
-        } else {
-                printf( "ERROR: validating protection of incoming message\n");
-                goto err;
-        }
+	if (CMP_PKIMESSAGE_get_bodytype( cp) != V_CMP_PKIBODY_CP) {
+		char errmsg[256];
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
+		ERR_add_error_data(1, PKIError_data(cp, errmsg, sizeof(errmsg)));
+		goto err;
+	}
 
-        switch (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0)) {
-                case CMP_PKISTATUS_grantedWithMods:
-                        printf( "WARNING: got \"grantedWithMods\"");
-                case CMP_PKISTATUS_accepted:
-                        if( !(ctx->newClCert = CMP_CERTREPMESSAGE_cert_get1(cp->body->value.cp,0))) {
-                                printf( "ERROR: could not find the certificate with certReqId=0\nFILE %s, LINE %d\n", __FILE__, __LINE__);
-                                goto err;
-                        }
-                        break;
-                case CMP_PKISTATUS_rejection:
-                case CMP_PKISTATUS_waiting:
-                case CMP_PKISTATUS_revocationWarning:
-                case CMP_PKISTATUS_revocationNotification:
-                case CMP_PKISTATUS_keyUpdateWarning:
-                        printf( "ERROR: didn't get a certificate");
-                        goto err;
-                        break;
-                default:
-                        printf( "ERROR: got an unknown PKIStatus");
-                        goto err;
-                        break;
-        }
 
-        /* check if implicit confirm is set in generalInfo */
-        /* TODO should I check if that was requested?
-         * What happens if this is set here while it was not requested?
-         */
-        if (CMP_PKIMESSAGE_check_implicitConfirm(cp)) goto cleanup;
+	if (CMP_protection_verify( cp, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
+		printf( "SUCCESS: validating protection of incoming message\n");
+	} else {
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
 
-        /* crate Certificate Confirmation - certConf */
-        if (! (certConf = CMP_certConf_new(ctx))) goto err;
+	switch (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0)) {
+		case CMP_PKISTATUS_grantedWithMods:
+			printf( "WARNING: got \"grantedWithMods\"");
+		case CMP_PKISTATUS_accepted:
+			if( !(ctx->newClCert = CMP_CERTREPMESSAGE_cert_get1(cp->body->value.cp,0))) {
+				// old: "ERROR: could not find the certificate with certReqId=0"
+				CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
+				goto err;
+			}
+			break;
+		case CMP_PKISTATUS_rejection:
+		case CMP_PKISTATUS_waiting:
+		case CMP_PKISTATUS_revocationWarning:
+		case CMP_PKISTATUS_revocationNotification:
+		case CMP_PKISTATUS_keyUpdateWarning:
+			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_NO_CERTIFICATE_RECEIVED);
+			goto err;
+			break;
+		default:
+			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+			goto err;
+			break;
+	}
 
-        printf("INFO: Sending Certificate Confirm\n");
-        if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, certConf))
-                goto err;
+	/* check if implicit confirm is set in generalInfo */
+	/* TODO should I check if that was requested?
+	 * What happens if this is set here while it was not requested?
+	 */
+	if (CMP_PKIMESSAGE_check_implicitConfirm(cp)) goto cleanup;
 
-        /* receive PKI confirmation - PKIconf */
-        printf("INFO: Attempting to receive PKIconf\n");
-        if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &PKIconf, ctx->compatibility))
-                goto err;
+	/* crate Certificate Confirmation - certConf */
+	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
-        if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
-                printf( "SUCCESS: validating protection of incoming message\n");
-        } else {
-                printf( "ERROR: validating protection of incoming message\n");
-                goto err;
-        }
+	printf("INFO: Sending Certificate Confirm\n");
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, certConf))
+		goto err;
 
-        /* make sure the received messagetype indicates an PKIconf message */
-        switch (CMP_PKIMESSAGE_get_bodytype(PKIconf)) {
-                case V_CMP_PKIBODY_PKICONF:
-                        break;
-                case V_CMP_PKIBODY_ERROR:
-                        printf( "ERROR: received an ERROR: %d Message\n", CMP_PKIMESSAGE_get_bodytype( PKIconf));
-                        CMP_PKIMESSAGE_parse_error_msg( PKIconf);
-                        goto err;
-                        break;
-                default:
-                        printf( "ERROR: received neither an PKIconf nor an ERROR: but a %d Message\n", CMP_PKIMESSAGE_get_bodytype( PKIconf));
-                        goto err;
-                        break;
-        }
+	/* receive PKI confirmation - PKIconf */
+	printf("INFO: Attempting to receive PKIconf\n");
+	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &PKIconf, ctx->compatibility))
+		goto err;
+
+	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
+		printf( "SUCCESS: validating protection of incoming message\n");
+	} else {
+		/* old: "ERROR: validating protection of incoming message\n" */
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
+
+	/* make sure the received messagetype indicates an PKIconf message */
+	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
+		char errmsg[256];
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
+		ERR_add_error_data(1, PKIError_data(PKIconf, errmsg, sizeof(errmsg)));
+		goto err;
+	}
 
 cleanup:
-        /* clean up */
-        CMP_PKIMESSAGE_free(cr);
-        CMP_PKIMESSAGE_free(cp);
-        /* those are not set in case of implicitConfirm */
-        if (certConf) CMP_PKIMESSAGE_free(certConf);
-        if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
-        return ctx->newClCert;
+	/* clean up */
+	CMP_PKIMESSAGE_free(cr);
+	CMP_PKIMESSAGE_free(cp);
+	/* those are not set in case of implicitConfirm */
+	if (certConf) CMP_PKIMESSAGE_free(certConf);
+	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
+	return ctx->newClCert;
+
 err:
-printf( "ERROR: in CMP_doCertificateRequestSeq, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
-        if (cr) CMP_PKIMESSAGE_free(cr);
-        if (cp) CMP_PKIMESSAGE_free(cp);
-        if (certConf) CMP_PKIMESSAGE_free(certConf);
-        if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
-        return NULL;
+	CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CMPERROR);
+
+	if (cr) CMP_PKIMESSAGE_free(cr);
+	if (cp) CMP_PKIMESSAGE_free(cp);
+	if (certConf) CMP_PKIMESSAGE_free(certConf);
+	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
+	return NULL;
 }
 
 
@@ -379,25 +381,17 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &kup, ctx->compatibility))
 		goto err;
 
-	switch (CMP_PKIMESSAGE_get_bodytype( kup)) {
-		case V_CMP_PKIBODY_KUP: 
-			break;
-		case V_CMP_PKIBODY_ERROR:
-			printf( "ERROR: received an ERROR: %d Message\n", CMP_PKIMESSAGE_get_bodytype( kup));
-			CMP_PKIMESSAGE_parse_error_msg( kup);
-			goto err;
-			break;
-		case -1:
-			printf( "ERROR: received NO message, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
-			exit(0);
-		default:		
-			printf( "ERROR: received not KUP message, but %d, FILE: %s, LINE: %d\n", CMP_PKIMESSAGE_get_bodytype( kup),__FILE__, __LINE__);
-			break;
+	if (CMP_PKIMESSAGE_get_bodytype( kup) != V_CMP_PKIBODY_KUP) {
+		char errmsg[256];
+		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
+		ERR_add_error_data(1, PKIError_data(kup, errmsg, sizeof(errmsg)));
+		goto err;
 	}
+
 	if (CMP_protection_verify( kup, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
 		printf( "SUCCESS: validating protection of incoming message\n");
 	} else {
-		printf( "ERROR: validating protection of incoming message\n");
+		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
@@ -406,7 +400,8 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 			printf( "WARNING: got \"grantedWithMods\"");
 		case CMP_PKISTATUS_accepted:
 			if( !(ctx->newClCert = CMP_CERTREPMESSAGE_cert_get1(kup->body->value.kup,0))) {
-				printf( "ERROR: could not find the certificate with certReqId=0\nFILE %s, LINE %d\n", __FILE__, __LINE__);
+				// old: "ERROR: could not find the certificate with certReqId=0"
+				CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
 				goto err;
 			}
 			break;
@@ -415,11 +410,11 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 		case CMP_PKISTATUS_revocationWarning:
 		case CMP_PKISTATUS_revocationNotification:
 		case CMP_PKISTATUS_keyUpdateWarning:
-			printf( "ERROR: didn't get a certificate");
+			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_NO_CERTIFICATE_RECEIVED);
 			goto err;
 			break;
 		default:
-			printf( "ERROR: got an unknown PKIStatus");
+			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
 			goto err;
 			break;
 	}
@@ -445,23 +440,16 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
 		printf( "SUCCESS: validating protection of incoming message\n");
 	} else {
-		printf( "ERROR: validating protection of incoming message\n");
+		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
 	/* make sure the received messagetype indicates an PKIconf message */
-	switch (CMP_PKIMESSAGE_get_bodytype(PKIconf)) {
-		case V_CMP_PKIBODY_PKICONF:
-			break;
-		case V_CMP_PKIBODY_ERROR:
-			printf( "ERROR: received an ERROR: %d Message\n", CMP_PKIMESSAGE_get_bodytype( PKIconf));
-			CMP_PKIMESSAGE_parse_error_msg( PKIconf);
-			goto err;
-			break;
-		default:
-			printf( "ERROR: received neither an PKIconf nor an ERROR: but a %d Message\n", CMP_PKIMESSAGE_get_bodytype( PKIconf));
-			goto err;
-			break;
+	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
+		char errmsg[256];
+		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
+		ERR_add_error_data(1, PKIError_data(PKIconf, errmsg, sizeof(errmsg)));
+		goto err;
 	}
 
 cleanup:
@@ -473,7 +461,8 @@ cleanup:
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 	return ctx->newClCert;
 err:
-printf( "ERROR: in CMP_doInitialRequestSeq, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CMPERROR);
+
 	if (kur) CMP_PKIMESSAGE_free(kur);
 	if (kup) CMP_PKIMESSAGE_free(kup);
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
@@ -512,28 +501,22 @@ int CMP_doPKIInfoReqSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (CMP_protection_verify( genp, ctx->protectionAlgor, NULL, ctx->secretValue))
 		printf( "SUCCESS: validating protection of incoming message\n");
 	else {
-		printf( "ERROR: validating protection of incoming message\n");
+		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
 	/* make sure the received messagetype indicates an IP message */
-	switch (CMP_PKIMESSAGE_get_bodytype(genp)) {
-		case V_CMP_PKIBODY_GENP:
-			/* this is the expected outcome at SUCCESS: */
-			break;
-		case V_CMP_PKIBODY_ERROR:
-			printf( "ERROR: received an ERROR: %d Message\n", CMP_PKIMESSAGE_get_bodytype( genp));
-			CMP_PKIMESSAGE_parse_error_msg( genp);
-			goto err;
-			break;
-		default:
-			printf( "ERROR: received neither an GENP nor an ERROR: but %d Message\n", CMP_PKIMESSAGE_get_bodytype( genp));
-			goto err;
-			break;
+	if (CMP_PKIMESSAGE_get_bodytype(genp) != V_CMP_PKIBODY_GENP) {
+		char errmsg[256];
+		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_PKIBODY_ERROR);
+		ERR_add_error_data(1, PKIError_data(genp, errmsg, sizeof(errmsg)));
+		goto err;
 	}
+
 	return 1;
 err:
-printf( "ERROR: in CMP_doPKIInfoReqSeq, FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_CMPERROR);
+
 	if (genm) CMP_PKIMESSAGE_free(genm);
 	if (genp) CMP_PKIMESSAGE_free(genp);
 	return 0;
