@@ -166,7 +166,7 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
-CMP_CTX *CMP_CTX_create() {
+CMP_CTX *CMP_CTX_create(void) {
 	CMP_CTX *ctx=NULL;
 
 	if( !(ctx = CMP_CTX_new())) goto err;
@@ -504,7 +504,7 @@ int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text) {
 	if( !(sk_ASN1_UTF8STRING_push(ctx->freeText, utf8string) goto err;
 	return 1;
 err:
-printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+CMP_printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
 	if (utf8string) ASN1_UTF8STRING_free(utf8string);
 	return 0;
 }

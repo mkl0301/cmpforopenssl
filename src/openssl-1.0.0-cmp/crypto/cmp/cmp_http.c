@@ -316,7 +316,7 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
 		derMessage += 7;
 	}
 
-printf("totalRecvdLen %d, totalMsgLen %d, chunkLen %d\n", totalRecvdLen, totalMsgLen, chunkLen);
+CMP_printf("totalRecvdLen %d, totalMsgLen %d, chunkLen %d\n", totalRecvdLen, totalMsgLen, chunkLen);
 	/* if not already done, receive the rest of the message */
 	while( totalRecvdLen < totalMsgLen) {
 		/* TODO: make sure we don't receive too much */

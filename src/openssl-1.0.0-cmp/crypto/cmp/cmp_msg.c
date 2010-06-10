@@ -468,39 +468,39 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
 
 	/* create an empty message body */
 	if( CMP_PKIMESSAGE_genm_item_push0( msg, NULL)) {
-		printf( "INFO: created message body\n");
+		CMP_printf("INFO: created message body\n");
 	}
 #if 0
 	itav = CMP_INFOTYPEANDVALUE_new();
 	if( CMP_INFOTYPEANDVALUE_set0( itav, OBJ_txt2obj("1.3.6.1.5.5.7.4.4",1), V_ASN1_UNDEF, NULL)) {
-		printf( "INFO: setting itav\n");
+		CMP_printf( "INFO: setting itav\n");
 	} /* Preferred Symmetric Algorithm */
 	if( CMP_PKIMESSAGE_genm_item_push0( msg, itav)) {
-		printf( "INFO: pushing itav\n");
+		CMP_printf( "INFO: pushing itav\n");
 	}
 #endif
 #if 0
 	itav = CMP_INFOTYPEANDVALUE_new();
 	if( CMP_INFOTYPEANDVALUE_set0( itav, OBJ_txt2obj("1.3.6.1.5.5.7.4.6",1), V_ASN1_UNDEF, NULL)) {
-		printf( "INFO: setting itav\n");
+		CMP_printf( "INFO: setting itav\n");
 	} /* CRL */
 	if( CMP_PKIMESSAGE_genm_item_push0( msg, itav)) {
-		printf( "INFO: pushing itav\n");
+		CMP_printf( "INFO: pushing itav\n");
 	}
 #endif
 #if 0
 	itav = CMP_INFOTYPEANDVALUE_new();
 	if( CMP_INFOTYPEANDVALUE_set0( itav, OBJ_txt2obj("1.3.6.1.4.1.3029.3.1.2",1), V_ASN1_UNDEF, NULL)) {
-		printf( "INFO: setting itav\n");
+		CMP_printf( "INFO: setting itav\n");
 	} /* PKIBoot request */
 	if( CMP_PKIMESSAGE_genm_item_push0( msg, itav)) {
-		printf( "INFO: pushing itav\n");
+		CMP_printf( "INFO: pushing itav\n");
 	}
 #endif
 #if 0
 	itav = CMP_INFOTYPEANDVALUE_new_by_def_noVal( CMP_ITAV_CRYPTLIB_PKIBOOT);
 	if( CMP_PKIMESSAGE_genm_item_push0( msg, itav)) {
-		printf( "INFO: pushing itav\n");
+		CMP_printf( "INFO: pushing itav\n");
 	}
 #endif
 

@@ -10,7 +10,7 @@ CFLAG=
 MAKEFILE=	Makefile
 AR=		ar r
 
-CFLAGS= $(INCLUDES) $(CFLAG) -Wall -Werror
+CFLAGS= $(INCLUDES) $(CFLAG) -Wall -Werror -DCMP_DEBUG
 
 GENERAL=Makefile README
 TEST=
@@ -94,23 +94,38 @@ cmp_ctx.o: ../../include/openssl/cmp.h ../../include/openssl/conf.h
 cmp_ctx.o: ../../include/openssl/crmf.h ../../include/openssl/crypto.h
 cmp_ctx.o: ../../include/openssl/e_os2.h ../../include/openssl/ec.h
 cmp_ctx.o: ../../include/openssl/ecdh.h ../../include/openssl/ecdsa.h
-cmp_ctx.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
-cmp_ctx.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
-cmp_ctx.o: ../../include/openssl/opensslconf.h ../../include/openssl/opensslv.h
-cmp_ctx.o: ../../include/openssl/ossl_typ.h ../../include/openssl/pkcs7.h
-cmp_ctx.o: ../../include/openssl/safestack.h ../../include/openssl/sha.h
-cmp_ctx.o: ../../include/openssl/stack.h ../../include/openssl/symhacks.h
-cmp_ctx.o: ../../include/openssl/x509.h ../../include/openssl/x509_vfy.h
-cmp_ctx.o: ../../include/openssl/x509v3.h cmp_ctx.c
+cmp_ctx.o: ../../include/openssl/err.h ../../include/openssl/evp.h
+cmp_ctx.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
+cmp_ctx.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
+cmp_ctx.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
+cmp_ctx.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
+cmp_ctx.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
+cmp_ctx.o: ../../include/openssl/symhacks.h ../../include/openssl/x509.h
+cmp_ctx.o: ../../include/openssl/x509_vfy.h ../../include/openssl/x509v3.h
+cmp_ctx.o: cmp_ctx.c
+cmp_err.o: ../../include/openssl/asn1.h ../../include/openssl/bio.h
+cmp_err.o: ../../include/openssl/buffer.h ../../include/openssl/cmp.h
+cmp_err.o: ../../include/openssl/conf.h ../../include/openssl/crmf.h
+cmp_err.o: ../../include/openssl/crypto.h ../../include/openssl/e_os2.h
+cmp_err.o: ../../include/openssl/ec.h ../../include/openssl/ecdh.h
+cmp_err.o: ../../include/openssl/ecdsa.h ../../include/openssl/err.h
+cmp_err.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
+cmp_err.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
+cmp_err.o: ../../include/openssl/opensslconf.h ../../include/openssl/opensslv.h
+cmp_err.o: ../../include/openssl/ossl_typ.h ../../include/openssl/pkcs7.h
+cmp_err.o: ../../include/openssl/safestack.h ../../include/openssl/sha.h
+cmp_err.o: ../../include/openssl/stack.h ../../include/openssl/symhacks.h
+cmp_err.o: ../../include/openssl/x509.h ../../include/openssl/x509_vfy.h
+cmp_err.o: ../../include/openssl/x509v3.h cmp_err.c
 cmp_http.o: ../../include/openssl/asn1.h ../../include/openssl/asn1t.h
 cmp_http.o: ../../include/openssl/bio.h ../../include/openssl/buffer.h
 cmp_http.o: ../../include/openssl/cmp.h ../../include/openssl/conf.h
 cmp_http.o: ../../include/openssl/crmf.h ../../include/openssl/crypto.h
 cmp_http.o: ../../include/openssl/e_os2.h ../../include/openssl/ec.h
 cmp_http.o: ../../include/openssl/ecdh.h ../../include/openssl/ecdsa.h
-cmp_http.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
-cmp_http.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
-cmp_http.o: ../../include/openssl/opensslconf.h
+cmp_http.o: ../../include/openssl/err.h ../../include/openssl/evp.h
+cmp_http.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
+cmp_http.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
 cmp_http.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
 cmp_http.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
 cmp_http.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
@@ -123,9 +138,9 @@ cmp_itav.o: ../../include/openssl/cmp.h ../../include/openssl/conf.h
 cmp_itav.o: ../../include/openssl/crmf.h ../../include/openssl/crypto.h
 cmp_itav.o: ../../include/openssl/e_os2.h ../../include/openssl/ec.h
 cmp_itav.o: ../../include/openssl/ecdh.h ../../include/openssl/ecdsa.h
-cmp_itav.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
-cmp_itav.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
-cmp_itav.o: ../../include/openssl/opensslconf.h
+cmp_itav.o: ../../include/openssl/err.h ../../include/openssl/evp.h
+cmp_itav.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
+cmp_itav.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
 cmp_itav.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
 cmp_itav.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
 cmp_itav.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
@@ -153,39 +168,41 @@ cmp_msg.o: ../../include/openssl/cmp.h ../../include/openssl/conf.h
 cmp_msg.o: ../../include/openssl/crmf.h ../../include/openssl/crypto.h
 cmp_msg.o: ../../include/openssl/e_os2.h ../../include/openssl/ec.h
 cmp_msg.o: ../../include/openssl/ecdh.h ../../include/openssl/ecdsa.h
-cmp_msg.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
-cmp_msg.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
-cmp_msg.o: ../../include/openssl/opensslconf.h ../../include/openssl/opensslv.h
-cmp_msg.o: ../../include/openssl/ossl_typ.h ../../include/openssl/pkcs7.h
-cmp_msg.o: ../../include/openssl/safestack.h ../../include/openssl/sha.h
-cmp_msg.o: ../../include/openssl/stack.h ../../include/openssl/symhacks.h
-cmp_msg.o: ../../include/openssl/x509.h ../../include/openssl/x509_vfy.h
-cmp_msg.o: ../../include/openssl/x509v3.h cmp_msg.c
+cmp_msg.o: ../../include/openssl/err.h ../../include/openssl/evp.h
+cmp_msg.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
+cmp_msg.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
+cmp_msg.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
+cmp_msg.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
+cmp_msg.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
+cmp_msg.o: ../../include/openssl/symhacks.h ../../include/openssl/x509.h
+cmp_msg.o: ../../include/openssl/x509_vfy.h ../../include/openssl/x509v3.h
+cmp_msg.o: cmp_msg.c
 cmp_ses.o: ../../include/openssl/asn1.h ../../include/openssl/bio.h
 cmp_ses.o: ../../include/openssl/buffer.h ../../include/openssl/cmp.h
 cmp_ses.o: ../../include/openssl/conf.h ../../include/openssl/crmf.h
 cmp_ses.o: ../../include/openssl/crypto.h ../../include/openssl/e_os2.h
 cmp_ses.o: ../../include/openssl/ec.h ../../include/openssl/ecdh.h
-cmp_ses.o: ../../include/openssl/ecdsa.h ../../include/openssl/evp.h
-cmp_ses.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
-cmp_ses.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
-cmp_ses.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
-cmp_ses.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
-cmp_ses.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
-cmp_ses.o: ../../include/openssl/symhacks.h ../../include/openssl/x509.h
-cmp_ses.o: ../../include/openssl/x509_vfy.h ../../include/openssl/x509v3.h
-cmp_ses.o: cmp_ses.c
+cmp_ses.o: ../../include/openssl/ecdsa.h ../../include/openssl/err.h
+cmp_ses.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
+cmp_ses.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
+cmp_ses.o: ../../include/openssl/opensslconf.h ../../include/openssl/opensslv.h
+cmp_ses.o: ../../include/openssl/ossl_typ.h ../../include/openssl/pkcs7.h
+cmp_ses.o: ../../include/openssl/safestack.h ../../include/openssl/sha.h
+cmp_ses.o: ../../include/openssl/stack.h ../../include/openssl/symhacks.h
+cmp_ses.o: ../../include/openssl/x509.h ../../include/openssl/x509_vfy.h
+cmp_ses.o: ../../include/openssl/x509v3.h cmp_ses.c
 cmp_vfy.o: ../../include/openssl/asn1.h ../../include/openssl/asn1t.h
 cmp_vfy.o: ../../include/openssl/bio.h ../../include/openssl/buffer.h
 cmp_vfy.o: ../../include/openssl/cmp.h ../../include/openssl/conf.h
 cmp_vfy.o: ../../include/openssl/crmf.h ../../include/openssl/crypto.h
 cmp_vfy.o: ../../include/openssl/e_os2.h ../../include/openssl/ec.h
 cmp_vfy.o: ../../include/openssl/ecdh.h ../../include/openssl/ecdsa.h
-cmp_vfy.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
-cmp_vfy.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
-cmp_vfy.o: ../../include/openssl/opensslconf.h ../../include/openssl/opensslv.h
-cmp_vfy.o: ../../include/openssl/ossl_typ.h ../../include/openssl/pkcs7.h
-cmp_vfy.o: ../../include/openssl/safestack.h ../../include/openssl/sha.h
-cmp_vfy.o: ../../include/openssl/stack.h ../../include/openssl/symhacks.h
-cmp_vfy.o: ../../include/openssl/x509.h ../../include/openssl/x509_vfy.h
-cmp_vfy.o: ../../include/openssl/x509v3.h cmp_vfy.c
+cmp_vfy.o: ../../include/openssl/err.h ../../include/openssl/evp.h
+cmp_vfy.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
+cmp_vfy.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
+cmp_vfy.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
+cmp_vfy.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
+cmp_vfy.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
+cmp_vfy.o: ../../include/openssl/symhacks.h ../../include/openssl/x509.h
+cmp_vfy.o: ../../include/openssl/x509_vfy.h ../../include/openssl/x509v3.h
+cmp_vfy.o: cmp_vfy.c
