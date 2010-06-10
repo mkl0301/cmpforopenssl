@@ -68,6 +68,9 @@
  * 2007 - Martin Peylo - Initial Creation
  * 2008 - Sami Lehtonen - added CMP_cr_new()
  *                      - bugfix in CMP_certConf_new(): pkey or ref/secret pair is enough
+ * 06/10/2010 - Martin Peylo - fixed potential NPD in CMP_ir_new(), CMP_cr_new() and 
+ *                             CMP_kur_new() and CMP_certConf_new() in case of failing 
+ *                             OPENSSL_malloc() and potential MLKS in error cases
  */
 
 #include <openssl/asn1.h>
@@ -175,14 +178,13 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility))) goto err;
 
-	msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null();
+	if( !(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.ir, certReq0);
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
 	/* TODO catch errors */
-	msg->protection = CMP_protection_new( msg, NULL, NULL, ctx->secretValue);
-	if (!msg->protection) goto err;
+	if( !(msg->protection = CMP_protection_new( msg, NULL, NULL, ctx->secretValue))) goto err;
 
 	/* XXX - should this be done somewhere else? */
 	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
@@ -191,7 +193,8 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 err:
 	CMPerr(CMP_F_CMP_IR_NEW, CMP_R_CMPERROR);
-	if (msg) CMP_PKIMESSAGE_free(msg);
+	if (msg) CMP_PKIMESSAGE_free(msg); /* TODO: check if that also frees msg->body->value.ir msg->protection if it had been allocated */
+	if (certReq0) CRMF_CERTREQMSG_free(certReq0);
 	return NULL;
 }
 
@@ -228,7 +231,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility))) goto err;
 
-	msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null();
+	if( !(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
@@ -244,7 +247,8 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 
 err:
 	CMPerr(CMP_F_CMP_CR_NEW, CMP_R_CMPERROR);
-	if (msg) CMP_PKIMESSAGE_free(msg);
+	if (msg) CMP_PKIMESSAGE_free(msg); /* TODO: check if that also frees msg->body->value.cr msg->protection if it had been allocated */
+	if (certReq0) CRMF_CERTREQMSG_free(certReq0);
 	return NULL;
 }
 
@@ -313,7 +317,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, X509_get_subject_name( (X509*) ctx->clCert), ctx->compatibility))) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);
-	msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null();
+	if( !(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;
 
 	/* identify our cert */
 
@@ -350,7 +354,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 		/* this is just wrong but CL does it:
 		 * prepend an ASN.1 set to the id-aa-signingCertificate sequence */
-		itavValueDerSet    = OPENSSL_malloc( itavValueDerLen+2);
+		if( !(itavValueDerSet = OPENSSL_malloc( itavValueDerLen+2))) goto err;
 		itavValueDerSet[0] = 0x31;
 		itavValueDerSet[1] = itavValueDer[1]+2;
 		memcpy( itavValueDerSet+2, itavValueDer, itavValueDerLen);
@@ -385,6 +389,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 err:
 	CMPerr(CMP_F_CMP_KUR_NEW, CMP_R_CMPERROR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
+	if (itavValueDerSet) OPENSSL_free(itavValueDerSet);
 	return NULL;
 }
 
@@ -412,6 +417,7 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CERTCONF);
 
 	/* TODO - there could be more than one certconf */
+	/* TODO - do I have to free this in error case? */
 	if( !(certStatus = CMP_CERTSTATUS_new())) goto err;
 
 	/* set the # of the certReq */
@@ -428,12 +434,11 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 	/* TODO: set optional PKIStatusInfo */
 
-	msg->body->value.certConf = sk_CMP_CERTSTATUS_new_null();
-	if(!sk_CMP_CERTSTATUS_push( msg->body->value.certConf, certStatus)) goto err;
+	if( !(msg->body->value.certConf = sk_CMP_CERTSTATUS_new_null())) goto err;
+	if( !sk_CMP_CERTSTATUS_push( msg->body->value.certConf, certStatus)) goto err;
 
 	/* TODO catch errors */
-	msg->protection = CMP_protection_new( msg, NULL, ctx->pkey, ctx->secretValue);
-	if (!msg->protection) goto err;
+	if( !(msg->protection = CMP_protection_new( msg, NULL, ctx->pkey, ctx->secretValue))) goto err;
 
 	return msg;
 

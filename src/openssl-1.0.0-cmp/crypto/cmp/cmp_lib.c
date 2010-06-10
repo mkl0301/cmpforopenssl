@@ -705,6 +705,8 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 			break;
 		default:
 			/* why did i hit default !? */
+      /* TODO: this should be caught better, as e.g macLen is not set here
+       * properly and it will be used later*/
 			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_UNKNOWN_ALGORITHM_ID);
 			break;
 	}

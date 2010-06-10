@@ -120,13 +120,14 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 	if (!msg->protection) 
 		return 0;
 
+	/* TODO: check if that makes sense and if that could be done clearer */
 	/* is the algorithm included in the  message? */
 	if ((algor = msg->header->protectionAlg)) {
 		int algorType=0;
 		int _algorType=0;
 
 		algorType = ASN1_TYPE_get(algor->parameter);
-		_algorType = ASN1_TYPE_get(_algor->parameter);
+		_algorType = ASN1_TYPE_get(_algor->parameter); /* XXX TODO that is a potential NPD as _algor could be NULL */
 
 		/* Cryplib 3.2.1 sends back the right algorithm but not the parameters in pkiconf messages */
 		if (    ((algorType == V_ASN1_UNDEF) || (algorType == V_ASN1_NULL))

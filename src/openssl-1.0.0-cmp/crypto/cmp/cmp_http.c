@@ -66,6 +66,7 @@
 
 /* =========================== CHANGE LOG =============================
  * 2007 - Martin Peylo - Initial Creation
+ * 6/10/2010 - Martin Peylo - fixed potential harmful sscanf conversion in CMP_PKIMESSAGE_hhtp_bio_recv()
  */
 
 #include <openssl/asn1.h>
@@ -230,10 +231,12 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
 	int chunkedHTTP=0;
 
 	int retID;
-	char retSTR[10];
+	char retSTR[256];
 	char *contLenBeg=NULL;
 	const unsigned char *derMessage=NULL;
 
+  /* TODO: it must be checked if size_t is good for the format conversions in
+   * sscanf() etc - is that unsigned long everywhere? */
 	size_t recvLen=0;
 	size_t totalMsgLen=0;
 	size_t contentLen=0;
@@ -271,7 +274,7 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
 
 	/* analyze HTTP header */
 	/* XXX: yes, I know this is extremely unsafe... */
-	hits = sscanf(recvMsg, "HTTP/1.1%d%s\r\n", &retID, retSTR);
+	hits = sscanf(recvMsg, "HTTP/1.1%d%255s\r\n", &retID, retSTR);
 	if( hits != 2) {
 		fprintf( stderr, "ERROR: received malformed message. FILE: %s, LINE %d\n", __FILE__, __LINE__);
 		return 0;
@@ -284,7 +287,7 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
 	/* determine the Content-Length */
 	contLenBeg = strstr(recvMsg, "Content-Length:");
 	if( contLenBeg)
-		hits = sscanf(contLenBeg, "Content-Length:%d\r\n", &contentLen);
+		hits = sscanf(contLenBeg, "Content-Length:%lu\r\n", &contentLen);
 	if( hits != 1) {
 		/* is it a chunked HTTP message as INSTA sends them? */
 		if( strstr(recvMsg, "Transfer-Encoding: chunked\r\n")) {
@@ -299,7 +302,7 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
 	if( chunkedHTTP) {
 		/* TODO: make sure we received the whole header of the chunk */
 		/* the first hex shall be the lenght of the chunk */
-		hits = sscanf((char *)derMessage, "%x", &chunkLen); /* the hex could be followed by a ; and other stuff */
+		hits = sscanf((char *)derMessage, "%lx", &chunkLen); /* the hex could be followed by a ; and other stuff */
 		/* jump to the beginning of the DER message inside the chunk */
 		derMessage = (unsigned char *) strstr((char*)derMessage, "\r\n")+2;
 		/* TODO: handle if there is more than one chunk */
@@ -316,7 +319,7 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
 		derMessage += 7;
 	}
 
-CMP_printf("totalRecvdLen %d, totalMsgLen %d, chunkLen %d\n", totalRecvdLen, totalMsgLen, chunkLen);
+CMP_printf("totalRecvdLen %lu, totalMsgLen %lu, chunkLen %lu\n", totalRecvdLen, totalMsgLen, chunkLen);
 	/* if not already done, receive the rest of the message */
 	while( totalRecvdLen < totalMsgLen) {
 		/* TODO: make sure we don't receive too much */
