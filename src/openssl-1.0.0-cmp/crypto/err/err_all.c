@@ -104,6 +104,9 @@
 #endif
 #include <openssl/comp.h>
 
+#include <openssl/cmp.h>
+#include <openssl/crmf.h>
+
 void ERR_load_crypto_strings(void)
 	{
 #ifndef OPENSSL_NO_ERR
