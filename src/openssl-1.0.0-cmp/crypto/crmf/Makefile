@@ -10,7 +10,7 @@ CFLAG=-g
 MAKEFILE=	Makefile
 AR=		ar r
 
-CFLAGS= $(INCLUDES) $(CFLAG) -Wall -Werror
+CFLAGS= $(INCLUDES) $(CFLAG) -Wall -Werror -DCRMF_DEBUG
 
 GENERAL=Makefile README
 TEST=
@@ -103,14 +103,29 @@ crmf_atav.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
 crmf_atav.o: ../../include/openssl/symhacks.h ../../include/openssl/x509.h
 crmf_atav.o: ../../include/openssl/x509_vfy.h ../../include/openssl/x509v3.h
 crmf_atav.o: crmf_atav.c
+crmf_err.o: ../../include/openssl/asn1.h ../../include/openssl/bio.h
+crmf_err.o: ../../include/openssl/buffer.h ../../include/openssl/conf.h
+crmf_err.o: ../../include/openssl/crmf.h ../../include/openssl/crypto.h
+crmf_err.o: ../../include/openssl/e_os2.h ../../include/openssl/ec.h
+crmf_err.o: ../../include/openssl/ecdh.h ../../include/openssl/ecdsa.h
+crmf_err.o: ../../include/openssl/err.h ../../include/openssl/evp.h
+crmf_err.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
+crmf_err.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
+crmf_err.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
+crmf_err.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
+crmf_err.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
+crmf_err.o: ../../include/openssl/symhacks.h ../../include/openssl/x509.h
+crmf_err.o: ../../include/openssl/x509_vfy.h ../../include/openssl/x509v3.h
+crmf_err.o: crmf_err.c
 crmf_lib.o: ../../include/openssl/asn1.h ../../include/openssl/asn1t.h
 crmf_lib.o: ../../include/openssl/bio.h ../../include/openssl/buffer.h
 crmf_lib.o: ../../include/openssl/conf.h ../../include/openssl/crmf.h
 crmf_lib.o: ../../include/openssl/crypto.h ../../include/openssl/e_os2.h
 crmf_lib.o: ../../include/openssl/ec.h ../../include/openssl/ecdh.h
-crmf_lib.o: ../../include/openssl/ecdsa.h ../../include/openssl/evp.h
-crmf_lib.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
-crmf_lib.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
+crmf_lib.o: ../../include/openssl/ecdsa.h ../../include/openssl/err.h
+crmf_lib.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
+crmf_lib.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
+crmf_lib.o: ../../include/openssl/opensslconf.h
 crmf_lib.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
 crmf_lib.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
 crmf_lib.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
@@ -123,9 +138,9 @@ crmf_msg.o: ../../include/openssl/cmp.h ../../include/openssl/conf.h
 crmf_msg.o: ../../include/openssl/crmf.h ../../include/openssl/crypto.h
 crmf_msg.o: ../../include/openssl/e_os2.h ../../include/openssl/ec.h
 crmf_msg.o: ../../include/openssl/ecdh.h ../../include/openssl/ecdsa.h
-crmf_msg.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
-crmf_msg.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
-crmf_msg.o: ../../include/openssl/opensslconf.h
+crmf_msg.o: ../../include/openssl/err.h ../../include/openssl/evp.h
+crmf_msg.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
+crmf_msg.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
 crmf_msg.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
 crmf_msg.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
 crmf_msg.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
@@ -137,10 +152,10 @@ crmf_pbm.o: ../../include/openssl/bio.h ../../include/openssl/buffer.h
 crmf_pbm.o: ../../include/openssl/conf.h ../../include/openssl/crmf.h
 crmf_pbm.o: ../../include/openssl/crypto.h ../../include/openssl/e_os2.h
 crmf_pbm.o: ../../include/openssl/ec.h ../../include/openssl/ecdh.h
-crmf_pbm.o: ../../include/openssl/ecdsa.h ../../include/openssl/evp.h
-crmf_pbm.o: ../../include/openssl/hmac.h ../../include/openssl/lhash.h
-crmf_pbm.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
-crmf_pbm.o: ../../include/openssl/opensslconf.h
+crmf_pbm.o: ../../include/openssl/ecdsa.h ../../include/openssl/err.h
+crmf_pbm.o: ../../include/openssl/evp.h ../../include/openssl/hmac.h
+crmf_pbm.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
+crmf_pbm.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
 crmf_pbm.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
 crmf_pbm.o: ../../include/openssl/pkcs7.h ../../include/openssl/rand.h
 crmf_pbm.o: ../../include/openssl/safestack.h ../../include/openssl/sha.h

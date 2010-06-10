@@ -105,7 +105,7 @@ int CRMF_CERTREQMSG_push0_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETY
 		newControls = 1;
 	}
 	if( !sk_CRMF_ATTRIBUTETYPEANDVALUE_push( certReqMsg->certReq->controls, control)) goto err;
-printf("FILE %s, LINE %d :Success setting control\n", __FILE__, __LINE__);
+CRMF_printf("FILE %s, LINE %d :Success setting control\n", __FILE__, __LINE__);
 	return 1;
 err:
 	CRMFerr(CRMF_F_CRMF_CERTREQMSG_PUSH0_CONTROL, CRMF_R_CRMFERROR);
@@ -418,7 +418,7 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 	/* cleanup */
 #if 0
 	/* XXX do I have to do that? */
-printf("file: %s line: %d\n", __FILE__, __LINE__);
+CRMF_printf("file: %s line: %d\n", __FILE__, __LINE__);
 	OPENSSL_free(certReqDer);
 #endif
 	EVP_MD_CTX_destroy(ctx);
@@ -428,7 +428,7 @@ err:
 	if( poposig) CRMF_POPOSIGNINGKEY_free( poposig);
 #if 0
 	/* XXX do I have to do that? */
-printf("file: %s line: %d\n", __FILE__, __LINE__);
+CRMF_printf("file: %s line: %d\n", __FILE__, __LINE__);
 	OPENSSL_free(certReqDer);
 #endif
 	if( signature) OPENSSL_free(signature);
