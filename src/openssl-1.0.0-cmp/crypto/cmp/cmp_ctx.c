@@ -66,6 +66,8 @@
 
 /* =========================== CHANGE LOG =============================
  * 2007 - Martin Peylo - Initial Creation
+ * 06/2010 - Miikka Viljanen - Report errors with OpenSSL error codes instead
+ *                             of printf statements.
  */
 
 #include <openssl/asn1.h>

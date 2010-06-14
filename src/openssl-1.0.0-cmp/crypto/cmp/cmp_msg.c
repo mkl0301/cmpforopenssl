@@ -68,6 +68,8 @@
  * 2007 - Martin Peylo - Initial Creation
  * 2008 - Sami Lehtonen - added CMP_cr_new()
  *                      - bugfix in CMP_certConf_new(): pkey or ref/secret pair is enough
+ * 06/2010 - Miikka Viljanen - Report errors with OpenSSL error codes instead
+ *                             of printf statements.
  * 06/10/2010 - Martin Peylo - fixed potential NPD in CMP_ir_new(), CMP_cr_new() and 
  *                             CMP_kur_new() and CMP_certConf_new() in case of failing 
  *                             OPENSSL_malloc() and potential MLKS in error cases

@@ -67,6 +67,8 @@
 /* =========================== CHANGE LOG =============================
  * 2007 - Martin Peylo - Initial Creation
  * 2008 - Sami Lehtonen - added CMP_doCertificateRequestSeq()
+ * 06/2010 - Miikka Viljanen - Report errors with OpenSSL error codes instead
+ *                             of printf statements.
  */
 
 #include <openssl/cmp.h>
