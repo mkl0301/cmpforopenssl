@@ -269,7 +269,7 @@ OPENSSLDIR=../../openssl
 lib_LTLIBRARIES += mod_cmpsrv.la
 mod_cmpsrv_la_SOURCES = $(CMPSRVDIR)/mod_cmpsrv.c
 mod_cmpsrv_la_CFLAGS = $(AM_CFLAGS) -I$(OPENSSLDIR)/include -g
-mod_cmpsrv_la_LDFLAGS = -module -export-dynamic -avoid-version -no-undefined -L$(CMPDIR) -lssl -lcrypto -ldl -g -s
+mod_cmpsrv_la_LDFLAGS = -module -export-dynamic -avoid-version -no-undefined -L$(OPENSSLDIR) -lssl -lcrypto -ldl -g -s
 mod_cmpsrv_la_LIBADD = $(common_libadd)
 
 
