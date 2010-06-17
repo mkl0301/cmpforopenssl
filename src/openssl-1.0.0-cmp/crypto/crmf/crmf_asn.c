@@ -273,7 +273,7 @@ ASN1_SEQUENCE(CRMF_CERTTEMPLATE) = {
 	/* signingAlg MUST be omitted.  This field is assigned by the CA
 	 * during certificate creation. */
 	ASN1_IMP_OPT(CRMF_CERTTEMPLATE, signingAlg, X509_ALGOR, 2),
-	ASN1_IMP_OPT(CRMF_CERTTEMPLATE, issuer, X509_NAME, 3),
+	ASN1_EXP_OPT(CRMF_CERTTEMPLATE, issuer, X509_NAME, 3),
 	ASN1_IMP_OPT(CRMF_CERTTEMPLATE, validity, CRMF_OPTIONALVALIDITY, 4),
 	/* XXX why is this EXP? */
 	ASN1_EXP_OPT(CRMF_CERTTEMPLATE, subject, X509_NAME, 5),
