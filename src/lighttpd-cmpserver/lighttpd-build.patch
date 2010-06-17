@@ -23,14 +23,13 @@ diff -crB a/src/Makefile.am b/src/Makefile.am
 --- b/src/Makefile.am	2010-06-17 11:12:25.745421863 +0300
 ***************
 *** 264,269 ****
---- 264,277 ----
+--- 264,276 ----
   mod_accesslog_la_LDFLAGS = -module -export-dynamic -avoid-version -no-undefined
   mod_accesslog_la_LIBADD = $(common_libadd)
   
-+ CMPSRVDIR=../../lighttpd-cmpserver
 + OPENSSLDIR=../../openssl
 + lib_LTLIBRARIES += mod_cmpsrv.la
-+ mod_cmpsrv_la_SOURCES = $(CMPSRVDIR)/mod_cmpsrv.c
++ mod_cmpsrv_la_SOURCES = mod_cmpsrv.c
 + mod_cmpsrv_la_CFLAGS = $(AM_CFLAGS) -I$(OPENSSLDIR)/include -g
 + mod_cmpsrv_la_LDFLAGS = -module -export-dynamic -avoid-version -no-undefined -L$(OPENSSLDIR) -lssl -lcrypto -ldl -g -s
 + mod_cmpsrv_la_LIBADD = $(common_libadd)

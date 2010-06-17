@@ -3,6 +3,7 @@ CWD     = $(shell pwd)
 ROOT    = $(CWD)/..
 DLDIR   = $(ROOT)/download
 SRCDIR  = $(CWD)
+BIN_DIR = $(ROOT)/bin
 LIB_DIR = $(ROOT)/lib
 
 OSSLSRC   = $(SRCDIR)/openssl
@@ -10,12 +11,17 @@ CLSRC     = $(SRCDIR)/cryptlib
 CLIENTSRC = $(SRCDIR)/cmpclient
 SERVERSRC = $(SRCDIR)/cmpserver
 CURLSRC   = $(SRCDIR)/curl
+LIGHTTPDSRC    = $(SRCDIR)/lighttpd
+LIGHTTPDMODSRC = $(SRCDIR)/lighttpd-cmpserver
+LIGHTTPDPATCH  = $(LIGHTTPDMODSRC)/lighttpd-build.patch
 
 OPENSSL_VERSION = 1.0.0
 CRYPTLIB_VERSION = 333
 CURL_VERSION = 7.21.0
+LIGHTTPD_VERSION = 1.4.26
 
 CURL_TARBALL = $(DLDIR)/curl-$(CURL_VERSION).tar.bz2
+LIGHTTPD_TARBALL = $(DLDIR)/lighttpd-$(LIGHTTPD_VERSION).tar.bz2
 
 LIBOSSL       = $(OSSLSRC)/libssl.a
 OPENSSLCFGOPT = -g no-asm no-idea no-fips no-rc5 no-mdc2 no-camellia -fomit-frame-pointer -fno-strict-aliasing
@@ -29,13 +35,15 @@ CURLCFGOPT = --prefix=$(ROOT) \
 						 --disable-soname-bump --without-ssl --without-zlib --without-gnutls --without-polarssl \
 						 --without-nss --without-libssh2 --without-librtmp
 
+LIGHTTPDCFGOPT = --prefix=$(ROOT)
+
 LIBCRYPTO = $(CLSRC)/libcrypto.a
 
-all: openssl_patch_$(OPENSSL_VERSION) openssl cmpclient cryptlib cmpserver curl
+all: openssl_patch_$(OPENSSL_VERSION) openssl cmpclient cryptlib cmpserver curl lighttpd
 
 .PHONY: all
 
-world: openssl_src cryptlib_src curl_src
+world: openssl_src cryptlib_src curl_src lighttpd_src
 
 .PHONY: world
 
@@ -166,6 +174,27 @@ $(LIB_DIR)/libcurl.a: $(CURLSRC)/unzip-stamp
 	cd $(CURLSRC)/include && \
 	make install
 
+
+################################################################################
+# LIGHTTPD
+################################################################################
+
+lighttpd: $(BIN_DIR)/lighttpd
+
+.PHONY: lighttpd
+
+$(LIGHTTPDSRC)/unzip-stamp: $(LIGHTTPD_TARBALL)
+	cd $(SRCDIR)
+	rm -rf lighttpd-$(LIGHTTPD_VERSION) 
+	tar xvfj $(LIGHTTPD_TARBALL)
+	ln -sf lighttpd-$(LIGHTTPD_VERSION) $(LIGHTTPDSRC)
+	patch -d $(LIGHTTPDSRC) -p1 < $(LIGHTTPDPATCH)
+	ln -sf $(LIGHTTPDMODSRC)/{*.c,*.h} $(LIGHTTPDSRC)/src
+	touch $(LIGHTTPDSRC)/unzip_stamp
+
+$(BIN_DIR)/lighttpd: $(LIGHTTPDSRC)/unzip-stamp
+	cd $(LIGHTTPDSRC) && ./configure $(LIGHTTPDCFGOPT)
+	make -C $(LIGHTTPDSRC) all install
 
 FORCE:
 
