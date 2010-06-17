@@ -1,0 +1,41 @@
+diff -crB a/configure b/configure
+*** a/configure	2010-02-07 22:05:45.000000000 +0200
+--- b/configure	2010-06-17 11:03:01.533396200 +0300
+***************
+*** 17392,17398 ****
+  
+  
+  
+! do_build="mod_cgi mod_fastcgi mod_extforward mod_proxy mod_evhost mod_simple_vhost mod_access mod_alias mod_setenv mod_usertrack mod_auth mod_status mod_accesslog"
+  do_build="$do_build mod_rrdtool mod_secdownload mod_expire mod_compress mod_dirlisting mod_indexfile mod_userdir mod_webdav mod_staticfile mod_scgi mod_flv_streaming"
+  
+  plugins="mod_rewrite mod_redirect mod_ssi mod_trigger_b4_dl"
+--- 17392,17398 ----
+  
+  
+  
+! do_build="mod_cgi mod_fastcgi mod_extforward mod_proxy mod_evhost mod_simple_vhost mod_access mod_alias mod_setenv mod_usertrack mod_auth mod_status mod_accesslog mod_cmpsrv"
+  do_build="$do_build mod_rrdtool mod_secdownload mod_expire mod_compress mod_dirlisting mod_indexfile mod_userdir mod_webdav mod_staticfile mod_scgi mod_flv_streaming"
+  
+  plugins="mod_rewrite mod_redirect mod_ssi mod_trigger_b4_dl"
+diff -crB a/src/Makefile.am b/src/Makefile.am
+*** a/src/Makefile.am	2010-02-02 01:28:20.000000000 +0200
+--- b/src/Makefile.am	2010-06-17 11:12:25.745421863 +0300
+***************
+*** 264,269 ****
+--- 264,277 ----
+  mod_accesslog_la_LDFLAGS = -module -export-dynamic -avoid-version -no-undefined
+  mod_accesslog_la_LIBADD = $(common_libadd)
+  
++ CMPSRVDIR=../../lighttpd-cmpserver
++ OPENSSLDIR=../../openssl
++ lib_LTLIBRARIES += mod_cmpsrv.la
++ mod_cmpsrv_la_SOURCES = $(CMPSRVDIR)/mod_cmpsrv.c
++ mod_cmpsrv_la_CFLAGS = $(AM_CFLAGS) -I$(OPENSSLDIR)/include -g
++ mod_cmpsrv_la_LDFLAGS = -module -export-dynamic -avoid-version -no-undefined -L$(CMPDIR) -lssl -lcrypto -ldl -g -s
++ mod_cmpsrv_la_LIBADD = $(common_libadd)
++ 
+  
+  hdr = server.h buffer.h network.h log.h keyvalue.h \
+        response.h request.h fastcgi.h chunk.h \
+Only in b: tags
