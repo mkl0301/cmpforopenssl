@@ -35,7 +35,12 @@ CURLCFGOPT = --prefix=$(ROOT) \
 						 --disable-soname-bump --without-ssl --without-zlib --without-gnutls --without-polarssl \
 						 --without-nss --without-libssh2 --without-librtmp
 
-LIGHTTPDCFGOPT = --prefix=$(ROOT)
+LIGHTTPDCFGOPT = --prefix=$(ROOT) \
+				 --without-mysql --without-ldap --without-attr --without-valgrind \
+				 --without-openssl --without-kerberos5 --without-zlib \
+				 --without-bzip2 --without-fam --without-webdav-props --without-webdav-locks \
+				 --without-gdbm --without-memcache --without-lua
+
 
 LIBCRYPTO = $(CLSRC)/libcrypto.a
 
