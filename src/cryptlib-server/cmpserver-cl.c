@@ -147,6 +147,7 @@ unsigned char *StrToHexStr(char *str, int length)
 	return(newstr);
 }
 
+/* TODO: add error handling */
 /* ##########################################################################
  * Once the user information has been entered into the certificate store,
  * you can read back the PKI user ID, ... page 244
@@ -158,8 +159,7 @@ unsigned char *StrToHexStr(char *str, int length)
  * certificates are typically obtained by signing the request with the initial certificate or
  * with subsequently-obtained certificates.
  * ########################################################################## */
-int readUserAndPwd( CRYPT_CERTIFICATE *myPKIUser_p) {
-	int status;
+void readUserAndPwd( CRYPT_CERTIFICATE *myPKIUser_p) {
 	char userID[ CRYPT_MAX_TEXTSIZE + 1 ];
 	char issuePW[ CRYPT_MAX_TEXTSIZE + 1 ];
 	char revPW[ CRYPT_MAX_TEXTSIZE + 1 ];
@@ -196,7 +196,7 @@ int readUserAndPwd( CRYPT_CERTIFICATE *myPKIUser_p) {
 		free(aux3);
 	}
 
-	return status;
+	return;
 }
 
 

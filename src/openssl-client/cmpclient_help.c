@@ -171,7 +171,8 @@
 
 /* ############################################################################ */
 /* convert hex string to string, return length */
-/* str has to be freed afterwards */
+/* str has to be freed afterwards
+ * if *str already contains a pointer that address will be freed */
 /* XXX this is just a hack... */
 size_t HELP_hex2str( char *hex, unsigned char **str) {
 	size_t hexLen, ret;
@@ -179,7 +180,9 @@ size_t HELP_hex2str( char *hex, unsigned char **str) {
 
 	hexLen = strlen(hex);
 	ret = hexLen/2;
-	*str = malloc(hexLen/2);
+  /* ensure that we're not leaking */
+  if(*str) free(*str);
+	if(! (*str = malloc(hexLen/2))) goto err;
 	strPtr = *str;
 
 	while(hexLen) {
@@ -201,6 +204,10 @@ size_t HELP_hex2str( char *hex, unsigned char **str) {
 	}
 
 	return ret;
+
+err:
+  /* TODO: this can be handled better... */
+  return 0;
 }
 
 /* ############################################################################ */
