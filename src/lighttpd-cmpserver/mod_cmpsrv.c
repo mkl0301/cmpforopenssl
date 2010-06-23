@@ -256,7 +256,7 @@ X509 *HELP_read_der_cert( const char *file) {
 
 /* ############################################################################ */
 /* ############################################################################ */
-CMP_PKIMESSAGE * CMP_ip_new( server *srv, CMP_CTX *ctx) {
+CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx) {
 	UNUSED(ctx);
 
 	CMP_PKIMESSAGE *msg=NULL;
@@ -271,6 +271,24 @@ CMP_PKIMESSAGE * CMP_ip_new( server *srv, CMP_CTX *ctx) {
 	CMP_PKIHEADER_set1(msg->header, ctx);
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IP);
 
+#if 1
+	X509_NAME *sender = X509_NAME_new();
+	X509_NAME_add_entry_by_txt(sender, "CN", MBSTRING_ASC, (unsigned char*) "Sender Name", -1, -1, 0);
+	CMP_PKIHEADER_set1_sender(msg->header, sender);
+
+	X509_NAME *recipient = X509_NAME_new();
+	X509_NAME_add_entry_by_txt(recipient, "CN", MBSTRING_ASC, (unsigned char*) "Recipient Name", -1, -1, 0);
+	CMP_PKIHEADER_set1_recipient( msg->header, recipient);
+#endif
+
+
+#if 0
+	/* set implicitconfirm */
+	msg->header->generalInfo = sk_CMP_INFOTYPEANDVALUE_new_null();
+	CMP_INFOTYPEANDVALUE *itav = CMP_INFOTYPEANDVALUE_new();
+	itav->infoType = OBJ_nid2obj(NID_id_it_implicitConfirm);
+	sk_CMP_INFOTYPEANDVALUE_push(msg->header->generalInfo, itav);
+#endif
 
 	/* Generate X509 certificate */
 	/*
@@ -297,12 +315,13 @@ CMP_PKIMESSAGE * CMP_ip_new( server *srv, CMP_CTX *ctx) {
 
 	cr->certifiedKeyPair = CMP_CERTIFIEDKEYPAIR_new();
 	X509 *cert = HELP_read_der_cert("/home/miikka/code/cmpforopenssl/certs/cl_cert.der");
+	cr->certifiedKeyPair->certOrEncCert->type = CMP_CERTORENCCERT_CERTIFICATE;
 	cr->certifiedKeyPair->certOrEncCert->value.certificate = X509_dup(cert);
 
 	resp->response = sk_CMP_CERTRESPONSE_new_null();
 	sk_CMP_CERTRESPONSE_push(resp->response, cr);
 	
-	resp->caPubs = sk_X509_new_null();
+	// resp->caPubs = sk_X509_new_null();
 
 	msg->body->value.ip = resp;
 	msg->protection = CMP_protection_new(msg, NULL, NULL, ctx->secretValue);
@@ -319,14 +338,16 @@ int handleMessage(server *srv, connection *con, CMP_PKIMESSAGE *msg)
 {
 	UNUSED(srv);
 	int result = 0;
+	CMP_CTX *ctx = createContext();
+	CMP_PKIMESSAGE *response = 0;
+	unsigned char *derBuf = 0;
+	size_t derLen = 0;
 
 	int bodyType = CMP_PKIMESSAGE_get_bodytype(msg);
 	dbgmsg("ss", "got message", MSG_TYPE_STR(bodyType));
 	switch (bodyType) {
 		case V_CMP_PKIBODY_IR:
 			dbgmsg("sd", "CMP version is", ASN1_INTEGER_get(msg->header->pvno));
-
-			CMP_CTX *ctx = createContext();
 
 			/* verify protection */
 			/* TODO store user data on disk etc etc etc */
@@ -347,18 +368,20 @@ int handleMessage(server *srv, connection *con, CMP_PKIMESSAGE *msg)
 			// int reqId = ASN1_INTEGER_get(crm->certReq->certReqId);
 
 
-			CMP_PKIMESSAGE *resp = CMP_ip_new(srv, ctx);
+			response = CMP_ip_new(ctx);
 
 			dbgmsg("s", "attempting to encode message");
-			unsigned char *derBuf = 0;
-			int derLen = i2d_CMP_PKIMESSAGE( resp, &derBuf);
+			derLen = i2d_CMP_PKIMESSAGE( response, &derBuf);
 			dbgmsg("sd", "message encoded, sending... len=", derLen);
+
+
+			response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN(CMP_CONTENT_TYPE));
 			http_chunk_append_mem(srv, con, (const char*)derBuf, derLen+1);
 
-			resp = 0;
-			dbgmsg("s", "verifying protection");
-			d2i_CMP_PKIMESSAGE(&resp, (const unsigned char**)&derBuf, derLen);
-			// if (CMP_protection_verify(resp, resp->header->protectionAlg, 0, ctx->secretValue))
+			// response = 0;
+			// dbgmsg("s", "verifying protection");
+			// d2i_CMP_PKIMESSAGE(&response, (const unsigned char**)&derBuf, derLen);
+			// if (CMP_protection_verify(response, response->header->protectionAlg, 0, ctx->secretValue))
 				// dbgmsg("s", "protection is valid");
 			// else
 				// dbgmsg("s", "protection is NOT valid");
@@ -367,7 +390,37 @@ int handleMessage(server *srv, connection *con, CMP_PKIMESSAGE *msg)
 
 			result = 1;
 
-			// CMP_PKIMESSAGE_free(resp);
+			// CMP_PKIMESSAGE_free(response);
+			break;
+
+		case V_CMP_PKIBODY_CERTCONF:
+			if (!CMP_protection_verify(msg, msg->header->protectionAlg, 0, ctx->secretValue)) {
+				/* TODO return error code */
+				dbgmsg("s", "ERROR: protection not valid!");
+				break;
+			}
+			else dbgmsg("s", "protection validated successfully");
+
+			response = CMP_PKIMESSAGE_new();
+			CMP_PKIHEADER_set1(response->header, ctx);
+			CMP_PKIMESSAGE_set_bodytype(response, V_CMP_PKIBODY_PKICONF);
+			ASN1_TYPE *t = ASN1_TYPE_new();
+			t->type = 1; // boolean
+			t->value.boolean = 0;
+			response->body->value.pkiconf = t;
+
+			dbgmsg("s", "protecting");
+			response->protection = CMP_protection_new(response, NULL, NULL, ctx->secretValue);
+
+			dbgmsg("s", "encoding");
+			derLen = i2d_CMP_PKIMESSAGE( response, &derBuf);
+			dbgmsg("sd", "message encoded, sending... len=", derLen);
+
+			response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN(CMP_CONTENT_TYPE));
+			http_chunk_append_mem(srv, con, (const char*)derBuf, derLen+1);
+			result = 1;
+
+			log_cmperrors();
 			break;
 
 		default:
