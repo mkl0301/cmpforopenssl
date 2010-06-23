@@ -1,6 +1,10 @@
+/* vim: set ts=4 sts=4 sw=4 cino={.25s: */
+
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
+#include "http_chunk.h"
+#include "chunk.h"
 
 #include "plugin.h"
 
@@ -14,10 +18,10 @@
 #define DEBUG 1
 
 #ifdef DEBUG
-#define dbgmsg(fmt, ...) log_error_write(srv, __FILE__, __LINE__, "s"fmt, "CMP DEBUG: ", __VA_ARGS__)
+#define dbgmsg(fmt, ...) log_error_write(srv, __FILE__, __LINE__, "s"fmt, "CMPDBG: ", __VA_ARGS__)
 void log_cmperrors(void)
 {
-#warning using hard-coded path for error log!
+// #warning using hard-coded path for error log!
 	FILE *f = fopen("/home/miikka/light/cmperr.log", "w");
 	ERR_load_crypto_strings();
 	ERR_print_errors_fp(f);
@@ -213,9 +217,108 @@ char *V_CMP_TABLE[] = {
 	(((unsigned int) (type) < sizeof(V_CMP_TABLE)/sizeof(V_CMP_TABLE[0])) \
 	 ? V_CMP_TABLE[(unsigned int)(type)] : "unknown")
 
-int handleMessage(server *srv, CMP_PKIMESSAGE *msg)
+CMP_CTX *createContext()
+{
+	CMP_CTX *ctx = CMP_CTX_create();
+
+	// CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+	// CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
+	// CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
+	CMP_CTX_set1_referenceValue( ctx, (unsigned char*)"\x3F\xC5\xDD\x75\xF7\xDA\x47\x5D\x80", 9);
+	CMP_CTX_set1_secretValue( ctx, (unsigned char*)"\xFC\x2B\x12\x07\xDF\x2C\xFA\xAB\x04\x97\x7C\xA0", 12);
+	// CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
+	// CMP_CTX_set1_caCert( cmp_ctx, caCert);
+	// CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
+
+	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
+
+	return ctx;
+}
+
+X509 *HELP_read_der_cert( const char *file) {
+	X509 *x;
+	BIO  *bio;
+
+	printf("INFO: Reading Certificate from File %s\n", file);
+	if ((bio=BIO_new(BIO_s_file())) != NULL)
+		if (!BIO_read_filename(bio,file)) {
+			printf("ERROR: could not open file \"%s\" for reading.\n", file);
+			return NULL;
+		}
+
+	x=d2i_X509_bio(bio,NULL);
+
+	BIO_free(bio);
+	return x;
+}
+
+
+
+/* ############################################################################ */
+/* ############################################################################ */
+CMP_PKIMESSAGE * CMP_ip_new( server *srv, CMP_CTX *ctx) {
+	UNUSED(ctx);
+
+	CMP_PKIMESSAGE *msg=NULL;
+
+	// if (!ctx) goto err;
+	if (!ctx->referenceValue) goto err;
+	if (!ctx->secretValue) goto err;
+	// if (!ctx->pkey) goto err;
+
+	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
+
+	CMP_PKIHEADER_set1(msg->header, ctx);
+	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IP);
+
+
+	/* Generate X509 certificate */
+	/*
+	   int			X509_set_version(X509 *x,long version);
+	   int			X509_set_serialNumber(X509 *x, ASN1_INTEGER *serial);
+	   ASN1_INTEGER *	X509_get_serialNumber(X509 *x);
+	   int			X509_set_issuer_name(X509 *x, X509_NAME *name);
+	   X509_NAME *	X509_get_issuer_name(X509 *a);
+	   int			X509_set_subject_name(X509 *x, X509_NAME *name);
+	   X509_NAME *	X509_get_subject_name(X509 *a);
+	   int			X509_set_notBefore(X509 *x, const ASN1_TIME *tm);
+	   int			X509_set_notAfter(X509 *x, const ASN1_TIME *tm);
+	   int			X509_set_pubkey(X509 *x, EVP_PKEY *pkey);
+	   EVP_PKEY *	X509_get_pubkey(X509 *x);
+	   ASN1_BIT_STRING * X509_get0_pubkey_bitstr(const X509 *x);
+	   int		X509_certificate_type(X509 *x,EVP_PKEY *pubkey optional );
+	   */
+
+	CMP_CERTREPMESSAGE *resp = CMP_CERTREPMESSAGE_new();
+
+	CMP_CERTRESPONSE *cr = CMP_CERTRESPONSE_new();
+	ASN1_INTEGER_set(cr->certReqId, 0);
+	ASN1_INTEGER_set(cr->status->status, CMP_PKISTATUS_accepted);
+
+	cr->certifiedKeyPair = CMP_CERTIFIEDKEYPAIR_new();
+	X509 *cert = HELP_read_der_cert("/home/miikka/code/cmpforopenssl/certs/cl_cert.der");
+	cr->certifiedKeyPair->certOrEncCert->value.certificate = X509_dup(cert);
+
+	resp->response = sk_CMP_CERTRESPONSE_new_null();
+	sk_CMP_CERTRESPONSE_push(resp->response, cr);
+	
+	resp->caPubs = sk_X509_new_null();
+
+	msg->body->value.ip = resp;
+	msg->protection = CMP_protection_new(msg, NULL, NULL, ctx->secretValue);
+
+	return msg;
+
+err:
+	// CMPerr(CMP_F_CMP_IP_NEW, CMP_R_CMPERROR);
+	return NULL;
+}
+
+
+int handleMessage(server *srv, connection *con, CMP_PKIMESSAGE *msg)
 {
 	UNUSED(srv);
+	int result = 0;
 
 	int bodyType = CMP_PKIMESSAGE_get_bodytype(msg);
 	dbgmsg("ss", "got message", MSG_TYPE_STR(bodyType));
@@ -223,22 +326,48 @@ int handleMessage(server *srv, CMP_PKIMESSAGE *msg)
 		case V_CMP_PKIBODY_IR:
 			dbgmsg("sd", "CMP version is", ASN1_INTEGER_get(msg->header->pvno));
 
-#if 0
-			X509_NAME *name = msg->header->recipient->d.directoryName;
-			dbgmsg("sd", "num of entries in name", X509_NAME_entry_count(name));
-			char namebuf[1024]={0};
-			int n=X509_NAME_get_text_by_NID(name, 0, namebuf, sizeof(namebuf)-1);
-			dbgmsg("ssd", "name is:", namebuf, n);
-#endif
+			CMP_CTX *ctx = createContext();
 
-			X509_ALGOR *alg = msg->header->protectionAlg;
-			dbgmsg("sd", "alg:", alg);
+			/* verify protection */
+			/* TODO store user data on disk etc etc etc */
 
-			const unsigned char *p = msg->header->senderKID->data;
-			char b[1024];
-			sprintf(b, "%02x %02x %02x %02x", p[0], p[1], p[2], p[3]); 
-			dbgmsg("ss", "senderKID", b);
+			if (!CMP_protection_verify(msg, msg->header->protectionAlg, 0, ctx->secretValue)) {
+				/* TODO return error code */
+				dbgmsg("s", "ERROR: protection not valid!");
+				break;
+			}
+			else dbgmsg("s", "protection validated successfully");
 
+			int numCertRequests = sk_CRMF_CERTREQMSG_num(msg->body->value.ir);
+			dbgmsg("sd", "number of cert requests:", numCertRequests);
+
+
+			/* TODO handle multiple CERTREQMSGS? */
+			// CRMF_CERTREQMSG *crm = sk_CRMF_CERTREQMSG_pop(msg->body->value.ir);
+			// int reqId = ASN1_INTEGER_get(crm->certReq->certReqId);
+
+
+			CMP_PKIMESSAGE *resp = CMP_ip_new(srv, ctx);
+
+			dbgmsg("s", "attempting to encode message");
+			unsigned char *derBuf = 0;
+			int derLen = i2d_CMP_PKIMESSAGE( resp, &derBuf);
+			dbgmsg("sd", "message encoded, sending... len=", derLen);
+			http_chunk_append_mem(srv, con, (const char*)derBuf, derLen+1);
+
+			resp = 0;
+			dbgmsg("s", "verifying protection");
+			d2i_CMP_PKIMESSAGE(&resp, (const unsigned char**)&derBuf, derLen);
+			// if (CMP_protection_verify(resp, resp->header->protectionAlg, 0, ctx->secretValue))
+				// dbgmsg("s", "protection is valid");
+			// else
+				// dbgmsg("s", "protection is NOT valid");
+
+			log_cmperrors();
+
+			result = 1;
+
+			// CMP_PKIMESSAGE_free(resp);
 			break;
 
 		default:
@@ -246,7 +375,7 @@ int handleMessage(server *srv, CMP_PKIMESSAGE *msg)
 			break;
 	}
 
-	return 0;
+	return result;
 }
 
 URIHANDLER_FUNC(mod_cmpsrv_uri_handler) {
@@ -297,7 +426,7 @@ URIHANDLER_FUNC(mod_cmpsrv_uri_handler) {
 	}
 
 	/* handle the received PKI message */
-	handleMessage(srv, pkiMsg);
+	handleMessage(srv, con, pkiMsg);
 
 	// con->http_status = 200;
 	// con->mode = DIRECT;
