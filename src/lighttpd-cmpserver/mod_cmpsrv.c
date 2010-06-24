@@ -4,7 +4,7 @@
 #include "log.h"
 #include "buffer.h"
 #include "http_chunk.h"
-#include "chunk.h"
+#include "response.h"
 
 #include "plugin.h"
 
@@ -37,13 +37,15 @@ void log_cmperrors(void) { return; }
 /* plugin config for all request/connections */
 
 typedef struct {
-	array *match;
+	buffer *b;
 } plugin_config;
 
 typedef struct {
 	PLUGIN_DATA;
 
-	buffer *match_buf;
+	buffer *userID;
+	buffer *secretKey;
+	buffer *certPath;
 
 	plugin_config **config_storage;
 
@@ -75,7 +77,9 @@ INIT_FUNC(mod_cmpsrv_init) {
 
 	p = calloc(1, sizeof(*p));
 
-	p->match_buf = buffer_init();
+	p->userID = buffer_init();
+	p->secretKey = buffer_init();
+	p->certPath = buffer_init();
 
 	return p;
 }
@@ -96,14 +100,15 @@ FREE_FUNC(mod_cmpsrv_free) {
 
 			if (!s) continue;
 
-			array_free(s->match);
-
 			free(s);
 		}
+
 		free(p->config_storage);
 	}
 
-	buffer_free(p->match_buf);
+	buffer_free(p->userID);
+	buffer_free(p->secretKey);
+	buffer_free(p->certPath);
 
 	free(p);
 
@@ -117,7 +122,9 @@ SETDEFAULTS_FUNC(mod_cmpsrv_set_defaults) {
 	size_t i = 0;
 
 	config_values_t cv[] = {
-		{ "cmpsrv.array",             NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION },       /* 0 */
+		{ "cmpsrv.userID",              NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },       /* 0 */
+		{ "cmpsrv.secretKey",           NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },       /* 1 */
+		{ "cmpsrv.certPath",            NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },       /* 2 */		
 		{ NULL,                         NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
 
@@ -129,9 +136,11 @@ SETDEFAULTS_FUNC(mod_cmpsrv_set_defaults) {
 		plugin_config *s;
 
 		s = calloc(1, sizeof(plugin_config));
-		s->match    = array_init();
+		// s->match    = array_init();
 
-		cv[0].destination = s->match;
+		cv[0].destination = p->userID;
+		cv[1].destination = p->secretKey;
+		cv[2].destination = p->certPath;
 
 		p->config_storage[i] = s;
 
@@ -146,10 +155,10 @@ SETDEFAULTS_FUNC(mod_cmpsrv_set_defaults) {
 #define PATCH(x) \
 	p->conf.x = s->x;
 static int mod_cmpsrv_patch_connection(server *srv, connection *con, plugin_data *p) {
-	size_t i, j;
+	size_t i; //, j;
 	plugin_config *s = p->config_storage[0];
 
-	PATCH(match);
+	// PATCH();
 	
 	/* skip the first, the global context */
 	for (i = 1; i < srv->config_context->used; i++) {
@@ -160,13 +169,13 @@ static int mod_cmpsrv_patch_connection(server *srv, connection *con, plugin_data
 		if (!config_check_cond(srv, con, dc)) continue;
 
 		/* merge config */
-		for (j = 0; j < dc->value->used; j++) {
-			data_unset *du = dc->value->data[j];
+		/* for (j = 0; j < dc->value->used; j++) { */
+		/* 	data_unset *du = dc->value->data[j]; */
 			
-			if (buffer_is_equal_string(du->key, CONST_STR_LEN("cmpsrv.array"))) {
-				PATCH(match);
-			}
-		}
+		/* 	if (buffer_is_equal_string(du->key, CONST_STR_LEN("cmpsrv.array"))) { */
+		/* 		PATCH(match); */
+		/* 	} */
+		/* } */
 	}
 
 	return 0;
@@ -217,15 +226,31 @@ char *V_CMP_TABLE[] = {
 	(((unsigned int) (type) < sizeof(V_CMP_TABLE)/sizeof(V_CMP_TABLE[0])) \
 	 ? V_CMP_TABLE[(unsigned int)(type)] : "unknown")
 
-CMP_CTX *createContext()
+size_t str2hex(char *str, unsigned char *out, size_t outlen)
+{
+	size_t len = strlen(str), j = 0;
+	if (len > outlen*2) return 0;
+	for (size_t i = 0; i < len; i += 2, j++) {
+		char *junk, byte[3] = {str[i], str[i+1], 0};
+		out[j] = strtoul(byte, &junk, 16);
+	}
+	return j;
+}
+
+CMP_CTX *createContext(plugin_data *p)
 {
 	CMP_CTX *ctx = CMP_CTX_create();
+	unsigned char referenceVal[32], secretVal[32];
+	size_t refLen, secLen;
+
+	refLen = str2hex(p->userID->ptr, referenceVal, sizeof(referenceVal));
+	secLen = str2hex(p->secretKey->ptr, secretVal, sizeof(secretVal));
 
 	// CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
 	// CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
 	// CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
-	CMP_CTX_set1_referenceValue( ctx, (unsigned char*)"\x3F\xC5\xDD\x75\xF7\xDA\x47\x5D\x80", 9);
-	CMP_CTX_set1_secretValue( ctx, (unsigned char*)"\xFC\x2B\x12\x07\xDF\x2C\xFA\xAB\x04\x97\x7C\xA0", 12);
+	CMP_CTX_set1_referenceValue( ctx, referenceVal, refLen);
+	CMP_CTX_set1_secretValue( ctx, secretVal, secLen);
 	// CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
 	// CMP_CTX_set1_caCert( cmp_ctx, caCert);
 	// CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
@@ -256,6 +281,8 @@ X509 *HELP_read_der_cert( const char *file) {
 
 /* ############################################################################ */
 /* ############################################################################ */
+/* TODO: this function will be moved to the CMP library.
+ * it's here only for testing purposes.*/
 CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx) {
 	UNUSED(ctx);
 
@@ -314,7 +341,8 @@ CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx) {
 	ASN1_INTEGER_set(cr->status->status, CMP_PKISTATUS_accepted);
 
 	cr->certifiedKeyPair = CMP_CERTIFIEDKEYPAIR_new();
-	X509 *cert = HELP_read_der_cert("/home/miikka/code/cmpforopenssl/certs/cl_cert.der");
+	// X509 *cert = HELP_read_der_cert("/home/miikka/code/cmpforopenssl/certs/cl_cert.der");
+	X509 *cert = HELP_read_der_cert("/home/miikka/light/cert.der");
 	cr->certifiedKeyPair->certOrEncCert->type = CMP_CERTORENCCERT_CERTIFICATE;
 	cr->certifiedKeyPair->certOrEncCert->value.certificate = X509_dup(cert);
 
@@ -333,15 +361,26 @@ err:
 	return NULL;
 }
 
-
-int handleMessage(server *srv, connection *con, CMP_PKIMESSAGE *msg)
+void sendResponse(server *srv, connection *con, CMP_PKIMESSAGE *msg)
 {
-	UNUSED(srv);
-	int result = 0;
-	CMP_CTX *ctx = createContext();
-	CMP_PKIMESSAGE *response = 0;
 	unsigned char *derBuf = 0;
 	size_t derLen = 0;
+
+	dbgmsg("s", "attempting to encode message");
+	derLen = i2d_CMP_PKIMESSAGE( msg, &derBuf);
+	dbgmsg("sd", "message encoded, sending... len=", derLen);
+
+	response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN(CMP_CONTENT_TYPE));
+	http_chunk_append_mem(srv, con, (const char*)derBuf, derLen+1);
+
+	free(derBuf);
+}
+
+int handleMessage(server *srv, connection *con, CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
+{
+	CMP_PKIMESSAGE *resp = 0;
+	UNUSED(srv);
+	int result = 0;
 
 	int bodyType = CMP_PKIMESSAGE_get_bodytype(msg);
 	dbgmsg("ss", "got message", MSG_TYPE_STR(bodyType));
@@ -368,29 +407,13 @@ int handleMessage(server *srv, connection *con, CMP_PKIMESSAGE *msg)
 			// int reqId = ASN1_INTEGER_get(crm->certReq->certReqId);
 
 
-			response = CMP_ip_new(ctx);
-
-			dbgmsg("s", "attempting to encode message");
-			derLen = i2d_CMP_PKIMESSAGE( response, &derBuf);
-			dbgmsg("sd", "message encoded, sending... len=", derLen);
-
-
-			response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN(CMP_CONTENT_TYPE));
-			http_chunk_append_mem(srv, con, (const char*)derBuf, derLen+1);
-
-			// response = 0;
-			// dbgmsg("s", "verifying protection");
-			// d2i_CMP_PKIMESSAGE(&response, (const unsigned char**)&derBuf, derLen);
-			// if (CMP_protection_verify(response, response->header->protectionAlg, 0, ctx->secretValue))
-				// dbgmsg("s", "protection is valid");
-			// else
-				// dbgmsg("s", "protection is NOT valid");
+			resp= CMP_ip_new(ctx);
+			sendResponse(srv, con, resp);
+			result = 1;
 
 			log_cmperrors();
 
-			result = 1;
-
-			// CMP_PKIMESSAGE_free(response);
+			CMP_PKIMESSAGE_free(resp);
 			break;
 
 		case V_CMP_PKIBODY_CERTCONF:
@@ -401,23 +424,17 @@ int handleMessage(server *srv, connection *con, CMP_PKIMESSAGE *msg)
 			}
 			else dbgmsg("s", "protection validated successfully");
 
-			response = CMP_PKIMESSAGE_new();
-			CMP_PKIHEADER_set1(response->header, ctx);
-			CMP_PKIMESSAGE_set_bodytype(response, V_CMP_PKIBODY_PKICONF);
+			resp = CMP_PKIMESSAGE_new();
+			CMP_PKIHEADER_set1(resp->header, ctx);
+			CMP_PKIMESSAGE_set_bodytype(resp, V_CMP_PKIBODY_PKICONF);
 			ASN1_TYPE *t = ASN1_TYPE_new();
 			t->type = 1; // boolean
 			t->value.boolean = 0;
-			response->body->value.pkiconf = t;
+			resp->body->value.pkiconf = t;
 
-			dbgmsg("s", "protecting");
-			response->protection = CMP_protection_new(response, NULL, NULL, ctx->secretValue);
+			resp->protection = CMP_protection_new(resp, NULL, NULL, ctx->secretValue);
 
-			dbgmsg("s", "encoding");
-			derLen = i2d_CMP_PKIMESSAGE( response, &derBuf);
-			dbgmsg("sd", "message encoded, sending... len=", derLen);
-
-			response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN(CMP_CONTENT_TYPE));
-			http_chunk_append_mem(srv, con, (const char*)derBuf, derLen+1);
+			sendResponse(srv, con, resp);
 			result = 1;
 
 			log_cmperrors();
@@ -429,6 +446,13 @@ int handleMessage(server *srv, connection *con, CMP_PKIMESSAGE *msg)
 	}
 
 	return result;
+}
+
+CMP_PKIMESSAGE *decodeMessage(buffer *msg)
+{
+	const unsigned char *derMsg = (unsigned char *) msg->ptr;
+	size_t derLen = msg->used-1;
+	return d2i_CMP_PKIMESSAGE(NULL, &derMsg, derLen);
 }
 
 URIHANDLER_FUNC(mod_cmpsrv_uri_handler) {
@@ -468,30 +492,22 @@ URIHANDLER_FUNC(mod_cmpsrv_uri_handler) {
 
 	dbgmsg("s", "decoding DER message ...");
 
-	const unsigned char *derMsg = (unsigned char *) msg->ptr;
-	size_t derLen = con->request.content_length;
-	CMP_PKIMESSAGE *pkiMsg = 0;
-
-	if (!d2i_CMP_PKIMESSAGE(&pkiMsg, &derMsg, derLen )) {
+	CMP_PKIMESSAGE *pkiMsg = decodeMessage(msg);
+	if (!pkiMsg) {
 		dbgmsg("s", "ERROR decoding message");
 		log_cmperrors();
 		return HANDLER_GO_ON;
 	}
 
 	/* handle the received PKI message */
-	handleMessage(srv, con, pkiMsg);
+	CMP_CTX *ctx = createContext(p);
+	handleMessage(srv, con, ctx, pkiMsg);
 
 	// con->http_status = 200;
 	// con->mode = DIRECT;
-
 	con->file_finished = 1;
 
-	/* char msg[] = "TEST123123123"; */
-	/* http_chunk_append_mem(srv, con, msg, strlen(msg)+1); */
 	return HANDLER_FINISHED;
-
-	/* not found */
-	return HANDLER_GO_ON;
 }
 
 /* this function is called at dlopen() time and inits the callbacks */
