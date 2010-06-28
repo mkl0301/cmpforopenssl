@@ -111,6 +111,7 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_CERTIFICATE_NOT_FOUND) ,"certificate not found"},
 {ERR_REASON(CMP_R_CMPERROR)              ,"cmperror"},
 {ERR_REASON(CMP_R_ERROR_PARSING_PKISTATUS),"error parsing pkistatus"},
+{ERR_REASON(CMP_R_ERROR_RECEIVING_MESSAGE),"error receiving message"},
 {ERR_REASON(CMP_R_ERROR_VALIDATING_PROTECTION),"error validating protection"},
 {ERR_REASON(CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM),"failed to determine protection algorithm"},
 {ERR_REASON(CMP_R_INVALID_CONTEXT)       ,"invalid context"},

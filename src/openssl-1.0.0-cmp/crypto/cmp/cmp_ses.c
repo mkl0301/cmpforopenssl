@@ -112,26 +112,33 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (!ctx) goto err;
 	if (!ctx->caCert) goto err;
 	if (!ctx->referenceValue) goto err;
-	if (!ctx->secretValue) goto err;
+	if (!ctx->secretValue && !ctx->extCert) goto err;
 	if (!ctx->pkey) goto err;
 
 	/* this can not have been set here */
 	if (ctx->clCert) goto err;
 
 	/* set the protection Algor which will be used during the whole session */
-	if ( !CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC)) goto err;
+	if (ctx->extCert) {
+		if (!CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG)) goto err;
+	}
+	else if (!CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC)) goto err;
 
 	/* create Initialization Request - ir */
 	if (! (ir = CMP_ir_new(ctx))) goto err;
 
 	CMP_printf("INFO: Sending Initialization Request\n");
-	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, ir))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort, ctx->serverPath, ctx->compatibility, ir)) {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_RECEIVING_MESSAGE);
 		goto err;
+	}
 
 	/* receive Initialization Response - ip */
 	CMP_printf("INFO: Attempting to receive IP\n");
-	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &ip, ctx->compatibility))
+	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &ip, ctx->compatibility)) {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_RECEIVING_MESSAGE);
 		goto err;
+	}
 
 	if (CMP_protection_verify( ip, ctx->protectionAlgor, NULL, ctx->secretValue))
 		CMP_printf( "SUCCESS: validating protection of incoming message\n");
@@ -169,6 +176,7 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 			goto err;
 			break;
 		default:
+			CMP_printf("ERROR: unknown pkistatus %d\n", CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0));
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
 			goto err;
 			break;

@@ -556,6 +556,8 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 	/* in case there is no OLD client cert, the subject name is not set */
 	if( ctx->clCert) {
 		if( !CMP_PKIHEADER_set1_sender( hdr, X509_get_subject_name( (X509*) ctx->clCert))) goto err;
+	} else if ( ctx->extCert) {
+		if( !CMP_PKIHEADER_set1_sender( hdr, X509_get_subject_name( (X509*) ctx->extCert))) goto err;
 	} else {
 		if( !CMP_PKIHEADER_set1_sender( hdr, NULL)) goto err;
 	}
@@ -683,7 +685,7 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 	switch (usedAlgorNid) {
 		case NID_sha1WithRSAEncryption:
 		case NID_dsaWithSHA1:
-
+			CMP_printf("INFO: protecting with pkey\n");
 			maxMacLen = EVP_PKEY_size( (EVP_PKEY*) pkey);
 			mac = OPENSSL_malloc(maxMacLen);
 
@@ -698,6 +700,7 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 		case NID_id_PasswordBasedMAC:
 			/* there is no pmb set in this message */
 			if (!ppval) return NULL;
+			CMP_printf("INFO: protecting with PBMAC\n");
 
 			pbmStr = (ASN1_STRING *)ppval;
 			pbmStrUchar = (unsigned char *)pbmStr->data;

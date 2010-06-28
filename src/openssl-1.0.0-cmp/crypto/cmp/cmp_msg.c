@@ -173,9 +173,10 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	}
 
 	if (ctx->clCert)
-	{
 		subject = X509_get_subject_name(ctx->clCert);
-	}
+	else if (ctx->extCert)
+		subject = X509_get_subject_name(ctx->extCert);
+
 
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility))) goto err;
@@ -183,10 +184,18 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	if( !(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.ir, certReq0);
 
+	/* if we have external cert, try to initialize with that. */
+	if (ctx->extCert) {
+		CMP_printf("msg->extraCerts = %x\n", msg->extraCerts);
+		msg->extraCerts = sk_X509_new_null();
+		sk_X509_push(msg->extraCerts, ctx->extCert);
+	}
+
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
 	/* TODO catch errors */
-	if( !(msg->protection = CMP_protection_new( msg, NULL, NULL, ctx->secretValue))) goto err;
+	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
+	// if( !(msg->protection = CMP_protection_new( msg, NULL, NULL, ctx->secretValue))) goto err;
 
 	/* XXX - should this be done somewhere else? */
 	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);

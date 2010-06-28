@@ -121,6 +121,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 } ASN1_SEQUENCE_END(CMP_CTX)
 IMPLEMENT_ASN1_FUNCTIONS(CMP_CTX)
 
+;
 /* ################################################################ */
 /* ################################################################ */
 int CMP_CTX_init( CMP_CTX *ctx) {
@@ -245,6 +246,28 @@ int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert) {
 	}
 
 	if (!(ctx->clCert = X509_dup( (X509*)cert))) goto err;
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_CLCERT, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_set1_extCert( CMP_CTX *ctx, const X509 *cert) {
+	if (!ctx) goto err;
+
+	if (!cert) {
+		ctx->extCert = NULL;
+		return 1;
+	}
+
+	if (ctx->clCert) {
+		X509_free(ctx->extCert);
+		ctx->extCert = NULL;
+	}
+
+	if (!(ctx->extCert = X509_dup( (X509*)cert))) goto err;
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_CLCERT, CMP_R_CMPERROR);
