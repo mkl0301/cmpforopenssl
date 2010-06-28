@@ -105,6 +105,7 @@ static char* opt_httpProxyName=NULL;
 int opt_httpProxyPort=0;
 static char* opt_caCertFile=NULL;
 static char* opt_clCertFile=NULL;
+static char* opt_extCertFile=NULL;
 static char* opt_newClCertFile=NULL;
 static char* opt_clKeyFile=NULL;
 static char* opt_newClKeyFile=NULL;
@@ -154,6 +155,8 @@ void printUsage( const char* cmdName) {
   printf("The following OPTIONS have to be set when needed by CMD:\n");
   printf(" --user USER           the user (reference) for an IR message\n");
   printf(" --password PASSWORD   the password (secret) for an IR message\n");
+  printf(" --extcert FILE        location of another certificate to be used\n");
+  printf("                       for initialization (if this is set, password is ignored)\n");
   printf(" --hex                 user and password are HEX, not ASCII\n");
   printf(" --clcert FILE         location of the client's certificate\n");
   printf("                       this is overwritten at IR\n");
@@ -182,11 +185,24 @@ void doIr() {
   EVP_PKEY *initialPkey=NULL;
   BIO *cbio=NULL;
   X509 *initialClCert=NULL;
+  X509 *extCert=NULL;
   CMP_CTX *cmp_ctx=NULL;
 
   /* generate RSA key */
-  initialPkey = HELP_generateRSAKey();
-  HELP_savePrivKey(initialPkey, opt_clKeyFile);
+  if (opt_extCertFile) {
+	  if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile))) {
+		  printf("FATAL: could not read private client key!\n");
+		  exit(1);
+	  }
+  } else {
+	  initialPkey = HELP_generateRSAKey();
+	  HELP_savePrivKey(initialPkey, opt_clKeyFile);
+  }
+
+  if (opt_extCertFile && !(extCert = HELP_read_der_cert(opt_extCertFile))) {
+	  printf("FATAL: could not read extra certificate!\n");
+	  exit(1);
+  }
 
   /* XXX this is not freed yet */
   cmp_ctx = CMP_CTX_create();
@@ -198,6 +214,7 @@ void doIr() {
   CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
+  CMP_CTX_set1_extCert( cmp_ctx, extCert);
 
   /* CL does not support this, it just ignores it.
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
@@ -215,6 +232,8 @@ void doIr() {
     printf( "SUCCESS: received initial Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
   } else {
     printf( "ERROR: received no initial Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
+    ERR_load_crypto_strings();
+    ERR_print_errors_fp(stderr);
     exit(1);
   }
   if(!HELP_write_der_cert(initialClCert, opt_clCertFile)) {
@@ -402,6 +421,7 @@ void parseCLA( int argc, char **argv) {
     {"kur",      no_argument,          0, 'd'},
     {"user",     required_argument,    0, 'e'},
     {"password", required_argument,    0, 'f'},
+    {"extcert",  required_argument,    0, 'x'},
     {"cacert",   required_argument,    0, 'g'},
     {"clcert",   required_argument,    0, 'h'},
     {"help",     no_argument,          0, 'i'},
@@ -422,7 +442,7 @@ void parseCLA( int argc, char **argv) {
 
   while (1)
   {
-    c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqrs", long_options, &option_index);
+    c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqrsx:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -504,6 +524,10 @@ void parseCLA( int argc, char **argv) {
       case 'i':
         printUsage( argv[0]);
         break;
+      case 'x':
+        opt_extCertFile = (char*) malloc(strlen(optarg)+1);
+        strcpy(opt_extCertFile, optarg);
+        break;
       case 'j':
         opt_clKeyFile = (char*) malloc(strlen(optarg)+1);
         strcpy(opt_clKeyFile, optarg);
@@ -574,10 +598,11 @@ void parseCLA( int argc, char **argv) {
   }
 
   if( opt_doIr) {
-    if (!(opt_user && opt_password && opt_clCertFile && opt_clKeyFile)) {
-      printf("ERROR: setting user, password, cacert, clcert and key is mandatory for IR\n\n");
+    if (!(opt_user && (opt_password || opt_extCertFile) && opt_clCertFile && opt_clKeyFile)) {
+      printf("ERROR: setting user, password/extcert, cacert, clcert and key is mandatory for IR\n\n");
       printUsage( argv[0]);
     }
+    if (opt_extCertFile) opt_password = "";
   }
 
   if( opt_doCr) {
