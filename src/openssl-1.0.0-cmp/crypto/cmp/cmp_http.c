@@ -67,6 +67,7 @@
 /* =========================== CHANGE LOG =============================
  * 2007 - Martin Peylo - Initial Creation
  * 6/10/2010 - Martin Peylo - fixed potential harmful sscanf conversion in CMP_PKIMESSAGE_hhtp_bio_recv()
+ * 6/29/2010 - Martin Peylo - fixed wrong variable type of recvLen
  */
 
 #include <openssl/asn1.h>
@@ -103,7 +104,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 	unsigned char instaHeader[7] ;
 
 	/* for receiving the INSTA continue message... */
-	size_t recvLen=0;
+	int recvLen=0;
 	char recvBuf[101];
 	int respCode;
 
@@ -237,7 +238,7 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
 
   /* TODO: it must be checked if size_t is good for the format conversions in
    * sscanf() etc - is that unsigned long everywhere? */
-	size_t recvLen=0;
+	int recvLen=0;
 	size_t totalMsgLen=0;
 	size_t contentLen=0;
 	size_t totalRecvdLen=0;

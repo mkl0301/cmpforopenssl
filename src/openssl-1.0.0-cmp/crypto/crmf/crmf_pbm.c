@@ -66,6 +66,7 @@
 
 /* =========================== CHANGE LOG =============================
  * 2007 - Martin Peylo - Initial Creation
+ * 06/29/2010 - Martin Peylo - fixed unlikely NULL-dereference in error case in CRMF_passwordBasedMac_new 
  */
 
 #include <openssl/asn1.h>
@@ -225,6 +226,6 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 	return 1;
 err:
 	/* XXX this is also freed if it was something in it before... */
-	if( *mac) OPENSSL_free(*mac);
+	if( mac && *mac) OPENSSL_free(*mac);
 	return 0;
 }
