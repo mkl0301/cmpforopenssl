@@ -1,0 +1,147 @@
+=pod
+
+=head1 NAME
+ CMP_CTX_create,
+ CMP_CTX_set1_referenceValue,
+ CMP_CTX_set1_secretValue,
+ CMP_CTX_set1_caCert,
+ CMP_CTX_set1_clCert,
+ CMP_CTX_set1_newClCert,
+ CMP_CTX_set0_pkey,
+ CMP_CTX_set0_newPkey,
+ CMP_CTX_set1_transactionID,
+ CMP_CTX_set1_senderNonce,
+ CMP_CTX_set1_recipNonce,
+ CMP_CTX_set1_protectionAlgor,
+ CMP_CTX_set_protectionAlgor,
+ CMP_CTX_set_compatibility,
+ CMP_CTX_set1_serverName,
+ CMP_CTX_set_option
+
+=head1 SYNOPSIS
+
+ #include <openssl/cmp.h>
+
+ CMP_CTX *CMP_CTX_create();
+
+ int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t len);
+ int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len);
+ int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert);
+ int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
+ int CMP_CTX_set1_extCert( CMP_CTX *ctx, const X509 *cert);
+ int CMP_CTX_set1_newClCert( CMP_CTX *ctx, const X509 *cert);
+ int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
+ int CMP_CTX_set0_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
+ int CMP_CTX_set1_transactionID( CMP_CTX *ctx, const ASN1_OCTET_STRING *id);
+ int CMP_CTX_set1_senderNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
+ int CMP_CTX_set1_recipNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
+ int CMP_CTX_set1_protectionAlgor( CMP_CTX *ctx, const X509_ALGOR *algor);
+ int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
+
+ #define CMP_ALG_PBMAC 1
+ #define CMP_ALG_SIG   2
+ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algId);
+
+ #define CMP_COMPAT_RFC		1
+ #define CMP_COMPAT_CRYPTLIB	2
+ #define CMP_COMPAT_INSTA	3
+ #define CMP_COMPAT_INSTA_3_3	4
+ int CMP_CTX_set_compatibility( CMP_CTX *ctx, const int mode);
+
+ #define CMP_CTX_OPT_UNSET           0
+ #define CMP_CTX_OPT_SET             1
+ #define CMP_CTX_OPT_IMPLICITCONFIRM 1
+ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
+
+=head1 DESCRIPTION
+
+This is the context API for using CMP (Certificate Management Protocol) with OpenSSL.
+
+CMP_CTX_create() allocates and initialized an CMP_CTX structure.
+
+CMP_CTX_set1_referenceValue() sets the given referenceValue in the given CMP_CTX structure.
+
+CMP_CTX_set1_secretValue() sets the given secretValue in the given CMP_CTX structure.
+
+CMP_CTX_set1_caCert() sets the given CA Certificate in the given CMP_CTX structure.
+
+CMP_CTX_set1_clCert() sets the given Client Certificate in the given CMP_CTX structure.
+
+CMP_CTX_set1_extCert() sets the given external certificate (to be used for in-band initialization), in the given CMP_CTX structure.
+
+CMP_CTX_set1_newClCert() sets the given (newly obtained) Client Certificate in the given CMP_CTX structure.
+
+CMP_CTX_set0_pkey() sets the given EVP_PKEY structure, holding the private and public keys, belonging to the Client Certificate, in the given CMP_CTX structure.
+
+CMP_CTX_set0_newPkey() sets the given EVP_PKEY structure, holding the private and public keys, which shall be certified, in the given CMP_CTX structure.
+
+CMP_CTX_set1_transactionID() sets the given transaction ID in the given CMP_CTX structure.
+
+CMP_CTX_set1_senderNonce() sets the given sender nonce in the given CMP_CTX structure.
+
+CMP_CTX_set1_recipNonce() sets the given recip nonce  in the given CMP_CTX structure.
+
+CMP_CTX_set1_protectionAlgor() sets the protection algorithm, which shall be used for the CMP conversation, in the given CMP_CTX structure.
+
+CMP_CTX_set1_serverName() sets the given server Address (as IP or name) in the given CMP_CTX structure.
+
+CMP_CTX_set_protectionAlgor() sets the given definition (CMP_ALG_PBMAG or CMP_ALG_SIG) of the algorithm to use in the given CMP_CTX structure.
+
+CMP_CTX_set_compatibility() sets the given compatibility in the given CMP_CTX structure. This is needed since the CMP RFC can be interpreted in different ways so certain implementations may react different than others. Available Options are CMP_COMPAT_RFC for strict RFC conformace, CMP_COMPAT_CRYPTLIB for Cryptlib adaption, CMP_COMPAT_INSTA for Insta Certifier version < 3.3 adaption and CMP_COMPAT_INSTA_3_3 for Insta Certifier version => 3.3 adaption.
+
+CMP_CTX_set_option() sets the given values to the options (e.g. CMP_CTX_OPT_IMPLICITCONFIRM) in the given CMP_CTX structure. The values can be CMP_CTX_OPT_UNSET or CMP_CTX_OPT_SET. Options are always set to UNSET when the CMP_CTX structure is initialized.
+
+=head1 NOTES
+
+CMP is defined in RFC 4210 (and CRMF in RFC 4211).
+
+The implementaion of CMP for OpenSSL is still work in progress. The API might change every release!
+
+=head1 RETURN VALUES
+
+CMP_CTX_create() returns a pointer to an initialized CMP_CTX structure.
+
+All other functions return 0 on error, 1 on success.
+
+=head1 EXAMPLE
+
+The following code does an Initial Request with a Cryptlib CA:
+
+	cmp_ctx = CMP_CTX_create();
+	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+	CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
+	CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
+	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
+	CMP_CTX_set1_caCert( cmp_ctx, caCert);
+	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
+
+	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
+
+	initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
+	BIO_free(cbio);
+
+
+The following code does an Key Update Request with an Insta Certifier CA:
+
+	cmp_ctx = CMP_CTX_create();
+	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
+	CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
+	CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
+	CMP_CTX_set1_caCert( cmp_ctx, caCert);
+	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_INSTA);
+
+	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
+
+	updatedClCert = CMP_doKeyUpdateRequestSeq( cbio, cmp_ctx);
+	BIO_free(cbio);
+
+=head1 TODO
+
+A lot!
+
+A function to free a CMP_CTX structure.
+
+=head1 SEE ALSO
+
+CMP_sessions, CMP_http
