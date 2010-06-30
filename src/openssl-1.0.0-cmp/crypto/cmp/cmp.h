@@ -1130,6 +1130,8 @@ typedef struct cmp_ctx_st
 	/* *new* CLIENT certificate received from the CA */
 	/* XXX this should be a stack since there could be more than one */
 	X509                 *newClCert;
+	/* certificate to be used for initialization with another CA */
+	X509                 *extCert;
 	/* EVP_PKEY holding the *new* keys */
 	/* XXX this is not an ASN.1 type */
 	EVP_PKEY             *newPkey;
@@ -1307,6 +1309,7 @@ int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t 
 int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len);
 int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
+int CMP_CTX_set1_extCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_newClCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
 int CMP_CTX_set0_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
@@ -1392,6 +1395,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_R_CERTIFICATE_NOT_FOUND			 100
 #define CMP_R_CMPERROR					 101
 #define CMP_R_ERROR_PARSING_PKISTATUS			 102
+#define CMP_R_ERROR_RECEIVING_MESSAGE			 110
 #define CMP_R_ERROR_VALIDATING_PROTECTION		 103
 #define CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM	 104
 #define CMP_R_INVALID_CONTEXT				 105
