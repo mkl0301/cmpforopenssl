@@ -10,6 +10,8 @@
 
  X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx);
  X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx);
+ X509 *CMP_doCertificateRequestSeq( BIO *cbio, CMP_CTX *ctx);
+ int CMP_doPKIInfoReqSeq( BIO *cbio, CMP_CTX *ctx);
 
 =head1 DESCRIPTION
 
@@ -19,11 +21,15 @@ CMP_doInitialRequestSeq() does the sequence which obtains an initial certificate
 
 CMP_doKeyUpdateRequestSeq() does the sequence which obains a certificate for an updatded key from the CA. An initialized BIO and a populated CMP_CTX structure have to be given as arguments.
 
+CMP_doCertificateRequestSeq() requests an additional certificate for an existing key from the CA. An initialized BIO and a populated CMP_CTX structure have to be given as arguments.
+
+CMP_doPKIInfoReqSeq() requests information about the current status of a CA.
+
 =head1 NOTES
 
 CMP is defined in RFC 4210 (and CRMF in RFC 4211).
 
-The implementaion of CMP for OpenSSL is still work in progress. The API might change every release!
+The implementation of CMP for OpenSSL is still work in progress. The API might change every release!
 
 =head1 RETURN VALUES
 
@@ -31,36 +37,7 @@ CMP_doInitialRequestSeq() and CMP_doKeyUpdateRequestSeq() return a pointer the n
 
 =head1 EXAMPLE
 
-The following code does an Initial Request:
-
-	cmp_ctx = CMP_CTX_create();
-	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
-	CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
-	CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
-	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
-	CMP_CTX_set1_caCert( cmp_ctx, caCert);
-	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
-
-	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
-
-	initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
-	BIO_free(cbio);
-
-
-The following code does an Key Update Request:
-
-	cmp_ctx = CMP_CTX_create();
-	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
-	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
-	CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
-	CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
-	CMP_CTX_set1_caCert( cmp_ctx, caCert);
-	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
-
-	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
-
-	updatedClCert = CMP_doKeyUpdateRequestSeq( cbio, cmp_ctx);
-	BIO_free(cbio);
+See CMP_CTX for examples on how to prepare the context for these functions.
 
 =head1 TODO
 
