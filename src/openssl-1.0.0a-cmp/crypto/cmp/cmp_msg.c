@@ -186,7 +186,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	/* if we have external cert, try to initialize with that. */
 	if (ctx->extCert) {
-		msg->extraCerts = sk_X509_new_null();
+		if( !(msg->extraCerts = sk_X509_new_null())) goto err;
 		sk_X509_push(msg->extraCerts, ctx->extCert);
 	}
 
@@ -202,7 +202,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 err:
 	CMPerr(CMP_F_CMP_IR_NEW, CMP_R_CMPERROR);
-	if (msg) CMP_PKIMESSAGE_free(msg); /* TODO: check if that also frees msg->body->value.ir msg->protection if it had been allocated */
+	if (msg) CMP_PKIMESSAGE_free(msg); /* TODO: verify if that really also frees msg->body->value.ir, msg->protection, msg->extraCerts if it had been allocated */
 	if (certReq0) CRMF_CERTREQMSG_free(certReq0);
 	return NULL;
 }

@@ -176,7 +176,7 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 			goto err;
 			break;
 		default:
-			CMP_printf("ERROR: unknown pkistatus %d\n", CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0));
+			CMP_printf("ERROR: unknown pkistatus %ld\n", CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0));
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
 			goto err;
 			break;
