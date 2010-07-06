@@ -414,9 +414,6 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 	if (!ctx) goto err;
 	if (!ctx->caCert) goto err;
 	if (!ctx->newClCert) goto err;
-  // TODO: verify the following
-	// To my understanding - either the pkey or ref/secret pair is enough
-	//	if ( (!ctx->pkey) || ((!ctx->referenceValue) && (!ctx->secretValue)) ) goto err;
 	if ( (!ctx->pkey) && ((!ctx->referenceValue) && (!ctx->secretValue)) ) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;

@@ -681,11 +681,16 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 	X509_ALGOR_get0( &algorOID, &pptype, &ppval, algor);
 	usedAlgorNid = OBJ_obj2nid(algorOID);
 
-	/* XXX this should be more general - it should be verified that the right key is there (DSA or RSA) */
+	/* TODO this should be more general - it should be verified that the right key is there (DSA or RSA) */
 	switch (usedAlgorNid) {
 		case NID_sha1WithRSAEncryption:
 		case NID_dsaWithSHA1:
 			CMP_printf("INFO: protecting with pkey\n");
+      if(!pkey) { /* in this case this must not be NULL, TODO: check this more generally*/
+        /* TODO: this should be done with an CMPerr */
+        CMP_printf("ERROR: pkey was NULL although it is supposed to be used for generating protection\n");
+        goto err;
+      }
 			maxMacLen = EVP_PKEY_size( (EVP_PKEY*) pkey);
 			mac = OPENSSL_malloc(maxMacLen);
 
