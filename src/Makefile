@@ -145,20 +145,6 @@ openssl_patch_1.0.0a:
 
 .PHONY: openssl_patch_1.0.0a
 
-openssl_patch_0.9.8g:
-	-mkdir -p patches
-	cd $(SRCDIR) && \
-	svn diff -r 26:BASE openssl-0.9.8g-cmp > patches/openssl-0.9.8.g_cmp.diff
-
-.PHONY: openssl_patch_0.9.8.g
-
-openssl_patch_0.9.8n:
-	-mkdir -p patches
-	cd $(SRCDIR) && \
-	svn diff -r 51:BASE openssl-0.9.8n-cmp > patches/openssl-0.9.8.n_cmp.diff
-
-.PHONY: openssl_patch_0.9.8.n
-
 ################################################################################
 # CURL
 ################################################################################
