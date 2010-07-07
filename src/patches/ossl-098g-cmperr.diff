@@ -1,0 +1,87 @@
+diff -Naur openssl-0.9.8g-old/crypto/err/err_all.c openssl-0.9.8g-new/crypto/err/err_all.c
+--- openssl-0.9.8g-old/crypto/err/err_all.c	2006-12-07 15:28:07.000000000 +0200
++++ openssl-0.9.8g-new/crypto/err/err_all.c	2010-07-07 10:25:31.457424002 +0300
+@@ -95,6 +95,9 @@
+ #include <openssl/ocsp.h>
+ #include <openssl/err.h>
+ 
++#include <openssl/cmp.h>
++#include <openssl/crmf.h>
++
+ void ERR_load_crypto_strings(void)
+ 	{
+ #ifndef OPENSSL_NO_ERR
+@@ -139,4 +142,10 @@
+ 	ERR_load_OCSP_strings();
+ 	ERR_load_UI_strings();
+ #endif
++
++#ifndef OPENSSL_NO_CMP
++	ERR_load_CMP_strings();
++	ERR_load_CRMF_strings();
++#endif
++
+ 	}
+diff -Naur openssl-0.9.8g-old/crypto/err/err.c openssl-0.9.8g-new/crypto/err/err.c
+--- openssl-0.9.8g-old/crypto/err/err.c	2006-06-14 11:51:39.000000000 +0300
++++ openssl-0.9.8g-new/crypto/err/err.c	2010-07-07 11:26:22.617220955 +0300
+@@ -149,6 +149,8 @@
+ {ERR_PACK(ERR_LIB_DSO,0,0)		,"DSO support routines"},
+ {ERR_PACK(ERR_LIB_ENGINE,0,0)		,"engine routines"},
+ {ERR_PACK(ERR_LIB_OCSP,0,0)		,"OCSP routines"},
++{ERR_PACK(ERR_LIB_CMP,0,0)		,"CMP routines"},
++{ERR_PACK(ERR_LIB_CRMF,0,0)		,"CRMF routines"},
+ {0,NULL},
+ 	};
+ 
+@@ -195,6 +197,8 @@
+ {ERR_R_DSO_LIB				,"DSO lib"},
+ {ERR_R_ENGINE_LIB			,"ENGINE lib"},
+ {ERR_R_OCSP_LIB				,"OCSP lib"},
++{ERR_R_CMP_LIB				,"CMP lib"},
++{ERR_R_CRMF_LIB				,"CRMF lib"},
+ 
+ {ERR_R_NESTED_ASN1_ERROR		,"nested asn1 error"},
+ {ERR_R_BAD_ASN1_OBJECT_HEADER		,"bad asn1 object header"},
+diff -Naur openssl-0.9.8g-old/crypto/err/err.h openssl-0.9.8g-new/crypto/err/err.h
+--- openssl-0.9.8g-old/crypto/err/err.h	2004-04-19 20:45:59.000000000 +0300
++++ openssl-0.9.8g-new/crypto/err/err.h	2010-07-07 11:27:34.471220962 +0300
+@@ -140,6 +140,8 @@
+ #define ERR_LIB_ECDSA		42
+ #define ERR_LIB_ECDH		43
+ #define ERR_LIB_STORE           44
++#define ERR_LIB_CMP		45
++#define ERR_LIB_CRMF		46
+ 
+ #define ERR_LIB_USER		128
+ 
+@@ -171,6 +173,8 @@
+ #define ECDSAerr(f,r)  ERR_PUT_error(ERR_LIB_ECDSA,(f),(r),__FILE__,__LINE__)
+ #define ECDHerr(f,r)  ERR_PUT_error(ERR_LIB_ECDH,(f),(r),__FILE__,__LINE__)
+ #define STOREerr(f,r) ERR_PUT_error(ERR_LIB_STORE,(f),(r),__FILE__,__LINE__)
++#define CMPerr(f,r) ERR_PUT_error(ERR_LIB_CMP,(f),(r),__FILE__,__LINE__)
++#define CRMFerr(f,r) ERR_PUT_error(ERR_LIB_CRMF,(f),(r),__FILE__,__LINE__)
+ 
+ /* Borland C seems too stupid to be able to shift and do longs in
+  * the pre-processor :-( */
+@@ -226,6 +230,8 @@
+ #define ERR_R_ECDSA_LIB ERR_LIB_ECDSA	 /* 42 */
+ #define ERR_R_ECDH_LIB  ERR_LIB_ECDH	 /* 43 */
+ #define ERR_R_STORE_LIB ERR_LIB_STORE    /* 44 */
++#define ERR_R_CMP_LIB	ERR_LIB_CMP      /* 45 */
++#define ERR_R_CRMF_LIB	ERR_LIB_CRMF     /* 46 */
+ 
+ #define ERR_R_NESTED_ASN1_ERROR			58
+ #define ERR_R_BAD_ASN1_OBJECT_HEADER		59
+diff -Naur openssl-0.9.8g-old/crypto/err/openssl.ec openssl-0.9.8g-new/crypto/err/openssl.ec
+--- openssl-0.9.8g-old/crypto/err/openssl.ec	2003-05-01 06:52:47.000000000 +0300
++++ openssl-0.9.8g-new/crypto/err/openssl.ec	2010-07-07 11:29:22.824221032 +0300
+@@ -31,6 +31,8 @@
+ L ECDSA		crypto/ecdsa/ecdsa.h		crypto/ecdsa/ecs_err.c
+ L ECDH		crypto/ecdh/ecdh.h		crypto/ecdh/ech_err.c
+ L STORE		crypto/store/store.h		crypto/store/str_err.c
++L CMP		crypto/cmp/cmp.h		crypto/cmp/cmp_err.c
++L CRMF		crypto/crmf/crmf.h		crypto/crmf/crmf_err.c
+ 
+ # additional header files to be scanned for function names
+ L NONE		crypto/x509/x509_vfy.h		NONE

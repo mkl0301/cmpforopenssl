@@ -1,0 +1,554 @@
+Index: openssl-0.9.8g-cmp/Makefile.org
+===================================================================
+--- openssl-0.9.8g-cmp/Makefile.org	(revision 26)
++++ openssl-0.9.8g-cmp/Makefile.org	(working copy)
+@@ -115,7 +115,7 @@
+ 	bn ec rsa dsa ecdsa dh ecdh dso engine \
+ 	buffer bio stack lhash rand err \
+ 	evp asn1 pem x509 x509v3 conf txt_db pkcs7 pkcs12 comp ocsp ui krb5 \
+-	store pqueue
++	store pqueue cmp crmf
+ # keep in mind that the above list is adjusted by ./Configure
+ # according to no-xxx arguments...
+ 
+Index: openssl-0.9.8g-cmp/Makefile
+===================================================================
+--- openssl-0.9.8g-cmp/Makefile	(revision 26)
++++ openssl-0.9.8g-cmp/Makefile	(working copy)
+@@ -113,11 +113,11 @@
+ SDIRS=  \
+ 	objects \
+ 	md2 md4 md5 sha hmac ripemd \
+-	des aes rc2 rc4 idea bf cast \
++	des aes rc2 rc4 bf cast \
+ 	bn ec rsa dsa ecdsa dh ecdh dso engine \
+ 	buffer bio stack lhash rand err \
+ 	evp asn1 pem x509 x509v3 conf txt_db pkcs7 pkcs12 comp ocsp ui krb5 \
+-	store pqueue
++	store pqueue cmp crmf
+ # keep in mind that the above list is adjusted by ./Configure
+ # according to no-xxx arguments...
+ 
+Index: openssl-0.9.8g-cmp/crypto/objects/obj_mac.h
+===================================================================
+--- openssl-0.9.8g-cmp/crypto/objects/obj_mac.h	(revision 26)
++++ openssl-0.9.8g-cmp/crypto/objects/obj_mac.h	(working copy)
+@@ -97,6 +97,16 @@
+ #define NID_identified_organization		676
+ #define OBJ_identified_organization		OBJ_iso,3L
+ 
++#define SN_hmac_md5		"HMAC-MD5"
++#define LN_hmac_md5		"hmac-md5"
++#define NID_hmac_md5		780
++#define OBJ_hmac_md5		OBJ_identified_organization,6L,1L,5L,5L,8L,1L,1L
++
++#define SN_hmac_sha1		"HMAC-SHA1"
++#define LN_hmac_sha1		"hmac-sha1"
++#define NID_hmac_sha1		781
++#define OBJ_hmac_sha1		OBJ_identified_organization,6L,1L,5L,5L,8L,1L,2L
++
+ #define SN_certicom_arc		"certicom-arc"
+ #define NID_certicom_arc		677
+ #define OBJ_certicom_arc		OBJ_identified_organization,132L
+@@ -498,6 +508,16 @@
+ #define NID_pbeWithMD5AndCast5_CBC		112
+ #define OBJ_pbeWithMD5AndCast5_CBC		OBJ_ISO_US,113533L,7L,66L,12L
+ 
++#define SN_id_PasswordBasedMAC		"id-PasswordBasedMAC"
++#define LN_id_PasswordBasedMAC		"password based MAC"
++#define NID_id_PasswordBasedMAC		782
++#define OBJ_id_PasswordBasedMAC		OBJ_ISO_US,113533L,7L,66L,13L
++
++#define SN_id_DHBasedMac		"id-DHBasedMac"
++#define LN_id_DHBasedMac		"Diffie-Hellman based MAC"
++#define NID_id_DHBasedMac		783
++#define OBJ_id_DHBasedMac		OBJ_ISO_US,113533L,7L,66L,30L
++
+ #define SN_rsadsi		"rsadsi"
+ #define LN_rsadsi		"RSA Data Security, Inc."
+ #define NID_rsadsi		1
+@@ -1075,10 +1095,30 @@
+ #define LN_md5_sha1		"md5-sha1"
+ #define NID_md5_sha1		114
+ 
++#define LN_hmacWithMD5		"hmacWithMD5"
++#define NID_hmacWithMD5		784
++#define OBJ_hmacWithMD5		OBJ_rsadsi,2L,6L
++
+ #define LN_hmacWithSHA1		"hmacWithSHA1"
+ #define NID_hmacWithSHA1		163
+ #define OBJ_hmacWithSHA1		OBJ_rsadsi,2L,7L
+ 
++#define LN_hmacWithSHA224		"hmacWithSHA224"
++#define NID_hmacWithSHA224		785
++#define OBJ_hmacWithSHA224		OBJ_rsadsi,2L,8L
++
++#define LN_hmacWithSHA256		"hmacWithSHA256"
++#define NID_hmacWithSHA256		786
++#define OBJ_hmacWithSHA256		OBJ_rsadsi,2L,9L
++
++#define LN_hmacWithSHA384		"hmacWithSHA384"
++#define NID_hmacWithSHA384		787
++#define OBJ_hmacWithSHA384		OBJ_rsadsi,2L,10L
++
++#define LN_hmacWithSHA512		"hmacWithSHA512"
++#define NID_hmacWithSHA512		788
++#define OBJ_hmacWithSHA512		OBJ_rsadsi,2L,11L
++
+ #define SN_rc2_cbc		"RC2-CBC"
+ #define LN_rc2_cbc		"rc2-cbc"
+ #define NID_rc2_cbc		37
+@@ -1513,6 +1553,10 @@
+ #define NID_id_it_origPKIMessage		312
+ #define OBJ_id_it_origPKIMessage		OBJ_id_it,15L
+ 
++#define SN_id_it_suppLangTags		"id-it-suppLangTags"
++#define NID_id_it_suppLangTags		789
++#define OBJ_id_it_suppLangTags		OBJ_id_it,16L
++
+ #define SN_id_regCtrl		"id-regCtrl"
+ #define NID_id_regCtrl		313
+ #define OBJ_id_regCtrl		OBJ_id_pkip,1L
+@@ -2453,6 +2497,16 @@
+ #define NID_sha224		675
+ #define OBJ_sha224		OBJ_nist_hashalgs,4L
+ 
++#define OBJ_dsa_with_sha2		OBJ_nistAlgorithms,3L
++
++#define SN_dsa_with_SHA224		"dsa_with_SHA224"
++#define NID_dsa_with_SHA224		790
++#define OBJ_dsa_with_SHA224		OBJ_dsa_with_sha2,1L
++
++#define SN_dsa_with_SHA256		"dsa_with_SHA256"
++#define NID_dsa_with_SHA256		791
++#define OBJ_dsa_with_SHA256		OBJ_dsa_with_sha2,2L
++
+ #define SN_hold_instruction_code		"holdInstructionCode"
+ #define LN_hold_instruction_code		"Hold Instruction Code"
+ #define NID_hold_instruction_code		430
+@@ -3431,3 +3485,7 @@
+ #define NID_seed_ofb128		778
+ #define OBJ_seed_ofb128		OBJ_kisa,1L,6L
+ 
++#define SN_hmac		"HMAC"
++#define LN_hmac		"hmac"
++#define NID_hmac		792
++
+Index: openssl-0.9.8g-cmp/crypto/objects/objects.txt
+===================================================================
+--- openssl-0.9.8g-cmp/crypto/objects/objects.txt	(revision 26)
++++ openssl-0.9.8g-cmp/crypto/objects/objects.txt	(working copy)
+@@ -11,6 +11,10 @@
+ 
+ iso 3			: identified-organization
+ 
++# HMAC OIDs
++identified-organization 6 1 5 5 8 1 1	: HMAC-MD5	: hmac-md5
++identified-organization 6 1 5 5 8 1 2	: HMAC-SHA1	: hmac-sha1
++
+ identified-organization 132	: certicom-arc
+ 
+ joint-iso-itu-t 23	: international-organizations	: International Organizations
+@@ -141,6 +145,10 @@
+ !Cname pbeWithMD5AndCast5-CBC
+ ISO-US 113533 7 66 12	:			: pbeWithMD5AndCast5CBC
+ 
++# Macs for CMP and CRMF
++ISO-US 113533 7 66 13	: id-PasswordBasedMAC	: password based MAC
++ISO-US 113533 7 66 30	: id-DHBasedMac		: Diffie-Hellman based MAC
++
+ ISO-US 113549		: rsadsi		: RSA Data Security, Inc.
+ 
+ rsadsi 1		: pkcs			: RSA Data Security, Inc. PKCS
+@@ -338,7 +346,15 @@
+ rsadsi 2 4		: MD4			: md4
+ rsadsi 2 5		: MD5			: md5
+ 			: MD5-SHA1		: md5-sha1
++rsadsi 2 6		:			: hmacWithMD5
+ rsadsi 2 7		:			: hmacWithSHA1
++
++# From RFC4231
++rsadsi 2 8		:			: hmacWithSHA224
++rsadsi 2 9		:			: hmacWithSHA256
++rsadsi 2 10		:			: hmacWithSHA384
++rsadsi 2 11		:			: hmacWithSHA512
++
+ rsadsi 3 2		: RC2-CBC		: rc2-cbc
+ 			: RC2-ECB		: rc2-ecb
+ !Cname rc2-cfb64
+@@ -484,6 +500,7 @@
+ id-it 13		: id-it-implicitConfirm
+ id-it 14		: id-it-confirmWaitTime
+ id-it 15		: id-it-origPKIMessage
++id-it 16		: id-it-suppLangTags
+ 
+ # CRMF registration
+ id-pkip 1		: id-regCtrl
+@@ -817,6 +834,11 @@
+ nist_hashalgs 3		: SHA512		: sha512
+ nist_hashalgs 4		: SHA224		: sha224
+ 
++# OIDs for dsa-with-sha224 and dsa-with-sha256
++!Alias dsa_with_sha2 nistAlgorithms 3
++dsa_with_sha2 1		: dsa_with_SHA224
++dsa_with_sha2 2		: dsa_with_SHA256
++
+ # Hold instruction CRL entry extension
+ !Cname hold-instruction-code
+ id-ce 23		: holdInstructionCode	: Hold Instruction Code
+@@ -1101,3 +1123,7 @@
+ kisa 1 5                : SEED-CFB      : seed-cfb
+ !Cname seed-ofb128
+ kisa 1 6                : SEED-OFB      : seed-ofb
++
++# There is no OID that just denotes "HMAC" oddly enough...
++
++			: HMAC				: hmac
+Index: openssl-0.9.8g-cmp/crypto/objects/obj_dat.h
+===================================================================
+--- openssl-0.9.8g-cmp/crypto/objects/obj_dat.h	(revision 26)
++++ openssl-0.9.8g-cmp/crypto/objects/obj_dat.h	(working copy)
+@@ -62,12 +62,12 @@
+  * [including the GNU Public Licence.]
+  */
+ 
+-#define NUM_NID 780
+-#define NUM_SN 773
+-#define NUM_LN 773
+-#define NUM_OBJ 729
++#define NUM_NID 793
++#define NUM_SN 786
++#define NUM_LN 786
++#define NUM_OBJ 741
+ 
+-static unsigned char lvalues[5154]={
++static unsigned char lvalues[5254]={
+ 0x00,                                        /* [  0] OBJ_undef */
+ 0x2A,0x86,0x48,0x86,0xF7,0x0D,               /* [  1] OBJ_rsadsi */
+ 0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,          /* [  7] OBJ_pkcs */
+@@ -797,6 +797,18 @@
+ 0x2A,0x83,0x1A,0x8C,0x9A,0x44,0x01,0x04,     /* [5129] OBJ_seed_cbc */
+ 0x2A,0x83,0x1A,0x8C,0x9A,0x44,0x01,0x06,     /* [5137] OBJ_seed_ofb128 */
+ 0x2A,0x83,0x1A,0x8C,0x9A,0x44,0x01,0x05,     /* [5145] OBJ_seed_cfb128 */
++0x2B,0x06,0x01,0x05,0x05,0x08,0x01,0x01,     /* [5153] OBJ_hmac_md5 */
++0x2B,0x06,0x01,0x05,0x05,0x08,0x01,0x02,     /* [5161] OBJ_hmac_sha1 */
++0x2A,0x86,0x48,0x86,0xF6,0x7D,0x07,0x42,0x0D,/* [5169] OBJ_id_PasswordBasedMAC */
++0x2A,0x86,0x48,0x86,0xF6,0x7D,0x07,0x42,0x1E,/* [5178] OBJ_id_DHBasedMac */
++0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x06,     /* [5187] OBJ_hmacWithMD5 */
++0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x08,     /* [5195] OBJ_hmacWithSHA224 */
++0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x09,     /* [5203] OBJ_hmacWithSHA256 */
++0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x0A,     /* [5211] OBJ_hmacWithSHA384 */
++0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x0B,     /* [5219] OBJ_hmacWithSHA512 */
++0x2B,0x06,0x01,0x05,0x05,0x07,0x04,0x10,     /* [5227] OBJ_id_it_suppLangTags */
++0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x01,/* [5235] OBJ_dsa_with_SHA224 */
++0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x03,0x02,/* [5244] OBJ_dsa_with_SHA256 */
+ };
+ 
+ static ASN1_OBJECT nid_objs[NUM_NID]={
+@@ -2009,6 +2021,28 @@
+ {"SEED-CBC","seed-cbc",NID_seed_cbc,8,&(lvalues[5129]),0},
+ {"SEED-OFB","seed-ofb",NID_seed_ofb128,8,&(lvalues[5137]),0},
+ {"SEED-CFB","seed-cfb",NID_seed_cfb128,8,&(lvalues[5145]),0},
++{"HMAC-MD5","hmac-md5",NID_hmac_md5,8,&(lvalues[5153]),0},
++{"HMAC-SHA1","hmac-sha1",NID_hmac_sha1,8,&(lvalues[5161]),0},
++{"id-PasswordBasedMAC","password based MAC",NID_id_PasswordBasedMAC,9,
++	&(lvalues[5169]),0},
++{"id-DHBasedMac","Diffie-Hellman based MAC",NID_id_DHBasedMac,9,
++	&(lvalues[5178]),0},
++{"hmacWithMD5","hmacWithMD5",NID_hmacWithMD5,8,&(lvalues[5187]),0},
++{"hmacWithSHA224","hmacWithSHA224",NID_hmacWithSHA224,8,
++	&(lvalues[5195]),0},
++{"hmacWithSHA256","hmacWithSHA256",NID_hmacWithSHA256,8,
++	&(lvalues[5203]),0},
++{"hmacWithSHA384","hmacWithSHA384",NID_hmacWithSHA384,8,
++	&(lvalues[5211]),0},
++{"hmacWithSHA512","hmacWithSHA512",NID_hmacWithSHA512,8,
++	&(lvalues[5219]),0},
++{"id-it-suppLangTags","id-it-suppLangTags",NID_id_it_suppLangTags,8,
++	&(lvalues[5227]),0},
++{"dsa_with_SHA224","dsa_with_SHA224",NID_dsa_with_SHA224,9,
++	&(lvalues[5235]),0},
++{"dsa_with_SHA256","dsa_with_SHA256",NID_dsa_with_SHA256,9,
++	&(lvalues[5244]),0},
++{"HMAC","hmac",NID_hmac,0,NULL,0},
+ };
+ 
+ static ASN1_OBJECT *sn_objs[NUM_SN]={
+@@ -2089,6 +2123,9 @@
+ &(nid_objs[67]),/* "DSA-old" */
+ &(nid_objs[297]),/* "DVCS" */
+ &(nid_objs[99]),/* "GN" */
++&(nid_objs[792]),/* "HMAC" */
++&(nid_objs[780]),/* "HMAC-MD5" */
++&(nid_objs[781]),/* "HMAC-SHA1" */
+ &(nid_objs[381]),/* "IANA" */
+ &(nid_objs[34]),/* "IDEA-CBC" */
+ &(nid_objs[35]),/* "IDEA-CFB" */
+@@ -2262,6 +2299,8 @@
+ &(nid_objs[470]),/* "documentVersion" */
+ &(nid_objs[392]),/* "domain" */
+ &(nid_objs[452]),/* "domainRelatedObject" */
++&(nid_objs[790]),/* "dsa_with_SHA224" */
++&(nid_objs[791]),/* "dsa_with_SHA256" */
+ &(nid_objs[416]),/* "ecdsa-with-SHA1" */
+ &(nid_objs[48]),/* "emailAddress" */
+ &(nid_objs[132]),/* "emailProtection" */
+@@ -2276,7 +2315,12 @@
+ &(nid_objs[490]),/* "friendlyCountryName" */
+ &(nid_objs[156]),/* "friendlyName" */
+ &(nid_objs[509]),/* "generationQualifier" */
++&(nid_objs[784]),/* "hmacWithMD5" */
+ &(nid_objs[163]),/* "hmacWithSHA1" */
++&(nid_objs[785]),/* "hmacWithSHA224" */
++&(nid_objs[786]),/* "hmacWithSHA256" */
++&(nid_objs[787]),/* "hmacWithSHA384" */
++&(nid_objs[788]),/* "hmacWithSHA512" */
+ &(nid_objs[432]),/* "holdInstructionCallIssuer" */
+ &(nid_objs[430]),/* "holdInstructionCode" */
+ &(nid_objs[431]),/* "holdInstructionNone" */
+@@ -2285,6 +2329,8 @@
+ &(nid_objs[473]),/* "homeTelephoneNumber" */
+ &(nid_objs[466]),/* "host" */
+ &(nid_objs[442]),/* "iA5StringSyntax" */
++&(nid_objs[783]),/* "id-DHBasedMac" */
++&(nid_objs[782]),/* "id-PasswordBasedMAC" */
+ &(nid_objs[266]),/* "id-aca" */
+ &(nid_objs[355]),/* "id-aca-accessIdentity" */
+ &(nid_objs[354]),/* "id-aca-authenticationInfo" */
+@@ -2343,6 +2389,7 @@
+ &(nid_objs[299]),/* "id-it-signKeyPairTypes" */
+ &(nid_objs[305]),/* "id-it-subscriptionRequest" */
+ &(nid_objs[306]),/* "id-it-subscriptionResponse" */
++&(nid_objs[789]),/* "id-it-suppLangTags" */
+ &(nid_objs[304]),/* "id-it-unsupportedOIDs" */
+ &(nid_objs[128]),/* "id-kp" */
+ &(nid_objs[280]),/* "id-mod-attribute-cert" */
+@@ -2797,6 +2844,7 @@
+ &(nid_objs[285]),/* "Biometric Info" */
+ &(nid_objs[179]),/* "CA Issuers" */
+ &(nid_objs[131]),/* "Code Signing" */
++&(nid_objs[783]),/* "Diffie-Hellman based MAC" */
+ &(nid_objs[382]),/* "Directory" */
+ &(nid_objs[392]),/* "Domain" */
+ &(nid_objs[132]),/* "E-mail Protection" */
+@@ -3036,6 +3084,8 @@
+ &(nid_objs[66]),/* "dsaWithSHA" */
+ &(nid_objs[113]),/* "dsaWithSHA1" */
+ &(nid_objs[70]),/* "dsaWithSHA1-old" */
++&(nid_objs[790]),/* "dsa_with_SHA224" */
++&(nid_objs[791]),/* "dsa_with_SHA256" */
+ &(nid_objs[297]),/* "dvcs" */
+ &(nid_objs[416]),/* "ecdsa-with-SHA1" */
+ &(nid_objs[48]),/* "emailAddress" */
+@@ -3049,7 +3099,15 @@
+ &(nid_objs[509]),/* "generationQualifier" */
+ &(nid_objs[601]),/* "generic cryptogram" */
+ &(nid_objs[99]),/* "givenName" */
++&(nid_objs[792]),/* "hmac" */
++&(nid_objs[780]),/* "hmac-md5" */
++&(nid_objs[781]),/* "hmac-sha1" */
++&(nid_objs[784]),/* "hmacWithMD5" */
+ &(nid_objs[163]),/* "hmacWithSHA1" */
++&(nid_objs[785]),/* "hmacWithSHA224" */
++&(nid_objs[786]),/* "hmacWithSHA256" */
++&(nid_objs[787]),/* "hmacWithSHA384" */
++&(nid_objs[788]),/* "hmacWithSHA512" */
+ &(nid_objs[486]),/* "homePostalAddress" */
+ &(nid_objs[473]),/* "homeTelephoneNumber" */
+ &(nid_objs[466]),/* "host" */
+@@ -3113,6 +3171,7 @@
+ &(nid_objs[299]),/* "id-it-signKeyPairTypes" */
+ &(nid_objs[305]),/* "id-it-subscriptionRequest" */
+ &(nid_objs[306]),/* "id-it-subscriptionResponse" */
++&(nid_objs[789]),/* "id-it-suppLangTags" */
+ &(nid_objs[304]),/* "id-it-unsupportedOIDs" */
+ &(nid_objs[128]),/* "id-kp" */
+ &(nid_objs[280]),/* "id-mod-attribute-cert" */
+@@ -3272,6 +3331,7 @@
+ &(nid_objs[18]),/* "organizationalUnitName" */
+ &(nid_objs[475]),/* "otherMailbox" */
+ &(nid_objs[489]),/* "pagerTelephoneNumber" */
++&(nid_objs[782]),/* "password based MAC" */
+ &(nid_objs[374]),/* "path" */
+ &(nid_objs[621]),/* "payment gateway capabilities" */
+ &(nid_objs[ 9]),/* "pbeWithMD2AndDES-CBC" */
+@@ -3897,7 +3957,12 @@
+ &(nid_objs[ 3]),/* OBJ_md2                          1 2 840 113549 2 2 */
+ &(nid_objs[257]),/* OBJ_md4                          1 2 840 113549 2 4 */
+ &(nid_objs[ 4]),/* OBJ_md5                          1 2 840 113549 2 5 */
++&(nid_objs[784]),/* OBJ_hmacWithMD5                  1 2 840 113549 2 6 */
+ &(nid_objs[163]),/* OBJ_hmacWithSHA1                 1 2 840 113549 2 7 */
++&(nid_objs[785]),/* OBJ_hmacWithSHA224               1 2 840 113549 2 8 */
++&(nid_objs[786]),/* OBJ_hmacWithSHA256               1 2 840 113549 2 9 */
++&(nid_objs[787]),/* OBJ_hmacWithSHA384               1 2 840 113549 2 10 */
++&(nid_objs[788]),/* OBJ_hmacWithSHA512               1 2 840 113549 2 11 */
+ &(nid_objs[37]),/* OBJ_rc2_cbc                      1 2 840 113549 3 2 */
+ &(nid_objs[ 5]),/* OBJ_rc4                          1 2 840 113549 3 4 */
+ &(nid_objs[44]),/* OBJ_des_ede3_cbc                 1 2 840 113549 3 7 */
+@@ -3987,6 +4052,7 @@
+ &(nid_objs[310]),/* OBJ_id_it_implicitConfirm        1 3 6 1 5 5 7 4 13 */
+ &(nid_objs[311]),/* OBJ_id_it_confirmWaitTime        1 3 6 1 5 5 7 4 14 */
+ &(nid_objs[312]),/* OBJ_id_it_origPKIMessage         1 3 6 1 5 5 7 4 15 */
++&(nid_objs[789]),/* OBJ_id_it_suppLangTags           1 3 6 1 5 5 7 4 16 */
+ &(nid_objs[313]),/* OBJ_id_regCtrl                   1 3 6 1 5 5 7 5 1 */
+ &(nid_objs[314]),/* OBJ_id_regInfo                   1 3 6 1 5 5 7 5 2 */
+ &(nid_objs[323]),/* OBJ_id_alg_des40                 1 3 6 1 5 5 7 6 1 */
+@@ -4036,6 +4102,8 @@
+ &(nid_objs[179]),/* OBJ_ad_ca_issuers                1 3 6 1 5 5 7 48 2 */
+ &(nid_objs[363]),/* OBJ_ad_timeStamping              1 3 6 1 5 5 7 48 3 */
+ &(nid_objs[364]),/* OBJ_ad_dvcs                      1 3 6 1 5 5 7 48 4 */
++&(nid_objs[780]),/* OBJ_hmac_md5                     1 3 6 1 5 5 8 1 1 */
++&(nid_objs[781]),/* OBJ_hmac_sha1                    1 3 6 1 5 5 8 1 2 */
+ &(nid_objs[58]),/* OBJ_netscape_cert_extension      2 16 840 1 113730 1 */
+ &(nid_objs[59]),/* OBJ_netscape_data_type           2 16 840 1 113730 2 */
+ &(nid_objs[438]),/* OBJ_pilotAttributeType           0 9 2342 19200300 100 1 */
+@@ -4044,6 +4112,8 @@
+ &(nid_objs[441]),/* OBJ_pilotGroups                  0 9 2342 19200300 100 10 */
+ &(nid_objs[108]),/* OBJ_cast5_cbc                    1 2 840 113533 7 66 10 */
+ &(nid_objs[112]),/* OBJ_pbeWithMD5AndCast5_CBC       1 2 840 113533 7 66 12 */
++&(nid_objs[782]),/* OBJ_id_PasswordBasedMAC          1 2 840 113533 7 66 13 */
++&(nid_objs[783]),/* OBJ_id_DHBasedMac                1 2 840 113533 7 66 30 */
+ &(nid_objs[ 6]),/* OBJ_rsaEncryption                1 2 840 113549 1 1 1 */
+ &(nid_objs[ 7]),/* OBJ_md2WithRSAEncryption         1 2 840 113549 1 1 2 */
+ &(nid_objs[396]),/* OBJ_md4WithRSAEncryption         1 2 840 113549 1 1 3 */
+@@ -4125,6 +4195,8 @@
+ &(nid_objs[673]),/* OBJ_sha384                       2 16 840 1 101 3 4 2 2 */
+ &(nid_objs[674]),/* OBJ_sha512                       2 16 840 1 101 3 4 2 3 */
+ &(nid_objs[675]),/* OBJ_sha224                       2 16 840 1 101 3 4 2 4 */
++&(nid_objs[790]),/* OBJ_dsa_with_SHA224              2 16 840 1 101 3 4 3 1 */
++&(nid_objs[791]),/* OBJ_dsa_with_SHA256              2 16 840 1 101 3 4 3 2 */
+ &(nid_objs[71]),/* OBJ_netscape_cert_type           2 16 840 1 113730 1 1 */
+ &(nid_objs[72]),/* OBJ_netscape_base_url            2 16 840 1 113730 1 2 */
+ &(nid_objs[73]),/* OBJ_netscape_revocation_url      2 16 840 1 113730 1 3 */
+Index: openssl-0.9.8g-cmp/crypto/objects/obj_mac.num
+===================================================================
+--- openssl-0.9.8g-cmp/crypto/objects/obj_mac.num	(revision 26)
++++ openssl-0.9.8g-cmp/crypto/objects/obj_mac.num	(working copy)
+@@ -777,3 +777,16 @@
+ seed_cbc		777
+ seed_ofb128		778
+ seed_cfb128		779
++hmac_md5		780
++hmac_sha1		781
++id_PasswordBasedMAC		782
++id_DHBasedMac		783
++hmacWithMD5		784
++hmacWithSHA224		785
++hmacWithSHA256		786
++hmacWithSHA384		787
++hmacWithSHA512		788
++id_it_suppLangTags		789
++dsa_with_SHA224		790
++dsa_with_SHA256		791
++hmac		792
+Index: openssl-0.9.8g-cmp/crypto/x509v3/v3_genn.c
+===================================================================
+--- openssl-0.9.8g-cmp/crypto/x509v3/v3_genn.c	(revision 26)
++++ openssl-0.9.8g-cmp/crypto/x509v3/v3_genn.c	(working copy)
+@@ -99,3 +99,10 @@
+ ASN1_ITEM_TEMPLATE_END(GENERAL_NAMES)
+ 
+ IMPLEMENT_ASN1_FUNCTIONS(GENERAL_NAMES)
++
++GENERAL_NAME *GENERAL_NAME_dup(GENERAL_NAME *a)
++	{
++	return (GENERAL_NAME *) ASN1_dup((i2d_of_void *) i2d_GENERAL_NAME,
++					 (d2i_of_void *) d2i_GENERAL_NAME,
++					 (char *) a);
++	}
+Index: openssl-0.9.8g-cmp/crypto/x509v3/x509v3.h
+===================================================================
+--- openssl-0.9.8g-cmp/crypto/x509v3/x509v3.h	(revision 26)
++++ openssl-0.9.8g-cmp/crypto/x509v3/x509v3.h	(working copy)
+@@ -469,6 +469,7 @@
+ DECLARE_ASN1_FUNCTIONS(PKEY_USAGE_PERIOD)
+ 
+ DECLARE_ASN1_FUNCTIONS(GENERAL_NAME)
++GENERAL_NAME *GENERAL_NAME_dup(GENERAL_NAME *a);
+ 
+ 
+ ASN1_BIT_STRING *v2i_ASN1_BIT_STRING(X509V3_EXT_METHOD *method,
+Index: openssl-0.9.8g-cmp/crypto/asn1/x_algor.c
+===================================================================
+--- openssl-0.9.8g-cmp/crypto/asn1/x_algor.c	(revision 26)
++++ openssl-0.9.8g-cmp/crypto/asn1/x_algor.c	(working copy)
+@@ -71,3 +71,55 @@
+ 
+ IMPLEMENT_STACK_OF(X509_ALGOR)
+ IMPLEMENT_ASN1_SET_OF(X509_ALGOR)
++
++int X509_ALGOR_set0(X509_ALGOR *alg, ASN1_OBJECT *aobj, int ptype, void *pval)
++	{
++	if (!alg)
++		return 0;
++	if (ptype != V_ASN1_UNDEF)
++		{
++		if (alg->parameter == NULL)
++			alg->parameter = ASN1_TYPE_new();
++		if (alg->parameter == NULL)
++			return 0;
++		}
++	if (alg)
++		{
++		if (alg->algorithm)
++			ASN1_OBJECT_free(alg->algorithm);
++		alg->algorithm = aobj;
++		}
++	if (ptype == 0)
++		return 1;	
++	if (ptype == V_ASN1_UNDEF)
++		{
++		if (alg->parameter)
++			{
++			ASN1_TYPE_free(alg->parameter);
++			alg->parameter = NULL;
++			}
++		}
++	else
++		ASN1_TYPE_set(alg->parameter, ptype, pval);
++	return 1;
++	}
++
++void X509_ALGOR_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval,
++						X509_ALGOR *algor)
++	{
++	if (paobj)
++		*paobj = algor->algorithm;
++	if (pptype)
++		{
++		if (algor->parameter == NULL)
++			{
++			*pptype = V_ASN1_UNDEF;
++			return;
++			}
++		else
++			*pptype = algor->parameter->type;
++		if (ppval)
++			*ppval = algor->parameter->value.ptr;
++		}
++	}
++
+Index: openssl-0.9.8g-cmp/crypto/x509/x509.h
+===================================================================
+--- openssl-0.9.8g-cmp/crypto/x509/x509.h	(revision 26)
++++ openssl-0.9.8g-cmp/crypto/x509/x509.h	(working copy)
+@@ -862,6 +862,8 @@
+ X509_CRL *X509_CRL_dup(X509_CRL *crl);
+ X509_REQ *X509_REQ_dup(X509_REQ *req);
+ X509_ALGOR *X509_ALGOR_dup(X509_ALGOR *xn);
++int X509_ALGOR_set0(X509_ALGOR *alg, ASN1_OBJECT *aobj, int ptype, void *pval);
++void X509_ALGOR_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval, X509_ALGOR *algor);
+ X509_NAME *X509_NAME_dup(X509_NAME *xn);
+ X509_NAME_ENTRY *X509_NAME_ENTRY_dup(X509_NAME_ENTRY *ne);
+ 
+Index: openssl-0.9.8g-cmp/util/libeay.num
+===================================================================
+--- openssl-0.9.8g-cmp/util/libeay.num	(revision 26)
++++ openssl-0.9.8g-cmp/util/libeay.num	(working copy)
+@@ -3521,3 +3521,6 @@
+ EVP_seed_ecb                            3916	EXIST::FUNCTION:SEED
+ SEED_set_key                            3917	EXIST::FUNCTION:SEED
+ EVP_seed_cfb128                         3918	EXIST::FUNCTION:SEED
++GENERAL_NAME_dup                        3919	EXIST::FUNCTION:
++X509_ALGOR_get0                         3920	EXIST::FUNCTION:
++X509_ALGOR_set0                         3921	EXIST::FUNCTION:
