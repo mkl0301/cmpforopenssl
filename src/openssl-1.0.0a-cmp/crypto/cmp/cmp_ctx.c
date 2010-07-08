@@ -221,7 +221,7 @@ err:
 /* ################################################################ */
 X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx) {
 	if (!ctx) goto err;
-	if (!ctx->caPubs) goto err;
+	if (!ctx->caPubs) return NULL;
 	return sk_X509_pop(ctx->caPubs);
 err:
 	CMPerr(CMP_F_CMP_CTX_CAPUBS_POP, CMP_R_CMPERROR);
@@ -232,7 +232,7 @@ err:
 /* ################################################################ */
 int CMP_CTX_caPubs_num( CMP_CTX *ctx) {
 	if (!ctx) goto err;
-	if (!ctx->caPubs) goto err;
+	if (!ctx->caPubs) return 0;
 	return sk_X509_num(ctx->caPubs);
 err:
 	CMPerr(CMP_F_CMP_CTX_CAPUBS_NUM, CMP_R_CMPERROR);
