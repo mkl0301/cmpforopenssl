@@ -104,6 +104,7 @@ static char* opt_httpProxy=NULL;
 static char* opt_httpProxyName=NULL;
 int opt_httpProxyPort=0;
 static char* opt_caCertFile=NULL;
+static char* opt_caPubsDir=NULL;
 static char* opt_clCertFile=NULL;
 static char* opt_extCertFile=NULL;
 static char* opt_newClCertFile=NULL;
@@ -145,6 +146,7 @@ void printUsage( const char* cmdName) {
   printf("\n");
   printf("The OPTIONAL COMMON OPTIONS may to be set:\n");
   printf(" --engine ENGINE    the OpenSSL engine\n");
+  printf(" --capubs DIRECTORY the directory where received CA certificates will be saved\n");
   printf("\n");
   printf("One of the following can be used as CMD:\n");
   printf(" --ir   do initial certificate request sequence\n");
@@ -240,6 +242,19 @@ void doIr() {
     printf("FATAL: could not write client certificate!\n");
     exit(1);
   }
+
+  if (opt_caPubsDir && CMP_CTX_caPubs_num(cmp_ctx) > 0) {
+		X509 *cert = NULL;
+		char certFile[512];
+		int n = 0;
+
+		printf( "Received %d CA certificates, saving to %s\n", CMP_CTX_caPubs_num(cmp_ctx), opt_caPubsDir);
+		while ( (cert=CMP_CTX_caPubs_pop(cmp_ctx)) != NULL) {
+			sprintf(certFile, "%s/cacert%d.der", opt_caPubsDir, ++n);
+			if(!HELP_write_der_cert(initialClCert, certFile))
+				printf("FATAL: could not write CA certificate to %s!\n", certFile);
+		}
+	}
 
   return;
 }
@@ -355,7 +370,8 @@ void doKur() {
   BIO_free(cbio);
 
   if( updatedClCert) {
-    printf( "SUCCESS: received updated Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
+    printf( "SUCCESS: received updated Client Certificate, and %d CA certs in caPubs. FILE %s, LINE %d\n", 
+    		CMP_CTX_caPubs_num(cmp_ctx), __FILE__, __LINE__);
   } else {
     printf( "ERROR: received no updated Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
     exit(1);
@@ -364,6 +380,19 @@ void doKur() {
     printf("FATAL: could not write new client certificate!\n");
     exit(1);
   }
+
+  if (opt_caPubsDir && CMP_CTX_caPubs_num(cmp_ctx) > 0) {
+		X509 *cert = NULL;
+		char certFile[512];
+		int n = 0;
+
+		printf( "Received %d CA certificates, saving to %s\n", CMP_CTX_caPubs_num(cmp_ctx), opt_caPubsDir);
+		while ( (cert=CMP_CTX_caPubs_pop(cmp_ctx)) != NULL) {
+			sprintf(certFile, "%s/cacert%d.der", opt_caPubsDir, ++n);
+			if(!HELP_write_der_cert(initialClCert, certFile))
+				printf("FATAL: could not write CA certificate to %s!\n", certFile);
+		}
+	}
 
   return;
 }
@@ -424,6 +453,7 @@ void parseCLA( int argc, char **argv) {
     {"extcert",  required_argument,    0, 'x'},
     {"cacert",   required_argument,    0, 'g'},
     {"clcert",   required_argument,    0, 'h'},
+    {"capubs",   required_argument,    0, 2},
     {"help",     no_argument,          0, 'i'},
     {"key",      required_argument,    0, 'j'},
     {"newkey",   required_argument,    0, 'k'},
@@ -458,6 +488,11 @@ void parseCLA( int argc, char **argv) {
         if (optarg)
           printf (" with arg %s", optarg);
         printf ("\n");
+        break;
+
+      case 2:
+        opt_caPubsDir = (char*) malloc(strlen(optarg)+1);
+        strcpy(opt_caPubsDir, optarg);
         break;
 
       case 'a':
