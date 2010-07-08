@@ -6,6 +6,7 @@
  CMP_CTX_set1_secretValue,
  CMP_CTX_set1_caCert,
  CMP_CTX_set1_clCert,
+ CMP_CTX_set1_extCert,
  CMP_CTX_set1_newClCert,
  CMP_CTX_set0_pkey,
  CMP_CTX_set0_newPkey,
@@ -16,7 +17,10 @@
  CMP_CTX_set_protectionAlgor,
  CMP_CTX_set_compatibility,
  CMP_CTX_set1_serverName,
- CMP_CTX_set_option
+ CMP_CTX_set_option,
+ CMP_CTX_caPubs_pop,
+ CMP_CTX_caPubs_num,
+ CMP_CTX_set1_caPubs
 
 =head1 SYNOPSIS
 
@@ -39,6 +43,9 @@
  int CMP_CTX_set1_protectionAlgor( CMP_CTX *ctx, const X509_ALGOR *algor);
  int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
  int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
+ X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
+ int CMP_CTX_caPubs_num( CMP_CTX *ctx);
+ int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs);
 
  #define CMP_ALG_PBMAC 1
  #define CMP_ALG_SIG   2
@@ -96,6 +103,13 @@ CMP_CTX_set_protectionAlgor() sets the given definition (CMP_ALG_PBMAG or CMP_AL
 CMP_CTX_set_compatibility() sets the given compatibility in the given CMP_CTX structure. This is needed since the CMP RFC can be interpreted in different ways so certain implementations may react different than others. Available Options are CMP_COMPAT_RFC for strict RFC conformace, CMP_COMPAT_CRYPTLIB for Cryptlib adaption, CMP_COMPAT_INSTA for Insta Certifier version < 3.3 adaption and CMP_COMPAT_INSTA_3_3 for Insta Certifier version => 3.3 adaption.
 
 CMP_CTX_set_option() sets the given values to the options (e.g. CMP_CTX_OPT_IMPLICITCONFIRM) in the given CMP_CTX structure. The values can be CMP_CTX_OPT_UNSET or CMP_CTX_OPT_SET. Options are always set to UNSET when the CMP_CTX structure is initialized.
+
+CMP_CTX_caPubs_num() can be used after an Initial Request or Key Update request to check the number of CA certificates that were sent from the server.
+
+CMP_CTX_caPubs_pop() pops one CA certificates of the stack of received CA certs and returns it
+
+CMP_CTX_set1_caPubs() copies the given caPubs stack to the context so that it may be accessed later by CMP_CTX_caPubs_num() and CMP_CTX_caPubs_pop().
+
 
 =head1 NOTES
 
