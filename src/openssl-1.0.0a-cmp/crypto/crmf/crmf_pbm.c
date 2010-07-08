@@ -225,7 +225,7 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 	return 1;
 err:
 	/* XXX this is also freed if it was something in it before... */
-	if( *mac) OPENSSL_free(*mac);
+	if( mac && *mac) OPENSSL_free(*mac);
 	CRMFerr(CRMF_F_CRMF_PASSWORDBASEDMAC_NEW, CRMF_R_CRMFERROR);
 	return 0;
 }
