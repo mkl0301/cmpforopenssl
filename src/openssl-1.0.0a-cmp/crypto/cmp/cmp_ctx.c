@@ -93,6 +93,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, secretValue, ASN1_OCTET_STRING),
 	ASN1_OPT(CMP_CTX, caCert, X509),
 	ASN1_OPT(CMP_CTX, clCert, X509),
+	ASN1_OPT(CMP_CTX, caPubs, X509),
 	/* EVP_PKEY *pkey */
 	ASN1_OPT(CMP_CTX, newClCert, X509),
 	/* EVP_PKEY *newPkey */
@@ -213,6 +214,52 @@ int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size
 	return (ASN1_OCTET_STRING_set(ctx->secretValue, sec, len));
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_SECRETVALUE, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx) {
+	if (!ctx) goto err;
+	if (!ctx->caPubs) goto err;
+	return sk_X509_pop(ctx->caPubs);
+err:
+	CMPerr(CMP_F_CMP_CTX_CAPUBS_POP, CMP_R_CMPERROR);
+	return NULL;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_caPubs_num( CMP_CTX *ctx) {
+	if (!ctx) goto err;
+	if (!ctx->caPubs) goto err;
+	return sk_X509_num(ctx->caPubs);
+err:
+	CMPerr(CMP_F_CMP_CTX_CAPUBS_NUM, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs) {
+	X509 *temp = NULL;
+
+	if (!ctx) goto err;
+	if (!caPubs) goto err;
+
+	if (ctx->caPubs) {
+		sk_X509_free(ctx->caPubs);
+		ctx->caPubs = NULL;
+	}
+
+	// if (!(ctx->caPubs = sk_X509_dup( (X509*)caPubs))) goto err;
+	ctx->caPubs = sk_X509_new_null();
+	while ((temp = sk_X509_pop(caPubs)) != NULL)
+		sk_X509_push(ctx->caPubs, temp);
+
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_CAPUBS, CMP_R_CMPERROR);
 	return 0;
 }
 

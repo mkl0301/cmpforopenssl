@@ -182,6 +182,12 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 			break;
 	}
 
+	/* if the CA returned certificates in the caPubs field, copy them
+	 * to the context so that they can be retrieved if necessary */
+	if (ip->body->value.ip->caPubs) {
+		CMP_CTX_set1_caPubs(ctx, ip->body->value.ip->caPubs);
+	}
+
 	/* check if implicit confirm is set in generalInfo */
 	/* TODO should I check if that was requested?
 	 * What happens if this is set here while it was not requested?
@@ -425,6 +431,12 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
 			goto err;
 			break;
+	}
+
+	/* if the CA returned certificates in the caPubs field, copy them
+	 * to the context so that they can be retrieved if necessary */
+	if (kup->body->value.kup->caPubs) {
+		CMP_CTX_set1_caPubs(ctx, kup->body->value.kup->caPubs);
 	}
 
 	/* check if implicit confirm is set in generalInfo */

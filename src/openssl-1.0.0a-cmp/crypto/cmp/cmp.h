@@ -1124,6 +1124,8 @@ typedef struct cmp_ctx_st
 	/* *current* CLIENT certificate used to identify the Client */
 	/* XXX this should be a stack since there could be more than one */
 	X509                 *clCert;
+	/* Stack of CA certificates sent by the CA in a IP/KUP message */ 
+	STACK_OF(X509)       *caPubs;
 	/* EVP_PKEY holding the *current* keys */
 	/* XXX this is not an ASN.1 type */
 	EVP_PKEY             *pkey;
@@ -1309,6 +1311,9 @@ int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t 
 int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len);
 int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
+X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
+int CMP_CTX_caPubs_num( CMP_CTX *ctx);
+int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs);
 int CMP_CTX_set1_extCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_newClCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
@@ -1362,11 +1367,14 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CKUANN_NEW				 102
 #define CMP_F_CMP_CMP_INFOTYPEANDVALUE_NEW_BY_DEF_NOVAL	 103
 #define CMP_F_CMP_CR_NEW				 104
+#define CMP_F_CMP_CTX_CAPUBS_NUM			 134
+#define CMP_F_CMP_CTX_CAPUBS_POP			 135
 #define CMP_F_CMP_CTX_CREATE				 105
 #define CMP_F_CMP_CTX_INIT				 106
 #define CMP_F_CMP_CTX_SET0_NEWPKEY			 107
 #define CMP_F_CMP_CTX_SET0_PKEY				 108
 #define CMP_F_CMP_CTX_SET1_CACERT			 109
+#define CMP_F_CMP_CTX_SET1_CAPUBS			 133
 #define CMP_F_CMP_CTX_SET1_CLCERT			 110
 #define CMP_F_CMP_CTX_SET1_NEWCLCERT			 111
 #define CMP_F_CMP_CTX_SET1_PROTECTIONALGOR		 112

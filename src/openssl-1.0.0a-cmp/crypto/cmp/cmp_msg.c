@@ -177,7 +177,6 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	else if (ctx->extCert)
 		subject = X509_get_subject_name(ctx->extCert);
 
-
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility))) goto err;
 
@@ -234,8 +233,6 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 
 	/* Set the subject from the previous certificate */
 	subject = X509_get_subject_name(ctx->clCert);
-
-
 
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility))) goto err;
