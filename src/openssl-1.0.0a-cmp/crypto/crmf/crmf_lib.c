@@ -389,10 +389,9 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 
 	EVP_MD_CTX *ctx=NULL;
 
-/* TODO: what about PoposkInput? */
+	/* TODO: what about PoposkInput? */
 	if( !(poposig = CRMF_POPOSIGNINGKEY_new())) goto err;
 	/* get DER representation */
-	/* TODO - Do I free that? */
 	certReqSize = i2d_CRMF_CERTREQUEST( certReq, &certReqDer);
 
 	maxSignatureSize = EVP_PKEY_size( (EVP_PKEY*) pkey);
@@ -412,25 +411,20 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 	poposig->signature->flags |= ASN1_STRING_FLAG_BITS_LEFT;
 
 	/* set the type of the algorithm */
-	/* TODO: this should be set according to the used key */
-	X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
+	if (EVP_PKEY_type(pkey->type) == EVP_PKEY_DSA)
+		X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_dsaWithSHA1), V_ASN1_NULL, NULL);
+	else /* assume RSA */
+		X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
 
 	/* cleanup */
-#if 0
-	/* XXX do I have to do that? */
-CRMF_printf("file: %s line: %d\n", __FILE__, __LINE__);
 	OPENSSL_free(certReqDer);
-#endif
 	EVP_MD_CTX_destroy(ctx);
 	OPENSSL_free(signature);
 	return poposig;
 err:
 	if( poposig) CRMF_POPOSIGNINGKEY_free( poposig);
-#if 0
-	/* XXX do I have to do that? */
-CRMF_printf("file: %s line: %d\n", __FILE__, __LINE__);
-	OPENSSL_free(certReqDer);
-#endif
+	if( certReqDer) OPENSSL_free(certReqDer);
+	if( ctx) EVP_MD_CTX_destroy(ctx);
 	if( signature) OPENSSL_free(signature);
 	return NULL;
 }
