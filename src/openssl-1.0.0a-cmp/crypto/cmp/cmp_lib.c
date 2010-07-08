@@ -686,11 +686,11 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 		case NID_sha1WithRSAEncryption:
 		case NID_dsaWithSHA1:
 			CMP_printf("INFO: protecting with pkey\n");
-      if(!pkey) { /* in this case this must not be NULL, TODO: check this more generally*/
-        /* TODO: this should be done with an CMPerr */
-        CMP_printf("ERROR: pkey was NULL although it is supposed to be used for generating protection\n");
-        goto err;
-      }
+			if(!pkey) { /* in this case this must not be NULL, TODO: check this more generally*/
+				CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_INVALID_KEY);
+				ERR_add_error_data(1, "pkey was NULL although it is supposed to be used for generating protection");
+				goto err;
+			}
 			maxMacLen = EVP_PKEY_size( (EVP_PKEY*) pkey);
 			mac = OPENSSL_malloc(maxMacLen);
 
@@ -729,8 +729,7 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 	prot->flags |= ASN1_STRING_FLAG_BITS_LEFT;
 
 	/* cleanup */
-	// XXX why does this produce an segfault?
-	// EVP_MD_CTX_destroy(ctx);
+	if (ctx) EVP_MD_CTX_destroy(ctx);
 	return prot;
 
 err:
