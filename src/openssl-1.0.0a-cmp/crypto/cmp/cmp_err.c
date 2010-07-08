@@ -118,6 +118,7 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_ERROR_VALIDATING_PROTECTION),"error validating protection"},
 {ERR_REASON(CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM),"failed to determine protection algorithm"},
 {ERR_REASON(CMP_R_INVALID_CONTEXT)       ,"invalid context"},
+{ERR_REASON(CMP_R_INVALID_KEY)           ,"invalid key"},
 {ERR_REASON(CMP_R_NO_CERTIFICATE_RECEIVED),"no certificate received"},
 {ERR_REASON(CMP_R_PKIBODY_ERROR)         ,"pkibody error"},
 {ERR_REASON(CMP_R_UNKNOWN_ALGORITHM_ID)  ,"unknown algorithm id"},
