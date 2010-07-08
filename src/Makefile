@@ -139,7 +139,6 @@ $(CLSRC)/unzip-stamp: $(DLDIR)/cl$(CRYPTLIB_VERSION).zip
 ################################################################################
 
 openssl_patch_1.0.0a:
-	-mkdir -p patches
 	cd $(SRCDIR) && \
 	svn diff -r 87:BASE openssl-1.0.0a-cmp > patches/openssl-1.0.0a_cmp.diff
 
