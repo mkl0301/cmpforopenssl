@@ -426,6 +426,8 @@ void doInfo() {
     printf( "SUCCESS: Doing PKI Information Request/Response. FILE %s, LINE %d\n", __FILE__, __LINE__);
   } else {
     printf( "ERROR: Doing PKI Information Request/Response. FILE %s, LINE %d\n", __FILE__, __LINE__);
+    ERR_load_crypto_strings();
+    ERR_print_errors_fp(stderr);
     exit(1);
   }
 
@@ -453,7 +455,7 @@ void parseCLA( int argc, char **argv) {
     {"extcert",  required_argument,    0, 'x'},
     {"cacert",   required_argument,    0, 'g'},
     {"clcert",   required_argument,    0, 'h'},
-    {"capubs",   required_argument,    0, 2},
+    {"capubs",   required_argument,    0, 'U'},
     {"help",     no_argument,          0, 'i'},
     {"key",      required_argument,    0, 'j'},
     {"newkey",   required_argument,    0, 'k'},
@@ -472,7 +474,7 @@ void parseCLA( int argc, char **argv) {
 
   while (1)
   {
-    c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqrsx:", long_options, &option_index);
+    c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqrstu:U:x:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -490,7 +492,7 @@ void parseCLA( int argc, char **argv) {
         printf ("\n");
         break;
 
-      case 2:
+      case 'U':
         opt_caPubsDir = (char*) malloc(strlen(optarg)+1);
         strcpy(opt_caPubsDir, optarg);
         break;
