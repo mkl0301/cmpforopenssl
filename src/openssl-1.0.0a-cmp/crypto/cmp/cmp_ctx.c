@@ -253,7 +253,7 @@ int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs) {
 	}
 
 	// if (!(ctx->caPubs = sk_X509_dup( (X509*)caPubs))) goto err;
-	ctx->caPubs = sk_X509_new_null();
+	if (!(ctx->caPubs = sk_X509_new_null())) goto err;
 	while ((temp = sk_X509_pop(caPubs)) != NULL)
 		sk_X509_push(ctx->caPubs, temp);
 
