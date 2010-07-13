@@ -21,7 +21,7 @@ strip: all
 $(BIN): $(OBJ) $(OPENSSLDIR)/libcrypto.a
 	$(CC) -Wall -o $(BIN) $(OBJ) $(LFLAGS) $(INCDIR) $(LIBDIR)
 
-cmpclient.o: cmpclient.c cmpclient.h cmpclient_help.h
+cmpclient.o: cmpclient.c cmpclient.h cmpclient_help.h $(OPENSSLDIR)/include/openssl/cmp.h
 	$(CC) -Wall -c $(INCDIR) $(CFLAGS) -o cmpclient.o cmpclient.c
 
 cmpclient_help.o: cmpclient_help.c cmpclient_help.h
@@ -35,4 +35,4 @@ install:
 
 distclean: clean
 
-.PHONY: distclean clean all strip
+.PHONY: all distclean clean all strip
