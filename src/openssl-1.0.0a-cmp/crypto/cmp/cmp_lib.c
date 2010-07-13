@@ -569,7 +569,11 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 	}
 
 	/* INSTA replies with a very strange message when the time is set */
-	if( (ctx->compatibility != CMP_COMPAT_INSTA) && (ctx->compatibility != CMP_COMPAT_INSTA_3_3) ) {
+	if( 
+#ifdef SUPPORT_OLD_INSTA /* TODO remove completely one day */
+      (ctx->compatibility != CMP_COMPAT_INSTA) && 
+#endif /* SUPPORT_OLD_INSTA */
+      (ctx->compatibility != CMP_COMPAT_INSTA_3_3) ) {
 		if( !CMP_PKIHEADER_set_messageTime(hdr)) goto err;
 	}
 

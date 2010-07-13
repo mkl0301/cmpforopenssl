@@ -165,7 +165,11 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);
 
 	/* XXX TODO This might be always needed for RFC conformity CHECK ME */
-	if( (ctx->compatibility == CMP_COMPAT_INSTA) || (ctx->compatibility == CMP_COMPAT_INSTA_3_3)) {
+	if( 
+#ifdef SUPPORT_OLD_INSTA /* TODO remove completely one day */
+      (ctx->compatibility == CMP_COMPAT_INSTA) || 
+#endif /* SUPPORT_OLD_INSTA */
+      (ctx->compatibility == CMP_COMPAT_INSTA_3_3)) {
 		/* XXX do I have to free that? */
 		subject = X509_NAME_new();
 		if (!X509_NAME_add_entry_by_txt(subject, "CN", MBSTRING_ASC, (unsigned char*) "My Common Name", -1, -1, 0));

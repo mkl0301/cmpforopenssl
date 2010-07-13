@@ -131,6 +131,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 
 	derLen = i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, NULL);
 
+#ifdef SUPPORT_OLD_INSTA /* TODO remove completely one day */
 	/* Insta < 3.3 prepends the TCP header to the CMP message (Content-Type: pkixcmp-poll) */
 	if (compatibility == CMP_COMPAT_INSTA) {
 		/* this will be used for the msg length in TCP style transport */
@@ -138,11 +139,15 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 		/* this will be used for the HTTP Content-Length */
 		derLen += 7;
 	}
+#endif /* SUPPORT_OLD_INSTA */
 
 	/* print HTTP header */
+#ifdef SUPPORT_OLD_INSTA /* TODO remove completely one day */
 	if( compatibility != CMP_COMPAT_INSTA) {
+#endif /* SUPPORT_OLD_INSTA */
 		if (BIO_printf(cbio, http_hdr, serverName, serverPort, serverPath, serverName, serverPort, derLen) <= 0)
 			return 0;
+#ifdef SUPPORT_OLD_INSTA /* TODO remove completely one day */
 	} else {
 		/* XXX INSTA 3.2.1 likes it like this */
 		if (BIO_printf(cbio, insta_http_hdr, serverPath, serverName, serverPort, derLen) <= 0)
@@ -162,7 +167,9 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 			return -1;
 		}
 	}
+#endif /* SUPPORT_OLD_INSTA */
 
+#if SUPPORT_OLD_INSTA /* TODO remove completely one day */
 	/* Insta < 3.3 prepends the TCP header to the CMP message (Content-Type: pkixcmp-poll) */
 	if (compatibility == CMP_COMPAT_INSTA) {
 		derLenUintSize = sizeof(derLenUint);
@@ -206,6 +213,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 		if (BIO_write(cbio, instaHeader, 7) != 7)
 			return 0;
 	}
+#endif /* SUPPORT_OLD_INSTA */
 
 	i2d_CMP_PKIMESSAGE_bio(cbio, msg);
 
@@ -314,10 +322,12 @@ int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
 		totalMsgLen = (derMessage - (unsigned char*) recvMsg) + contentLen;
 	}
 
+#ifdef SUPPORT_OLD_INSTA /* TODO remove completely one day */
 	/* skip TCP-Style INSTA < 3.3 header */
 	if( compatibility == CMP_COMPAT_INSTA) {
 		derMessage += 7;
 	}
+#endif /* SUPPORT_OLD_INSTA */
 
 CMP_printf("totalRecvdLen %lu, totalMsgLen %lu, chunkLen %lu\n", totalRecvdLen, totalMsgLen, chunkLen);
 	/* if not already done, receive the rest of the message */
