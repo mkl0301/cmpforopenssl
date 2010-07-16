@@ -83,7 +83,7 @@
 /* ############################################################################ */
 /* XXX is the naming of this function sane? Is it too connected to CMP? */
 /* TODO there are some optional settings which are not cared for right now */
-CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, const int compatibility) {
+CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, const int compatibility, int popoMethod) {
 	CRMF_CERTREQMSG *certReqMsg;
 
 	if( !(certReqMsg = CRMF_CERTREQMSG_new())) goto err;
@@ -141,7 +141,7 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 	/* this could be done here */
 	int CRMF_CERTREQMSG_push0_extension( CRMF_CERTREQMSG *certReqMsg, X509_EXTENSION *ext);
 #endif
-	CRMF_CERTREQMSG_calc_and_set_popo( certReqMsg, pkey);
+	CRMF_CERTREQMSG_calc_and_set_popo( certReqMsg, pkey, popoMethod);
 
 	return certReqMsg;
 err:

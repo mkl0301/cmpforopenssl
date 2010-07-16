@@ -85,6 +85,7 @@
 
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
+#include <openssl/cmp.h>
 #include <openssl/crmf.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
@@ -432,22 +433,62 @@ err:
 /* ############################################################################ */
 /* calculate and set the proof of possession */
 /* ############################################################################ */
-int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PKEY *pkey) {
+int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PKEY *pkey, int popoMethod) {
 	CRMF_PROOFOFPOSSESION *newPopo=NULL;
 
 	if (! certReqMsg) return 0;
 	if (! pkey) return 0;
 
 	if( !(newPopo = CRMF_PROOFOFPOSSESION_new())) goto err;
+	CRMF_printf("INFO: using popoMethod %d\n", popoMethod);
 
-	newPopo->value.signature = CRMF_poposigningkey_new( certReqMsg->certReq, pkey);
-	if( !(newPopo->value.signature)) goto err;
-	newPopo->type = CRMF_PROOFOFPOSESSION_SIGNATURE;
+	switch (popoMethod) {
+		case CMP_POPO_SIGNATURE:
+			newPopo->value.signature = CRMF_poposigningkey_new( certReqMsg->certReq, pkey);
+			if( !(newPopo->value.signature)) goto err;
+			newPopo->type = CRMF_PROOFOFPOSESSION_SIGNATURE;
+			break;
+
+		case CMP_POPO_ENCRCERT:
+			newPopo->type = CRMF_PROOFOFPOSESSION_KEYENCIPHERMENT;
+			newPopo->value.keyEncipherment = CRMF_POPOPRIVKEY_new();
+
+			/*
+			  POPOPrivKey ::= CHOICE {
+			    thisMessage       [0] BIT STRING,         -- Deprecated
+			    -- possession is proven in this message (which contains the private
+			    -- key itself (encrypted for the CA))
+			    subsequentMessage [1] SubsequentMessage,
+			    -- possession will be proven in a subsequent message
+			    dhMAC             [2] BIT STRING,         -- Deprecated
+			    agreeMAC          [3] PKMACValue,
+			    encryptedKey      [4] EnvelopedData }
+			*/			
+			newPopo->value.keyEncipherment->type = 1; /* TODO make definition for this? */
+			
+			/*
+			  SubsequentMessage ::= INTEGER {
+			    encrCert (0),
+			    -- requests that resulting certificate be encrypted for the
+			    -- end entity (following which, POP will be proven in a
+			    -- confirmation message)
+			    challengeResp (1) }
+			    -- requests that CA engage in challenge-response exchange with
+			    -- end entity in order to prove private key possession 
+			 */ 
+			newPopo->value.keyEncipherment->value.subsequentMessage = ASN1_INTEGER_new();
+			ASN1_INTEGER_set(newPopo->value.keyEncipherment->value.subsequentMessage, 0); /* make #define? */
+			break;
+
+		default: goto err;
+	}
 
 	if(certReqMsg->popo) 
 		/* OPTIONAL, initialized before */
 		CRMF_PROOFOFPOSSESION_free(certReqMsg->popo);
 	certReqMsg->popo = newPopo;
+
+	CMP_printf("INFO: popo set\n");
 
 	return 1;
 err:

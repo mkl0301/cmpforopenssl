@@ -1,4 +1,5 @@
-/* crypto/cmp/cmp_ses.c
+/* vim: set noet ts=4 sts=4 sw=4: */
+ /* crypto/cmp/cmp_ses.c
  * Functions to do CMP (RFC 4210) message sequences for OpenSSL
  */
 /* ====================================================================
@@ -71,10 +72,13 @@
  *                             of printf statements.
  */
 
+#include <string.h>
+
 #include <openssl/cmp.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include <openssl/bio.h>
+#include <openssl/evp.h>
 #include <openssl/err.h>
 
 /* ############################################################################ */
@@ -99,6 +103,7 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
 	return out;
 }
 
+
 /* ############################################################################ */
 /* ############################################################################ */
 X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
@@ -119,6 +124,7 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	if (ctx->clCert) goto err;
 
 	/* set the protection Algor which will be used during the whole session */
+	/* if extCert is set, try to use that for authentication (appendix E.7) instead of PBMAC */
 	if (ctx->extCert) {
 		if (!CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG)) goto err;
 	}
@@ -140,7 +146,7 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( ip, ctx->protectionAlgor, NULL, ctx->secretValue))
+	if (CMP_protection_verify( ip, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), ctx->secretValue))
 		CMP_printf( "SUCCESS: validating protection of incoming message\n");
 	else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -161,10 +167,19 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 		case CMP_PKISTATUS_grantedWithMods:
 			CMP_printf( "WARNING: got \"grantedWithMods\"\n");
 		case CMP_PKISTATUS_accepted:
-			if( !(ctx->newClCert = CMP_CERTREPMESSAGE_cert_get1(ip->body->value.ip,0))) {
-				// old: "ERROR: could not find the certificate with certReqId=0"
-				CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
-				goto err;
+			switch (CMP_CERTREPMESSAGE_certType_get(ip->body->value.ip, 0)) {
+				case CMP_CERTORENCCERT_CERTIFICATE:
+					if( !(ctx->newClCert = CMP_CERTREPMESSAGE_cert_get1(ip->body->value.ip,0))) {
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
+						goto err;
+					}					
+					break;
+				case CMP_CERTORENCCERT_ENCRYPTEDCERT:
+					if( !(ctx->newClCert = CMP_CERTREPMESSAGE_encCert_get1(ip->body->value.ip,0,ctx->pkey))) {
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
+						goto err;
+					}					
+					break;
 			}
 			break;
 		case CMP_PKISTATUS_rejection:

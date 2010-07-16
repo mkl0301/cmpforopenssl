@@ -118,6 +118,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	 * int setSenderNonce
 	* XXX not setting transactionID test for PKI INFO
 	 * int setTransactionID
+	 * int popoMethod
 	 */
 } ASN1_SEQUENCE_END(CMP_CTX)
 IMPLEMENT_ASN1_FUNCTIONS(CMP_CTX)
@@ -147,6 +148,8 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->setSenderNonce  = 1;
 	/* XXX not setting transactionID test for PKI INFO */
 	ctx->setTransactionID  = 1;
+	ctx->popoMethod = CMP_POPO_SIGNATURE;
+	/* ctx->popoMethod = CMP_POPO_ENCRCERT; */
 
 #if 0
 	ctx->referenceValue = NULL;

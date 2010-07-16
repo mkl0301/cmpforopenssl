@@ -1170,6 +1170,11 @@ typedef struct cmp_ctx_st
 	int	setTransactionID;
 	/* XXX not setting senderNonce test for PKI INFO */
 	int	setSenderNonce;
+
+#define CMP_POPO_SIGNATURE 1
+#define CMP_POPO_ENCRCERT  2
+	/* Proof-of-posession mechanism used. Defaults to signature (POPOsignkingKey) */ 
+	int	popoMethod;
 } CMP_CTX;
 DECLARE_ASN1_FUNCTIONS(CMP_CTX)
 
@@ -1244,6 +1249,9 @@ int CMP_PKIFAILUREINFO_check( ASN1_BIT_STRING *failInfo, int codeBit);
 CMP_CERTRESPONSE *CMP_CERTREPMESSAGE_certResponse_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
 X509 *CMP_CERTREPMESSAGE_cert_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
 X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId);
+
+X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId, EVP_PKEY *pkey);
+int CMP_CERTREPMESSAGE_certType_get( CMP_CERTREPMESSAGE *certRep, long certReqId);
 
 int CMP_PKIMESSAGE_set_bodytype( CMP_PKIMESSAGE *msg, int type);
 int CMP_PKIMESSAGE_get_bodytype( CMP_PKIMESSAGE *msg);

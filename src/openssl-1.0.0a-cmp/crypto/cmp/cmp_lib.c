@@ -734,9 +734,13 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 
 	/* cleanup */
 	if (ctx) EVP_MD_CTX_destroy(ctx);
+	if (mac) OPENSSL_free(mac);
 	return prot;
 
 err:
+	if (ctx) EVP_MD_CTX_destroy(ctx);
+	if (mac) OPENSSL_free(mac);
+
 	CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_CMPERROR);
 	if(prot) ASN1_BIT_STRING_free(prot);
 	return NULL;
@@ -1135,6 +1139,104 @@ X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId)
 	if( (cert = CMP_CERTREPMESSAGE_cert_get0(certRep, certReqId)))
 		certCopy = X509_dup(cert);
 	return certCopy;
+}
+
+X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId, EVP_PKEY *pkey) {
+	CRMF_ENCRYPTEDVALUE *encCert      = NULL;
+	X509				*cert		  = NULL;	/* decrypted certificate */
+	EVP_PKEY_CTX		*pkctx		  = NULL;	/* private key context for decrypting the symmetric key */
+	EVP_CIPHER_CTX		*ctx		  = NULL;	/* context for symmetric encryption */
+	unsigned char		*ek			  = NULL;	/* decrypted symmetric encryption key */
+	const EVP_CIPHER	*cipher		  = NULL;	/* used cipher */
+	unsigned char		*iv			  = NULL;	/* initial vector for symmetric encryption */
+	unsigned char		*outbuf		  = NULL;	/* decryption output buffer */
+	const unsigned char *p			  = NULL;
+	int					 n, outlen	  = 0;
+	int                  keyAlg, symmAlg;
+
+	CMP_CERTRESPONSE *certResponse = NULL;
+	if ( (certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) ) {
+		encCert = certResponse->certifiedKeyPair->certOrEncCert->value.encryptedCert;
+	}
+
+	CMP_printf("INFO: Received encrypted certificate, attempting to decrypt... \n");
+
+	keyAlg  = OBJ_obj2nid(encCert->keyAlg->algorithm);
+	symmAlg = OBJ_obj2nid(encCert->symmAlg->algorithm);
+
+	/* first the symmetric key needs to be decrypted */
+	pkctx = EVP_PKEY_CTX_new(pkey, NULL);
+	switch (keyAlg) {
+		case NID_dsa: 
+		case NID_rsaEncryption: 
+		{
+			ASN1_BIT_STRING *encKey = encCert->encSymmKey;
+			size_t eksize = 0;
+
+			EVP_PKEY_decrypt_init(pkctx);
+			if (EVP_PKEY_decrypt(pkctx, NULL, &eksize, encKey->data, encKey->length) <= 0)
+				goto err;
+			ek = OPENSSL_malloc(eksize);
+			if (EVP_PKEY_decrypt(pkctx, ek, &eksize, encKey->data, encKey->length) <= 0)
+				goto err;
+			break;
+		}
+			/* TODO useful error message */
+		default: goto err;
+	}
+
+	/* XXX which ciphers should be supported here? */
+	switch (symmAlg) {
+		case NID_des_ede3_cbc: 
+			cipher = EVP_des_ede3_cbc(); 
+			iv = OPENSSL_malloc(cipher->iv_len);
+			ASN1_TYPE_get_octetstring(encCert->symmAlg->parameter, iv, cipher->iv_len);
+			break;
+			/* TODO useful error message */
+		default: goto err;
+	}
+
+	p = outbuf = OPENSSL_malloc(encCert->encValue->length + cipher->block_size - 1);
+	ctx = EVP_CIPHER_CTX_new();
+	EVP_CIPHER_CTX_set_padding(ctx, 0);
+
+	EVP_DecryptInit(ctx, cipher, ek, iv);
+	if (!EVP_DecryptUpdate(ctx, outbuf, &outlen, encCert->encValue->data, encCert->encValue->length)
+			|| !EVP_DecryptFinal(ctx, outbuf+outlen, &n)) {
+		goto err;
+	}
+	outlen += n;
+
+	cert = d2i_X509(NULL, &p, outlen);
+
+	if (outbuf) OPENSSL_free(outbuf);
+	if (pkctx) EVP_PKEY_CTX_free(pkctx);
+	if (ek) OPENSSL_free(ek);
+	if (ctx) EVP_CIPHER_CTX_free(ctx);
+	if (iv) OPENSSL_free(iv);
+	return cert;
+
+err:
+	if (outbuf) OPENSSL_free(outbuf);
+	if (pkctx) EVP_PKEY_CTX_free(pkctx);
+	if (ek) OPENSSL_free(ek);
+	if (ctx) EVP_CIPHER_CTX_free(ctx);
+	if (iv) OPENSSL_free(iv);
+	return NULL;
+}
+
+/* ############################################################################ */
+/* returns the type of the certificate contained in the certificate response    */
+/* returns -1 on errror                                                         */
+/* ############################################################################ */
+int CMP_CERTREPMESSAGE_certType_get( CMP_CERTREPMESSAGE *certRep, long certReqId) {
+	CMP_CERTRESPONSE *certResponse=NULL;
+
+	if( !certRep) return -1;
+	if( !(certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) )
+		return -1;
+
+	return certResponse->certifiedKeyPair->certOrEncCert->type;
 }
 
 /* ############################################################################ */
