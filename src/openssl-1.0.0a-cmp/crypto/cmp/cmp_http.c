@@ -98,6 +98,8 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 				 const CMP_PKIMESSAGE *msg)
 {
 	int derLen;
+
+#ifdef SUPPORT_OLD_INSTA
 	unsigned int derLenUint;
 	size_t derLenUintSize;
 	unsigned char instaHeader[7] ;
@@ -106,6 +108,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 	size_t recvLen=0;
 	char recvBuf[101];
 	int respCode;
+#endif
 
 	char http_hdr[] =
 		"POST http://%s:%d/%s HTTP/1.1\r\n" /* TODO: check HTTP standard if that's right */
@@ -115,6 +118,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 		"Connection: Keep-Alive\r\n" /* this is actually HTTP 1.0 but might be necessary for proxies */
 		"Cache-Control: no-cache\r\n\r\n";
 
+#ifdef SUPPORT_OLD_INSTA
 	char insta_http_hdr[] =
 		/* "POST http://%s:%d/%s HTTP/1.1\r\n" */
 		"POST /%s HTTP/1.1\r\n" /* XXX INSTA 3.2.1 likes it like this XXX */
@@ -125,6 +129,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 		"Connection: Keep-Alive\r\n" /* this is actually HTTP 1.0 but might be necessary for proxies */
 		"Cache-Control: no-cache\r\n"
 		"Expect: 100-continue\r\n\r\n"; /* XXX don't understand why they do that */
+#endif
 
 	if (!cbio)
 		return 0;

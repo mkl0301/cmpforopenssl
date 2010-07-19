@@ -71,6 +71,7 @@
 static ERR_STRING_DATA CMP_str_functs[]=
 	{
 {ERR_FUNC(CMP_F_CMP_CERTCONF_NEW),	"CMP_certConf_new"},
+{ERR_FUNC(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1),	"CMP_CERTREPMESSAGE_encCert_get1"},
 {ERR_FUNC(CMP_F_CMP_CERTSTATUS_SET_CERTHASH),	"CMP_CERTSTATUS_set_certHash"},
 {ERR_FUNC(CMP_F_CMP_CKUANN_NEW),	"CMP_ckuann_new"},
 {ERR_FUNC(CMP_F_CMP_CMP_INFOTYPEANDVALUE_NEW_BY_DEF_NOVAL),	"CMP_CMP_INFOTYPEANDVALUE_NEW_BY_DEF_NOVAL"},
@@ -113,6 +114,9 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 	{
 {ERR_REASON(CMP_R_CERTIFICATE_NOT_FOUND) ,"certificate not found"},
 {ERR_REASON(CMP_R_CMPERROR)              ,"cmperror"},
+{ERR_REASON(CMP_R_ERROR_DECODING_CERTIFICATE),"error decoding certificate"},
+{ERR_REASON(CMP_R_ERROR_DECRYPTING_CERTIFICATE),"error decrypting certificate"},
+{ERR_REASON(CMP_R_ERROR_DECRYPTING_SYMMETRIC_KEY),"error decrypting symmetric key"},
 {ERR_REASON(CMP_R_ERROR_PARSING_PKISTATUS),"error parsing pkistatus"},
 {ERR_REASON(CMP_R_ERROR_RECEIVING_MESSAGE),"error receiving message"},
 {ERR_REASON(CMP_R_ERROR_VALIDATING_PROTECTION),"error validating protection"},
@@ -122,7 +126,9 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_NO_CERTIFICATE_RECEIVED),"no certificate received"},
 {ERR_REASON(CMP_R_PKIBODY_ERROR)         ,"pkibody error"},
 {ERR_REASON(CMP_R_UNKNOWN_ALGORITHM_ID)  ,"unknown algorithm id"},
+{ERR_REASON(CMP_R_UNKNOWN_KEY_ALGORITHM) ,"unknown key algorithm"},
 {ERR_REASON(CMP_R_UNKNOWN_PKISTATUS)     ,"unknown pkistatus"},
+{ERR_REASON(CMP_R_UNKNOWN_SYMMETRIC_ALGORITHM),"unknown symmetric algorithm"},
 {0,NULL}
 	};
 
