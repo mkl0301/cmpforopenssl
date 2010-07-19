@@ -1342,6 +1342,7 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algId);
 #define CMP_CTX_OPT_UNSET           0
 #define CMP_CTX_OPT_SET             1
 #define CMP_CTX_OPT_IMPLICITCONFIRM 1
+#define CMP_CTX_OPT_POPMETHOD       2
 int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 #if 0
 int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);

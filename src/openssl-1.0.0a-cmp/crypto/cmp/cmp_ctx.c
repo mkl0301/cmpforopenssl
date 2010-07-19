@@ -595,6 +595,9 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val) {
 		case CMP_CTX_OPT_IMPLICITCONFIRM:
 			ctx->implicitConfirm = val;
 			break;
+		case CMP_CTX_OPT_POPMETHOD:
+			ctx->popoMethod = val;
+			break;
 		default:
 			goto err;
 	}
