@@ -253,6 +253,8 @@ printf("INFO: Saving Certificate to File %s\n", file);
 
 
 /* ############################################################################ */
+/* returns NULL on error */
+/* ############################################################################ */
 RSA *generateRSA(const int length) {
 	RSA *RSAkey=NULL;
 	BIGNUM *bn;
@@ -266,22 +268,23 @@ RSA *generateRSA(const int length) {
 	{
 		printf("ERROR: generating key.\n");
 		RSA_free(RSAkey);
-		RSAkey = NULL;
-		return(NULL);
+		return NULL;
 	}
 
 	return RSAkey;
 }
 
 /* ############################################################################ */
+/* returns NULL on error */
+/* ############################################################################ */
 EVP_PKEY *HELP_generateRSAKey() {
 	RSA *RSAkey=NULL;
 	EVP_PKEY *pkey=NULL;
 
 	/* generate RSA key */
-	RSAkey = generateRSA(1024);
-        pkey = EVP_PKEY_new();
-        EVP_PKEY_set1_RSA(pkey, RSAkey);
+  if(! (RSAkey = generateRSA(1024))) return NULL;
+  if( (pkey = EVP_PKEY_new()) )
+      EVP_PKEY_set1_RSA(pkey, RSAkey);
 
 	RSA_free(RSAkey);
 
