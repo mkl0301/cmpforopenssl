@@ -183,6 +183,31 @@ void printUsage( const char* cmdName) {
   exit(1);
 }
 
+
+/* ############################################################################ */
+/* this function writes all the certificates from the caPubs field of a received
+ * ip or kup message into the given directory */
+/* ############################################################################ */
+int writeCaPubsCertificates( char *destDir, CMP_CTX *cmp_ctx) {
+#define CERTFILEPATHLEN 512
+		X509 *cert = NULL;
+		char certFile[CERTFILEPATHLEN];
+		int n = 0;
+
+  if (!destDir) goto err;
+
+  printf( "Received %d CA certificates, saving to %s\n", CMP_CTX_caPubs_num(cmp_ctx), destDir);
+  while ( (cert=CMP_CTX_caPubs_pop(cmp_ctx)) != NULL) {
+    snprintf(certFile, CERTFILEPATHLEN, "%s/cacert%d.der", destDir, ++n);
+    if(!HELP_write_der_cert(cert, certFile)) {
+      printf("ERROR: could not write CA certificate number %d to %s!\n", n, certFile);
+    }
+  }
+  return n;
+err:
+  return 0;
+}
+
 /* ############################################################################ */
 /* ############################################################################ */
 void doIr() {
@@ -245,17 +270,10 @@ void doIr() {
     exit(1);
   }
 
-  if (opt_caPubsDir && CMP_CTX_caPubs_num(cmp_ctx) > 0) {
-		X509 *cert = NULL;
-		char certFile[512];
-		int n = 0;
-
-		printf( "Received %d CA certificates, saving to %s\n", CMP_CTX_caPubs_num(cmp_ctx), opt_caPubsDir);
-		while ( (cert=CMP_CTX_caPubs_pop(cmp_ctx)) != NULL) {
-			sprintf(certFile, "%s/cacert%d.der", opt_caPubsDir, ++n);
-			if(!HELP_write_der_cert(initialClCert, certFile))
-				printf("FATAL: could not write CA certificate to %s!\n", certFile);
-		}
+  /* if the option caPubsDir was given, see if we received certificates in
+   * the caPubs field and write them into the given directory */
+  if (opt_caPubsDir) {
+    writeCaPubsCertificates(opt_caPubsDir, cmp_ctx);
 	}
 
   return;
@@ -383,17 +401,10 @@ void doKur() {
     exit(1);
   }
 
-  if (opt_caPubsDir && CMP_CTX_caPubs_num(cmp_ctx) > 0) {
-		X509 *cert = NULL;
-		char certFile[512];
-		int n = 0;
-
-		printf( "Received %d CA certificates, saving to %s\n", CMP_CTX_caPubs_num(cmp_ctx), opt_caPubsDir);
-		while ( (cert=CMP_CTX_caPubs_pop(cmp_ctx)) != NULL) {
-			sprintf(certFile, "%s/cacert%d.der", opt_caPubsDir, ++n);
-			if(!HELP_write_der_cert(initialClCert, certFile))
-				printf("FATAL: could not write CA certificate to %s!\n", certFile);
-		}
+  /* if the option caPubsDir was given, see if we received certificates in
+   * the caPubs field and write them into the given directory */
+  if (opt_caPubsDir) {
+    writeCaPubsCertificates(opt_caPubsDir, cmp_ctx);
 	}
 
   return;
