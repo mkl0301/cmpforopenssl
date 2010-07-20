@@ -1149,7 +1149,6 @@ X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId)
 X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId, EVP_PKEY *pkey) {
 	CRMF_ENCRYPTEDVALUE *encCert      = NULL;
 	X509				*cert		  = NULL;	/* decrypted certificate */
-	EVP_PKEY_CTX		*pkctx		  = NULL;	/* private key context for decrypting the symmetric key */
 	EVP_CIPHER_CTX		*ctx		  = NULL;	/* context for symmetric encryption */
 	unsigned char		*ek			  = NULL;	/* decrypted symmetric encryption key */
 	const EVP_CIPHER	*cipher		  = NULL;	/* used cipher */
@@ -1171,21 +1170,29 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	symmAlg = OBJ_obj2nid(encCert->symmAlg->algorithm);
 
 	/* first the symmetric key needs to be decrypted */
-	pkctx = EVP_PKEY_CTX_new(pkey, NULL);
 	switch (keyAlg) {
 		case NID_dsa: 
 		case NID_rsaEncryption: 
 			 {
 				ASN1_BIT_STRING *encKey = encCert->encSymmKey;
-				size_t eksize = 0;
 
+#if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
+				size_t eksize = 0;
+				EVP_PKEY_CTX *pkctx = EVP_PKEY_CTX_new(pkey, NULL);
+				if (!pkctx) goto err;
 				EVP_PKEY_decrypt_init(pkctx);
 				if (EVP_PKEY_decrypt(pkctx, NULL, &eksize, encKey->data, encKey->length) <= 0
 						|| !(ek = OPENSSL_malloc(eksize))
 						|| EVP_PKEY_decrypt(pkctx, ek, &eksize, encKey->data, encKey->length) <= 0) {
+
 					CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
 					goto err;
 				}
+				EVP_PKEY_CTX_free(pkctx);
+#else
+				ek = OPENSSL_malloc(encKey->length);
+				EVP_PKEY_decrypt(ek, encKey->data, encKey->length, pkey);
+#endif
 				break;
 			 }
 
@@ -1228,7 +1235,6 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 
 	OPENSSL_free(outbuf);
 	EVP_CIPHER_CTX_free(ctx);
-	EVP_PKEY_CTX_free(pkctx);
 	OPENSSL_free(ek);
 	OPENSSL_free(iv);
 	return cert;
@@ -1236,7 +1242,6 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 err:
 	CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_CMPERROR);
 	if (outbuf) OPENSSL_free(outbuf);
-	if (pkctx) EVP_PKEY_CTX_free(pkctx);
 	if (ctx) EVP_CIPHER_CTX_free(ctx);
 	if (ek) OPENSSL_free(ek);
 	if (iv) OPENSSL_free(iv);
