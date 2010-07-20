@@ -174,6 +174,7 @@
 /* str has to be freed afterwards
  * if *str already contains a pointer that address will be freed */
 /* XXX this is just a hack... */
+/* returns 0 on error */
 size_t HELP_hex2str( char *hex, unsigned char **str) {
 	size_t hexLen, ret;
 	unsigned char* strPtr;
@@ -211,36 +212,45 @@ err:
 }
 
 /* ############################################################################ */
-X509 *HELP_read_der_cert( const char *file) {
-	X509 *x;
+/* returns 0 on error */
+/* ############################################################################ */
+X509 *HELP_read_der_cert( const char *filename) {
+	X509 *cert;
 	BIO  *bio;
 
-printf("INFO: Reading Certificate from File %s\n", file);
+  if(!filename) return 0; /* mandatory parameter */
+
+printf("INFO: Reading Certificate from File %s\n", filename);
 	if ((bio=BIO_new(BIO_s_file())) != NULL)
 		IFSTAT(BIO_new)
 
-	if (!BIO_read_filename(bio,file)) {
-		printf("ERROR: could not open file \"%s\" for reading.\n", file);
+	if (!BIO_read_filename(bio,filename)) {
+		printf("ERROR: could not open file \"%s\" for reading.\n", filename);
 		return NULL;
 	}
 
-	x=d2i_X509_bio(bio,NULL);
+	cert = d2i_X509_bio(bio,NULL);
 
 	BIO_free(bio);
-	return x;
+	return cert;
 }
 
 /* ############################################################################ */
-int HELP_write_der_cert( X509 *cert, const char *file) {
+/* returns 0 on error */
+/* ############################################################################ */
+int HELP_write_der_cert( X509 *cert, const char *filename) {
 	BIO  *bio;
 
-printf("INFO: Saving Certificate to File %s\n", file);
+  if(!cert) return 0;     /* mandatory parameter */
+  if(!filename) return 0; /* mandatory parameter */
+
+printf("INFO: Saving Certificate to File %s\n", filename);
 
 	if ((bio=BIO_new(BIO_s_file())) != NULL)
 		IFSTAT(BIO_new)
 
-	if (!BIO_write_filename(bio,(char *)file)) {
-		printf("ERROR: could not open file \"%s\" for writing.\n", file);
+	if (!BIO_write_filename(bio,(char *)filename)) {
+		printf("ERROR: could not open file \"%s\" for writing.\n", filename);
 		return 0;
 	}
 
@@ -292,8 +302,13 @@ EVP_PKEY *HELP_generateRSAKey() {
 }
 
 /* ############################################################################ */
+/* returns 0 on error */
+/* ############################################################################ */
 int HELP_savePrivKey(EVP_PKEY *pkey, const char * filename) {
 	FILE *fp;
+
+  if(!pkey) return 0;     /* mandatory parameter */
+  if(!filename) return 0; /* mandatory parameter */
 
 printf("INFO: Writing Private Key to File %s\n", filename);
 printf("INFO: the passphrase is \"password\"\n");
@@ -309,8 +324,13 @@ printf("INFO: private Key written\n");
 }
 
 /* ############################################################################ */
+/* returns 0 on error */
+/* ############################################################################ */
 int HELP_saveRSAPublicKey(EVP_PKEY *pkey, const char * filename) {
 	FILE *fp;
+
+  if(!pkey) return 0;     /* mandatory parameter */
+  if(!filename) return 0; /* mandatory parameter */
 
 printf("INFO: Writing Public Key to File %s\n", filename);
 	if( !(fp = fopen(filename, "w"))) {
@@ -325,9 +345,13 @@ printf("INFO: public Key written\n");
 }
 
 /* ############################################################################ */
+/* returns NULL on error */
+/* ############################################################################ */
 EVP_PKEY *HELP_readPrivKey(const char * filename) {
 	FILE *fp;
 	EVP_PKEY *pkey;
+
+  if(!filename) return NULL; /* mandatory parameter */
 
 printf("INFO: Reading Public Key from File %s\n", filename);
 printf("INFO: the passphrase is \"password\"...\n");
@@ -342,5 +366,4 @@ printf("INFO: the passphrase is \"password\"...\n");
 	fclose(fp);
 
 	return pkey;
-
 }
