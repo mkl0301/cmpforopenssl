@@ -101,14 +101,10 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, recipNonce, ASN1_OCTET_STRING),
 	ASN1_OPT(CMP_CTX, protectionAlgor, X509_ALGOR),
 #if 0
-	ASN1_OPT(CMP_CTX, lastMsgSent, CMP_PKIMESSAGE),
-	ASN1_OPT(CMP_CTX, lastMsgRecvd, CMP_PKIMESSAGE),
-#endif
-#if 0
 	/* this is actually CMP_PKIFREETEXT which is STACK_OF(ANS1_UTF8STRING) */
 	ASN1_SEQUENCE_OPT(CMP_CTX, freeText, STACK_OF(UTF8STRING));
 #endif
-	/* the following are not ASN1 types:
+	/* the following are not ASN1 types and present in the declaration in cmp.h
 	 * int compatibilitiy
 	 * char *serverName
 	 * int serverPort
@@ -160,8 +156,6 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->transactionID = NULL;
 	ctx->recipNonce = NULL;
 	ctx->protectionAlgor = NULL;
-	ctx->lastMsgSent = NULL;
-	ctx->lastMsgRecvd = NULL;
 #endif
 
 	return 1;
@@ -172,20 +166,17 @@ err:
 }
 
 /* ################################################################ */
+/* creates and initializes a CMP_CTX structure */
 /* ################################################################ */
 CMP_CTX *CMP_CTX_create(void) {
 	CMP_CTX *ctx=NULL;
 
 	if( !(ctx = CMP_CTX_new())) goto err;
-#if 0
-	ctx = OPENSSL_malloc(sizeof(CMP_CTX));
-#endif
 	if( !(CMP_CTX_init(ctx))) goto err;
 
 	return ctx;
 err:
 	CMPerr(CMP_F_CMP_CTX_CREATE, CMP_R_CMPERROR);
-
 	if (ctx) CMP_CTX_free(ctx);
 	return NULL;
 }

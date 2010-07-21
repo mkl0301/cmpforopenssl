@@ -272,7 +272,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	/* for oldCertId in "controls" of the CRMF cr message*/
 	GENERAL_NAME *gName;
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
-	long serial;
 	ASN1_INTEGER *serialASN=NULL;
 
 	/* for setting the id-aa-signingCertificate for CL */
@@ -342,7 +341,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		gName->type = GEN_DIRNAME;
 		/* 3 set it with the following commands */
 		serialASN   = X509_get_serialNumber(ctx->clCert);
-		serial      = ASN1_INTEGER_get(serialASN);
 		atav        = CRMF_ATAV_OldCertId_new( gName, serialASN);
 		CRMF_CERTREQMSG_push0_control( certReq0, atav);
 	}
