@@ -94,6 +94,8 @@
 #include <openssl/x509.h>
 #include <openssl/rand.h>
 #include <openssl/safestack.h>
+#include <openssl/crypto.h>
+#include <openssl/engine.h>
 #include <openssl/evp.h>
 #include <openssl/objects.h>
 /* for bio_err */
@@ -1155,8 +1157,9 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	unsigned char		*iv			  = NULL;	/* initial vector for symmetric encryption */
 	unsigned char		*outbuf		  = NULL;	/* decryption output buffer */
 	const unsigned char *p			  = NULL;   /* needed for decoding ASN1 */
+	int                  keyAlg, symmAlg;       /* NIDs for key and symmetric algorithm */
+	static int           ciphers_added= 0;      /* make sure that OpenSSL_add_all_ciphers is called only once */
 	int					 n, outlen	  = 0;
-	int                  keyAlg, symmAlg;
 
 	CMP_printf("INFO: Received encrypted certificate, attempting to decrypt... \n");
 
@@ -1170,49 +1173,48 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	symmAlg = OBJ_obj2nid(encCert->symmAlg->algorithm);
 
 	/* first the symmetric key needs to be decrypted */
-	switch (keyAlg) {
-		case NID_dsa: 
-		case NID_rsaEncryption: 
-			 {
-				ASN1_BIT_STRING *encKey = encCert->encSymmKey;
+
+	/* XXX this check could probably be removed since the EVP_PKEY_* calls will 
+	 * return an error if the key type is unsupported... */
+	if (keyAlg == NID_dsa || keyAlg == NID_rsaEncryption) {
+		ASN1_BIT_STRING *encKey = encCert->encSymmKey;
 
 #if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
-				size_t eksize = 0;
-				EVP_PKEY_CTX *pkctx = EVP_PKEY_CTX_new(pkey, NULL);
-				if (!pkctx) goto err;
-				EVP_PKEY_decrypt_init(pkctx);
-				if (EVP_PKEY_decrypt(pkctx, NULL, &eksize, encKey->data, encKey->length) <= 0
-						|| !(ek = OPENSSL_malloc(eksize))
-						|| EVP_PKEY_decrypt(pkctx, ek, &eksize, encKey->data, encKey->length) <= 0) {
+		size_t eksize = 0;
+		EVP_PKEY_CTX *pkctx = EVP_PKEY_CTX_new(pkey, NULL);
+		if (!pkctx) goto err;
+		EVP_PKEY_decrypt_init(pkctx);
+		if (EVP_PKEY_decrypt(pkctx, NULL, &eksize, encKey->data, encKey->length) <= 0
+				|| !(ek = OPENSSL_malloc(eksize))
+				|| EVP_PKEY_decrypt(pkctx, ek, &eksize, encKey->data, encKey->length) <= 0) {
 
-					CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
-					goto err;
-				}
-				EVP_PKEY_CTX_free(pkctx);
+			CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
+			goto err;
+		}
+		EVP_PKEY_CTX_free(pkctx);
 #else
-				ek = OPENSSL_malloc(encKey->length);
-				EVP_PKEY_decrypt(ek, encKey->data, encKey->length, pkey);
+		ek = OPENSSL_malloc(encKey->length);
+		EVP_PKEY_decrypt(ek, encKey->data, encKey->length, pkey);
 #endif
-				break;
-			 }
-
-		default: 
-			CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_UNKNOWN_KEY_ALGORITHM);
-			goto err;
+	}
+	else {
+		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_UNKNOWN_KEY_ALGORITHM);
+		goto err;
 	}
 
-	/* XXX which ciphers should be supported here? */
-	switch (symmAlg) {
-		case NID_des_ede3_cbc: 
-			cipher = EVP_des_ede3_cbc(); 
-			iv = OPENSSL_malloc(cipher->iv_len);
-			ASN1_TYPE_get_octetstring(encCert->symmAlg->parameter, iv, cipher->iv_len);
-			break;
-
-		default: 
-			CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_UNKNOWN_SYMMETRIC_ALGORITHM);
-			goto err;
+	if (!ciphers_added) {
+		/* TODO should this be moved to some common init function like CMP_CTX_create() ? */
+		OpenSSL_add_all_ciphers();
+		ciphers_added = 1;
 	}
+
+	/* select cipher based on algorithm given in message */
+	if (!(cipher = EVP_get_cipherbynid(symmAlg))) {
+		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_UNKNOWN_CIPHER);
+		goto err;
+	}
+	iv = OPENSSL_malloc(cipher->iv_len);
+	ASN1_TYPE_get_octetstring(encCert->symmAlg->parameter, iv, cipher->iv_len);
 
 	/* d2i_X509 changes the given pointer, so use p for decoding the message and keep the 
 	 * original pointer in outbuf so that the memory can be freed later */
