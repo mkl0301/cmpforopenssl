@@ -367,7 +367,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		itavValueDerSet[1] = itavValueDer[1]+2;
 		memcpy( itavValueDerSet+2, itavValueDer, itavValueDerLen);
 
-		itavValueStr = ASN1_STRING_new();
+		if( !(itavValueStr = ASN1_STRING_new())) goto err;
 #if 0
 		ASN1_STRING_set( itavValueStr, itavValueDer, itavValueDerLen);
 #endif
@@ -378,6 +378,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		CMP_INFOTYPEANDVALUE_set0(itav, OBJ_nid2obj(NID_id_smime_aa_signingCertificate), V_ASN1_SEQUENCE, itavValueStr);
 #endif
 		CMP_INFOTYPEANDVALUE_set0(itav, OBJ_nid2obj( NID_id_smime_aa_signingCertificate), V_ASN1_SET, itavValueStr);
+    itavValueStr = NULL; /* to avoid that this is freed on error although "consumed" by itav */
 		CMP_PKIHEADER_generalInfo_item_push0( msg->header, itav);
 	}
 
@@ -398,6 +399,7 @@ err:
 	CMPerr(CMP_F_CMP_KUR_NEW, CMP_R_CMPERROR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	if (itavValueDerSet) OPENSSL_free(itavValueDerSet);
+  if (itavValueStr) ASN1_STRING_free(itavValueStr);
 	return NULL;
 }
 
