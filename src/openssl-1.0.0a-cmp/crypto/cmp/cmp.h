@@ -1158,10 +1158,6 @@ typedef struct cmp_ctx_st
 #define CMP_TRANSPORT_TCP	2
 	int	   transport;
 #if 0
-	CMP_PKIMESSAGE       *lastMsgSent;
-	CMP_PKIMESSAGE       *lastMsgRecvd;
-#endif
-#if 0
 	/* this is actually CMP_PKIFREETEXT which is STACK_OF(ANS1_UTF8STRING) */
 	STACK_OF(ASN1_UTF8STRING)      *freeText;
 #endif
