@@ -316,7 +316,7 @@ X509_ALGOR *CMP_get_protectionAlgor_pbmac() {
 	ASN1_STRING_set( pbmStr, pbmDer, pbmDerLen);
 	pbmDer = NULL; /* TODO XXX should this actually be freed? this might be a memory leak if this is allocated by 12d_CRMF_PBMPARAMETER */
 	X509_ALGOR_set0( alg, OBJ_nid2obj(NID_id_PasswordBasedMAC), V_ASN1_SEQUENCE, pbmStr);
-	pbmStr = NULL;
+	pbmStr = NULL; /* TODO XXX I don't think that X509_ALGOR_set0 actually consumes the last argument so this might also be a small memory leak */
 
 	CRMF_PBMPARAMETER_free( pbm);
 	return alg;
