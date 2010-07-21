@@ -174,7 +174,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 	}
 #endif /* SUPPORT_OLD_INSTA */
 
-#if SUPPORT_OLD_INSTA /* TODO remove completely one day */
+#ifdef SUPPORT_OLD_INSTA /* TODO remove completely one day */
 	/* Insta < 3.3 prepends the TCP header to the CMP message (Content-Type: pkixcmp-poll) */
 	if (compatibility == CMP_COMPAT_INSTA) {
 		derLenUintSize = sizeof(derLenUint);
