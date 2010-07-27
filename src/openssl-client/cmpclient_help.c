@@ -367,3 +367,27 @@ printf("INFO: the passphrase is \"password\"...\n");
 
 	return pkey;
 }
+
+X509_NAME* HELP_create_X509_NAME(char *string)
+{
+	X509_NAME* subject = X509_NAME_new();
+	if (subject == NULL) goto err;
+	
+	char* result = strtok(string, ";");
+
+	while (result != NULL) {
+		char* content = strchr(result, '=');
+
+		if (content != NULL) {
+			*content++ = 0;
+			if(!X509_NAME_add_entry_by_txt(subject, result, MBSTRING_ASC, (unsigned char*)content, -1, -1, 0))
+				printf("ERROR unable to add entry by txt to X509 subject name\n");
+		}
+		result = strtok(NULL, ";");
+	}
+
+	return subject;
+err:
+	return NULL;
+}
+

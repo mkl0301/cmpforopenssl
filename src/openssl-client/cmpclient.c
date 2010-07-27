@@ -1,3 +1,4 @@
+/* vim: set ts=2 sts=2 sw=2 expandtab: */
 /* cmpclient.c
  * A simple example CMP client utilizing OpenSSL
  */
@@ -84,6 +85,7 @@
 #include <openssl/cmp.h>
 #include <openssl/bio.h>
 #include <openssl/rsa.h>
+#include <openssl/dsa.h>
 
 #include <openssl/engine.h>
 
@@ -110,6 +112,7 @@ static char* opt_extCertFile=NULL;
 static char* opt_newClCertFile=NULL;
 static char* opt_clKeyFile=NULL;
 static char* opt_newClKeyFile=NULL;
+static char* opt_subjectName=NULL;
 static char* opt_user=NULL;
 static char* opt_password=NULL;
 static char* opt_engine=NULL;
@@ -160,6 +163,8 @@ void printUsage( const char* cmdName) {
   printf(" --extcert FILE        location of another certificate to be used\n");
   printf("                       for initialization (if this is set, password is ignored)\n");
   printf(" --hex                 user and password are HEX, not ASCII\n");
+  printf(" --subject NAME        X509 subject name for the certificate Template\n");
+  printf("                       example: CN=MyName\n");
   printf(" --clcert FILE         location of the client's certificate\n");
   printf("                       this is overwritten at IR\n");
   printf(" --newclcert FILE      location of the client's new certificate\n");
@@ -244,6 +249,10 @@ void doIr() {
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
   CMP_CTX_set1_extCert( cmp_ctx, extCert);
+  if (opt_subjectName) {
+    X509_NAME *subject = HELP_create_X509_NAME(opt_subjectName);
+    CMP_CTX_set1_subjectName( cmp_ctx, subject);
+  }
 
   /* CL does not support this, it just ignores it.
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
@@ -468,6 +477,7 @@ void parseCLA( int argc, char **argv) {
     {"extcert",  required_argument,    0, 'x'},
     {"cacert",   required_argument,    0, 'g'},
     {"clcert",   required_argument,    0, 'h'},
+    {"subject",  required_argument,    0, 'S'},
     {"capubs",   required_argument,    0, 'U'},
     {"help",     no_argument,          0, 'i'},
     {"key",      required_argument,    0, 'j'},
@@ -572,6 +582,10 @@ void parseCLA( int argc, char **argv) {
       case 'h':
         opt_clCertFile = (char*) malloc(strlen(optarg)+1);
         strcpy(opt_clCertFile, optarg);
+        break;
+      case 'S':
+        opt_subjectName = (char*) malloc(strlen(optarg)+1);
+        strcpy(opt_subjectName, optarg);
         break;
       case 'i':
         printUsage( argv[0]);
