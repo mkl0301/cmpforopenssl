@@ -115,9 +115,8 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 	/* check if all necessary options are set */
 	if (!cbio) goto err;
 	if (!ctx) goto err;
-	if (!ctx->caCert) goto err;
 	if (!ctx->referenceValue) goto err;
-	if (!ctx->secretValue && !ctx->extCert) goto err;
+	if (!ctx->secretValue && (!ctx->extCert || !ctx->caCert)) goto err;
 	if (!ctx->pkey) goto err;
 
 	/* this can not have been set here */

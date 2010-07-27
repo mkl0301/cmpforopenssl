@@ -1124,6 +1124,9 @@ typedef struct cmp_ctx_st
 	/* *current* CLIENT certificate used to identify the Client */
 	/* XXX this should be a stack since there could be more than one */
 	X509                 *clCert;
+	/* subject name to be used in the cert template. note: if clcert or
+	 * extcert are set, subject name is read from there and this is ignored */
+	X509_NAME            *subjectName;
 	/* Stack of CA certificates sent by the CA in a IP/KUP message */ 
 	STACK_OF(X509)       *caPubs;
 	/* EVP_PKEY holding the *current* keys */
@@ -1317,6 +1320,7 @@ int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t 
 int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len);
 int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
+int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name);
 X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
 int CMP_CTX_caPubs_num( CMP_CTX *ctx);
 int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs);
@@ -1391,6 +1395,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_SERVERNAME			 119
 #define CMP_F_CMP_CTX_SET1_SERVERPATH			 120
 #define CMP_F_CMP_CTX_SET1_SERVERPORT			 121
+#define CMP_F_CMP_CTX_SET1_SUBJECTNAME			 136
 #define CMP_F_CMP_CTX_SET1_TRANSACTIONID		 122
 #define CMP_F_CMP_CTX_SET_COMPATIBILITY			 123
 #define CMP_F_CMP_CTX_SET_PROTECTIONALGOR		 124
@@ -1420,6 +1425,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_R_INVALID_KEY				 110
 #define CMP_R_NO_CERTIFICATE_RECEIVED			 111
 #define CMP_R_PKIBODY_ERROR				 112
+#define CMP_R_SUBJECT_NAME_NOT_SET			 117
 #define CMP_R_UNKNOWN_ALGORITHM_ID			 113
 #define CMP_R_UNKNOWN_CIPHER				 114
 #define CMP_R_UNKNOWN_KEY_ALGORITHM			 115

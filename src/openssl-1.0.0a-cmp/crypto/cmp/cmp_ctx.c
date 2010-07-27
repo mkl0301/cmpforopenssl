@@ -93,6 +93,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, secretValue, ASN1_OCTET_STRING),
 	ASN1_OPT(CMP_CTX, caCert, X509),
 	ASN1_OPT(CMP_CTX, clCert, X509),
+	ASN1_OPT(CMP_CTX, subjectName, X509_NAME),
 	ASN1_OPT(CMP_CTX, caPubs, X509),
 	/* EVP_PKEY *pkey */
 	ASN1_OPT(CMP_CTX, newClCert, X509),
@@ -272,6 +273,24 @@ int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert) {
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_CACERT, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name) {
+	if (!ctx) goto err;
+	if (!name) goto err;
+
+	if (ctx->subjectName) {
+		X509_NAME_free(ctx->subjectName);
+		ctx->clCert = NULL;
+	}
+
+	if (!(ctx->subjectName = X509_NAME_dup( (X509_NAME*)name))) goto err;
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_SUBJECTNAME, CMP_R_CMPERROR);
 	return 0;
 }
 

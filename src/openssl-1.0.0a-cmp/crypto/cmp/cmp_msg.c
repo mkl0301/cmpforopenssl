@@ -164,6 +164,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);
 
+#if 0
 	/* XXX TODO This might be always needed for RFC conformity CHECK ME */
 	if( 
 #ifdef SUPPORT_OLD_INSTA /* TODO remove completely one day */
@@ -175,11 +176,21 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 		if (!X509_NAME_add_entry_by_txt(subject, "CN", MBSTRING_ASC, (unsigned char*) "My Common Name", -1, -1, 0));
 // WARNING: CN for INSTA is hardcoded
 	}
+#endif
 
 	if (ctx->clCert)
 		subject = X509_get_subject_name(ctx->clCert);
 	else if (ctx->extCert)
 		subject = X509_get_subject_name(ctx->extCert);
+	else
+		subject = ctx->subjectName;
+	
+	/* subject name is required for insta compatibility, raise error if it's unset. */
+	if (ctx->compatibility == CMP_COMPAT_INSTA_3_3 && subject == NULL) {
+		CMPerr(CMP_F_CMP_IR_NEW, CMP_R_SUBJECT_NAME_NOT_SET);
+		ERR_add_error_data(1, "subject name is required in insta compatibility mode");
+		goto err;
+	}
 
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility, ctx->popoMethod))) goto err;

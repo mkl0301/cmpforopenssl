@@ -1,6 +1,7 @@
 =pod
 
 =head1 NAME
+
  CMP_doInitialRequestSeq,
  CMP_doKeyUpdateRequestSeq,
 
