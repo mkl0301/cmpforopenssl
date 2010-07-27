@@ -499,7 +499,7 @@ void parseCLA( int argc, char **argv) {
 
   while (1)
   {
-    c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqrstu:U:x:", long_options, &option_index);
+    c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqrsS:tu:U:x:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
