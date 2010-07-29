@@ -200,8 +200,16 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	/* if we have external cert, try to initialize with that. */
 	if (ctx->extCert) {
-		if( !(msg->extraCerts = sk_X509_new_null())) goto err;
+		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
 		sk_X509_push(msg->extraCerts, ctx->extCert);
+	}
+
+	/* add any extraCerts that are set in the context */
+	if (sk_X509_num(ctx->extraCerts) > 0) {
+		int i;
+		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+		for (i = 0; i < sk_X509_num(ctx->extraCerts); i++)
+			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCerts, i)));
 	}
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
@@ -254,6 +262,13 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 
 	if( !(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
+
+	if (sk_X509_num(ctx->extraCerts) > 0) {
+		int i;
+		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+		for (i = 0; i < sk_X509_num(ctx->extraCerts); i++)
+			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCerts, i)));
+	}
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
@@ -394,6 +409,14 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	}
 
 	sk_CRMF_CERTREQMSG_push( msg->body->value.kur, certReq0);
+
+	
+	if (sk_X509_num(ctx->extraCerts) > 0) {
+		int i;
+		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+		for (i = 0; i < sk_X509_num(ctx->extraCerts); i++)
+			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCerts, i)));
+	}
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 

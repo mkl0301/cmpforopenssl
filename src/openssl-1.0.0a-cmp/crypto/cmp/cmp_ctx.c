@@ -94,7 +94,9 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, caCert, X509),
 	ASN1_OPT(CMP_CTX, clCert, X509),
 	ASN1_OPT(CMP_CTX, subjectName, X509_NAME),
-	ASN1_OPT(CMP_CTX, caPubs, X509),
+	ASN1_SEQUENCE_OF_OPT(CMP_CTX, caPubs, X509),
+	ASN1_SEQUENCE_OF_OPT(CMP_CTX, extraCerts, X509),
+	ASN1_SEQUENCE_OF_OPT(CMP_CTX, caExtraCerts, X509),
 	/* EVP_PKEY *pkey */
 	ASN1_OPT(CMP_CTX, newClCert, X509),
 	/* EVP_PKEY *newPkey */
@@ -119,6 +121,25 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	 */
 } ASN1_SEQUENCE_END(CMP_CTX)
 IMPLEMENT_ASN1_FUNCTIONS(CMP_CTX)
+
+/* TODO find out what's wrong with/how to use sk_X509_dup()
+ * so that this function could be removed... */
+static STACK_OF(X509)* X509_stack_dup(const STACK_OF(X509)* stack)
+{
+	STACK_OF(X509) *newsk = NULL;
+	int i;
+
+	if (!stack) goto err;
+	if (!(newsk = sk_X509_new_null())) goto err;
+
+	for (i = 0; i < sk_X509_num(stack); i++)
+		/* XXX does the X509_dup() call cause memory leakage? */
+		sk_X509_push(newsk, X509_dup(sk_X509_value(stack, i)));
+
+	return newsk;
+err:
+	return 0;
+}
 
 ;
 /* ################################################################ */
@@ -214,6 +235,92 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
+X509 *CMP_CTX_caExtraCerts_pop( CMP_CTX *ctx)
+{
+	if (!ctx) goto err;
+	if (!ctx->caExtraCerts) return NULL;
+	return sk_X509_pop(ctx->caExtraCerts);
+err:
+	CMPerr(CMP_F_CMP_CTX_CAEXTRACERTS_POP, CMP_R_CMPERROR);
+	return NULL;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_caExtraCerts_num( CMP_CTX *ctx)
+{
+	if (!ctx) goto err;
+	if (!ctx->caExtraCerts) return 0;
+	return sk_X509_num(ctx->caExtraCerts);
+  err:
+	CMPerr(CMP_F_CMP_CTX_CAEXTRACERTS_NUM, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_set1_caExtraCerts( CMP_CTX *ctx, const STACK_OF(X509) *caExtraCerts) {
+	if (!ctx) goto err;
+	if (!caExtraCerts) goto err;
+
+	if (ctx->caExtraCerts) {
+		sk_X509_free(ctx->caExtraCerts);
+		ctx->caExtraCerts = NULL;
+	}
+
+	if (!(ctx->caExtraCerts = X509_stack_dup(caExtraCerts))) goto err;
+
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_CAEXTRACERTS, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_extraCerts_push( CMP_CTX *ctx, const X509 *val)
+{
+	if (!ctx) goto err;
+	if (!ctx->extraCerts && !(ctx->extraCerts = sk_X509_new_null())) return 0;
+	return sk_X509_push(ctx->extraCerts, val);
+err:
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_POP, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_extraCerts_num( CMP_CTX *ctx)
+{
+	if (!ctx) goto err;
+	if (!ctx->extraCerts) return 0;
+	return sk_X509_num(ctx->extraCerts);
+  err:
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_NUM, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_set1_extraCerts( CMP_CTX *ctx, const STACK_OF(X509) *extraCerts) {
+	if (!ctx) goto err;
+	if (!extraCerts) goto err;
+
+	if (ctx->extraCerts) {
+		sk_X509_free(ctx->extraCerts);
+		ctx->extraCerts = NULL;
+	}
+
+	if (!(ctx->extraCerts = X509_stack_dup(extraCerts))) goto err;
+
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_EXTRACERTS, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
 X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx) {
 	if (!ctx) goto err;
 	if (!ctx->caPubs) return NULL;
@@ -237,8 +344,6 @@ err:
 /* ################################################################ */
 /* ################################################################ */
 int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs) {
-	X509 *temp = NULL;
-
 	if (!ctx) goto err;
 	if (!caPubs) goto err;
 
@@ -247,10 +352,9 @@ int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs) {
 		ctx->caPubs = NULL;
 	}
 
-	// if (!(ctx->caPubs = sk_X509_dup( (X509*)caPubs))) goto err;
-	if (!(ctx->caPubs = sk_X509_new_null())) goto err;
-	while ((temp = sk_X509_pop(caPubs)) != NULL)
-		sk_X509_push(ctx->caPubs, temp);
+	/* XXX why doesn't this work? */
+	/* if (!(ctx->caPubs = sk_X509_dup( (X509*)caPubs))) goto err; */
+	if (!(ctx->caPubs = X509_stack_dup(caPubs))) goto err;
 
 	return 1;
 err:

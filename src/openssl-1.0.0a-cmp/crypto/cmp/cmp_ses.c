@@ -198,9 +198,13 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 
 	/* if the CA returned certificates in the caPubs field, copy them
 	 * to the context so that they can be retrieved if necessary */
-	if (ip->body->value.ip->caPubs) {
+	if (ip->body->value.ip->caPubs)
 		CMP_CTX_set1_caPubs(ctx, ip->body->value.ip->caPubs);
-	}
+
+	/* copy any received extraCerts to context->caExtraCerts so
+	 * they can also be retrieved */
+	if (ip->extraCerts)
+		CMP_CTX_set1_caExtraCerts(ctx, ip->extraCerts);
 
 	/* check if implicit confirm is set in generalInfo */
 	/* TODO should I check if that was requested?
@@ -323,6 +327,16 @@ X509 *CMP_doCertificateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 			goto err;
 			break;
 	}
+
+	/* if the CA returned certificates in the caPubs field, copy them
+	 * to the context so that they can be retrieved if necessary */
+	if (cp->body->value.cp->caPubs)
+		CMP_CTX_set1_caPubs(ctx, cp->body->value.cp->caPubs);
+
+	/* copy any received extraCerts to context->caExtraCerts so
+	 * they can also be retrieved */
+	if (cp->extraCerts)
+		CMP_CTX_set1_caExtraCerts(ctx, cp->extraCerts);
 
 	/* check if implicit confirm is set in generalInfo */
 	/* TODO should I check if that was requested?
@@ -449,9 +463,13 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 
 	/* if the CA returned certificates in the caPubs field, copy them
 	 * to the context so that they can be retrieved if necessary */
-	if (kup->body->value.kup->caPubs) {
+	if (kup->body->value.kup->caPubs)
 		CMP_CTX_set1_caPubs(ctx, kup->body->value.kup->caPubs);
-	}
+
+	/* copy any received extraCerts to context->caExtraCerts so
+	 * they can also be retrieved */
+	if (kup->extraCerts)
+		CMP_CTX_set1_caExtraCerts(ctx, kup->extraCerts);
 
 	/* check if implicit confirm is set in generalInfo */
 	/* TODO should I check if that was requested?

@@ -1129,6 +1129,10 @@ typedef struct cmp_ctx_st
 	X509_NAME            *subjectName;
 	/* Stack of CA certificates sent by the CA in a IP/KUP message */ 
 	STACK_OF(X509)       *caPubs;
+	/* stack of extraCerts the client will include when sending a PKI message */
+	STACK_OF(X509)       *extraCerts;
+	/* stack of extraCerts returned from the server in an IP/KUP message */ 
+	STACK_OF(X509)       *caExtraCerts;
 	/* EVP_PKEY holding the *current* keys */
 	/* XXX this is not an ASN.1 type */
 	EVP_PKEY             *pkey;
@@ -1325,6 +1329,12 @@ int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name);
 X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
 int CMP_CTX_caPubs_num( CMP_CTX *ctx);
 int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs);
+int CMP_CTX_set1_extraCerts( CMP_CTX *ctx, const STACK_OF(X509) *extraCerts);
+int CMP_CTX_extraCerts_push( CMP_CTX *ctx, const X509 *val);
+int CMP_CTX_extraCerts_num( CMP_CTX *ctx);
+int CMP_CTX_set1_caExtraCerts( CMP_CTX *ctx, const STACK_OF(X509) *caExtraCerts);
+X509 *CMP_CTX_caExtraCerts_pop( CMP_CTX *ctx);
+int CMP_CTX_caExtraCerts_num( CMP_CTX *ctx);
 int CMP_CTX_set1_extCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_newClCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
@@ -1379,15 +1389,21 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CERTSTATUS_SET_CERTHASH		 102
 #define CMP_F_CMP_CKUANN_NEW				 103
 #define CMP_F_CMP_CR_NEW				 104
+#define CMP_F_CMP_CTX_CAEXTRACERTS_NUM			 139
+#define CMP_F_CMP_CTX_CAEXTRACERTS_POP			 140
 #define CMP_F_CMP_CTX_CAPUBS_NUM			 105
 #define CMP_F_CMP_CTX_CAPUBS_POP			 106
 #define CMP_F_CMP_CTX_CREATE				 107
+#define CMP_F_CMP_CTX_EXTRACERTS_NUM			 141
+#define CMP_F_CMP_CTX_EXTRACERTS_POP			 142
 #define CMP_F_CMP_CTX_INIT				 108
 #define CMP_F_CMP_CTX_SET0_NEWPKEY			 109
 #define CMP_F_CMP_CTX_SET0_PKEY				 110
 #define CMP_F_CMP_CTX_SET1_CACERT			 111
+#define CMP_F_CMP_CTX_SET1_CAEXTRACERTS			 137
 #define CMP_F_CMP_CTX_SET1_CAPUBS			 112
 #define CMP_F_CMP_CTX_SET1_CLCERT			 113
+#define CMP_F_CMP_CTX_SET1_EXTRACERTS			 138
 #define CMP_F_CMP_CTX_SET1_NEWCLCERT			 114
 #define CMP_F_CMP_CTX_SET1_PROTECTIONALGOR		 115
 #define CMP_F_CMP_CTX_SET1_RECIPNONCE			 116
