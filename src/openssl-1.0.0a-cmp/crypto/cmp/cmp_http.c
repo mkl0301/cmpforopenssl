@@ -76,17 +76,59 @@
 #include <openssl/err.h>
 #include <openssl/cmp.h>
 
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
+static uint32_t gethostiplong(const char *host) {
+	unsigned char ip[4];
+
+	BIO_get_host_ip(host, ip);
+
+	return htonl( (unsigned long)
+			((unsigned long)ip[0]<<24L)|
+			((unsigned long)ip[1]<<16L)|
+			((unsigned long)ip[2]<< 8L)|
+			((unsigned long)ip[3]) );
+}
+
 /* ############################################################################ */
 /* returns 1 on success, 0 on failure */
 /* @serverName holds a sting like "my.server.com" or "1.2.3.4" */
 /* ############################################################################ */
-int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port) {
-	*cbio = BIO_new(BIO_s_connect());
-	BIO_set_conn_hostname(*cbio, serverName);
-	BIO_set_conn_int_port(*cbio, &port);
-	/* set nonblocking - XXX should this really be done? */
-	/* BIO_setn_nbio(*cbio,1); */
-	return BIO_do_connect(*cbio);
+int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port, const char *srcip) {
+	struct sockaddr_in svaddr;
+	int sockfd;
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+		goto err;
+
+	if (srcip != NULL) {
+		struct sockaddr_in claddr;
+
+		memset(&claddr, 0, sizeof(claddr));
+		claddr.sin_family = AF_INET; 
+		claddr.sin_port = htons(0);
+		claddr.sin_addr.s_addr = gethostiplong(srcip);
+
+		if (bind(sockfd, (struct sockaddr *) &claddr, sizeof(claddr)) < 0)
+			goto err;
+	}
+
+	memset(&svaddr, 0, sizeof(svaddr));
+	svaddr.sin_family = AF_INET;
+	svaddr.sin_port = htons((unsigned short)port);
+	svaddr.sin_addr.s_addr = gethostiplong(serverName);
+
+	if (connect(sockfd, (struct sockaddr *) &svaddr, sizeof(svaddr)) < 0)
+		goto err;
+
+	if (!(*cbio = BIO_new_socket(sockfd, 1)))
+		goto err;
+	return 1;
+
+  err:
+	return 0;
 }
 
 /* ############################################################################ */

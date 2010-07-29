@@ -258,12 +258,14 @@ void doIr() {
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
    */
 
-  if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
+  if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort, NULL)) {
     printf( "ERROR: setting up connection to server");
     exit(1);
   }
 
   initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
+  printf("fd is %d \n",BIO_get_fd(cbio, NULL));
+  close(BIO_get_fd(cbio, NULL));
   BIO_free(cbio);
 
   if( initialClCert) {
@@ -329,7 +331,7 @@ void doCr() {
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
    */
 
-  if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
+  if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort, NULL)) {
     printf( "ERROR: setting up connection to server");
     exit(1);
   }
@@ -390,7 +392,7 @@ void doKur() {
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
-  if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
+  if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort, NULL)) {
     printf( "ERROR: setting up connection to server");
     exit(1);
   }
@@ -436,7 +438,7 @@ void doInfo() {
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
-  if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
+  if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort, NULL)) {
     printf( "ERROR: setting up connection to server");
     exit(1);
   }
