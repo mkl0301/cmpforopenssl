@@ -1302,7 +1302,8 @@ int CMP_INFOTYPEANDVALUE_set0(CMP_INFOTYPEANDVALUE *itav, ASN1_OBJECT *aobj, int
 void CMP_INFOTYPEANDVALUE_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval, CMP_INFOTYPEANDVALUE *itav);
 
 /* from cmp_http.c */
-int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port, const char *srcip);
+int CMP_new_http_bio_ex(BIO **cbio, const char* serverName, const int port, const char *srcip);
+int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port);
 /* int CMP_PKIMESSAGE_http_bio_send(BIO *cbio, const char* serverName, const int serverPort, const CMP_PKIMESSAGE *msg); */
 int CMP_PKIMESSAGE_http_bio_send(BIO *cbio, const char *serverName, const int serverPort, const char *serverPath, const int compatibility, const CMP_PKIMESSAGE *msg);
 int CMP_PKIMESSAGE_http_bio_recv(BIO *cbio, CMP_PKIMESSAGE **ip, const int compatibility);

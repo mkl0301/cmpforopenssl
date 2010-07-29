@@ -92,11 +92,7 @@ static uint32_t gethostiplong(const char *host) {
 			((unsigned long)ip[3]) );
 }
 
-/* ############################################################################ */
-/* returns 1 on success, 0 on failure */
-/* @serverName holds a sting like "my.server.com" or "1.2.3.4" */
-/* ############################################################################ */
-int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port, const char *srcip) {
+int CMP_new_http_bio_ex(BIO **cbio, const char* serverName, const int port, const char *srcip) {
 	struct sockaddr_in svaddr;
 	int sockfd;
 
@@ -129,6 +125,14 @@ int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port, const c
 
   err:
 	return 0;
+}
+
+/* ############################################################################ */
+/* returns 1 on success, 0 on failure */
+/* @serverName holds a sting like "my.server.com" or "1.2.3.4" */
+/* ############################################################################ */
+int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port) {
+	return CMP_new_http_bio_ex(cbio, serverName, port, NULL);
 }
 
 /* ############################################################################ */
