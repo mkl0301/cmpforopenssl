@@ -186,7 +186,9 @@ size_t HELP_hex2str( char *hex, unsigned char **str);
 X509 *HELP_read_der_cert( const char *file);
 int HELP_write_der_cert( X509 *cert, const char *file);
 EVP_PKEY *HELP_generateRSAKey();
+EVP_PKEY *HELP_generateDSAKey();
 int HELP_savePrivKey(EVP_PKEY *pkey, const char *filename);
 EVP_PKEY *HELP_readPrivKey(const char *filename);
+X509_NAME* HELP_create_X509_NAME(char *string);
 
 #endif /* CMPCLIENT_HELP_H */

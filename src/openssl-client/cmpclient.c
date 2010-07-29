@@ -264,8 +264,6 @@ void doIr() {
   }
 
   initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
-  printf("fd is %d \n",BIO_get_fd(cbio, NULL));
-  close(BIO_get_fd(cbio, NULL));
   BIO_free(cbio);
 
   if( initialClCert) {
