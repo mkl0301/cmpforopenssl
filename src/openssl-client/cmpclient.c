@@ -125,12 +125,17 @@ static int opt_doKur=0;
 static int opt_doInfo=0;
 static int opt_compatibility=CMP_COMPAT_RFC;
 
+static char** opt_extraCerts=NULL;
+static int opt_nExtraCerts=0;
+
 /* calculated from CLA */
 static unsigned char *idString=NULL;
 static unsigned char *password=NULL;
 static size_t idStringLen=0, passwordLen=0;
 static X509 *caCert=NULL;
 static ENGINE *engine=NULL;
+
+static STACK_OF(X509) *extraCerts = NULL;
 
 /* ############################################################################ */
 /* ############################################################################ */
@@ -173,6 +178,9 @@ void printUsage( const char* cmdName) {
   printf("                       this is overwritten at IR\n");
   printf(" --newkey FILE         location of the client's new private key\n");
   printf("                       this is overwritten at KUR\n");
+  printf(" --extracert FILE      certificate that will be added to the extraCerts field\n");
+  printf("                       when sending any PKIMessage. can be given multiple times\n");
+  printf("                       in order to specify several certificates.\n");
   printf("\n");
   printf("Other options are:\n");
   printf(" --cryptlib    be compatible to Cryptlib\n");
@@ -253,6 +261,8 @@ void doIr() {
     X509_NAME *subject = HELP_create_X509_NAME(opt_subjectName);
     CMP_CTX_set1_subjectName( cmp_ctx, subject);
   }
+  if (opt_nExtraCerts > 0)
+    CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
 
   /* CL does not support this, it just ignores it.
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
@@ -325,6 +335,9 @@ void doCr() {
   CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
+  if (opt_nExtraCerts > 0)
+    CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
+
   /* CL does not support this, it just ignores it.
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
    */
@@ -389,6 +402,9 @@ void doKur() {
   CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
+
+  if (opt_nExtraCerts > 0)
+    CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
 
   if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
     printf( "ERROR: setting up connection to server");
@@ -494,12 +510,13 @@ void parseCLA( int argc, char **argv) {
     {"insta3.3", no_argument,          0, 's'},
     {"cr",	     no_argument,          0, 't'},
     {"engine",   required_argument,    0, 'u'},
+    {"extracert",required_argument,    0, 'X'},
     {0, 0, 0, 0}
   };
 
   while (1)
   {
-    c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqrsS:tu:U:x:", long_options, &option_index);
+    c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqrsS:tu:U:x:X:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -565,6 +582,13 @@ void parseCLA( int argc, char **argv) {
         }
         opt_sequenceSet = 1;
         opt_doInfo = 1;
+        break;
+
+      case 'X':
+        opt_extraCerts = (char**) realloc(opt_extraCerts, (opt_nExtraCerts+1) * sizeof(char*));
+        opt_extraCerts[opt_nExtraCerts] = (char*) malloc(strlen(optarg)+1);
+        strcpy(opt_extraCerts[opt_nExtraCerts], optarg);
+        opt_nExtraCerts++;
         break;
 
       case 'e':
@@ -779,6 +803,20 @@ int main(int argc, char **argv) {
   if( !(caCert = HELP_read_der_cert(opt_caCertFile))) {
     printf("FATAL: could not read CA certificate!\n");
     exit(1);
+  }
+
+  /* read given extraCerts, if any */
+  if( opt_nExtraCerts > 0) {
+    int i;
+    extraCerts = sk_X509_new_null();
+    for (i = 0; i < opt_nExtraCerts; i++) {
+      X509 *cert = HELP_read_der_cert(opt_extraCerts[i]);
+      if (!cert) {
+        printf("FATAL: could not read extraCerts\n");
+        exit(1);
+      }
+      sk_X509_push(extraCerts, cert);
+    }
   }
 
   if( opt_doIr) {
