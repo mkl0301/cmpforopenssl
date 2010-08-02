@@ -180,6 +180,10 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->protectionAlgor = NULL;
 #endif
 
+	/* initialize OpenSSL */
+	OpenSSL_add_all_ciphers();
+	OpenSSL_add_all_digests();
+
 	return 1;
 
 err:

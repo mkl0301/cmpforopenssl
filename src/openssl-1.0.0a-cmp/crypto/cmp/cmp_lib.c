@@ -702,8 +702,6 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 			mac = OPENSSL_malloc(maxMacLen);
 
 			ctx=EVP_MD_CTX_create();
-			/* XXX do I have to do that here or somewhere else? */
-			OpenSSL_add_all_digests();
 
 			if (!(EVP_SignInit_ex(ctx, EVP_get_digestbynid(usedAlgorNid), NULL))) goto err;
 			if (!(EVP_SignUpdate(ctx, protPartDer, protPartDerLen))) goto err;
@@ -1159,7 +1157,6 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	unsigned char		*outbuf		  = NULL;	/* decryption output buffer */
 	const unsigned char *p			  = NULL;   /* needed for decoding ASN1 */
 	int                  keyAlg, symmAlg;       /* NIDs for key and symmetric algorithm */
-	static int           ciphers_added= 0;      /* make sure that OpenSSL_add_all_ciphers is called only once */
 	int					 n, outlen	  = 0;
 
 	CMP_printf("INFO: Received encrypted certificate, attempting to decrypt... \n");
@@ -1201,12 +1198,6 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	else {
 		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_UNKNOWN_KEY_ALGORITHM);
 		goto err;
-	}
-
-	if (!ciphers_added) {
-		/* TODO should this be moved to some common init function like CMP_CTX_create() ? */
-		OpenSSL_add_all_ciphers();
-		ciphers_added = 1;
 	}
 
 	/* select cipher based on algorithm given in message */
