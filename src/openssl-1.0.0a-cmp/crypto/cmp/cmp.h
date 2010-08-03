@@ -1203,10 +1203,6 @@ int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
-#if 0
-int CMP_PKIHEADER_set_protectionAlg_dsa(CMP_PKIHEADER *hdr);
-int CMP_PKIHEADER_set_protectionAlg_rsa(CMP_PKIHEADER *hdr);
-#endif
 int CMP_PKIHEADER_set1_transactionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *transactionID);
 int CMP_PKIHEADER_set1_recipNonce(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *recipNonce);
 int CMP_PKIHEADER_set1_senderKID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *senderKID);

@@ -104,28 +104,6 @@
 #include <time.h>
 
 
-#if 0
-/* ############################################################################ */
-unsigned char *StrToHexStr(unsigned char *str, int length)
-{
-	unsigned char *newstr;
-	unsigned char *cpold;
-	unsigned char *cpnew;
-
-	newstr = (unsigned char *)malloc((size_t)(length*2+1));
-	/* XXX I know this is not freed... */
-	cpold = str;
-	cpnew = newstr;
-
-	while(length--) {
-		sprintf((char*)cpnew, "%02X", (unsigned char)(*cpold++));
-		cpnew+=2;
-	}
-	*(cpnew) = '\0';
-	return(newstr);
-}
-#endif
-
 /* ############################################################################ */
 /* ############################################################################ */
 int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version) {
@@ -227,28 +205,6 @@ int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 	return ret;
 }
 
-#if 0
-/* ############################################################################ */
-int CMP_PKIHEADER_set_protectionAlg_dsa(CMP_PKIHEADER *hdr) {
-	if (!hdr->protectionAlg)
-		if (!(hdr->protectionAlg = X509_ALGOR_new())) goto err;
-	X509_ALGOR_set0( hdr->protectionAlg, OBJ_nid2obj(NID_dsaWithSHA1), V_ASN1_NULL, NULL);
-	return 1;
-err:
-	return 0;
-}
-
-/* ############################################################################ */
-int CMP_PKIHEADER_set_protectionAlg_rsa(CMP_PKIHEADER *hdr) {
-	if (!hdr->protectionAlg)
-		if (!(hdr->protectionAlg = X509_ALGOR_new())) goto err;
-	X509_ALGOR_set0( hdr->protectionAlg, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
-	return 1;
-err:
-	return 0;
-}
-#endif
-
 /* ############################################################################ */
 X509_ALGOR *CMP_get_protectionAlgor_by_nid(int nid) {
 	X509_ALGOR *alg=NULL;
@@ -269,35 +225,6 @@ err:
 	if (alg) X509_ALGOR_free(alg);
 	return NULL;
 }
-
-#if 0
-/* ############################################################################ */
-int CMP_PKIHEADER_set_protectionAlg_pbmac(CMP_PKIHEADER *hdr) {
-	CRMF_PBMPARAMETER *pbm=NULL;
-	unsigned char *pbmDer=NULL;
-	int pbmDerLen;
-	ASN1_STRING *pbmStr=NULL;
-
-	/* CRMF_pbm_new allocates and initializes */
-	if (!(pbm = CRMF_pbm_new())) goto err;
-
-	if (!hdr->protectionAlg)
-		if (!(hdr->protectionAlg = X509_ALGOR_new())) goto err;
-
-	if (!(pbmStr = ASN1_STRING_new())) goto err;
-	pbmDerLen = i2d_CRMF_PBMPARAMETER( pbm, &pbmDer);
-	ASN1_STRING_set( pbmStr, pbmDer, pbmDerLen);
-	X509_ALGOR_set0( hdr->protectionAlg, OBJ_nid2obj(NID_id_PasswordBasedMAC), V_ASN1_SEQUENCE, pbmStr);
-	CRMF_PBMPARAMETER_free( pbm);
-
-	return 1;
-err:
-	/* XXX hdr->protoectionAlg is not freed on error*/
-	if (pbm) CRMF_PBMPARAMETER_free( pbm);
-	if (pbmStr) ASN1_STRING_free( pbmStr);
-	return 0;
-}
-#endif
 
 /* ############################################################################ */
 X509_ALGOR *CMP_get_protectionAlgor_pbmac() {

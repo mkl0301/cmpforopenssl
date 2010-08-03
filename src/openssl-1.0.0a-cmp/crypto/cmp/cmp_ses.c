@@ -207,9 +207,6 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 		CMP_CTX_set1_caExtraCerts(ctx, ip->extraCerts);
 
 	/* check if implicit confirm is set in generalInfo */
-	/* TODO should I check if that was requested?
-	 * What happens if this is set here while it was not requested?
-	 */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(ip)) goto cleanup;
 
 	/* create Certificate Confirmation - certConf */
@@ -339,9 +336,6 @@ X509 *CMP_doCertificateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 		CMP_CTX_set1_caExtraCerts(ctx, cp->extraCerts);
 
 	/* check if implicit confirm is set in generalInfo */
-	/* TODO should I check if that was requested?
-	 * What happens if this is set here while it was not requested?
-	 */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(cp)) goto cleanup;
 
 	/* crate Certificate Confirmation - certConf */
@@ -472,9 +466,6 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 		CMP_CTX_set1_caExtraCerts(ctx, kup->extraCerts);
 
 	/* check if implicit confirm is set in generalInfo */
-	/* TODO should I check if that was requested?
-	 * What happens if this is set here while it was not requested?
-	 */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(kup)) goto cleanup;
 
 	/* crate Certificate Confirmation - certConf */
@@ -573,3 +564,4 @@ err:
 	if (genp) CMP_PKIMESSAGE_free(genp);
 	return 0;
 }
+
