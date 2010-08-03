@@ -101,12 +101,8 @@ CRMF_PBMPARAMETER * CRMF_pbm_new() {
 	 * compute the key used in the MAC process.  All implementations MUST
 	 * support SHA-1.
 	 */
-	 /* XXX is this free...new...= thing to much overhead? */
-	if (pbm->owf) X509_ALGOR_free(pbm->owf); 
-	owf = X509_ALGOR_new();
 	/* TODO right now SHA-1 is hardcoded */
-	X509_ALGOR_set0(owf, OBJ_nid2obj(NID_sha1), V_ASN1_NULL, NULL);
-	pbm->owf = owf;
+	X509_ALGOR_set0(pbm->owf, OBJ_nid2obj(NID_sha1), V_ASN1_NULL, NULL);
 
 	 /*
       iterationCount identifies the number of times the hash is applied
