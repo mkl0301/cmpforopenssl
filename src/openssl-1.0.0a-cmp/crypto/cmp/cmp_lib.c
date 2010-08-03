@@ -688,13 +688,8 @@ int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 	if (!certStatus) goto err;
 	if (!cert) goto err;
 
-	/* this works but TODO: does this comply with the RFC?
-	        -- the hash of the certificate, using the same hash algorithm
-		-- as is used to create and verify the certificate signature
-		*/
-
-	/* XXX Do I have to check what algorithm to use? */
-	if (!X509_digest(cert, EVP_sha1(), hash, &hashLen)) goto err;
+	/* select algorithm based on the one used in the cert signature */
+	if (!X509_digest(cert, EVP_get_digestbynid(OBJ_obj2nid(cert->sig_alg->algorithm)), hash, &hashLen)) goto err;
 	certHash=ASN1_OCTET_STRING_new();
 	if (!ASN1_OCTET_STRING_set(certHash, hash, hashLen)) goto err;
 
