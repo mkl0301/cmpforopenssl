@@ -77,11 +77,9 @@
 #include <openssl/err.h>
 
 /* ############################################################################ *
- * validate a sha1+RSA/DSA protected message
- * tested
- * TODO: enhance this to accept md5 etc.
+ * validate a protected message (sha1+RSA/DSA or any other algorithm supported by OpenSSL)
  * ############################################################################ */
-int CMP_verify_sha( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKEY *senderPkey) {
+static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKEY *senderPkey) {
 	EVP_MD_CTX *ctx=NULL;
 	CMP_PROTECTEDPART protPart;
 	int ret;
@@ -94,7 +92,7 @@ int CMP_verify_sha( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKEY *senderPkey
 	protPartDerLen  = i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
 
 	ctx=EVP_MD_CTX_create();
-	EVP_VerifyInit_ex(ctx, EVP_sha1(), NULL);
+	EVP_VerifyInit_ex(ctx, EVP_get_digestbynid(OBJ_obj2nid(algor->algorithm)), NULL);
 	EVP_VerifyUpdate(ctx, protPartDer, protPartDerLen);
 	ret = EVP_VerifyFinal(ctx, msg->protection->data, msg->protection->length, senderPkey);
 
@@ -145,7 +143,6 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 			/* algorithm is taken from the arguments */
 			algor = _algor;
 		} else {
-			/* old: "ERROR: failed to determine protection algorithm\n" */
 			CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
 			return 0;
 		}
@@ -154,12 +151,16 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 	X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
 	usedAlgorNid = OBJ_obj2nid(algorOID);
 
-	/* TODO: enhance this to accept md5 etc. */
 	switch (usedAlgorNid) {
+		case NID_md2WithRSAEncryption:
+		case NID_md5WithRSAEncryption:
+		case NID_shaWithRSAEncryption:
 		case NID_sha1WithRSAEncryption:
+		case NID_dsaWithSHA1_2:
 		case NID_dsaWithSHA1:
-		/* sha-1 public key based algorithms */
-			return CMP_verify_sha( msg, algor, senderPkey);
+		case NID_dsaWithSHA:
+			/* public key based algorithms */
+			return CMP_verify_signature( msg, algor, senderPkey);
 			break;
 		case NID_id_PasswordBasedMAC:
 			/* password based Mac */
