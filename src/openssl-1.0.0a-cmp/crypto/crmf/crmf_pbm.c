@@ -84,8 +84,6 @@
 CRMF_PBMPARAMETER * CRMF_pbm_new() {
 	CRMF_PBMPARAMETER *pbm=NULL;
 	unsigned char salt[SALT_LEN];
-	X509_ALGOR *owf;
-	X509_ALGOR *mac;
 
 	if(!(pbm = CRMF_PBMPARAMETER_new())) goto err;
 
@@ -102,7 +100,7 @@ CRMF_PBMPARAMETER * CRMF_pbm_new() {
 	 * support SHA-1.
 	 */
 	/* TODO right now SHA-1 is hardcoded */
-	X509_ALGOR_set0(pbm->owf, OBJ_nid2obj(NID_sha1), V_ASN1_NULL, NULL);
+	X509_ALGOR_set0(pbm->owf, OBJ_nid2obj(NID_sha1), V_ASN1_UNDEF, NULL);
 
 	 /*
       iterationCount identifies the number of times the hash is applied
@@ -122,14 +120,9 @@ CRMF_PBMPARAMETER * CRMF_pbm_new() {
       [HMAC].  All implementations SHOULD support DES-MAC and Triple-
       DES-MAC [PKCS11].
       */
-	 /* XXX is this free...new...= thing to much overhead? */
-	if (pbm->mac) X509_ALGOR_free(pbm->mac); 
-	mac = X509_ALGOR_new();
-	/* XXX what is V_ASN1_NULL - this should be V_ASN1_OBJECT? XXX */
 	/* TODO right now HMAC-SHA1 is hardcoded */
 	/* X509_ALGOR_set0(mac, OBJ_nid2obj(NID_id_alg_dh_sig_hmac_sha1), V_ASN1_UNDEF, NULL); */
-	X509_ALGOR_set0(mac, OBJ_nid2obj(NID_hmac_sha1), V_ASN1_UNDEF, NULL);
-	pbm->mac = mac;
+	X509_ALGOR_set0(pbm->mac, OBJ_nid2obj(NID_hmac_sha1), V_ASN1_UNDEF, NULL);
 
 	return pbm;
 err:
@@ -164,12 +157,13 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
         unsigned int basekeyLen;
         long iterations;
 
+	if (!mac) goto err;
+	if( *mac) OPENSSL_free(*mac);
+
 	if (!pbm) goto err;
 	if (!msg) goto err;
 	if (!secret) goto err;
-	if (!mac) goto err;
 
-	if( *mac) OPENSSL_free(*mac);
 	*mac = OPENSSL_malloc(EVP_MAX_MD_SIZE);
 
         OpenSSL_add_all_digests();
@@ -220,7 +214,6 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 
 	return 1;
 err:
-	/* XXX this is also freed if it was something in it before... */
 	if( mac && *mac) OPENSSL_free(*mac);
 	CRMFerr(CRMF_F_CRMF_PASSWORDBASEDMAC_NEW, CRMF_R_CRMFERROR);
 	return 0;

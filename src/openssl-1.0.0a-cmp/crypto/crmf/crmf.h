@@ -479,6 +479,7 @@ typedef struct crmf_certtemplate_st
 	/* subjectUID is deprecated in version 2 */
 	ASN1_BIT_STRING *subjectUID; /* 8 */
 	STACK_OF(X509_EXTENSION)  *extensions; /* 9 */
+	// X509_EXTENSION  *extensions; /* 9 */
 
 } CRMF_CERTTEMPLATE;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTTEMPLATE)

@@ -112,7 +112,7 @@ err:
 	CRMFerr(CRMF_F_CRMF_CERTREQMSG_PUSH0_CONTROL, CRMF_R_CRMFERROR);
 
 	if( newControls) {
-		sk_CRMF_ATTRIBUTETYPEANDVALUE_free(certReqMsg->certReq->controls);
+		sk_CRMF_ATTRIBUTETYPEANDVALUE_pop_free(certReqMsg->certReq->controls, CRMF_ATTRIBUTETYPEANDVALUE_free);
 		certReqMsg->certReq->controls = NULL;
 	}
 	return 0;
@@ -345,7 +345,7 @@ err:
 	CRMFerr(CRMF_F_CRMF_CERTREQMSG_PUSH0_EXTENSION, CRMF_R_CRMFERROR);
 
 	if (createdStack) {
-		sk_X509_EXTENSION_free( certReqMsg->certReq->certTemplate->extensions);
+		sk_X509_EXTENSION_pop_free( certReqMsg->certReq->certTemplate->extensions, X509_EXTENSION_free);
 		certReqMsg->certReq->certTemplate->extensions = NULL;
 	}
 	return 0;

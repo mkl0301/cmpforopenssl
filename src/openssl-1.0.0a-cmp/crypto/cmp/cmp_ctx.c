@@ -268,7 +268,7 @@ int CMP_CTX_set1_caExtraCerts( CMP_CTX *ctx, const STACK_OF(X509) *caExtraCerts)
 	if (!caExtraCerts) goto err;
 
 	if (ctx->caExtraCerts) {
-		sk_X509_free(ctx->caExtraCerts);
+		sk_X509_pop_free(ctx->caExtraCerts, X509_free);
 		ctx->caExtraCerts = NULL;
 	}
 
@@ -311,7 +311,7 @@ int CMP_CTX_set1_extraCerts( CMP_CTX *ctx, const STACK_OF(X509) *extraCerts) {
 	if (!extraCerts) goto err;
 
 	if (ctx->extraCerts) {
-		sk_X509_free(ctx->extraCerts);
+		sk_X509_pop_free(ctx->extraCerts, X509_free);
 		ctx->extraCerts = NULL;
 	}
 
@@ -352,7 +352,7 @@ int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs) {
 	if (!caPubs) goto err;
 
 	if (ctx->caPubs) {
-		sk_X509_free(ctx->caPubs);
+		sk_X509_pop_free(ctx->caPubs, X509_free);
 		ctx->caPubs = NULL;
 	}
 

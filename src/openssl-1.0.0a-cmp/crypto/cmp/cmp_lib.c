@@ -818,7 +818,7 @@ int CMP_ITAV_stack_item_push0(STACK_OF(CMP_INFOTYPEANDVALUE) **itav_sk_p, const 
 	return 1;
 err:
 	if( created) {
-		sk_CMP_INFOTYPEANDVALUE_free(*itav_sk_p);
+		sk_CMP_INFOTYPEANDVALUE_pop_free(*itav_sk_p, CMP_INFOTYPEANDVALUE_free);
 		*itav_sk_p = NULL;
 	}
 	return 0;
