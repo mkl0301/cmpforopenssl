@@ -415,7 +415,7 @@ int CMP_CTX_subjectAltName_push( CMP_CTX *ctx, const GENERAL_NAME *name) {
 	if (!sk_GENERAL_NAME_push(ctx->subjectAltNames, GENERAL_NAME_dup( (GENERAL_NAME*)name))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_SUBJECTNAME, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH, CMP_R_CMPERROR);
 	return 0;
 }
 
