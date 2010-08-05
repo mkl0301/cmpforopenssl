@@ -426,9 +426,8 @@ int CMP_PKIHEADER_push1_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text) {
 	if (!hdr) goto err;
 	if (!text) goto err;
 
-	/* XXX there is no function ASN1_UTF8STRING_dup()? */
 	if( !(textDup = ASN1_UTF8STRING_new())) goto err;
-	if( !ASN1_UTF8STRING_set( textDup, text->data, text->length)) goto err;
+	if( !ASN1_STRING_set( textDup, text->data, text->length)) goto err;
 
 	return CMP_PKIHEADER_push0_freeText( hdr, textDup);
 err:
@@ -598,7 +597,8 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 
 	int usedAlgorNid;
 
-	EVP_MD_CTX *ctx=NULL;
+	EVP_MD_CTX   *ctx=NULL;
+	const EVP_MD *md=NULL;
 
 	protPart.header = pkimessage->header;
 	protPart.body   = pkimessage->body;
@@ -615,42 +615,37 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 	X509_ALGOR_get0( &algorOID, &pptype, &ppval, algor);
 	usedAlgorNid = OBJ_obj2nid(algorOID);
 
-	/* TODO this should be more general - it should be verified that the right key is there (DSA or RSA) */
-	switch (usedAlgorNid) {
-		case NID_sha1WithRSAEncryption:
-		case NID_dsaWithSHA1:
-			CMP_printf("INFO: protecting with pkey\n");
-			if(!pkey) { /* in this case this must not be NULL, TODO: check this more generally*/
-				CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_INVALID_KEY);
-				ERR_add_error_data(1, "pkey was NULL although it is supposed to be used for generating protection");
-				goto err;
-			}
-			maxMacLen = EVP_PKEY_size( (EVP_PKEY*) pkey);
-			mac = OPENSSL_malloc(maxMacLen);
 
-			ctx=EVP_MD_CTX_create();
+	if ((md = EVP_get_digestbynid(usedAlgorNid)) != NULL) {
+		CMP_printf("INFO: protecting with pkey, algorithm %s\n", OBJ_nid2sn(usedAlgorNid));
+		if (!pkey) { /* EVP_SignFinal() will check that pkey type is correct for the algorithm */
+			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_INVALID_KEY);
+			ERR_add_error_data(1, "pkey was NULL although it is supposed to be used for generating protection");
+			goto err;
+		}
 
-			if (!(EVP_SignInit_ex(ctx, EVP_get_digestbynid(usedAlgorNid), NULL))) goto err;
-			if (!(EVP_SignUpdate(ctx, protPartDer, protPartDerLen))) goto err;
-			if (!(EVP_SignFinal(ctx, mac, &macLen, (EVP_PKEY*) pkey))) goto err;
-			break;
-		case NID_id_PasswordBasedMAC:
-			/* there is no pmb set in this message */
-			if (!ppval) return NULL;
-			CMP_printf("INFO: protecting with PBMAC\n");
+		maxMacLen = EVP_PKEY_size( (EVP_PKEY*) pkey);
+		mac = OPENSSL_malloc(maxMacLen);
 
-			pbmStr = (ASN1_STRING *)ppval;
-			pbmStrUchar = (unsigned char *)pbmStr->data;
-			pbm = d2i_CRMF_PBMPARAMETER( NULL, &pbmStrUchar, pbmStr->length);
+		ctx = EVP_MD_CTX_create();
+		if (!(EVP_SignInit_ex(ctx, EVP_get_digestbynid(usedAlgorNid), NULL))) goto err;
+		if (!(EVP_SignUpdate(ctx, protPartDer, protPartDerLen))) goto err;
+		if (!(EVP_SignFinal(ctx, mac, &macLen, (EVP_PKEY*) pkey))) goto err;
+	}
+	else if (usedAlgorNid == NID_id_PasswordBasedMAC) {
+		/* there is no pmb set in this message */
+		if (!ppval) return NULL;
+		CMP_printf("INFO: protecting with PBMAC\n");
 
-			if(!(CRMF_passwordBasedMac_new(pbm, protPartDer, protPartDerLen, secret->data, secret->length, &mac, &macLen))) goto err;
-			break;
-		default:
-			/* why did i hit default !? */
-      /* TODO: this should be caught better, as e.g macLen is not set here
-       * properly and it will be used later*/
-			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_UNKNOWN_ALGORITHM_ID);
-			break;
+		pbmStr = (ASN1_STRING *)ppval;
+		pbmStrUchar = (unsigned char *)pbmStr->data;
+		pbm = d2i_CRMF_PBMPARAMETER( NULL, &pbmStrUchar, pbmStr->length);
+
+		if(!(CRMF_passwordBasedMac_new(pbm, protPartDer, protPartDerLen, secret->data, secret->length, &mac, &macLen))) goto err;
+	}
+	else {
+		CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_UNKNOWN_ALGORITHM_ID);
+		goto err;
 	}
 
 	if(!(prot = ASN1_BIT_STRING_new())) goto err;
