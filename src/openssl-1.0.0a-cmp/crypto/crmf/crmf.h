@@ -479,7 +479,7 @@ typedef struct crmf_certtemplate_st
 	/* subjectUID is deprecated in version 2 */
 	ASN1_BIT_STRING *subjectUID; /* 8 */
 	STACK_OF(X509_EXTENSION)  *extensions; /* 9 */
-	// X509_EXTENSION  *extensions; /* 9 */
+	// X509_EXTENSIONS  *extensions; /* 9 */
 
 } CRMF_CERTTEMPLATE;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTTEMPLATE)
@@ -528,7 +528,7 @@ DECLARE_ASN1_SET_OF(CRMF_CERTREQMSG) /* CertReqMessages */
 
 /* DECLARATIONS */
 /* crmf_msg.c */
-CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, const int compatibility, int popoMethod);
+CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, const int compatibility, int popoMethod, X509_EXTENSIONS *extensions);
 
 /* crmf_pbm.c */
 CRMF_PBMPARAMETER * CRMF_pbm_new(void);

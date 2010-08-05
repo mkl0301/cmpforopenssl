@@ -137,14 +137,32 @@ unsigned char *StrToHexStr(unsigned char *str, int length)
 }
 #endif
 
+static int add_altname_extensions(X509_EXTENSION **extensions, STACK_OF(GENERAL_NAME) *altnames) {
+	X509_EXTENSION *ext = NULL;
+	unsigned char *der = NULL;
+	int derlen = 0;
+	ASN1_OCTET_STRING *str = ASN1_OCTET_STRING_new();
+
+	ASN1_seq_pack_GENERAL_NAME(altnames, i2d_GENERAL_NAME, &der, &derlen);
+
+	ASN1_STRING_set(str, der, derlen);
+	X509_EXTENSION_create_by_NID(&ext, NID_subject_alt_name, 0, str);
+
+	ASN1_OCTET_STRING_free(str);
+	OPENSSL_free(der);
+
+	X509v3_add_ext(extensions, ext, 0);
+
+	return 1;
+}
 
 /* ############################################################################ */
 /* ############################################################################ */
 CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE  *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
-
-	X509_NAME *subject=NULL; /* needed for COMPAT_INSTA */
+	X509_EXTENSIONS *extensions = NULL;
+	X509_NAME *subject=NULL;
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
@@ -192,8 +210,13 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 		goto err;
 	}
 
+	if (sk_GENERAL_NAME_num(ctx->subjectAltNames) > 0)
+		add_altname_extensions(&extensions, ctx->subjectAltNames);
+
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility, ctx->popoMethod))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility, ctx->popoMethod, extensions))) goto err;
+
+	if (extensions) sk_X509_EXTENSION_pop_free(extensions, X509_EXTENSION_free);
 
 	if( !(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.ir, certReq0);
@@ -257,7 +280,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	subject = X509_get_subject_name(ctx->clCert);
 
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility, ctx->popoMethod))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility, ctx->popoMethod, NULL))) goto err;
 
 	if( !(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
@@ -347,7 +370,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of kur and is freed there */
 	/* XXX setting the sender in a KUR message is not really required by the RFC */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, X509_get_subject_name( (X509*) ctx->clCert), ctx->compatibility, ctx->popoMethod))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, X509_get_subject_name( (X509*) ctx->clCert), ctx->compatibility, ctx->popoMethod, NULL))) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);
 	if( !(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;

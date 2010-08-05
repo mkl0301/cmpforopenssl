@@ -78,13 +78,16 @@
 #include <openssl/evp.h>
 #include <openssl/cmp.h> /* for the CMP_COMPAT_* flags */
 #include <openssl/err.h>
+#include <openssl/x509.h>
+#include <string.h>
 
 
 /* ############################################################################ */
 /* XXX is the naming of this function sane? Is it too connected to CMP? */
 /* TODO there are some optional settings which are not cared for right now */
-CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, const int compatibility, int popoMethod) {
+CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, const int compatibility, int popoMethod, X509_EXTENSIONS *extensions) {
 	CRMF_CERTREQMSG *certReqMsg;
+	int i;
 
 	if( !(certReqMsg = CRMF_CERTREQMSG_new())) goto err;
 
@@ -130,6 +133,11 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 		CRMFerr(CRMF_F_CRMF_CR_NEW, CRMF_R_ERROR_SETTING_PUBLIC_KEY);
 		goto err;
 	}
+
+	/* sk_X509_EXTENSION_num will return -1 if extensions is NULL so this is ok */
+	for (i = 0; i < sk_X509_EXTENSION_num(extensions); i++)
+		/* X509v3_add_ext will allocate new stack if there isn't one already */
+		X509v3_add_ext(&certReqMsg->certReq->certTemplate->extensions, sk_X509_EXTENSION_value(extensions, i), i);
 
 #if 0
 	/* CL supports this (for client certificates) for up to 3 years in the future for both dates

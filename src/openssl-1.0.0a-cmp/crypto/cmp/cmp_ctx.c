@@ -94,6 +94,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, caCert, X509),
 	ASN1_OPT(CMP_CTX, clCert, X509),
 	ASN1_OPT(CMP_CTX, subjectName, X509_NAME),
+	ASN1_SEQUENCE_OF_OPT(CMP_CTX, subjectAltNames, GENERAL_NAME),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, caPubs, X509),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, extraCerts, X509),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, caExtraCerts, X509),
@@ -286,7 +287,7 @@ int CMP_CTX_extraCerts_push( CMP_CTX *ctx, const X509 *val)
 {
 	if (!ctx) goto err;
 	if (!ctx->extraCerts && !(ctx->extraCerts = sk_X509_new_null())) return 0;
-	return sk_X509_push(ctx->extraCerts, val);
+	return sk_X509_push(ctx->extraCerts, X509_dup((X509*)val));
 err:
 	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_POP, CMP_R_CMPERROR);
 	return 0;
@@ -392,10 +393,26 @@ int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name) {
 
 	if (ctx->subjectName) {
 		X509_NAME_free(ctx->subjectName);
-		ctx->clCert = NULL;
+		ctx->subjectName = NULL;
 	}
 
 	if (!(ctx->subjectName = X509_NAME_dup( (X509_NAME*)name))) goto err;
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_SUBJECTNAME, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_subjectAltName_push( CMP_CTX *ctx, const GENERAL_NAME *name) {
+	if (!ctx) goto err;
+	if (!name) goto err;
+
+	if (!ctx->subjectAltNames && !(ctx->subjectAltNames = sk_GENERAL_NAME_new_null()))
+		goto err;
+
+	if (!sk_GENERAL_NAME_push(ctx->subjectAltNames, GENERAL_NAME_dup( (GENERAL_NAME*)name))) goto err;
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_SUBJECTNAME, CMP_R_CMPERROR);

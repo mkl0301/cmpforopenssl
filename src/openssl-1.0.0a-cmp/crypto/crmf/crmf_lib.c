@@ -106,7 +106,6 @@ int CRMF_CERTREQMSG_push0_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETY
 		newControls = 1;
 	}
 	if( !sk_CRMF_ATTRIBUTETYPEANDVALUE_push( certReqMsg->certReq->controls, control)) goto err;
-CRMF_printf("FILE %s, LINE %d :Success setting control\n", __FILE__, __LINE__);
 	return 1;
 err:
 	CRMFerr(CRMF_F_CRMF_CERTREQMSG_PUSH0_CONTROL, CRMF_R_CRMFERROR);
