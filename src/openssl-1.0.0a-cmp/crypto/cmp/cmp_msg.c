@@ -343,7 +343,8 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 	/* get the subject_key_id from the certificate to set it later as senderKID */
 	/* XXX this is actually not required by the RFC but CL does like that */
-	if( ctx->compatibility == CMP_COMPAT_CRYPTLIB) {
+	/*     Insta also seems to have problems when this is not set! */
+	if( ctx->compatibility == CMP_COMPAT_CRYPTLIB || ctx->compatibility == CMP_COMPAT_INSTA_3_3) {
 		int subjKeyIDLoc;
 		if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->clCert, NID_subject_key_identifier, -1)) != -1) {
 			/* found a subject key ID */

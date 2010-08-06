@@ -628,7 +628,7 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 		mac = OPENSSL_malloc(maxMacLen);
 
 		ctx = EVP_MD_CTX_create();
-		if (!(EVP_SignInit_ex(ctx, EVP_get_digestbynid(usedAlgorNid), NULL))) goto err;
+		if (!(EVP_SignInit_ex(ctx, md, NULL))) goto err;
 		if (!(EVP_SignUpdate(ctx, protPartDer, protPartDerLen))) goto err;
 		if (!(EVP_SignFinal(ctx, mac, &macLen, (EVP_PKEY*) pkey))) goto err;
 	}
@@ -679,18 +679,29 @@ int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 	ASN1_OCTET_STRING *certHash=NULL;
 	unsigned int hashLen;
 	unsigned char hash[EVP_MAX_MD_SIZE];
+	int sigAlgID;
+	EVP_MD *md = NULL;
 
 	if (!certStatus) goto err;
 	if (!cert) goto err;
 
-	/* select algorithm based on the one used in the cert signature */
-	if (!X509_digest(cert, EVP_get_digestbynid(OBJ_obj2nid(cert->sig_alg->algorithm)), hash, &hashLen)) goto err;
-	certHash=ASN1_OCTET_STRING_new();
-	if (!ASN1_OCTET_STRING_set(certHash, hash, hashLen)) goto err;
+	sigAlgID = OBJ_obj2nid(cert->sig_alg->algorithm);
+	CMP_printf("INFO: certificate signature algorithm used: \"%s\"\n", OBJ_nid2sn(sigAlgID));
 
-	if (certStatus->certHash)
-		ASN1_OCTET_STRING_free(certStatus->certHash);
-	certStatus->certHash = certHash;
+	/* select algorithm based on the one used in the cert signature */
+	if ((md = EVP_get_digestbynid(sigAlgID))) {
+		if (!X509_digest(cert, md, hash, &hashLen)) goto err;
+		certHash=ASN1_OCTET_STRING_new();
+		if (!ASN1_OCTET_STRING_set(certHash, hash, hashLen)) goto err;
+
+		if (certStatus->certHash)
+			ASN1_OCTET_STRING_free(certStatus->certHash);
+		certStatus->certHash = certHash;
+	}
+	else {
+		/* TODO ERROR MESSAGE! */
+		goto err;
+	}
 
 	return 1;
 err:

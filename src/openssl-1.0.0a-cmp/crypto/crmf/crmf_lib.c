@@ -118,6 +118,33 @@ err:
 }
 
 /* ############################################################################ */
+/* TODO: check */
+/* ############################################################################ */
+int CRMF_CERTREQMSG_push0_regInfo( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *regInfo) {
+	int newRegInfo = 0;
+
+	if( !certReqMsg) return 0;
+	if( !regInfo) return 0;
+
+	if( !(certReqMsg->regInfo)) {
+		/* OPTIONAL, not initialized yet */
+		if( !(certReqMsg->regInfo = sk_CRMF_ATTRIBUTETYPEANDVALUE_new_null())) 
+			return 0;
+		newRegInfo = 1;
+	}
+	if( !sk_CRMF_ATTRIBUTETYPEANDVALUE_push( certReqMsg->regInfo, regInfo)) goto err;
+	return 1;
+err:
+	CRMFerr(CRMF_F_CRMF_CERTREQMSG_PUSH0_REGINFO, CRMF_R_CRMFERROR);
+
+	if( newRegInfo) {
+		sk_CRMF_ATTRIBUTETYPEANDVALUE_pop_free(certReqMsg->regInfo, CRMF_ATTRIBUTETYPEANDVALUE_free);
+		certReqMsg->regInfo = NULL;
+	}
+	return 0;
+}
+
+/* ############################################################################ */
 /* ############################################################################ */
 int CRMF_CERTREQMSG_push1_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *control) {
 	CRMF_ATTRIBUTETYPEANDVALUE * controlDup=NULL;
@@ -155,6 +182,10 @@ int CRMF_CERTREQMSG_set1_control_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING
 	if( !CRMF_ATTRIBUTETYPEANDVALUE_set0_nid_utf8string( atav, NID_id_regCtrl_regToken, tokDup)) goto err;
 	tokDup = NULL;
 	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
+#if 0
+	/* XXX RFC says the regToken should be in controls, but EJBCA wants it in regInfo */
+	if( !CRMF_CERTREQMSG_push0_regInfo( msg, atav)) goto err;
+#endif
 	atav = NULL;
 	
 	return 1;

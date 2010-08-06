@@ -122,7 +122,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 
 	/* TODO: check if that makes sense and if that could be done clearer */
 	/* is the algorithm included in the  message? */
-	if ((algor = msg->header->protectionAlg)) {
+	if ((algor = msg->header->protectionAlg) && algor->parameter != NULL) {
 		int algorType=0;
 		int _algorType=0;
 
@@ -150,32 +150,19 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 
 	X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
 	usedAlgorNid = OBJ_obj2nid(algorOID);
+	CMP_printf("Verifying protection, algorithm %s\n", OBJ_nid2sn(OBJ_obj2nid(msg->header->protectionAlg->algorithm)));
 
-	switch (usedAlgorNid) {
-		case NID_md2WithRSAEncryption:
-		case NID_md5WithRSAEncryption:
-		case NID_shaWithRSAEncryption:
-		case NID_sha1WithRSAEncryption:
-		case NID_dsaWithSHA1_2:
-		case NID_dsaWithSHA1:
-		case NID_dsaWithSHA:
-			/* public key based algorithms */
-			return CMP_verify_signature( msg, algor, senderPkey);
-			break;
-		case NID_id_PasswordBasedMAC:
-			/* password based Mac */
-			if (!(protection = CMP_protection_new( msg, algor, NULL, secret)))
-				return 0;
-			if (M_ASN1_BIT_STRING_cmp( protection, msg->protection)) {
-				/* strings are not equal */
-				return 0;
-			}
-			break;
-		default:
-			CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_UNKNOWN_ALGORITHM_ID);
+	if (usedAlgorNid == NID_id_PasswordBasedMAC)  {
+		/* password based Mac */ 
+		if (!(protection = CMP_protection_new( msg, algor, NULL, secret)))
 			return 0;
-			break;
+		if (M_ASN1_BIT_STRING_cmp( protection, msg->protection)) {
+			/* strings are not equal */
+			return 0;
+		}
 	}
+	else
+		return CMP_verify_signature(msg, algor, senderPkey);
 
 	/* protection is valid */
 	return 1;

@@ -140,6 +140,18 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 		X509v3_add_ext(&certReqMsg->certReq->certTemplate->extensions, sk_X509_EXTENSION_value(extensions, i), i);
 
 #if 0
+	/* EJBCA wants to have the user's password in regToken field */
+	 {
+		/* password for EJBCA */
+		char *pwd = "lol";
+		ASN1_UTF8STRING *pwdstr = ASN1_UTF8STRING_new();
+		ASN1_STRING_set(pwdstr, pwd, strlen(pwd));
+		printf("\tdata = %s, type = %d, len %d\n", pwdstr->data, pwdstr->type, pwdstr->length);
+		if (!CRMF_CERTREQMSG_set1_control_regToken(certReqMsg, pwdstr)) goto err;
+	 }
+#endif
+
+#if 0
 	/* CL supports this (for client certificates) for up to 3 years in the future for both dates
 	 * in case the notBefore date is in the past it will be set to the current date without any comment */
 	int CRMF_CERTREQMSG_set_validity( CRMF_CERTREQMSG *certReqMsg, time_t notBefore, time_t notAfter);
