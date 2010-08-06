@@ -238,6 +238,7 @@ void doIr() {
 	  }
   } else {
 	  initialPkey = HELP_generateRSAKey();
+	  /* initialPkey = HELP_generateDSAKey(); */
 	  HELP_savePrivKey(initialPkey, opt_clKeyFile);
   }
 
@@ -387,6 +388,7 @@ void doKur() {
 
   /* generate RSA key */
   updatedPkey = HELP_generateRSAKey();
+  /* updatedPkey = HELP_generateDSAKey(); */
   if(!HELP_savePrivKey( updatedPkey, opt_newClKeyFile)) {
     printf("FATAL: could not save private client key!");
     exit(1);
@@ -419,6 +421,8 @@ void doKur() {
     		CMP_CTX_caPubs_num(cmp_ctx), __FILE__, __LINE__);
   } else {
     printf( "ERROR: received no updated Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
+    ERR_load_crypto_strings();
+    ERR_print_errors_fp(stderr);
     exit(1);
   }
   if(!HELP_write_der_cert( updatedClCert, opt_newClCertFile)) {

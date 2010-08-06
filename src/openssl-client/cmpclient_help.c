@@ -166,6 +166,7 @@
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
+#include <openssl/dsa.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
@@ -261,6 +262,43 @@ printf("INFO: Saving Certificate to File %s\n", filename);
 	return 1;
 }
 
+static int dsa_cb(int p, int n, BN_GENCB *arg) {
+	return 1;
+}
+
+DSA *generateDSA(const int length) {
+	BN_GENCB cb;
+	int counter;
+	unsigned long h;
+	DSA *key = NULL;
+	BIO *bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
+
+	BN_GENCB_set(&cb, dsa_cb, NULL);
+	key = DSA_new();
+	DSA_generate_parameters_ex(key, length, NULL, 0, &counter, &h, &cb);
+	DSA_generate_key(key);
+
+	return key;
+}
+
+/* ############################################################################ */
+/* returns NULL on error */
+/* ############################################################################ */
+EVP_PKEY *HELP_generateDSAKey() {
+	DSA *DSAkey=NULL;
+	EVP_PKEY *pkey=NULL;
+
+	/* generate RSA key */
+	if(! (DSAkey = generateDSA(1024))) return NULL;
+	if( (pkey = EVP_PKEY_new()) )
+		EVP_PKEY_set1_DSA(pkey, DSAkey);
+
+	DSA_free(DSAkey);
+	ERR_load_crypto_strings();
+	ERR_print_errors_fp(stderr);
+
+	return pkey;
+}
 
 /* ############################################################################ */
 /* returns NULL on error */
