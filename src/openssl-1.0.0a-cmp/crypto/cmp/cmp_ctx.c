@@ -283,13 +283,13 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
-int CMP_CTX_extraCerts_push( CMP_CTX *ctx, const X509 *val)
+int CMP_CTX_extraCerts_push1( CMP_CTX *ctx, const X509 *val)
 {
 	if (!ctx) goto err;
 	if (!ctx->extraCerts && !(ctx->extraCerts = sk_X509_new_null())) return 0;
 	return sk_X509_push(ctx->extraCerts, X509_dup((X509*)val));
 err:
-	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_POP, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_PUSH1, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -405,7 +405,7 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
-int CMP_CTX_subjectAltName_push( CMP_CTX *ctx, const GENERAL_NAME *name) {
+int CMP_CTX_subjectAltName_push1( CMP_CTX *ctx, const GENERAL_NAME *name) {
 	if (!ctx) goto err;
 	if (!name) goto err;
 
@@ -415,7 +415,7 @@ int CMP_CTX_subjectAltName_push( CMP_CTX *ctx, const GENERAL_NAME *name) {
 	if (!sk_GENERAL_NAME_push(ctx->subjectAltNames, GENERAL_NAME_dup( (GENERAL_NAME*)name))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH1, CMP_R_CMPERROR);
 	return 0;
 }
 
