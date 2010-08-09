@@ -123,6 +123,7 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_CMPERROR)              ,"cmperror"},
 {ERR_REASON(CMP_R_ERROR_DECODING_CERTIFICATE),"error decoding certificate"},
 {ERR_REASON(CMP_R_ERROR_DECRYPTING_CERTIFICATE),"error decrypting certificate"},
+{ERR_REASON(CMP_R_ERROR_DECRYPTING_KEY)  ,"error decrypting key"},
 {ERR_REASON(CMP_R_ERROR_DECRYPTING_SYMMETRIC_KEY),"error decrypting symmetric key"},
 {ERR_REASON(CMP_R_ERROR_PARSING_PKISTATUS),"error parsing pkistatus"},
 {ERR_REASON(CMP_R_ERROR_RECEIVING_MESSAGE),"error receiving message"},
@@ -135,7 +136,6 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_SUBJECT_NAME_NOT_SET)  ,"subject name not set"},
 {ERR_REASON(CMP_R_UNKNOWN_ALGORITHM_ID)  ,"unknown algorithm id"},
 {ERR_REASON(CMP_R_UNKNOWN_CIPHER)        ,"unknown cipher"},
-{ERR_REASON(CMP_R_UNKNOWN_KEY_ALGORITHM) ,"unknown key algorithm"},
 {ERR_REASON(CMP_R_UNKNOWN_PKISTATUS)     ,"unknown pkistatus"},
 {0,NULL}
 	};

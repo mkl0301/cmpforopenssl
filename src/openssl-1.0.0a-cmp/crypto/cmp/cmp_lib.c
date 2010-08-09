@@ -1079,6 +1079,7 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	CRMF_ENCRYPTEDVALUE *encCert      = NULL;
 	X509				*cert		  = NULL;	/* decrypted certificate */
 	EVP_CIPHER_CTX		*ctx		  = NULL;	/* context for symmetric encryption */
+	EVP_PKEY_CTX        *pkctx        = NULL;   /* private key context */
 	unsigned char		*ek			  = NULL;	/* decrypted symmetric encryption key */
 	const EVP_CIPHER	*cipher		  = NULL;	/* used cipher */
 	unsigned char		*iv			  = NULL;	/* initial vector for symmetric encryption */
@@ -1100,16 +1101,11 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 
 	/* first the symmetric key needs to be decrypted */
 
-	/* XXX this check could probably be removed since the EVP_PKEY_* calls will 
-	 * return an error if the key type is unsupported... */
-	if (keyAlg == NID_dsa || keyAlg == NID_rsaEncryption) {
+	if ((pkctx = EVP_PKEY_CTX_new(pkey, NULL)) && EVP_PKEY_decrypt_init(pkctx)) {
 		ASN1_BIT_STRING *encKey = encCert->encSymmKey;
 
 #if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
 		size_t eksize = 0;
-		EVP_PKEY_CTX *pkctx = EVP_PKEY_CTX_new(pkey, NULL);
-		if (!pkctx) goto err;
-		EVP_PKEY_decrypt_init(pkctx);
 		if (EVP_PKEY_decrypt(pkctx, NULL, &eksize, encKey->data, encKey->length) <= 0
 				|| !(ek = OPENSSL_malloc(eksize))
 				|| EVP_PKEY_decrypt(pkctx, ek, &eksize, encKey->data, encKey->length) <= 0) {
@@ -1124,7 +1120,7 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 #endif
 	}
 	else {
-		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_UNKNOWN_KEY_ALGORITHM);
+		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_KEY);
 		goto err;
 	}
 
