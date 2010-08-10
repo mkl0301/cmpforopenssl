@@ -114,16 +114,13 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 	ASN1_BIT_STRING *protection=NULL;
 	X509_ALGOR *algor=NULL;
 	ASN1_OBJECT *algorOID=NULL;
+	int valid = 0;
 
 	int usedAlgorNid;
 
-	if (!msg->protection) 
-		return 0;
-
-	if (!msg->header->protectionAlg || !(algor = X509_ALGOR_dup(msg->header->protectionAlg))) {
-		CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
-		return 0;
-	}
+	if (!msg->protection) goto err;
+	if (!msg->header->protectionAlg) goto err;
+	if (!(algor = X509_ALGOR_dup(msg->header->protectionAlg))) goto err;
 
 	X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
 	usedAlgorNid = OBJ_obj2nid(algorOID);
@@ -137,7 +134,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 					ASN1_TYPE_get(_algor->parameter) == V_ASN1_UNDEF || 
 					ASN1_TYPE_get(_algor->parameter) == V_ASN1_NULL) {
 				CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
-				return 0;
+				goto err;
 			}
 			ASN1_TYPE_set1(algor->parameter, _algor->parameter->type, _algor->parameter->value.ptr);
 		}
@@ -148,15 +145,23 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 	if (usedAlgorNid == NID_id_PasswordBasedMAC)  {
 		/* password based Mac */ 
 		if (!(protection = CMP_protection_new( msg, algor, NULL, secret)))
-			return 0;
-		if (M_ASN1_BIT_STRING_cmp( protection, msg->protection)) {
+			goto err; /* failed to generate protection string! */
+		if (!M_ASN1_BIT_STRING_cmp( protection, msg->protection))
+			/* protection is valid */
+			valid = 1;
+		else
 			/* strings are not equal */
-			return 0;
-		}
+			valid = 0;
 	}
 	else
-		return CMP_verify_signature(msg, algor, senderPkey);
+		valid = CMP_verify_signature(msg, algor, senderPkey);
 
-	/* protection is valid */
-	return 1;
+	X509_ALGOR_free(algor);
+
+	return valid;
+
+err:
+	if (algor) X509_ALGOR_free(algor);
+	CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_CMPERROR);
+	return 0;
 }
