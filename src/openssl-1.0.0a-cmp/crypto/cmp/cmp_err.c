@@ -137,6 +137,7 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_UNKNOWN_ALGORITHM_ID)  ,"unknown algorithm id"},
 {ERR_REASON(CMP_R_UNKNOWN_CIPHER)        ,"unknown cipher"},
 {ERR_REASON(CMP_R_UNKNOWN_PKISTATUS)     ,"unknown pkistatus"},
+{ERR_REASON(CMP_R_UNSUPPORTED_ALGORITHM) ,"unsupported algorithm"},
 {0,NULL}
 	};
 

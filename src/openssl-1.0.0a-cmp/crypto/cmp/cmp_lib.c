@@ -699,7 +699,7 @@ int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 		certStatus->certHash = certHash;
 	}
 	else {
-		/* TODO ERROR MESSAGE! */
+		CMPerr(CMP_F_CMP_CERTSTATUS_SET_CERTHASH, CMP_R_UNSUPPORTED_ALGORITHM);
 		goto err;
 	}
 

@@ -123,8 +123,6 @@ ASN1_SEQUENCE(CMP_CTX) = {
 } ASN1_SEQUENCE_END(CMP_CTX)
 IMPLEMENT_ASN1_FUNCTIONS(CMP_CTX)
 
-/* TODO find out what's wrong with/how to use sk_X509_dup()
- * so that this function could be removed... */
 static STACK_OF(X509)* X509_stack_dup(const STACK_OF(X509)* stack)
 {
 	STACK_OF(X509) *newsk = NULL;
@@ -134,7 +132,6 @@ static STACK_OF(X509)* X509_stack_dup(const STACK_OF(X509)* stack)
 	if (!(newsk = sk_X509_new_null())) goto err;
 
 	for (i = 0; i < sk_X509_num(stack); i++)
-		/* XXX does the X509_dup() call cause memory leakage? */
 		sk_X509_push(newsk, X509_dup(sk_X509_value(stack, i)));
 
 	return newsk;
@@ -191,6 +188,16 @@ err:
 	CMPerr(CMP_F_CMP_CTX_INIT, CMP_R_CMPERROR);
 	return 0;
 }
+
+/* ################################################################ */
+/* frees CMP_CTX variables allocated in CMP_CTX_init and calls CMP_CTX_free */
+/* ################################################################ */
+void CMP_CTX_delete(CMP_CTX *ctx) {
+	if (!ctx) return;
+	OPENSSL_free(ctx->serverPath);
+	CMP_CTX_free(ctx);
+}
+
 
 /* ################################################################ */
 /* creates and initializes a CMP_CTX structure */
@@ -357,8 +364,6 @@ int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs) {
 		ctx->caPubs = NULL;
 	}
 
-	/* XXX why doesn't this work? */
-	/* if (!(ctx->caPubs = sk_X509_dup( (X509*)caPubs))) goto err; */
 	if (!(ctx->caPubs = X509_stack_dup(caPubs))) goto err;
 
 	return 1;

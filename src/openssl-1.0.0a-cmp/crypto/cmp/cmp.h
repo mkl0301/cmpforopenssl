@@ -1318,6 +1318,7 @@ int CMP_doPKIInfoReqSeq( BIO *cbio, CMP_CTX *ctx);
 
 /* from cmp_ctx.c */
 int CMP_CTX_init( CMP_CTX *ctx);
+void CMP_CTX_delete(CMP_CTX *ctx);
 CMP_CTX *CMP_CTX_create(void);
 int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t len);
 int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len);
@@ -1447,6 +1448,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_R_UNKNOWN_ALGORITHM_ID			 115
 #define CMP_R_UNKNOWN_CIPHER				 116
 #define CMP_R_UNKNOWN_PKISTATUS				 117
+#define CMP_R_UNSUPPORTED_ALGORITHM			 118
 
 #ifdef  __cplusplus
 }
