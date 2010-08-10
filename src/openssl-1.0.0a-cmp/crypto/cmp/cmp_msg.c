@@ -137,7 +137,7 @@ unsigned char *StrToHexStr(unsigned char *str, int length)
 }
 #endif
 
-static int add_altname_extensions(X509_EXTENSION **extensions, STACK_OF(GENERAL_NAME) *altnames) {
+static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL_NAME) *altnames) {
 	X509_EXTENSION *ext = NULL;
 	unsigned char *der = NULL;
 	int derlen = 0;

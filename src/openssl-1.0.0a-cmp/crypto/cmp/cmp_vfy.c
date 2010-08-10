@@ -120,37 +120,30 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 	if (!msg->protection) 
 		return 0;
 
-	/* TODO: check if that makes sense and if that could be done clearer */
-	/* is the algorithm included in the  message? */
-	if ((algor = msg->header->protectionAlg) && algor->parameter != NULL) {
-		int algorType=0;
-		int _algorType=0;
-
-		algorType = ASN1_TYPE_get(algor->parameter);
-		_algorType = ASN1_TYPE_get(_algor->parameter); /* XXX TODO that is a potential NPD as _algor could be NULL */
-
-		/* Cryplib 3.2.1 sends back the right algorithm but not the parameters in pkiconf messages */
-		if (    ((algorType == V_ASN1_UNDEF) || (algorType == V_ASN1_NULL))
-			&& _algor
-			&& (algor->algorithm->nid == _algor->algorithm->nid)
-			&& !((_algorType == V_ASN1_UNDEF) || (_algorType == V_ASN1_NULL))
-		) {
-			/* algorithm is taken from the arguments */
-			algor = _algor;
-		}
-	} else {
-		if (_algor) {
-			/* algorithm is taken from the arguments */
-			algor = _algor;
-		} else {
-			CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
-			return 0;
-		}
+	if (!msg->header->protectionAlg || !(algor = X509_ALGOR_dup(msg->header->protectionAlg))) {
+		CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
+		return 0;
 	}
 
 	X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
 	usedAlgorNid = OBJ_obj2nid(algorOID);
-	CMP_printf("Verifying protection, algorithm %s\n", OBJ_nid2sn(OBJ_obj2nid(msg->header->protectionAlg->algorithm)));
+	if (usedAlgorNid == NID_id_PasswordBasedMAC) {
+		/* need to have params for PBMAC, so check that we have them */
+		if (!algor->parameter || 
+				ASN1_TYPE_get(algor->parameter) == V_ASN1_UNDEF ||
+				ASN1_TYPE_get(algor->parameter) == V_ASN1_NULL) {
+			/* if parameter is not given in PKIMessage, then try to use parameter from arguments */
+			if (!_algor || algor->algorithm->nid != _algor->algorithm->nid || 
+					ASN1_TYPE_get(_algor->parameter) == V_ASN1_UNDEF || 
+					ASN1_TYPE_get(_algor->parameter) == V_ASN1_NULL) {
+				CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
+				return 0;
+			}
+			ASN1_TYPE_set1(algor->parameter, _algor->parameter->type, _algor->parameter->value.ptr);
+		}
+	}
+
+	CMP_printf("INFO: Verifying protection, algorithm %s\n", OBJ_nid2sn(OBJ_obj2nid(msg->header->protectionAlg->algorithm)));
 
 	if (usedAlgorNid == NID_id_PasswordBasedMAC)  {
 		/* password based Mac */ 

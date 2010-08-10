@@ -680,7 +680,7 @@ int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 	unsigned int hashLen;
 	unsigned char hash[EVP_MAX_MD_SIZE];
 	int sigAlgID;
-	EVP_MD *md = NULL;
+	const EVP_MD *md = NULL;
 
 	if (!certStatus) goto err;
 	if (!cert) goto err;
