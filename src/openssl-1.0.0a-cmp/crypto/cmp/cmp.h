@@ -1176,6 +1176,7 @@ typedef struct cmp_ctx_st
 	/* XXX not setting senderNonce test for PKI INFO */
 	int	setSenderNonce;
 
+#define CMP_POPO_NONE      0
 #define CMP_POPO_SIGNATURE 1
 #define CMP_POPO_ENCRCERT  2
 	/* Proof-of-posession mechanism used. Defaults to signature (POPOsignkingKey) */ 

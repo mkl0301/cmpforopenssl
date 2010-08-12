@@ -410,25 +410,33 @@ typedef struct crmf_proofofpossesion_st
 } CRMF_PROOFOFPOSSESION;
 DECLARE_ASN1_FUNCTIONS(CRMF_PROOFOFPOSSESION)
 
-/* XXX is this the right way for an ANY DEFINED BY? */
-/* TODO I'm pretty sure it's not */
-
-/*
-TODO - what to do with "controls?"
-Controls  ::= SEQUENCE SIZE(1..MAX) OF AttributeTypeAndValue
-AttributeTypeAndValue ::= SEQUENCE {
- type         OBJECT IDENTIFIER,
- value        ANY DEFINED BY type }
- */
 typedef struct crmf_attributetypeandvalue_st
 {
 	ASN1_OBJECT *type;
-	ASN1_TYPE   *value;
+	union {
+		/* NID_id_regCtrl_regToken */ 
+		ASN1_UTF8STRING *regToken;
+
+		/* NID_id_regCtrl_authenticator */ 
+		ASN1_UTF8STRING *authenticator;
+
+		/* NID_id_regCtrl_pkiPublicationInfo */
+		CRMF_PKIPUBLICATIONINFO *pkiPublicationInfo;
+
+		/* NID_id_regCtrl_pkiArchiveOptions */ 
+		CRMF_PKIARCHIVEOPTIONS *pkiArchiveOptions;
+
+		/* NID_id_regCtrl_oldCertID */
+		CRMF_CERTID     *oldCertId;
+
+		/* NID_id_regCtrl_protocolEncrKey */
+		X509_PUBKEY     *protocolEncrKey;
+
+		ASN1_TYPE *other;
+	} value;
 } CRMF_ATTRIBUTETYPEANDVALUE;
 DECLARE_ASN1_FUNCTIONS(CRMF_ATTRIBUTETYPEANDVALUE)
-/* XXX - is this right for "Controls"? */
 DECLARE_STACK_OF(CRMF_ATTRIBUTETYPEANDVALUE)
-/* XXX do I declare duplicate functions like that? */
 CRMF_ATTRIBUTETYPEANDVALUE *CRMF_ATTRIBUTETYPEANDVALUE_dup( CRMF_ATTRIBUTETYPEANDVALUE *atav);
 
 /* XXX looks like x509.h also just uses ASN1_TIME */
@@ -556,7 +564,7 @@ int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PK
 
 CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const EVP_PKEY *pkey);
 
-CRMF_ATTRIBUTETYPEANDVALUE * CRMF_ATAV_OldCertId_new( GENERAL_NAME *issuer, ASN1_INTEGER *serialNumber);
+int CRMF_CERTREQMSG_set1_control_oldCertId( CRMF_CERTREQMSG *certReqMsg, X509 *oldCert);
 
 /* crmf_atav.c */
 void CRMF_ATTRIBUTETYPEANDVALUE_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval, CRMF_ATTRIBUTETYPEANDVALUE *atav);
@@ -581,12 +589,11 @@ void ERR_load_CRMF_strings(void);
 /* Error codes for the CRMF functions. */
 
 /* Function codes. */
-#define CRMF_F_CRMF_ATAV_OLDCERTID_NEW			 101
-#define CRMF_F_CRMF_CERTREQMSG_PUSH0_CONTROL		 102
-#define CRMF_F_CRMF_CERTREQMSG_PUSH0_EXTENSION		 103
-#define CRMF_F_CRMF_CERTREQMSG_PUSH0_REGINFO		 107
-#define CRMF_F_CRMF_CERTREQMSG_SET1_PUBLICKEY		 104
-#define CRMF_F_CRMF_CERTREQMSG_SET_VALIDITY		 100
+#define CRMF_F_CRMF_CERTREQMSG_PUSH0_CONTROL		 100
+#define CRMF_F_CRMF_CERTREQMSG_PUSH0_EXTENSION		 101
+#define CRMF_F_CRMF_CERTREQMSG_PUSH0_REGINFO		 102
+#define CRMF_F_CRMF_CERTREQMSG_SET1_PUBLICKEY		 103
+#define CRMF_F_CRMF_CERTREQMSG_SET_VALIDITY		 104
 #define CRMF_F_CRMF_CR_NEW				 105
 #define CRMF_F_CRMF_PASSWORDBASEDMAC_NEW		 106
 

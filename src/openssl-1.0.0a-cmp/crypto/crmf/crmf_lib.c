@@ -163,6 +163,38 @@ err:
 	return 0;
 }
 
+/* ############################################################################ */
+/* TODO better error handling, make sure everything gets freed properly */
+/* ############################################################################ */
+int CRMF_CERTREQMSG_set1_control_oldCertId( CRMF_CERTREQMSG *certReqMsg, X509 *oldCert) { 
+	CRMF_ATTRIBUTETYPEANDVALUE *atav   = NULL;
+	CRMF_CERTID                *certId = NULL;
+	GENERAL_NAME               *gName  = NULL;
+
+	if ( !certReqMsg) goto err;
+	if ( !oldCert) goto err;
+
+	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())
+			|| !(certId = CRMF_CERTID_new())
+			|| !(gName = GENERAL_NAME_new()))
+		goto err;
+
+	X509_NAME_set( &gName->d.directoryName, X509_get_issuer_name( oldCert));
+	gName->type = GEN_DIRNAME;
+	certId->issuer = gName;
+	certId->serialNumber = ASN1_INTEGER_dup(X509_get_serialNumber(oldCert));
+
+	atav->type = OBJ_nid2obj(NID_id_regCtrl_oldCertID);
+	atav->value.oldCertId = certId;
+
+	if (!CRMF_CERTREQMSG_push0_control( certReqMsg, atav)) goto err;
+
+	return 1;
+err:
+	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
+	return 0;
+}
+
 
 /* ############################################################################ */
 /* TODO: check */
@@ -174,17 +206,18 @@ int CRMF_CERTREQMSG_set1_control_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING
 	if (!msg) return 0;
 	if (!tok) return 0;
 
-	/* XXX is there no ASN1_UTF8STRING_dup() function? */
 	if (!(tokDup = ASN1_STRING_dup( tok))) goto err;
 	
 	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())) goto err;
 
-	if( !CRMF_ATTRIBUTETYPEANDVALUE_set0_nid_utf8string( atav, NID_id_regCtrl_regToken, tokDup)) goto err;
+	atav->type = OBJ_nid2obj(NID_id_regCtrl_regToken);
+	atav->value.regToken = tokDup;
 	tokDup = NULL;
-	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
-#if 0
+#if 1
 	/* XXX RFC says the regToken should be in controls, but EJBCA wants it in regInfo */
 	if( !CRMF_CERTREQMSG_push0_regInfo( msg, atav)) goto err;
+#else
+	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
 #endif
 	atav = NULL;
 	
@@ -210,7 +243,8 @@ int CRMF_CERTREQMSG_set1_control_authenticator( CRMF_CERTREQMSG *msg, ASN1_UTF8S
 	
 	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())) goto err;
 
-	if( !CRMF_ATTRIBUTETYPEANDVALUE_set0_nid_utf8string( atav, NID_id_regCtrl_authenticator, authDup)) goto err;
+	atav->type = OBJ_nid2obj(NID_id_regCtrl_authenticator);
+	atav->value.regToken = authDup;
 	authDup = NULL;
 	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
 	atav = NULL;
@@ -237,17 +271,27 @@ int CRMF_CERTREQMSG_set1_control_pkiArchiveOptions( CRMF_CERTREQMSG *msg, ASN1_U
 /* ############################################################################ */
 
 /* ############################################################################ */
-/* TODO: implement */
-#if 0
-int CRMF_CERTREQMSG_set1_control_oldCertID( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *auth) {
-#endif
 /* ############################################################################ */
+int CRMF_CERTREQMSG_set1_control_protocolEncrKey( CRMF_CERTREQMSG *msg, X509_PUBKEY *pubkey) {	
+	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
 
-/* ############################################################################ */
-/* TODO: implement */
-#if 0
-int CRMF_CERTREQMSG_set1_control_protocolEncrKey( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *auth) {
-#endif
+	if (!msg) return 0;
+	if (!pubkey) return 0;
+
+	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())) goto err;
+
+	atav->type = OBJ_nid2obj(NID_id_regCtrl_protocolEncrKey);
+	atav->value.protocolEncrKey = pubkey;
+	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
+	atav = NULL;
+	
+	return 1;
+err:
+	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
+	return 0;
+}
+
+	
 /* ############################################################################ */
 
 /* REGINFO */
@@ -526,41 +570,3 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* TODO check */
-/* XXX this is a test */
-/* ############################################################################ */
-CRMF_ATTRIBUTETYPEANDVALUE * CRMF_ATAV_OldCertId_new( GENERAL_NAME *issuer, ASN1_INTEGER *serialNumber) {
-	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
-	CRMF_CERTID *certId=NULL;
-	unsigned char *certIdDer=NULL;
-	int certIdDerLen;
-	ASN1_STRING *certIdStr=NULL;
-
-	/* XXX catch errors */
-	atav = CRMF_ATTRIBUTETYPEANDVALUE_new();
-
-	certId = CRMF_CERTID_new();
-	certId->issuer = GENERAL_NAME_dup(issuer);
-	certId->serialNumber = ASN1_INTEGER_dup(serialNumber);
-	
-	certIdDerLen = i2d_CRMF_CERTID( certId, &certIdDer);
-
-	if (!(certIdStr = ASN1_STRING_new())) goto err;
-	ASN1_STRING_set( certIdStr, certIdDer, certIdDerLen);
-	certIdDer = NULL;
-
-	CRMF_CERTID_free( certId);
-
-	CRMF_ATTRIBUTETYPEANDVALUE_set0( atav, OBJ_nid2obj(NID_id_regCtrl_oldCertID), V_ASN1_SEQUENCE, certIdStr);
-	certIdStr = NULL;
-
-	return atav;
-err:
-	CRMFerr(CRMF_F_CRMF_ATAV_OLDCERTID_NEW, CRMF_R_CRMFERROR);
-
-	if (certIdDer) OPENSSL_free(certIdDer);
-	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free(atav);
-	if (certIdStr) ASN1_STRING_free(certIdStr);
-	return NULL;
-}

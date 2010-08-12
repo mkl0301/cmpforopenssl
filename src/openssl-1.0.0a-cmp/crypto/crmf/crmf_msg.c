@@ -161,7 +161,9 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 	/* this could be done here */
 	int CRMF_CERTREQMSG_push0_extension( CRMF_CERTREQMSG *certReqMsg, X509_EXTENSION *ext);
 #endif
-	CRMF_CERTREQMSG_calc_and_set_popo( certReqMsg, pkey, popoMethod);
+
+	if (popoMethod != CMP_POPO_NONE)
+		CRMF_CERTREQMSG_calc_and_set_popo( certReqMsg, pkey, popoMethod);
 
 	return certReqMsg;
 err:

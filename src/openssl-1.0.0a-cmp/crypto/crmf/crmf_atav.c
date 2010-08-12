@@ -65,6 +65,7 @@
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
 
+#if 0
 /* ############################################################################ */
 /* ############################################################################ */
 int CRMF_ATTRIBUTETYPEANDVALUE_set0(CRMF_ATTRIBUTETYPEANDVALUE *atav, ASN1_OBJECT *aobj, int ptype, void *pval)
@@ -137,3 +138,4 @@ err:
 	if (utf8strDer) OPENSSL_free( utf8strDer);
 	return 0;
 }
+#endif

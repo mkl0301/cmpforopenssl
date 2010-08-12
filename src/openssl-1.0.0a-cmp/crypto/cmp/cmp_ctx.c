@@ -154,7 +154,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->compatibility   = CMP_COMPAT_RFC;
 	ctx->serverName      = NULL;
 	/* serverPath has to be an empty sting if not set since it is not mandatory */
-	/* XXX TODO this should be freed somewhere */
+	/* this will be freed by CMP_CTX_delete() */
 	ctx->serverPath      = OPENSSL_malloc(1);
 	ctx->serverPath[0]   = 0;
 	ctx->serverPort      = 0;

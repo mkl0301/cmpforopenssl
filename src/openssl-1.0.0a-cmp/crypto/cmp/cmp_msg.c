@@ -182,32 +182,24 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);
 
-#if 0
-	/* XXX TODO This might be always needed for RFC conformity CHECK ME */
-	if( 
-#ifdef SUPPORT_OLD_INSTA /* TODO remove completely one day */
-      (ctx->compatibility == CMP_COMPAT_INSTA) || 
-#endif /* SUPPORT_OLD_INSTA */
-      (ctx->compatibility == CMP_COMPAT_INSTA_3_3)) {
-		/* XXX do I have to free that? */
-		subject = X509_NAME_new();
-		if (!X509_NAME_add_entry_by_txt(subject, "CN", MBSTRING_ASC, (unsigned char*) "My Common Name", -1, -1, 0));
-// WARNING: CN for INSTA is hardcoded
-	}
-#endif
-
 	if (ctx->clCert)
 		subject = X509_get_subject_name(ctx->clCert);
 	else if (ctx->extCert)
 		subject = X509_get_subject_name(ctx->extCert);
 	else
 		subject = ctx->subjectName;
-	
-	/* subject name is required for insta compatibility, raise error if it's unset. */
+
+	/* subject name is required for insta compatibility! */
 	if (ctx->compatibility == CMP_COMPAT_INSTA_3_3 && subject == NULL) {
+		/* XXX should this raise an error, or should we just use a default? */
+		subject = X509_NAME_new();
+		if (!X509_NAME_add_entry_by_txt(subject, "CN", MBSTRING_ASC, (unsigned char*) "My Common Name", -1, -1, 0))
+			goto err;
+#if 0
 		CMPerr(CMP_F_CMP_IR_NEW, CMP_R_SUBJECT_NAME_NOT_SET);
 		ERR_add_error_data(1, "subject name is required in insta compatibility mode");
 		goto err;
+#endif
 	}
 
 	if (sk_GENERAL_NAME_num(ctx->subjectAltNames) > 0)
@@ -316,11 +308,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
 
-	/* for oldCertId in "controls" of the CRMF cr message*/
-	GENERAL_NAME *gName;
-	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
-	ASN1_INTEGER *serialASN=NULL;
-
 	/* for setting the id-aa-signingCertificate for CL */
 	unsigned int hashLen;
 	unsigned char hash[EVP_MAX_MD_SIZE];
@@ -382,15 +369,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	 * set oldCertId in "controls" of the CRMF cr message
 	 * CL does not like this to be set */
 	if( ctx->compatibility != CMP_COMPAT_CRYPTLIB) {
-		gName = GENERAL_NAME_new();
-		/* 1 GET issuer X509_NAME from certificate */
-		/* 2 transform to GENERAL_NAME */
-		X509_NAME_set( &gName->d.directoryName, X509_get_issuer_name( ctx->clCert));
-		gName->type = GEN_DIRNAME;
-		/* 3 set it with the following commands */
-		serialASN   = X509_get_serialNumber(ctx->clCert);
-		atav        = CRMF_ATAV_OldCertId_new( gName, serialASN);
-		CRMF_CERTREQMSG_push0_control( certReq0, atav);
+		CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert);
 	}
 
 	/* this is like CL likes it:
