@@ -186,6 +186,51 @@ typedef struct cmp_cakeyupdanncontent_st
 } CMP_CAKEYUPDANNCONTENT;
 DECLARE_ASN1_FUNCTIONS(CMP_CAKEYUPDANNCONTENT)
 
+     /* XXX HELPERS - where should they actually be? */
+#if 0
+	id-aa-signingCertificate OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs9(9) smime(16) id-aa(2) 12 }
+
+	SigningCertificate ::=  SEQUENCE {
+		certs        SEQUENCE OF ESSCertID,
+		policies     SEQUENCE OF PolicyInformation OPTIONAL
+	}
+
+	ESSCertID ::=  SEQUENCE {
+		certHash                 Hash,
+		issuerSerial             IssuerSerial OPTIONAL
+	}
+	Hash ::= OCTET STRING -- SHA1 hash of entire certificate
+
+	IssuerSerial ::= SEQUENCE {
+		issuer                   GeneralNames,
+		serialNumber             CertificateSerialNumber
+	}
+#endif
+typedef struct ess_issuerserial_st
+{
+	GENERAL_NAMES *issuer;
+	ASN1_INTEGER  *serialNumber;
+} ESS_ISSUERSERIAL;
+DECLARE_ASN1_FUNCTIONS(ESS_ISSUERSERIAL)
+
+typedef struct ess_esscertid_st
+{
+	ASN1_OCTET_STRING *certHash;
+	ESS_ISSUERSERIAL  *issuerSerial;
+} ESS_ESSCERTID;
+DECLARE_ASN1_FUNCTIONS(ESS_ESSCERTID)
+DECLARE_STACK_OF(ESS_ESSCERTID)
+/* XXX DO I NEED THAT? */
+DECLARE_ASN1_SET_OF(ESS_ESSCERTID)
+
+typedef struct ess_signingcertificate_st
+{
+	STACK_OF(ESS_ESSCERTID) *certs;
+	STACK_OF(POLICYINFO)    *policies;
+} ESS_SIGNINGCERTIFICATE;
+DECLARE_ASN1_FUNCTIONS(ESS_SIGNINGCERTIFICATE)
+DECLARE_STACK_OF(ESS_SIGNINGCERTIFICATE)
+
 	/*
      InfoTypeAndValue ::= SEQUENCE {
          infoType               OBJECT IDENTIFIER,
@@ -196,8 +241,45 @@ DECLARE_ASN1_FUNCTIONS(CMP_CAKEYUPDANNCONTENT)
 typedef struct cmp_infotypeandvalue_st
 {
 	ASN1_OBJECT *infoType;
+	union {
+		char *ptr;
+
+		/* NID_id_it_caProtEncCert - CA Protocol Encryption Certificate  */
+		X509 *caProtEncCert;
+		/* NID_id_it_signKeyPairTypes - Signing Key Pair Types  */
+		STACK_OF(X509_ALGOR) *signKeyPairTypes;
+		/* NID_id_it_encKeyPairTypes - Encryption/Key Agreement Key Pair Types  */
+		STACK_OF(X509_ALGOR) *encKeyPairTypes;
+		/* NID_id_it_preferredSymmAlg - Preferred Symmetric Algorithm  */
+		X509_ALGOR *preferredSymmAlg;
+		/* NID_id_it_caKeyUpdateInfo - Updated CA Key Pair  */
+		CMP_CAKEYUPDANNCONTENT *caKeyUpdateInfo;
+		/* TODO: NID_id_it_currentCRL - CRL  */
+		/* NID_id_it_unsupportedOIDs - Unsupported Object Identifiers  */
+		STACK_OF(ASN1_OBJECT) *unsupportedOIDs;
+		/* NID_id_it_keyPairParamReq - Key Pair Parameters Request  */
+		ASN1_OBJECT *keyPairParamReq;
+		/* NID_id_it_keyPairParamRep - Key Pair Parameters Response  */
+		X509_ALGOR *keyPairParamRep;
+		/* NID_id_it_revPassphrase - Revocation Passphrase  */
+		CRMF_ENCRYPTEDVALUE *revPassphrase;
+
+		/* NID_id_it_implicitConfirm - ImplicitConfirm  */
+		ASN1_NULL *implicitConfirm;
+		/* NID_id_it_confirmWaitTime - ConfirmWaitTime  */
+		ASN1_GENERALIZEDTIME *confirmWaitTime;
+		/* NID_id_it_origPKIMessage - origPKIMessage  */
+		struct CMP_PKIMESSAGE *origPKIMessage;
+
+		/* NID_id_smime_aa_signingCertificate */
+		STACK_OF(ESS_SIGNINGCERTIFICATE) *signingCertificate; 
+
+		ASN1_TYPE *other;
+	} infoValue;
+#if 0
 	/* XXX is this right? */
 	ASN1_TYPE   *infoValue;
+#endif
 } CMP_INFOTYPEANDVALUE;
 DECLARE_ASN1_FUNCTIONS(CMP_INFOTYPEANDVALUE)
 DECLARE_STACK_OF(CMP_INFOTYPEANDVALUE)
@@ -1063,50 +1145,6 @@ RFC 4210                          CMP                     September 2005
      END -- of CMP module
 */
 
-     /* XXX HELPERS - where should they actually be? */
-#if 0
-	id-aa-signingCertificate OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs9(9) smime(16) id-aa(2) 12 }
-
-	SigningCertificate ::=  SEQUENCE {
-		certs        SEQUENCE OF ESSCertID,
-		policies     SEQUENCE OF PolicyInformation OPTIONAL
-	}
-
-	ESSCertID ::=  SEQUENCE {
-		certHash                 Hash,
-		issuerSerial             IssuerSerial OPTIONAL
-	}
-	Hash ::= OCTET STRING -- SHA1 hash of entire certificate
-
-	IssuerSerial ::= SEQUENCE {
-		issuer                   GeneralNames,
-		serialNumber             CertificateSerialNumber
-	}
-#endif
-typedef struct ess_issuerserial_st
-{
-	GENERAL_NAMES *issuer;
-	ASN1_INTEGER  *serialNumber;
-} ESS_ISSUERSERIAL;
-DECLARE_ASN1_FUNCTIONS(ESS_ISSUERSERIAL)
-
-typedef struct ess_esscertid_st
-{
-	ASN1_OCTET_STRING *certHash;
-	ESS_ISSUERSERIAL  *issuerSerial;
-} ESS_ESSCERTID;
-DECLARE_ASN1_FUNCTIONS(ESS_ESSCERTID)
-DECLARE_STACK_OF(ESS_ESSCERTID)
-/* XXX DO I NEED THAT? */
-DECLARE_ASN1_SET_OF(ESS_ESSCERTID)
-
-typedef struct ess_signingcertificate_st
-{
-	STACK_OF(ESS_ESSCERTID) *certs;
-	STACK_OF(POLICYINFO)    *policies;
-} ESS_SIGNINGCERTIFICATE;
-DECLARE_ASN1_FUNCTIONS(ESS_SIGNINGCERTIFICATE)
-
 /* CMP_CTX definitions */
 /* XXX TODO work in progress */
 /* this structure is used to store the context for CMP sessions */
@@ -1301,8 +1339,10 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 #define CMP_ITAV_CRYPTLIB_PKIBOOT	102
 CMP_INFOTYPEANDVALUE *CMP_INFOTYPEANDVALUE_new_by_def_noVal(int def);
 
+#if 0
 int CMP_INFOTYPEANDVALUE_set0(CMP_INFOTYPEANDVALUE *itav, ASN1_OBJECT *aobj, int ptype, void *pval);
 void CMP_INFOTYPEANDVALUE_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval, CMP_INFOTYPEANDVALUE *itav);
+#endif
 
 /* from cmp_http.c */
 int CMP_new_http_bio_ex(BIO **cbio, const char* serverName, const int port, const char *srcip);

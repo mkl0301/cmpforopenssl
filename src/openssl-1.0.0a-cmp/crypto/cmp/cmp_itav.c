@@ -66,6 +66,7 @@
 #include <openssl/asn1t.h>
 #include <openssl/err.h>
 
+#if 0
 int CMP_INFOTYPEANDVALUE_set0(CMP_INFOTYPEANDVALUE *itav, ASN1_OBJECT *aobj, int ptype, void *pval) {
 	if (!itav)
 		return 0;
@@ -191,3 +192,4 @@ err:
 	if (itav) CMP_INFOTYPEANDVALUE_free(itav);
 	return NULL;
 }
+#endif

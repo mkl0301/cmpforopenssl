@@ -308,17 +308,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
 
-	/* for setting the id-aa-signingCertificate for CL */
-	unsigned int hashLen;
-	unsigned char hash[EVP_MAX_MD_SIZE];
-	ESS_ESSCERTID *essCertId=NULL;
-	ESS_SIGNINGCERTIFICATE *signingCert;
-	unsigned char *itavValueDer=NULL;
-	size_t itavValueDerLen;
-	ASN1_STRING * itavValueStr=NULL;
-	CMP_INFOTYPEANDVALUE *itav=NULL;
-	unsigned char *itavValueDerSet=NULL;
-
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
 	if (!ctx->caCert) goto err;
@@ -375,6 +364,14 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	/* this is like CL likes it:
 	 * set id-aa-signingCertificate "generalInfo" of the CMP header */
 	if( ctx->compatibility == CMP_COMPAT_CRYPTLIB) {
+		/* TODO check for memory leaks! */
+		unsigned int hashLen;
+		unsigned char hash[EVP_MAX_MD_SIZE];
+		ESS_ESSCERTID *essCertId = NULL;
+		ESS_SIGNINGCERTIFICATE *signingCert = NULL;
+		CMP_INFOTYPEANDVALUE *itav = NULL;
+		STACK_OF(ESS_SIGNINGCERTIFICATE) *set = NULL;
+
 		if (!X509_digest(ctx->clCert, EVP_sha1(), hash, &hashLen)) goto err;
 		essCertId = ESS_ESSCERTID_new();
 		if (!ASN1_OCTET_STRING_set(essCertId->certHash, hash, hashLen)) goto err;
@@ -385,27 +382,12 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 			if( !(signingCert->certs = sk_ESS_ESSCERTID_new_null())) goto err;
 		}
 		if(!sk_ESS_ESSCERTID_push(signingCert->certs, essCertId)) goto err;
-		itavValueDerLen = i2d_ESS_SIGNINGCERTIFICATE( signingCert, &itavValueDer);
 
-		/* this is just wrong but CL does it:
-		 * prepend an ASN.1 set to the id-aa-signingCertificate sequence */
-		if( !(itavValueDerSet = OPENSSL_malloc( itavValueDerLen+2))) goto err;
-		itavValueDerSet[0] = 0x31;
-		itavValueDerSet[1] = itavValueDer[1]+2;
-		memcpy( itavValueDerSet+2, itavValueDer, itavValueDerLen);
-
-		if( !(itavValueStr = ASN1_STRING_new())) goto err;
-#if 0
-		ASN1_STRING_set( itavValueStr, itavValueDer, itavValueDerLen);
-#endif
-		ASN1_STRING_set( itavValueStr, itavValueDerSet, itavValueDerLen+2);
-
+		set = sk_ESS_SIGNINGCERTIFICATE_new_null();
+		sk_ESS_SIGNINGCERTIFICATE_push(set, signingCert);
 		itav = CMP_INFOTYPEANDVALUE_new();
-#if 0
-		CMP_INFOTYPEANDVALUE_set0(itav, OBJ_nid2obj(NID_id_smime_aa_signingCertificate), V_ASN1_SEQUENCE, itavValueStr);
-#endif
-		CMP_INFOTYPEANDVALUE_set0(itav, OBJ_nid2obj( NID_id_smime_aa_signingCertificate), V_ASN1_SET, itavValueStr);
-    itavValueStr = NULL; /* to avoid that this is freed on error although "consumed" by itav */
+		itav->infoType = OBJ_nid2obj( NID_id_smime_aa_signingCertificate);
+		itav->infoValue.signingCertificate = set;
 		CMP_PKIHEADER_generalInfo_item_push0( msg->header, itav);
 	}
 
@@ -433,8 +415,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 err:
 	CMPerr(CMP_F_CMP_KUR_NEW, CMP_R_CMPERROR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
-	if (itavValueDerSet) OPENSSL_free(itavValueDerSet);
-  if (itavValueStr) ASN1_STRING_free(itavValueStr);
 	return NULL;
 }
 

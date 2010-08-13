@@ -721,7 +721,9 @@ int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg) {
 	if (!msg) goto err;
 
 	itav = CMP_INFOTYPEANDVALUE_new();
-	if (! CMP_INFOTYPEANDVALUE_set0( itav, OBJ_nid2obj(NID_id_it_implicitConfirm), V_ASN1_NULL, NULL)) goto err;
+	itav->infoType = OBJ_nid2obj(NID_id_it_implicitConfirm);
+	itav->infoValue.implicitConfirm = ASN1_NULL_new();
+	// if (! CMP_INFOTYPEANDVALUE_set0( itav, OBJ_nid2obj(NID_id_it_implicitConfirm), V_ASN1_NULL, NULL)) goto err;
 	if (! CMP_PKIHEADER_generalInfo_item_push0( msg->header, itav)) goto err;
 	return 1;
 err:
@@ -736,7 +738,6 @@ err:
 int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg) {
 	int itavCount;
 	int i;
-	ASN1_OBJECT *obj=NULL;
 	CMP_INFOTYPEANDVALUE *itav=NULL;
 
 
@@ -746,8 +747,7 @@ int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg) {
 
 	for( i=0; i < itavCount; i++) {
 		itav = sk_CMP_INFOTYPEANDVALUE_value(msg->header->generalInfo,i);
-		CMP_INFOTYPEANDVALUE_get0( &obj, NULL, NULL, itav);
-		if (OBJ_obj2nid(obj) == NID_id_it_implicitConfirm)
+		if (OBJ_obj2nid(itav->infoType) == NID_id_it_implicitConfirm)
 			return 1;
 	}
 
