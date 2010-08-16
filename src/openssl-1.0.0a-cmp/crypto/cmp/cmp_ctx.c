@@ -139,6 +139,42 @@ err:
 	return 0;
 }
 
+static EVP_PKEY *pkey_dup(const EVP_PKEY *pkey)
+{
+	EVP_PKEY *pkeyDup = EVP_PKEY_new();
+	switch (pkey->type) {
+#ifndef OPENSSL_NO_RSA
+		case EVP_PKEY_RSA:
+			EVP_PKEY_set1_RSA(pkeyDup, pkey->pkey.rsa);
+			break;
+#endif
+#ifndef OPENSSL_NO_DSA
+		case EVP_PKEY_DSA: 
+			EVP_PKEY_set1_DSA(pkeyDup, pkey->pkey.dsa);
+			break;
+#endif
+#ifndef OPENSSL_NO_DH
+		case EVP_PKEY_DH:
+			EVP_PKEY_set1_DH(pkeyDup, pkey->pkey.dh);
+			break;
+#endif
+#ifndef OPENSSL_NO_EC
+		case EVP_PKEY_EC:
+			EVP_PKEY_set1_EC_KEY(pkeyDup, pkey->pkey.ec);
+			break;
+#endif
+		default: 
+			CMPerr(CMP_F_PKEY_DUP, CMP_R_UNSUPPORTED_KEY_TYPE);
+			goto err;
+	}
+	return pkeyDup;
+
+err:
+	EVP_PKEY_free(pkeyDup);
+	CMPerr(CMP_F_PKEY_DUP, CMP_R_CMPERROR);
+	return NULL;
+}
+
 ;
 /* ################################################################ */
 /* ################################################################ */
@@ -484,6 +520,22 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
+int CMP_CTX_set1_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
+	EVP_PKEY *pkeyDup = NULL;
+	if (!ctx) goto err;
+	if (!pkey) goto err;
+
+	pkeyDup = pkey_dup(pkey);;
+	return CMP_CTX_set0_pkey(ctx, pkeyDup);
+
+err:
+	if (pkeyDup) EVP_PKEY_free(pkeyDup);
+	CMPerr(CMP_F_CMP_CTX_SET1_PKEY, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
 int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 	if (!ctx) goto err;
 	if (!pkey) goto err;
@@ -493,17 +545,26 @@ int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 		ctx->pkey = NULL;
 	}
 
-// XXX SETTING CTX->PKEY SHOULD NOT CONSUME THE POINTER
-#if 0
-/* XXX this is NOT sufficient to copy everything! */
-	ctx->pkey = EVP_PKEY_new();
-
-	return (EVP_PKEY_copy_parameters( ctx->pkey, pkey));
-#endif
 	ctx->pkey = (EVP_PKEY*) pkey;
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SET0_PKEY, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_set1_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
+	EVP_PKEY *pkeyDup = NULL;
+	if (!ctx) goto err;
+	if (!pkey) goto err;
+
+	pkeyDup = pkey_dup(pkey);
+	return CMP_CTX_set0_newPkey(ctx, pkeyDup);
+
+err:
+	if (pkeyDup) EVP_PKEY_free(pkeyDup);
+	CMPerr(CMP_F_CMP_CTX_SET1_NEWPKEY, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -518,12 +579,6 @@ int CMP_CTX_set0_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 		ctx->newPkey = NULL;
 	}
 
-// XXX SETTING CTX->NEWPKEY SHOULD NOT CONSUME THE POINTER
-#if 0
-	ctx->newPkey = EVP_PKEY_new();
-
-	return (EVP_PKEY_copy_parameters( ctx->newPkey, pkey));
-#endif
 	ctx->newPkey = (EVP_PKEY*) pkey;
 	return 1;
 err:
