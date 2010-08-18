@@ -399,7 +399,6 @@ err:
 	return 0;
 }
 
-#if 0
 /* ############################################################################ */
 /* push an ASN1_UTF8STRING to hdr->freeText and consume the given pointer */
 /* ############################################################################ */
@@ -435,10 +434,11 @@ err:
 	return 0;
 }
 
+#if 0
 /* ############################################################################ */
 /* set an ASN1_UTF8STRING stack to hdr->freeText and consume the given pointer */
 /* ############################################################################ */
-int CMP_PKIHEADER_set1_freeText( CMP_PKIHEADER *hdr, STACK_OF(ASN1_UTF8STRING) *text) {
+int CMP_PKIHEADER_set0_freeText( CMP_PKIHEADER *hdr, STACK_OF(ASN1_UTF8STRING) *text) {
 	STACK_OF(ASN1_UTF8STRING) *textDup;
 
 	if (!hdr) goto err;
@@ -457,7 +457,7 @@ err:
 /* ############################################################################ */
 /* set an ASN1_UTF8STRING stack to hdr->freeText and don't consume the given pointer */
 /* ############################################################################ */
-int CMP_PKIHEADER_set0_freeText( CMP_PKIHEADER *hdr, STACK_OF(ASN1_UTF8STRING) *text) {
+int CMP_PKIHEADER_set1_freeText( CMP_PKIHEADER *hdr, STACK_OF(ASN1_UTF8STRING) *text) {
 	STACK_OF(ASN1_UTF8STRING) *textDup;
 
 	if (!hdr) goto err;
@@ -757,7 +757,6 @@ int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg) {
 
 
 /* ############################################################################ */
-/* is that really "push0" - what does "push" do? */
 /* TODO: check */
 /* ############################################################################ */
 int CMP_PKIHEADER_generalInfo_item_push0(CMP_PKIHEADER *hdr, const CMP_INFOTYPEANDVALUE *itav) {
@@ -777,7 +776,6 @@ err:
 }
 
 /* ############################################################################ */
-/* is that really "push0" - what does "push" do? */
 /* TODO: check */
 /* ############################################################################ */
 int CMP_PKIMESSAGE_genm_item_push0(CMP_PKIMESSAGE *msg, const CMP_INFOTYPEANDVALUE *itav) {
@@ -797,7 +795,6 @@ err:
 }
 
 /* ############################################################################ */
-/* TODO: is that really "push0" - what does "push" do? */
 /* @itav: a pointer to the infoTypeAndValue item to push on the stack. */
 /*        If NULL it will be only made sure the stack exists */
 /* ############################################################################ */
@@ -900,6 +897,11 @@ long CMP_CERTRESPONSE_PKIStatus_get( CMP_CERTRESPONSE *resp) {
 	return CMP_PKISTATUSINFO_PKIstatus_get(resp->status);
 }
 
+STACK_OF(ASN1_UTF8STRING)* CMP_CERTRESPONSE_PKIStatusString_get0( CMP_CERTRESPONSE *resp) {
+	if (!resp) return NULL;
+	return resp->status->statusString;
+}
+
 /* ############################################################################ */
 /* returns the PKIFailureInfo */
 /* returns 0 on error */
@@ -997,6 +999,21 @@ long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReq
 	return -1;
 }
 
+/* ############################################################################ */
+/* returns the status string of the given certReqId inside a CertRepMessage */
+/* returns NULL on error */
+/* ############################################################################ */
+STACK_OF(ASN1_UTF8STRING)* CMP_CERTREPMESSAGE_PKIStatusString_get0( CMP_CERTREPMESSAGE *certRep, long certReqId) {
+	CMP_CERTRESPONSE *certResponse=NULL;
+	if (!certRep) return NULL;
+
+	if ( (certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) ) {
+		return (CMP_CERTRESPONSE_PKIStatusString_get0(certResponse));
+	}
+
+	/* did not find a CertResponse with the right certRep */
+	return NULL;
+}
 
 /* ############################################################################ */
 /* returns 1 if a given bit is set in a PKIFailureInfo */

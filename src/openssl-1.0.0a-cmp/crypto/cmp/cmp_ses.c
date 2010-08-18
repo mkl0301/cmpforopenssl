@@ -154,9 +154,12 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 
 	/* make sure the received messagetype indicates an IP message */
 	if (CMP_PKIMESSAGE_get_bodytype(ip) != V_CMP_PKIBODY_IP) {
+		ASN1_UTF8STRING *ftstr = NULL;
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data(ip, errmsg, sizeof(errmsg)));
+		while ((ftstr = sk_ASN1_UTF8STRING_pop(ip->header->freeText)))
+			ERR_add_error_data(3, "freeText=\"", ftstr->data, "\"");
 		goto err;
 	}
 
@@ -189,11 +192,18 @@ X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_NO_CERTIFICATE_RECEIVED);
 			goto err;
 			break;
-		default:
-			CMP_printf("ERROR: unknown pkistatus %ld\n", CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0));
+		default: {
+			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(ip->body->value.ip, 0);
+			ASN1_UTF8STRING *status = NULL;
+
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
+				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
+
+			CMP_printf("ERROR: unknown pkistatus %ld\n", CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0));
 			goto err;
 			break;
+		}
 	}
 
 	/* if the CA returned certificates in the caPubs field, copy them

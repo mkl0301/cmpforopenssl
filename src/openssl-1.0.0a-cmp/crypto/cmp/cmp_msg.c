@@ -229,7 +229,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
-	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
+	// if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
 
 	/* XXX - should this be done somewhere else? */
 	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
@@ -367,24 +367,24 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		/* TODO check for memory leaks! */
 		unsigned int hashLen;
 		unsigned char hash[EVP_MAX_MD_SIZE];
-		ESS_ESSCERTID *essCertId = NULL;
-		ESS_SIGNINGCERTIFICATE *signingCert = NULL;
+		ESS_CERT_ID *essCertId = NULL;
+		ESS_SIGNING_CERT *signingCert = NULL;
 		CMP_INFOTYPEANDVALUE *itav = NULL;
-		STACK_OF(ESS_SIGNINGCERTIFICATE) *set = NULL;
+		STACK_OF(ESS_SIGNING_CERT) *set = NULL;
 
 		if (!X509_digest(ctx->clCert, EVP_sha1(), hash, &hashLen)) goto err;
-		essCertId = ESS_ESSCERTID_new();
-		if (!ASN1_OCTET_STRING_set(essCertId->certHash, hash, hashLen)) goto err;
+		essCertId = ESS_CERT_ID_new();
+		if (!ASN1_OCTET_STRING_set(essCertId->hash, hash, hashLen)) goto err;
 
-		signingCert = ESS_SIGNINGCERTIFICATE_new();
-		if( !signingCert->certs) {
+		signingCert = ESS_SIGNING_CERT_new();
+		if( !signingCert->cert_ids) {
 			/* XXX free... */
-			if( !(signingCert->certs = sk_ESS_ESSCERTID_new_null())) goto err;
+			if( !(signingCert->cert_ids = sk_ESS_CERT_ID_new_null())) goto err;
 		}
-		if(!sk_ESS_ESSCERTID_push(signingCert->certs, essCertId)) goto err;
+		if(!sk_ESS_CERT_ID_push(signingCert->cert_ids, essCertId)) goto err;
 
-		set = sk_ESS_SIGNINGCERTIFICATE_new_null();
-		sk_ESS_SIGNINGCERTIFICATE_push(set, signingCert);
+		set = sk_ESS_SIGNING_CERT_new_null();
+		sk_ESS_SIGNING_CERT_push(set, signingCert);
 		itav = CMP_INFOTYPEANDVALUE_new();
 		itav->infoType = OBJ_nid2obj( NID_id_smime_aa_signingCertificate);
 		itav->infoValue.signingCertificate = set;

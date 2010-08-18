@@ -80,6 +80,7 @@
 #include <openssl/crmf.h>
 #include <openssl/safestack.h>
 
+#include <openssl/ts.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -145,7 +146,6 @@ DECLARE_STACK_OF(CMP_CHALLENGE)
      -- same order as these requests appear in CertReqMessages).
      */
 
-/* XXX USING THAT DOES NOT WORK FOR SOME REASON */
 /* the rfc allows substituting that with "Certificate"... */
 	/*
       CMPCertificate ::= CHOICE {
@@ -185,50 +185,9 @@ typedef struct cmp_cakeyupdanncontent_st
 } CMP_CAKEYUPDANNCONTENT;
 DECLARE_ASN1_FUNCTIONS(CMP_CAKEYUPDANNCONTENT)
 
-     /* XXX HELPERS - where should they actually be? */
-#if 0
-	id-aa-signingCertificate OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs9(9) smime(16) id-aa(2) 12 }
 
-	SigningCertificate ::=  SEQUENCE {
-		certs        SEQUENCE OF ESSCertID,
-		policies     SEQUENCE OF PolicyInformation OPTIONAL
-	}
-
-	ESSCertID ::=  SEQUENCE {
-		certHash                 Hash,
-		issuerSerial             IssuerSerial OPTIONAL
-	}
-	Hash ::= OCTET STRING -- SHA1 hash of entire certificate
-
-	IssuerSerial ::= SEQUENCE {
-		issuer                   GeneralNames,
-		serialNumber             CertificateSerialNumber
-	}
-#endif
-typedef struct ess_issuerserial_st
-{
-	GENERAL_NAMES *issuer;
-	ASN1_INTEGER  *serialNumber;
-} ESS_ISSUERSERIAL;
-DECLARE_ASN1_FUNCTIONS(ESS_ISSUERSERIAL)
-
-typedef struct ess_esscertid_st
-{
-	ASN1_OCTET_STRING *certHash;
-	ESS_ISSUERSERIAL  *issuerSerial;
-} ESS_ESSCERTID;
-DECLARE_ASN1_FUNCTIONS(ESS_ESSCERTID)
-DECLARE_STACK_OF(ESS_ESSCERTID)
-/* XXX DO I NEED THAT? */
-DECLARE_ASN1_SET_OF(ESS_ESSCERTID)
-
-typedef struct ess_signingcertificate_st
-{
-	STACK_OF(ESS_ESSCERTID) *certs;
-	STACK_OF(POLICYINFO)    *policies;
-} ESS_SIGNINGCERTIFICATE;
-DECLARE_ASN1_FUNCTIONS(ESS_SIGNINGCERTIFICATE)
-DECLARE_STACK_OF(ESS_SIGNINGCERTIFICATE)
+/* ESS_SIGNING_CERT comes from ts.h, but for some reason ESS_SIGNING_CERT_it isn't declared there */
+DECLARE_ASN1_ITEM(ESS_SIGNING_CERT)
 
 	/*
      InfoTypeAndValue ::= SEQUENCE {
@@ -271,14 +230,10 @@ typedef struct cmp_infotypeandvalue_st
 		struct CMP_PKIMESSAGE *origPKIMessage;
 
 		/* NID_id_smime_aa_signingCertificate */
-		STACK_OF(ESS_SIGNINGCERTIFICATE) *signingCertificate; 
+		STACK_OF(ESS_SIGNING_CERT) *signingCertificate; 
 
 		ASN1_TYPE *other;
 	} infoValue;
-#if 0
-	/* XXX is this right? */
-	ASN1_TYPE   *infoValue;
-#endif
 } CMP_INFOTYPEANDVALUE;
 DECLARE_ASN1_FUNCTIONS(CMP_INFOTYPEANDVALUE)
 DECLARE_STACK_OF(CMP_INFOTYPEANDVALUE)
@@ -617,8 +572,7 @@ DECLARE_STACK_OF(CMP_CERTRESPONSE)
 */
 typedef struct cmp_certrepmessage_st
 {
-	//CMP_CMPCERTIFICATE *caPubs;
-	/* XXX is this STACK_OF - stuff right? */
+	// STACK_OF(CMP_CMPCERTIFICATE) *caPubs;
 	STACK_OF(X509) *caPubs;
 	STACK_OF(CMP_CERTRESPONSE)   *response;
 } CMP_CERTREPMESSAGE;
@@ -1252,12 +1206,11 @@ X509_ALGOR *CMP_get_protectionAlgor_pbmac(void);
 int CMP_PKIHEADER_set_messageTime(CMP_PKIHEADER *hdr);
 int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg);
 int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg);
-#if 0
+
 int CMP_PKIHEADER_push0_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text);
 int CMP_PKIHEADER_push1_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text);
 int CMP_PKIHEADER_set0_freeText( CMP_PKIHEADER *hdr, STACK_OF(ASN1_UTF8STRING) *text);
 int CMP_PKIHEADER_set1_freeText( CMP_PKIHEADER *hdr, STACK_OF(ASN1_UTF8STRING) *text);
-#endif
 
 int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx);
 
@@ -1282,6 +1235,9 @@ char *CMP_ERRORMSGCONTENT_PKIFailureInfo_print( CMP_ERRORMSGCONTENT *error);
 
 long CMP_CERTRESPONSE_PKIStatus_get( CMP_CERTRESPONSE *resp);
 long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReqId);
+
+STACK_OF(ASN1_UTF8STRING)* CMP_CERTRESPONSE_PKIStatusString_get0( CMP_CERTRESPONSE *resp);
+STACK_OF(ASN1_UTF8STRING)* CMP_CERTREPMESSAGE_PKIStatusString_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
 
 int CMP_PKIFAILUREINFO_check( ASN1_BIT_STRING *failInfo, int codeBit);
 
