@@ -401,7 +401,6 @@ typedef struct cmp_certorenccert_st
 {
 	int type;
 	union{
-		/* XXX is this the right type? */
 		//CMP_CMPCERTIFICATE  *certificate;
 		X509  *certificate;
 		CRMF_ENCRYPTEDVALUE *encryptedCert;

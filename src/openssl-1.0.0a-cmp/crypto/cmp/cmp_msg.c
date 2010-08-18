@@ -229,7 +229,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
-	// if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
+	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
 
 	/* XXX - should this be done somewhere else? */
 	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
@@ -238,7 +238,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 err:
 	CMPerr(CMP_F_CMP_IR_NEW, CMP_R_CMPERROR);
-	if (msg) CMP_PKIMESSAGE_free(msg); /* TODO: verify if that really also frees msg->body->value.ir, msg->protection, msg->extraCerts if it had been allocated */
+	if (msg) CMP_PKIMESSAGE_free(msg);
 	if (certReq0) CRMF_CERTREQMSG_free(certReq0);
 	return NULL;
 }

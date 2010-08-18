@@ -231,6 +231,7 @@ err:
 void CMP_CTX_delete(CMP_CTX *ctx) {
 	if (!ctx) return;
 	OPENSSL_free(ctx->serverPath);
+	if (ctx->serverName) OPENSSL_free(ctx->serverName);
 	CMP_CTX_free(ctx);
 }
 
