@@ -233,6 +233,7 @@ typedef struct crmf_pkiarchiveoptions_st
 	} value;
 } CRMF_PKIARCHIVEOPTIONS;
 DECLARE_ASN1_FUNCTIONS(CRMF_PKIARCHIVEOPTIONS)
+CRMF_PKIARCHIVEOPTIONS *CRMF_PKIARCHIVEOPTIONS_dup( CRMF_PKIARCHIVEOPTIONS *pkiPubInfo);
 
 /*
 SinglePubInfo ::= SEQUENCE {
@@ -269,6 +270,7 @@ typedef struct crmf_pkipublicationinfo_st
 	CRMF_SINGLEPUBINFO *pubinfos; /* XXX what to do with the SEQUENCE SIZE... ? */
 } CRMF_PKIPUBLICATIONINFO;
 DECLARE_ASN1_FUNCTIONS(CRMF_PKIPUBLICATIONINFO)
+CRMF_PKIPUBLICATIONINFO *CRMF_PKIPUBLICATIONINFO_dup( CRMF_PKIPUBLICATIONINFO *pkiPubInfo);
 
 /*
 TODO
@@ -432,6 +434,12 @@ typedef struct crmf_attributetypeandvalue_st
 		/* NID_id_regCtrl_protocolEncrKey */
 		X509_PUBKEY     *protocolEncrKey;
 
+		/* NID_id_regInfo_utf8Pairs */ 
+		ASN1_UTF8STRING *utf8pairs;
+
+		/* NID_id_regInfo_certReq */ 
+		struct CRMF_CERTREQUEST *certReq;
+
 		ASN1_TYPE *other;
 	} value;
 } CRMF_ATTRIBUTETYPEANDVALUE;
@@ -506,7 +514,7 @@ typedef struct crmf_certrequest_st
 	STACK_OF(CRMF_ATTRIBUTETYPEANDVALUE) *controls;
 } CRMF_CERTREQUEST;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTREQUEST)
-
+CRMF_CERTREQUEST *CRMF_CERTREQUEST_dup( CRMF_CERTREQUEST *atav);
 
 /*
 CertReqMessages ::= SEQUENCE SIZE (1..MAX) OF CertReqMsg
@@ -552,6 +560,7 @@ int CRMF_CERTREQMSG_push1_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETY
 int CRMF_CERTREQMSG_set1_control_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *tok);
 int CRMF_CERTREQMSG_set1_control_authenticator( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *auth);
 int CRMF_CERTREQMSG_push0_regInfo( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *regInfo);
+int CRMF_CERTREQMSG_set1_regInfo_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *tok);
 
 int CRMF_CERTREQMSG_set_version2( CRMF_CERTREQMSG *certReqMsg);
 int CRMF_CERTREQMSG_set_validity( CRMF_CERTREQMSG *certReqMsg, time_t notBefore, time_t notAfter);

@@ -558,11 +558,19 @@ int CMP_doPKIInfoReqSeq( BIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	/* make sure the received messagetype indicates an IP message */
+	/* make sure the received messagetype indicates an GENP message */
 	if (CMP_PKIMESSAGE_get_bodytype(genp) != V_CMP_PKIBODY_GENP) {
+		STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(genp->body->value.ip, 0);
+		ASN1_UTF8STRING *status = NULL;
+
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data(genp, errmsg, sizeof(errmsg)));
+
+
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+		while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
+			ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 		goto err;
 	}
 

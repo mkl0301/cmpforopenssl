@@ -474,7 +474,7 @@ err:
 /* ############################################################################ */
 CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *msg=NULL;
-#if 0
+#if 1
 	CMP_INFOTYPEANDVALUE *itav=NULL;
 #endif
 
@@ -492,10 +492,17 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_GENM);
 
+	itav = CMP_INFOTYPEANDVALUE_new();
+	itav->infoType = OBJ_nid2obj(NID_id_it_preferredSymmAlg);
+	itav->infoValue.ptr = NULL;
+	CMP_PKIMESSAGE_genm_item_push0( msg, itav);
+
+#if 0
 	/* create an empty message body */
 	if( CMP_PKIMESSAGE_genm_item_push0( msg, NULL)) {
 		CMP_printf("INFO: created message body\n");
 	}
+#endif
 #if 0
 	itav = CMP_INFOTYPEANDVALUE_new();
 	if( CMP_INFOTYPEANDVALUE_set0( itav, OBJ_txt2obj("1.3.6.1.5.5.7.4.4",1), V_ASN1_UNDEF, NULL)) {

@@ -147,7 +147,7 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 		ASN1_UTF8STRING *pwdstr = ASN1_UTF8STRING_new();
 		ASN1_STRING_set(pwdstr, pwd, strlen(pwd));
 		printf("\tdata = %s, type = %d, len %d\n", pwdstr->data, pwdstr->type, pwdstr->length);
-		if (!CRMF_CERTREQMSG_set1_control_regToken(certReqMsg, pwdstr)) goto err;
+		if (!CRMF_CERTREQMSG_set1_regInfo_regToken(certReqMsg, pwdstr)) goto err;
 	 }
 #endif
 

@@ -91,7 +91,6 @@
 #include <openssl/err.h>
 
 /* ############################################################################ */
-/* TODO: check */
 /* ############################################################################ */
 int CRMF_CERTREQMSG_push0_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *control) {
 	int newControls = 0;
@@ -118,7 +117,6 @@ err:
 }
 
 /* ############################################################################ */
-/* TODO: check */
 /* ############################################################################ */
 int CRMF_CERTREQMSG_push0_regInfo( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *regInfo) {
 	int newRegInfo = 0;
@@ -191,13 +189,14 @@ int CRMF_CERTREQMSG_set1_control_oldCertId( CRMF_CERTREQMSG *certReqMsg, X509 *o
 
 	return 1;
 err:
+	if (gName) GENERAL_NAME_free(gName);
+	if (certId) CRMF_CERTID_free(certId);
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
 	return 0;
 }
 
 
 /* ############################################################################ */
-/* TODO: check */
 /* ############################################################################ */
 int CRMF_CERTREQMSG_set1_control_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *tok) {
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
@@ -213,12 +212,8 @@ int CRMF_CERTREQMSG_set1_control_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING
 	atav->type = OBJ_nid2obj(NID_id_regCtrl_regToken);
 	atav->value.regToken = tokDup;
 	tokDup = NULL;
-#if 1
-	/* XXX RFC says the regToken should be in controls, but EJBCA wants it in regInfo */
-	if( !CRMF_CERTREQMSG_push0_regInfo( msg, atav)) goto err;
-#else
+
 	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
-#endif
 	atav = NULL;
 	
 	return 1;
@@ -229,7 +224,6 @@ err:
 }
 
 /* ############################################################################ */
-/* TODO: check */
 /* ############################################################################ */
 int CRMF_CERTREQMSG_set1_control_authenticator( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *auth) {
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
@@ -238,7 +232,6 @@ int CRMF_CERTREQMSG_set1_control_authenticator( CRMF_CERTREQMSG *msg, ASN1_UTF8S
 	if (!msg) return 0;
 	if (!auth) return 0;
 
-	/* XXX is there no ASN1_UTF8STRING_dup() function? */
 	if (!(authDup = ASN1_STRING_dup( auth))) goto err;
 	
 	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())) goto err;
@@ -257,36 +250,79 @@ err:
 }
 
 /* ############################################################################ */
-/* TODO: implement */
-#if 0
-int CRMF_CERTREQMSG_set1_control_pkiPublicationInfo( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *auth) {
-#endif
 /* ############################################################################ */
-
-/* ############################################################################ */
-/* TODO: implement */
-#if 0
-int CRMF_CERTREQMSG_set1_control_pkiArchiveOptions( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *auth) {
-#endif
-/* ############################################################################ */
-
-/* ############################################################################ */
-/* ############################################################################ */
-int CRMF_CERTREQMSG_set1_control_protocolEncrKey( CRMF_CERTREQMSG *msg, X509_PUBKEY *pubkey) {	
+int CRMF_CERTREQMSG_set1_control_pkiPublicationInfo( CRMF_CERTREQMSG *msg, CRMF_PKIPUBLICATIONINFO *pubinfo) {
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
+	CRMF_PKIPUBLICATIONINFO *pubinfoDup=NULL;
 
 	if (!msg) return 0;
-	if (!pubkey) return 0;
+	if (!pubinfo) return 0;
 
+	if (!(pubinfoDup = CRMF_PKIPUBLICATIONINFO_dup( pubinfo))) goto err;
+	
 	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())) goto err;
 
-	atav->type = OBJ_nid2obj(NID_id_regCtrl_protocolEncrKey);
-	atav->value.protocolEncrKey = pubkey;
+	atav->type = OBJ_nid2obj(NID_id_regCtrl_pkiPublicationInfo);
+	atav->value.pkiPublicationInfo = pubinfoDup;
+	pubinfoDup = NULL;
 	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
 	atav = NULL;
 	
 	return 1;
 err:
+	if (pubinfoDup) CRMF_PKIPUBLICATIONINFO_free( pubinfoDup);
+	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
+	return 0;
+}
+
+/* ############################################################################ */
+/* ############################################################################ */
+int CRMF_CERTREQMSG_set1_control_pkiArchiveOptions( CRMF_CERTREQMSG *msg, CRMF_PKIARCHIVEOPTIONS *archopts) {
+	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
+	CRMF_PKIARCHIVEOPTIONS *archoptsDup=NULL;
+
+	if (!msg) return 0;
+	if (!archopts) return 0;
+
+	if (!(archoptsDup = CRMF_PKIARCHIVEOPTIONS_dup( archopts))) goto err;
+	
+	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())) goto err;
+
+	atav->type = OBJ_nid2obj(NID_id_regCtrl_pkiArchiveOptions);
+	atav->value.pkiArchiveOptions = archoptsDup;
+	archoptsDup = NULL;
+	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
+	atav = NULL;
+	
+	return 1;
+err:
+	if (archoptsDup) CRMF_PKIARCHIVEOPTIONS_free( archoptsDup);
+	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
+	return 0;
+}
+
+/* ############################################################################ */
+/* ############################################################################ */
+static IMPLEMENT_ASN1_DUP_FUNCTION(X509_PUBKEY);
+int CRMF_CERTREQMSG_set1_control_protocolEncrKey( CRMF_CERTREQMSG *msg, X509_PUBKEY *pubkey) {	
+	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
+	X509_PUBKEY *pubkeyDup=NULL;
+
+	if (!msg) return 0;
+	if (!pubkey) return 0;
+
+	if (!(pubkeyDup = X509_PUBKEY_dup(pubkey))) goto err;
+
+	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())) goto err;
+
+	atav->type = OBJ_nid2obj(NID_id_regCtrl_protocolEncrKey);
+	atav->value.protocolEncrKey = pubkeyDup;
+	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
+	atav = NULL;
+	
+	return 1;
+err:
+	if (pubkeyDup) X509_PUBKEY_free(pubkeyDup);
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
 	return 0;
 }
@@ -296,16 +332,87 @@ err:
 
 /* REGINFO */
 /* ############################################################################ */
-/* TODO: implement */
-#if 0
-int CRMF_CERTREQMSG_set1_regInfo_utf8Pairs( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *auth) {
-#endif
+/* ############################################################################ */
+int CRMF_CERTREQMSG_set1_regInfo_utf8Pairs( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *utf8pairs) {
+	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
+	ASN1_UTF8STRING *utf8pairsDup=NULL;
+
+	if (!msg) return 0;
+	if (!utf8pairs) return 0;
+
+	if (!(utf8pairsDup = ASN1_STRING_dup( utf8pairs))) goto err;
+	
+	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())) goto err;
+
+	atav->type = OBJ_nid2obj(NID_id_regInfo_utf8Pairs);
+	atav->value.utf8pairs = utf8pairsDup;
+	utf8pairsDup = NULL;
+
+	if( !CRMF_CERTREQMSG_push0_regInfo( msg, atav)) goto err;
+	atav = NULL;
+	
+	return 1;
+err:
+	if (utf8pairsDup) ASN1_UTF8STRING_free( utf8pairsDup);
+	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
+	return 0;
+}
+
 /* ############################################################################ */
 /* ############################################################################ */
-/* TODO: implement */
-#if 0
-int CRMF_CERTREQMSG_set1_regInfo_certReq( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *auth) {
-#endif
+int CRMF_CERTREQMSG_set1_regInfo_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *tok) {
+	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
+	ASN1_UTF8STRING *tokDup=NULL;
+
+	if (!msg) return 0;
+	if (!tok) return 0;
+
+	if (!(tokDup = ASN1_STRING_dup( tok))) goto err;
+	
+	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())) goto err;
+
+	atav->type = OBJ_nid2obj(NID_id_regCtrl_regToken);
+	atav->value.regToken = tokDup;
+	tokDup = NULL;
+
+	if( !CRMF_CERTREQMSG_push0_regInfo( msg, atav)) goto err;
+	atav = NULL;
+	
+	return 1;
+err:
+	if (tokDup) ASN1_UTF8STRING_free( tokDup);
+	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
+	return 0;
+}
+
+/* ############################################################################ */
+/* ############################################################################ */
+int CRMF_CERTREQMSG_set1_regInfo_certReq( CRMF_CERTREQMSG *msg, CRMF_CERTREQUEST *certReq) {
+	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
+	CRMF_CERTREQUEST *certReqDup=NULL;
+
+	if (!msg) return 0;
+	if (!certReq) return 0;
+
+	if (!(certReqDup = CRMF_CERTREQUEST_dup( certReq))) goto err;
+	
+	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())) goto err;
+
+	atav->type = OBJ_nid2obj(NID_id_regInfo_certReq);
+	atav->value.certReq = (struct CRMF_CERTREQUEST*) certReqDup;
+	certReqDup = NULL;
+
+	if( !CRMF_CERTREQMSG_push0_regInfo( msg, atav)) goto err;
+	atav = NULL;
+	
+	return 1;
+err:
+	if (certReqDup) CRMF_CERTREQUEST_free( certReqDup);
+	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
+	return 0;
+}
+
+
 /* ############################################################################ */
 
 /* CERTTEMPLATE */
