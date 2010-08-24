@@ -341,10 +341,20 @@ CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx) {
 	ASN1_INTEGER_set(cr->status->status, CMP_PKISTATUS_accepted);
 
 	cr->certifiedKeyPair = CMP_CERTIFIEDKEYPAIR_new();
-	// X509 *cert = HELP_read_der_cert("/home/miikka/code/cmpforopenssl/certs/cl_cert.der");
-	X509 *cert = HELP_read_der_cert("/home/miikka/light/cert.der");
+	// X509 *cert = HELP_read_der_cert("/home/miikka/light/cert.der");
 	cr->certifiedKeyPair->certOrEncCert->type = CMP_CERTORENCCERT_CERTIFICATE;
-	cr->certifiedKeyPair->certOrEncCert->value.certificate = X509_dup(cert);
+
+	X509 *cert = X509_new();
+	X509_set_version(cert, 2);
+	ASN1_INTEGER_set(cert->cert_info->serialNumber, 0);
+	ASN1_TIME_set(cert->cert_info->validity->notBefore, time(0));
+	ASN1_TIME_set(cert->cert_info->validity->notAfter, time(0)+60*60*24*365);
+	// X509_set_subject_name(cert, certReqMsg->certReq->certTemplate->subject);
+	// X509_set_issuer_name(cert, ...);
+	// X509_set_pubkey(cert, certReqMsg->certReq->certTemplate->publicKey->pkey);
+	// X509_ALGOR_set0(cert->sig_alg, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
+
+	cr->certifiedKeyPair->certOrEncCert->value.certificate = cert;
 
 	resp->response = sk_CMP_CERTRESPONSE_new_null();
 	sk_CMP_CERTRESPONSE_push(resp->response, cr);
