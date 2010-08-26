@@ -85,58 +85,6 @@
 
 #include <string.h>
 
-#if 0
-/* ############################################################################ */
-/* Lie and say we'd be CL */
-/* XXX this is just for testing and should be removed */
-/* ############################################################################ */
-void pretend_to_be_cl(CMP_PKIMESSAGE *msg) {
-	/* for saying we'd be CL */
-	ASN1_STRING *emptySetStr=NULL;
-	unsigned char *emptySetDer=NULL;
-	CMP_INFOTYPEANDVALUE *itavLie=NULL;
-	ASN1_OBJECT *clNid;
-
-	emptySetStr = ASN1_STRING_new();
-	emptySetDer = OPENSSL_malloc(3);
-	emptySetDer[0] = 0x31;
-	emptySetDer[1] = 0x0;
-	emptySetDer[2] = 0x0;
-	ASN1_STRING_set( emptySetStr, emptySetDer, 2);
-	clNid = OBJ_txt2obj("1.3.6.1.4.1.3029.3.1.1",1);
-	itavLie = CMP_INFOTYPEANDVALUE_new();
-	CMP_INFOTYPEANDVALUE_set0(itavLie, clNid, V_ASN1_SET, emptySetStr);
-	CMP_PKIMESSAGE_add0_infotypeandvalue(msg, itavLie);
-
-	return;
-}
-#endif
-
-
-
-#if 0
-/* ############################################################################ */
-/* ############################################################################ */
-unsigned char *StrToHexStr(unsigned char *str, int length)
-{
-	unsigned char *newstr;
-	unsigned char *cpold;
-	unsigned char *cpnew;
-
-	newstr = (unsigned char *)malloc((size_t)(length*2+1));
-	/* XXX I know this is not freed... */
-	cpold = str;
-	cpnew = newstr;
-
-	while(length--) {
-		sprintf((char *)cpnew, "%02X", *cpold++);
-		cpnew+=2;
-	}
-	*(cpnew) = '\0';
-	return(newstr);
-}
-#endif
-
 static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL_NAME) *altnames) {
 	X509_EXTENSION *ext = NULL;
 	unsigned char *der = NULL;

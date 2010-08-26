@@ -757,7 +757,6 @@ int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg) {
 
 
 /* ############################################################################ */
-/* TODO: check */
 /* ############################################################################ */
 int CMP_PKIHEADER_generalInfo_item_push0(CMP_PKIHEADER *hdr, const CMP_INFOTYPEANDVALUE *itav) {
 	if( !hdr)
@@ -776,7 +775,6 @@ err:
 }
 
 /* ############################################################################ */
-/* TODO: check */
 /* ############################################################################ */
 int CMP_PKIMESSAGE_genm_item_push0(CMP_PKIMESSAGE *msg, const CMP_INFOTYPEANDVALUE *itav) {
 	if( !msg)

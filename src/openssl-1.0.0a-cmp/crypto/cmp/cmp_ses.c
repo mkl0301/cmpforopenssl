@@ -429,9 +429,12 @@ X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx) {
 		goto err;
 
 	if (CMP_PKIMESSAGE_get_bodytype( kup) != V_CMP_PKIBODY_KUP) {
+		ASN1_UTF8STRING *ftstr = NULL;
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data(kup, errmsg, sizeof(errmsg)));
+		while ((ftstr = sk_ASN1_UTF8STRING_pop(kup->header->freeText)))
+			ERR_add_error_data(3, "freeText=\"", ftstr->data, "\"");
 		goto err;
 	}
 

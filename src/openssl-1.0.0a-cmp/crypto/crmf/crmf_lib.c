@@ -579,7 +579,6 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 	maxSignatureSize = EVP_PKEY_size( (EVP_PKEY*) pkey);
 	signature = OPENSSL_malloc(maxSignatureSize);
 
-	/* TODO do I have to free this? */
 	ctx=EVP_MD_CTX_create();
 	if (!(EVP_SignInit_ex(ctx, EVP_sha1(),NULL))) goto err;
 	if (!(EVP_SignUpdate(ctx, certReqDer, certReqSize))) goto err;
