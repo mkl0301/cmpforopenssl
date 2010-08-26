@@ -724,7 +724,14 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algID) {
 		case CMP_ALG_PBMAC:
 			nid = NID_id_PasswordBasedMAC;
 			break;
-		case CMP_ALG_SIG:
+		case CMP_ALG_SIG: {
+			X509 *cert=NULL;
+			/* first try to set algorithm based on the algorithm 
+			 * used in the certificate, if we already have one */
+			cert = ctx->clCert ? ctx->clCert : ctx->extCert;
+			if (cert && (ctx->protectionAlgor = cert->sig_alg) != NULL)
+				return 1;
+
 			if (!ctx->pkey) goto err;
 #ifndef OPENSSL_NO_DSA
 			if (EVP_PKEY_type(ctx->pkey->type) == EVP_PKEY_DSA) {
@@ -740,6 +747,7 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algID) {
 #endif
 			goto err;
 			break;
+		}
 		default:
 			goto err;
 	}
