@@ -633,31 +633,10 @@ int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PK
 			newPopo->type = CRMF_PROOFOFPOSESSION_KEYENCIPHERMENT;
 			newPopo->value.keyEncipherment = CRMF_POPOPRIVKEY_new();
 
-			/*
-			  POPOPrivKey ::= CHOICE {
-			    thisMessage       [0] BIT STRING,         -- Deprecated
-			    -- possession is proven in this message (which contains the private
-			    -- key itself (encrypted for the CA))
-			    subsequentMessage [1] SubsequentMessage,
-			    -- possession will be proven in a subsequent message
-			    dhMAC             [2] BIT STRING,         -- Deprecated
-			    agreeMAC          [3] PKMACValue,
-			    encryptedKey      [4] EnvelopedData }
-			*/			
-			newPopo->value.keyEncipherment->type = 1; /* TODO make definition for this? */
+			newPopo->value.keyEncipherment->type = CRMF_POPOPRIVKEY_SUBSEQUENTMESSAGE;
 			
-			/*
-			  SubsequentMessage ::= INTEGER {
-			    encrCert (0),
-			    -- requests that resulting certificate be encrypted for the
-			    -- end entity (following which, POP will be proven in a
-			    -- confirmation message)
-			    challengeResp (1) }
-			    -- requests that CA engage in challenge-response exchange with
-			    -- end entity in order to prove private key possession 
-			 */ 
 			newPopo->value.keyEncipherment->value.subsequentMessage = ASN1_INTEGER_new();
-			ASN1_INTEGER_set(newPopo->value.keyEncipherment->value.subsequentMessage, 0); /* make #define? */
+			ASN1_INTEGER_set(newPopo->value.keyEncipherment->value.subsequentMessage, CRMF_SUBSEQUENTMESSAGE_ENCRCERT);
 			break;
 
 		default: goto err;

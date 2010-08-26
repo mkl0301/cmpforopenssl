@@ -308,6 +308,15 @@ POPOPrivKey ::= CHOICE {
  agreeMAC          [3] PKMACValue,
  encryptedKey      [4] EnvelopedData }
 */
+#define CRMF_POPOPRIVKEY_THISMESSAGE       0
+#define CRMF_POPOPRIVKEY_SUBSEQUENTMESSAGE 1
+#define CRMF_POPOPRIVKEY_DHMAC             2
+#define CRMF_POPOPRIVKEY_AGREEMAC          3
+#define CRMF_POPOPRIVKEY_ENCRYPTEDKEY      4
+
+#define CRMF_SUBSEQUENTMESSAGE_ENCRCERT      0
+#define CRMF_SUBSEQUENTMESSAGE_CHALLENGERESP 1
+
 typedef struct crmf_popoprivkey_st
 {
 	int type;
