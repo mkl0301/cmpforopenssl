@@ -903,7 +903,7 @@ STACK_OF(ASN1_UTF8STRING)* CMP_CERTRESPONSE_PKIStatusString_get0( CMP_CERTRESPON
 /* returns the PKIFailureInfo */
 /* returns 0 on error */
 /* ############################################################################ */
-char *CMP_PKISTATUSINFO_PKIFailureInfo_print( CMP_PKISTATUSINFO *statusInfo) {
+char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo) {
 	int i;
 
 	if (!statusInfo) return 0;
@@ -975,9 +975,9 @@ char *CMP_PKISTATUSINFO_PKIFailureInfo_print( CMP_PKISTATUSINFO *statusInfo) {
 /* returns 1 on success */
 /* returns 0 on error */
 /* ############################################################################ */
-char *CMP_ERRORMSGCONTENT_PKIFailureInfo_print( CMP_ERRORMSGCONTENT *error) {
+char *CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string( CMP_ERRORMSGCONTENT *error) {
 	if (!error) return 0;
-	return CMP_PKISTATUSINFO_PKIFailureInfo_print(error->pKIStatusInfo);
+	return CMP_PKISTATUSINFO_PKIFailureInfo_get_string(error->pKIStatusInfo);
 }
 
 /* ############################################################################ */
@@ -1232,7 +1232,7 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
 	}
 
 	/* PKIFailureInfo is optional */
-	failureinfo = CMP_ERRORMSGCONTENT_PKIFailureInfo_print(msg->body->value.error);
+	failureinfo = CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string(msg->body->value.error);
 
 	if (failureinfo)
 		BIO_snprintf(errormsg, bufsize, "Status: %s, Failureinfo: %s", status, failureinfo);

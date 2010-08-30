@@ -1227,8 +1227,8 @@ long CMP_ERRORMSGCONTENT_PKIStatus_get( CMP_ERRORMSGCONTENT *error);
 char *CMP_PKISTATUSINFO_PKIStatus_get_string( CMP_PKISTATUSINFO *statusInfo);
 char *CMP_ERRORMSGCONTENT_PKIStatus_get_string( CMP_ERRORMSGCONTENT *error);
 
-char *CMP_PKISTATUSINFO_PKIFailureInfo_print( CMP_PKISTATUSINFO *statusInfo);
-char *CMP_ERRORMSGCONTENT_PKIFailureInfo_print( CMP_ERRORMSGCONTENT *error);
+char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo);
+char *CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string( CMP_ERRORMSGCONTENT *error);
 
 long CMP_CERTRESPONSE_PKIStatus_get( CMP_CERTRESPONSE *resp);
 long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReqId);
