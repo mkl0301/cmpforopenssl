@@ -312,7 +312,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	/* this is like CL likes it:
 	 * set id-aa-signingCertificate "generalInfo" of the CMP header */
 	if( ctx->compatibility == CMP_COMPAT_CRYPTLIB) {
-		/* TODO check for memory leaks! */
 		unsigned int hashLen;
 		unsigned char hash[EVP_MAX_MD_SIZE];
 		ESS_CERT_ID *essCertId = NULL;

@@ -847,7 +847,7 @@ long CMP_ERRORMSGCONTENT_PKIStatus_get( CMP_ERRORMSGCONTENT *error) {
 /* returns the PKIStatus of the given PKIStatusInfo */
 /* or NULL on error */
 /* ############################################################################ */
-char *CMP_PKISTATUSINFO_PKIstatus_print( CMP_PKISTATUSINFO *statusInfo) {
+char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusInfo) {
 	long PKIstatus;
 
 	if (!statusInfo) return 0;
@@ -870,20 +870,19 @@ char *CMP_PKISTATUSINFO_PKIstatus_print( CMP_PKISTATUSINFO *statusInfo) {
 			return "PKIStatus: key update warning";
 		case -1:
 		default:
-			CMPerr(CMP_F_CMP_PKISTATUSINFO_PKISTATUS_PRINT, CMP_R_ERROR_PARSING_PKISTATUS);
+			CMPerr(CMP_F_CMP_PKISTATUSINFO_PKISTATUS_GET_STRING, CMP_R_ERROR_PARSING_PKISTATUS);
 			return 0;
 	}
 	return 0;
 }
 
 /* ############################################################################ */
-/* prints the PKIStatus of the givven error message to stdout */
-/* returns 1 on success */
+/* returns the PKIStatus info of the given error message */
 /* returns 0 on error */
 /* ############################################################################ */
-char *CMP_ERRORMSGCONTENT_PKIStatus_print( CMP_ERRORMSGCONTENT *error) {
+char *CMP_ERRORMSGCONTENT_PKIStatus_get_string( CMP_ERRORMSGCONTENT *error) {
 	if (!error) return 0;
-	return CMP_PKISTATUSINFO_PKIstatus_print(error->pKIStatusInfo);
+	return CMP_PKISTATUSINFO_PKIstatus_get_string(error->pKIStatusInfo);
 }
 
 /* ############################################################################ */
@@ -1226,7 +1225,7 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
 	if( !msg) return 0;
 	if( CMP_PKIMESSAGE_get_bodytype(msg) != V_CMP_PKIBODY_ERROR) return 0;
 
-	status = CMP_ERRORMSGCONTENT_PKIStatus_print(msg->body->value.error);
+	status = CMP_ERRORMSGCONTENT_PKIStatus_get_string(msg->body->value.error);
 	if (!status) {
 		BIO_snprintf(errormsg, bufsize, "failed to parse error message");
 		return errormsg;

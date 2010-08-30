@@ -162,7 +162,6 @@ err:
 }
 
 /* ############################################################################ */
-/* TODO better error handling, make sure everything gets freed properly */
 /* ############################################################################ */
 int CRMF_CERTREQMSG_set1_control_oldCertId( CRMF_CERTREQMSG *certReqMsg, X509 *oldCert) { 
 	CRMF_ATTRIBUTETYPEANDVALUE *atav   = NULL;
@@ -177,6 +176,7 @@ int CRMF_CERTREQMSG_set1_control_oldCertId( CRMF_CERTREQMSG *certReqMsg, X509 *o
 			|| !(gName = GENERAL_NAME_new()))
 		goto err;
 
+	/* note: X509_NAME_set does not consume the pointer so this is ok */
 	X509_NAME_set( &gName->d.directoryName, X509_get_issuer_name( oldCert));
 	gName->type = GEN_DIRNAME;
 	certId->issuer = gName;

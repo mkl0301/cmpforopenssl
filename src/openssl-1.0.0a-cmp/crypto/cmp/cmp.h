@@ -385,7 +385,7 @@ typedef ASN1_BIT_STRING CMP_PKIFAILUREINFO;
 #define CMP_PKISTATUS_revocationWarning		4
 #define CMP_PKISTATUS_revocationNotification	5
 #define CMP_PKISTATUS_keyUpdateWarning		6
-     /* XXX this should be done right */
+
 typedef ASN1_INTEGER CMP_PKISTATUS;
 
 
@@ -437,10 +437,7 @@ DECLARE_ASN1_FUNCTIONS(CMP_CERTIFIEDKEYPAIR)
 
 typedef struct cmp_pkistatusinfo_st
 {
-/* XXX XXX this should actually be
 	CMP_PKISTATUS      *status;
-	*/
-	ASN1_INTEGER       *status;
 #if 0
 	CMP_PKIFREETEXT    *statusString;
 #endif
@@ -1227,8 +1224,8 @@ int CMP_ITAV_stack_item_push0(STACK_OF(CMP_INFOTYPEANDVALUE) **itav_sk_p, const 
 
 long CMP_PKISTATUSINFO_PKIstatus_get( CMP_PKISTATUSINFO *statusInfo);
 long CMP_ERRORMSGCONTENT_PKIStatus_get( CMP_ERRORMSGCONTENT *error);
-char *CMP_PKISTATUSINFO_PKIStatus_print( CMP_PKISTATUSINFO *statusInfo);
-char *CMP_ERRORMSGCONTENT_PKIStatus_print( CMP_ERRORMSGCONTENT *error);
+char *CMP_PKISTATUSINFO_PKIStatus_get_string( CMP_PKISTATUSINFO *statusInfo);
+char *CMP_ERRORMSGCONTENT_PKIStatus_get_string( CMP_ERRORMSGCONTENT *error);
 
 char *CMP_PKISTATUSINFO_PKIFailureInfo_print( CMP_PKISTATUSINFO *statusInfo);
 char *CMP_ERRORMSGCONTENT_PKIFailureInfo_print( CMP_ERRORMSGCONTENT *error);
@@ -1425,7 +1422,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_INFOTYPEANDVALUE_NEW_BY_DEF_NOVAL	 140
 #define CMP_F_CMP_IR_NEW				 141
 #define CMP_F_CMP_KUR_NEW				 142
-#define CMP_F_CMP_PKISTATUSINFO_PKISTATUS_PRINT		 143
+#define CMP_F_CMP_PKISTATUSINFO_PKISTATUS_GET_STRING	 143
 #define CMP_F_CMP_PROTECTION_NEW			 144
 #define CMP_F_CMP_PROTECTION_VERIFY			 145
 #define CMP_F_PKEY_DUP					 146
