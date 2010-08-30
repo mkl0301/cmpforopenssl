@@ -2,85 +2,114 @@
 
 =head1 NAME
 
- CMP_CERTREPMESSAGE_PKIStatus_get,
- CMP_CERTREPMESSAGE_certResponse_get0,
- CMP_CERTREPMESSAGE_cert_get0,
- CMP_CERTREPMESSAGE_cert_get1,
- CMP_CERTREPMESSAGE_encCert_get1,
- CMP_CERTRESPONSE_PKIStatus_get,
- CMP_CERTSTATUS_set_certHash,
- CMP_ERRORMSGCONTENT_PKIFailureInfo_print,
- CMP_ERRORMSGCONTENT_PKIStatus_get,
- CMP_ERRORMSGCONTENT_PKIStatus_print,
- CMP_PKIFAILUREINFO_check,
- CMP_PKIHEADER_generalInfo_item_push0,
- CMP_PKIHEADER_new_senderNonce,
- CMP_PKIHEADER_set0_recipient,
- CMP_PKIHEADER_set0_sender,
- CMP_PKIHEADER_set1,
- CMP_PKIHEADER_set1_protectionAlgor,
- CMP_PKIHEADER_set1_recipNonce,
- CMP_PKIHEADER_set1_recipient,
- CMP_PKIHEADER_set1_sender,
- CMP_PKIHEADER_set1_senderKID,
- CMP_PKIHEADER_set1_transactionID,
- CMP_PKIHEADER_set_messageTime,
- CMP_PKIHEADER_set_version,
- CMP_PKIMESSAGE_check_implicitConfirm,
- CMP_PKIMESSAGE_genm_item_push0,
- CMP_PKIMESSAGE_get_bodytype,
- CMP_PKIMESSAGE_parse_error_msg,
- CMP_PKIMESSAGE_set_bodytype,
- CMP_PKIMESSAGE_set_implicitConfirm,
- CMP_PKISTATUSINFO_PKIFailureInfo_print,
- CMP_PKISTATUSINFO_PKIstatus_get,
- CMP_PKISTATUSINFO_PKIstatus_print,
- CMP_get_protectionAlgor_by_nid,
- CMP_get_protectionAlgor_pbmac,
- CMP_protection_new
+  CMP_CERTREPMESSAGE_PKIStatus_get,
+  CMP_CERTREPMESSAGE_certResponse_get0,
+  CMP_CERTREPMESSAGE_certType_get,
+  CMP_CERTREPMESSAGE_cert_get0,
+  CMP_CERTREPMESSAGE_cert_get1,
+  CMP_CERTREPMESSAGE_encCert_get1,
+  CMP_CERTRESPONSE_PKIStatus_get,
+  CMP_CERTSTATUS_set_certHash,
+  CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string,
+  CMP_ERRORMSGCONTENT_PKIStatus_get,
+  CMP_ERRORMSGCONTENT_PKIStatus_get_string,
+  CMP_PKIFAILUREINFO_check,
+  CMP_PKIHEADER_generalInfo_item_push0,
+  CMP_PKIHEADER_new_senderNonce,
+  CMP_PKIHEADER_push0_freeText,
+  CMP_PKIHEADER_push1_freeText,
+  CMP_PKIHEADER_set0_recipient,
+  CMP_PKIHEADER_set0_sender,
+  CMP_PKIHEADER_set1,
+  CMP_PKIHEADER_set1_protectionAlgor,
+  CMP_PKIHEADER_set1_recipNonce,
+  CMP_PKIHEADER_set1_recipient,
+  CMP_PKIHEADER_set1_sender,
+  CMP_PKIHEADER_set1_senderKID,
+  CMP_PKIHEADER_set1_transactionID,
+  CMP_PKIHEADER_set_messageTime,
+  CMP_PKIHEADER_set_version,
+  CMP_PKIMESSAGE_check_implicitConfirm,
+  CMP_PKIMESSAGE_genm_item_push0,
+  CMP_PKIMESSAGE_get_bodytype,
+  CMP_PKIMESSAGE_parse_error_msg,
+  CMP_PKIMESSAGE_set_bodytype,
+  CMP_PKIMESSAGE_set_implicitConfirm,
+  CMP_PKISTATUSINFO_PKIFailureInfo_get_string,
+  CMP_PKISTATUSINFO_PKIstatus_get,
+  CMP_PKISTATUSINFO_PKIstatus_get_string,
+  CMP_get_protectionAlgor_by_nid,
+  CMP_get_protectionAlgor_pbmac,
+  CMP_protection_new,
+  CMP_CERTREPMESSAGE_PKIStatusString_get0,
+  CMP_CERTRESPONSE_PKIStatusString_get0,
+  CMP_ITAV_stack_item_push0
 
 =head1 SYNOPSIS
 
- #include <openssl/cmp.h>
+  #include <openssl/cmp.h>
 
-long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReqId);
-CMP_CERTRESPONSE *CMP_CERTREPMESSAGE_certResponse_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
-X509 *CMP_CERTREPMESSAGE_cert_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
-X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId);
-X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId, EVP_PKEY *pkey);
-long CMP_CERTRESPONSE_PKIStatus_get( CMP_CERTRESPONSE *resp);
-int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert);
-char *CMP_ERRORMSGCONTENT_PKIFailureInfo_print( CMP_ERRORMSGCONTENT *error);
-long CMP_ERRORMSGCONTENT_PKIStatus_get( CMP_ERRORMSGCONTENT *error);
-char *CMP_ERRORMSGCONTENT_PKIStatus_print( CMP_ERRORMSGCONTENT *error);
-int CMP_PKIFAILUREINFO_check( ASN1_BIT_STRING *failInfo, int codeBit);
-int CMP_PKIHEADER_generalInfo_item_push0(CMP_PKIHEADER *hdr, const CMP_INFOTYPEANDVALUE *itav);
-int CMP_PKIHEADER_new_senderNonce(CMP_PKIHEADER *hdr);
-int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
-int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
-int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx);
-int CMP_PKIHEADER_set1_protectionAlgor(CMP_PKIHEADER *hdr, const X509_ALGOR *alg);
-int CMP_PKIHEADER_set1_recipNonce(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *recipNonce);
-int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
-int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
-int CMP_PKIHEADER_set1_senderKID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *senderKID);
-int CMP_PKIHEADER_set1_transactionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *transactionID);
-int CMP_PKIHEADER_set_messageTime(CMP_PKIHEADER *hdr);
-int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version);
-int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg);
-int CMP_PKIMESSAGE_genm_item_push0(CMP_PKIMESSAGE *msg, const CMP_INFOTYPEANDVALUE *itav);
-int CMP_PKIMESSAGE_get_bodytype( CMP_PKIMESSAGE *msg);
-char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int bufsize);
-int CMP_PKIMESSAGE_set_bodytype( CMP_PKIMESSAGE *msg, int type);
-int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg);
-char *CMP_PKISTATUSINFO_PKIFailureInfo_print( CMP_PKISTATUSINFO *statusInfo);
-long CMP_PKISTATUSINFO_PKIstatus_get( CMP_PKISTATUSINFO *statusInfo);
-char *CMP_PKISTATUSINFO_PKIstatus_print( CMP_PKISTATUSINFO *statusInfo);
-X509_ALGOR *CMP_get_protectionAlgor_by_nid(int nid);
-X509_ALGOR *CMP_get_protectionAlgor_pbmac();
-ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage, X509_ALGOR *_algor, const EVP_PKEY *pkey, const ASN1_OCTET_STRING *secret);
+  long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReqId);
+  CMP_CERTRESPONSE *CMP_CERTREPMESSAGE_certResponse_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
+  int CMP_CERTREPMESSAGE_certType_get( CMP_CERTREPMESSAGE *certRep, long certReqId);
+  X509 *CMP_CERTREPMESSAGE_cert_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
+  X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId);
+  X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId, EVP_PKEY *pkey);
+  long CMP_CERTRESPONSE_PKIStatus_get( CMP_CERTRESPONSE *resp);
+  int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert);
+  char *CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string( CMP_ERRORMSGCONTENT *error);
+  long CMP_ERRORMSGCONTENT_PKIStatus_get( CMP_ERRORMSGCONTENT *error);
+  char *CMP_ERRORMSGCONTENT_PKIStatus_get_string( CMP_ERRORMSGCONTENT *error);
+  int CMP_PKIFAILUREINFO_check( ASN1_BIT_STRING *failInfo, int codeBit);
+  int CMP_PKIHEADER_generalInfo_item_push0(CMP_PKIHEADER *hdr, const CMP_INFOTYPEANDVALUE *itav);
+  int CMP_PKIHEADER_new_senderNonce(CMP_PKIHEADER *hdr);
+  int CMP_PKIHEADER_push0_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text);
+  int CMP_PKIHEADER_push1_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text);
+  int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
+  int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
+  int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx);
+  int CMP_PKIHEADER_set1_protectionAlgor(CMP_PKIHEADER *hdr, const X509_ALGOR *alg);
+  int CMP_PKIHEADER_set1_recipNonce(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *recipNonce);
+  int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
+  int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
+  int CMP_PKIHEADER_set1_senderKID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *senderKID);
+  int CMP_PKIHEADER_set1_transactionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *transactionID);
+  tionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *transactionID);
+  int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version);
+  int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg);
+  int CMP_PKIMESSAGE_genm_item_push0(CMP_PKIMESSAGE *msg, const CMP_INFOTYPEANDVALUE *itav);
+  int CMP_PKIMESSAGE_get_bodytype( CMP_PKIMESSAGE *msg);
+  char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int bufsize);
+  int CMP_PKIMESSAGE_set_bodytype( CMP_PKIMESSAGE *msg, int type);
+  int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg);
+  char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo);
+  long CMP_PKISTATUSINFO_PKIstatus_get( CMP_PKISTATUSINFO *statusInfo);
+  char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusInfo);
+  X509_ALGOR *CMP_get_protectionAlgor_by_nid(int nid);
+  X509_ALGOR *CMP_get_protectionAlgor_pbmac();
+  ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage, X509_ALGOR *_algor, const EVP_PKEY *pkey, const ASN1_OCTET_STRING *secret);
+  STACK_OF(ASN1_UTF8STRING)* CMP_CERTREPMESSAGE_PKIStatusString_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
+  STACK_OF(ASN1_UTF8STRING)* CMP_CERTRESPONSE_PKIStatusString_get0( CMP_CERTRESPONSE *resp);
+  int CMP_ITAV_stack_item_push0(STACK_OF(CMP_INFOTYPEANDVALUE) **itav_sk_p, const CMP_INFOTYPEANDVALUE *itav);
 
 =head1 DESCRIPTION
+
+CMP_CERTREPMESSAGE_PKIStatus_get() returns the PKIStatus of the given certReqId inside a CertRepMessage, or -1 on error.
+
+CMP_CERTREPMESSAGE_certResponse_get0() returns a pointer to the CertResponse with the given certReqId inside a CertRepMessage. If no CertResponse is available or if there's an error, the function returns NULL.
+
+CMP_CERTREPMESSAGE_certType_get() returns the type of the certificate contained in the certificate response, or -1 on error.
+
+CMP_CERTREPMESSAGE_cert_get0() returns a pointer to the Certificate with the given certReqId inside a CertRepMessage. If no certificate is available or if there is an error, the function returns NULL.
+
+CMP_CERTREPMESSAGE_cert_get1() does the same as above, except it returns a pointer to a copy of the certificate instead of the original.
+
+CMP_CERTREPMESSAGE_encCert_get1() decrypts the certificate with the given certReqId inside a CertRepMessage and returns a pointer to the decrypted certificate. Returns NULL on error or if no Certificate available.
+
+CMP_CERTRESPONSE_PKIStatus_get() returns the PKIStatus of the given Certresponse, or -1 on error.
+
+CMP_CERTSTATUS_set_certHash() calculates a hash of the certificate, using the same hash algorithm as is used to create and verify the certificate signature, and places the has into the certHash field of a CMP_CERTSTATUS structure. This is used in the certConf message, for example, to confirm that the certificate was received successfully.
+
 
 
 =head1 NOTES
