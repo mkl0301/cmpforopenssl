@@ -74,7 +74,6 @@
   int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
   int CMP_PKIHEADER_set1_senderKID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *senderKID);
   int CMP_PKIHEADER_set1_transactionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *transactionID);
-  tionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *transactionID);
   int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version);
   int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg);
   int CMP_PKIMESSAGE_genm_item_push0(CMP_PKIMESSAGE *msg, const CMP_INFOTYPEANDVALUE *itav);
@@ -106,10 +105,75 @@ CMP_CERTREPMESSAGE_cert_get1() does the same as above, except it returns a point
 
 CMP_CERTREPMESSAGE_encCert_get1() decrypts the certificate with the given certReqId inside a CertRepMessage and returns a pointer to the decrypted certificate. Returns NULL on error or if no Certificate available.
 
-CMP_CERTRESPONSE_PKIStatus_get() returns the PKIStatus of the given Certresponse, or -1 on error.
+CMP_CERTRESPONSE_PKIStatus_get() returns the PKIStatus of the given CertResponse, or -1 on error.
 
 CMP_CERTSTATUS_set_certHash() calculates a hash of the certificate, using the same hash algorithm as is used to create and verify the certificate signature, and places the has into the certHash field of a CMP_CERTSTATUS structure. This is used in the certConf message, for example, to confirm that the certificate was received successfully.
 
+CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string() returns a string representing the failure code in the given PKIFailureInfo structure.
+
+CMP_ERRORMSGCONTENT_PKIStatus_get() returns the PKIStatus value of the given error message.
+
+CMP_ERRORMSGCONTENT_PKIStatus_get_string() returns the PKIStatus info of the given error message.
+
+CMP_PKIFAILUREINFO_check() checks whether a given bit is set within a given PKIFailureInfo.
+
+CMP_PKIHEADER_generalInfo_item_push0() adds the given InfoTypeAndValue item to the hdr->generalInfo stack.
+
+CMP_PKIHEADER_new_senderNonce() generates a random value for the hdr->senderNonce field, which is used to proetct the PKIMessage against replay attacks.
+
+CMP_PKIHEADER_push0_freeText() pushes an ASN1_UTF8STRING to hdr->freeText and consume the given pointer.
+
+CMP_PKIHEADER_push1_freeText() does the same as above, but does not consume the pointer.
+
+CMP_PKIHEADER_set0_recipient() sets the recipient field in the given PKIHeader to the given X509 name.
+
+CMP_PKIHEADER_set0_sender() sets the sender field in the given PKIHeader structure.
+
+CMP_PKIHEADER_set1() initializes a PKIHeader structure based on the values in the given CMP_CTX structure. 
+
+CMP_PKIHEADER_set1_protectionAlgor() sets hdr->protectionAlg to the given X509_ALGOR. This field specifies the algorithm that will be used to calculate the value of the protection field in a PKIMessage.
+
+CMP_PKIHEADER_set1_recipNonce() sets the recpiNonce field in the given hdr to the given value.
+
+CMP_PKIHEADER_set1_recipient() sets the recipient field in the given PKIHeader to the given X509 Name value, without consuming the pointer.
+
+CMP_PKIHEADER_set1_sender() sets the sender field in the given PKIHeader to the given X509 Name value, without consuming the pointer.
+
+CMP_PKIHEADER_set1_senderKID() Sets hdr->senderKID to the given string. In IR this is the reference number issued by the CA. In KUR with Insta or Cryptlib compatibility mode, this is set to the public key ID from the previously issued certificate.
+
+CMP_PKIHEADER_set1_transactionID() copies the given transactionID to hdr->transactionID. If the transactionID parameter is NULL, a new random value is generated for it.
+
+CMP_PKIHEADER_set_version() sets hdr->pvno to the given integer.
+
+CMP_PKIMESSAGE_check_implicitConfirm() returns 1 if implicitConfirm is set in the given PKIMessage, 0 if not.
+
+CMP_PKIMESSAGE_genm_item_push0() pushes an InfoTypeAndValue item to the stack of general messages (GenMsg).
+
+CMP_PKIMESSAGE_get_bodytype() 
+
+CMP_PKIMESSAGE_parse_error_msg()
+
+CMP_PKIMESSAGE_set_bodytype()
+
+CMP_PKIMESSAGE_set_implicitConfirm()
+
+CMP_PKISTATUSINFO_PKIFailureInfo_get_string()
+
+CMP_PKISTATUSINFO_PKIstatus_get() finds the CertResponse with the given certReqId inside the given CertRepMessage, and returns the value of PKIStatus in that message.
+
+CMP_PKISTATUSINFO_PKIstatus_get_string()
+
+CMP_get_protectionAlgor_by_nid()
+
+CMP_get_protectionAlgor_pbmac()
+
+CMP_protection_new() calculates the value of protection field for the PKIMessage, either by using Password based MAC or signing it with a private key.
+
+CMP_CERTREPMESSAGE_PKIStatusString_get0()
+
+CMP_CERTRESPONSE_PKIStatusString_get0()
+
+CMP_ITAV_stack_item_push0() 
 
 
 =head1 NOTES
