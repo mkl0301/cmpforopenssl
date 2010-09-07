@@ -244,7 +244,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 
 err:
 	CMPerr(CMP_F_CMP_CR_NEW, CMP_R_CMPERROR);
-	if (msg) CMP_PKIMESSAGE_free(msg); /* TODO: check if that also frees msg->body->value.cr msg->protection if it had been allocated */
+	if (msg) CMP_PKIMESSAGE_free(msg);
 	if (certReq0) CRMF_CERTREQMSG_free(certReq0);
 	return NULL;
 }
@@ -350,7 +350,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
-	/* TODO catch errors */
 	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
 	if (!msg->protection) goto err;
 
