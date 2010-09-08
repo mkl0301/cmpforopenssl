@@ -12,5 +12,7 @@ set -x
 ${CMPCLIENT} --ir --server ${SERVER} --port ${PORT} \
         --cacert ${CACERT} \
 	    --key ${CLKEY} --clcert ${CLCERT} \
-	    --hex --user "$1" --password "$2"
+	    --subject "CN=user;UID=user" \
+	    --user "$1" --password "$2" --path ejbca/publicweb/cmp
 set +x
+

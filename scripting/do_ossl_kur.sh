@@ -7,6 +7,10 @@ if [ "$1" == "-help" ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
 	exit 1
 fi
 
-echo "${CMPCLIENT} --kur --server ${SERVER} --port ${PORT} --cacert ${CACERT} --key ${CLKEY} --newkey ${NEWCLKEY} --clcert ${CLCERT} --newclcert ${NEWCLCERT}"
+#echo "${CMPCLIENT} --kur --cryptlib --server ${SERVER} --port ${PORT} --cacert ${CACERT} --key ${CLKEY} --newkey ${NEWCLKEY} --clcert ${CLCERT} --newclcert ${NEWCLCERT}"
+echo 
 
-${CMPCLIENT} --kur --server ${SERVER} --port ${PORT} --cacert ${CACERT} --key ${CLKEY} --newkey ${NEWCLKEY} --clcert ${CLCERT} --newclcert ${NEWCLCERT}
+#${CMPCLIENT} --kur --insta3.3 --server ${SERVER} --port ${PORT} --cacert ${CACERT} --key ${CLKEY} --newkey ${NEWCLKEY} --clcert ${CLCERT} --newclcert ${NEWCLCERT} $*
+CMD="${CMPCLIENT} --kur --cryptlib --server ${SERVER} --port ${PORT} --cacert ${CACERT} --key ${CLKEY} --newkey ${NEWCLKEY} --clcert ${CLCERT} --newclcert ${NEWCLCERT} $*"
+echo $CMD
+$CMD

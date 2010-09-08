@@ -4,14 +4,19 @@ myDir=`dirname $0`
 
 set -x
 ${CMPCLIENT} --ir \
-	     --insta \
+	     --insta3.3 \
 	     --server ${INSTA_SERVER} \
 	     --port ${INSTA_PORT} \
 	     --path ${INSTA_SERVERPATH} \
-	     --proxy \
 	     --cacert ${INSTA_CACERT} \
 	     --key ${CLKEY} \
 	     --clcert ${CLCERT} \
 	     --user ${INSTA_USER} \
-	     --password ${INSTA_PASS}
+	     --capubs tmp \
+	     --subject "CN=Name" \
+	     --password "${INSTA_PASS}" 
+
+#	     --extcert ${CLCERT2} 
+#	     --proxy \
+#		 --newkey ${NEWCLKEY} \
 set +x

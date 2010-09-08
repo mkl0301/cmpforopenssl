@@ -9,6 +9,13 @@ fi
 
 echo "${CMPCLIENT} --info --server ${SERVER} --port ${PORT} --cacert ${CACERT} --hex --user $1 --password $2"
 
+#${CMPCLIENT} --info --server ${SERVER} --port ${PORT} \
+#             --cacert ${CACERT} \
+#	     --hex --user $1 --password $2
+
 ${CMPCLIENT} --info --server ${SERVER} --port ${PORT} \
-             --cacert ${CACERT} \
-	     --hex --user $1 --password $2
+        --cacert ${CACERT} \
+	    --key ${CLKEY} --clcert ${CLCERT} \
+	    --hex --user "$1" --password "$2" 
+	    
+	   # --path ejbca/publicweb/cmp
