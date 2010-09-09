@@ -146,18 +146,13 @@ int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 {
 	X509_NAME *nmDup=NULL;
-	int ret;
 
 	if( !hdr) return 0;
 
 	if(nm)
-		nmDup = X509_NAME_dup( (X509_NAME*) nm);
+		if(!(nmDup = X509_NAME_dup( (X509_NAME*) nm))) return 0;
 
-	if( !(ret = CMP_PKIHEADER_set0_recipient( hdr, nmDup)))
-		if( nmDup)
-			X509_NAME_free(nmDup);
-
-	return ret;
+	return CMP_PKIHEADER_set0_recipient( hdr, nmDup);
 }
 
 /* ############################################################################ */
@@ -191,18 +186,13 @@ int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 {
 	X509_NAME *nmDup=NULL;
-	int ret;
 
 	if( !hdr) return 0;
 
 	if(nm)
 		nmDup = X509_NAME_dup( (X509_NAME*) nm);
 
-	if( !(ret = CMP_PKIHEADER_set0_sender( hdr, nm)))
-		if( nmDup)
-			X509_NAME_free(nmDup);
-
-	return ret;
+	return CMP_PKIHEADER_set0_sender( hdr, nmDup);
 }
 
 /* ############################################################################ */
@@ -242,16 +232,19 @@ X509_ALGOR *CMP_get_protectionAlgor_pbmac() {
 
 	ASN1_STRING_set( pbmStr, pbmDer, pbmDerLen);
 	OPENSSL_free( pbmDer);
-	pbmDer = NULL;
+	pbmDer = NULL; /* to avoid double free in case there would be a "goto err" inserted behind this point later in development */
+
 	X509_ALGOR_set0( alg, OBJ_nid2obj(NID_id_PasswordBasedMAC), V_ASN1_SEQUENCE, pbmStr);
-	pbmStr = NULL; /* pbmStr is not freed because the pointer is consumed by X509_ALGOR_set0() */
+	pbmStr = NULL; /* pbmStr is not freed explicityly because the pointer was consumed by X509_ALGOR_set0() */
 
 	CRMF_PBMPARAMETER_free( pbm);
 	return alg;
 err:
 	if (alg) X509_ALGOR_free(alg);
 	if (pbm) CRMF_PBMPARAMETER_free( pbm);
-	if (pbmStr) ASN1_STRING_free( pbmStr);
+#if 0
+	if (pbmStr) ASN1_STRING_free( pbmStr); /* that can never happen */
+#endif 
 	if (pbmDer) OPENSSL_free( pbmDer);
 	return NULL;
 }
@@ -407,7 +400,7 @@ int CMP_PKIHEADER_push0_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text) {
 	if (!text) goto err;
 
 	if (!hdr->freeText)
-		hdr->freeText = sk_ASN1_UTF8STRING_new_null();
+		if (!(hdr->freeText = sk_ASN1_UTF8STRING_new_null())) goto err;
 
 	if (!(sk_ASN1_UTF8STRING_push(hdr->freeText, text))) goto err;
 
@@ -1143,12 +1136,12 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_UNKNOWN_CIPHER);
 		goto err;
 	}
-	iv = OPENSSL_malloc(cipher->iv_len);
+	if (!(iv = OPENSSL_malloc(cipher->iv_len))) goto err;
 	ASN1_TYPE_get_octetstring(encCert->symmAlg->parameter, iv, cipher->iv_len);
 
 	/* d2i_X509 changes the given pointer, so use p for decoding the message and keep the 
 	 * original pointer in outbuf so that the memory can be freed later */
-	p = outbuf = OPENSSL_malloc(encCert->encValue->length + cipher->block_size - 1);
+	if (!(p = outbuf = OPENSSL_malloc(encCert->encValue->length + cipher->block_size - 1))) goto err;
 	ctx = EVP_CIPHER_CTX_new();
 	EVP_CIPHER_CTX_set_padding(ctx, 0);
 
