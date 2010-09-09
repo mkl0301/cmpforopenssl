@@ -330,7 +330,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		}
 		if(!sk_ESS_CERT_ID_push(signingCert->cert_ids, essCertId)) goto err;
 
-		set = sk_ESS_SIGNING_CERT_new_null();
+		if (!(set = sk_ESS_SIGNING_CERT_new_null())) goto err;
 		sk_ESS_SIGNING_CERT_push(set, signingCert);
 		itav = CMP_INFOTYPEANDVALUE_new();
 		itav->infoType = OBJ_nid2obj( NID_id_smime_aa_signingCertificate);
