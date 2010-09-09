@@ -442,10 +442,7 @@ typedef struct cmp_pkistatusinfo_st
 	CMP_PKIFREETEXT    *statusString;
 #endif
 	STACK_OF(ASN1_UTF8STRING)    *statusString;
-/* XXX XXX this should actually be
 	CMP_PKIFAILUREINFO *failInfo;
-	*/
-	ASN1_BIT_STRING    *failInfo;
 } CMP_PKISTATUSINFO;
 DECLARE_ASN1_FUNCTIONS(CMP_PKISTATUSINFO)
 
@@ -595,7 +592,7 @@ CertificationRequest ::= SEQUENCE {
 }
 */
 
-/* XXX this is untested! */
+/* TODO the PKCS10 structures need to be tested */
 typedef struct pkcs10_attribute_st
 {
 	ASN1_OBJECT         *id;
@@ -604,7 +601,6 @@ typedef struct pkcs10_attribute_st
 DECLARE_ASN1_FUNCTIONS(PKCS10_ATTRIBUTE)
 DECLARE_STACK_OF(PKCS10_ATTRIBUTE)
 
-/* XXX this is untested! */
 typedef struct pkcs10_certificationrequestinfo_st
 {
 	ASN1_INTEGER               *version;
@@ -614,7 +610,6 @@ typedef struct pkcs10_certificationrequestinfo_st
 } PKCS10_CERTIFICATIONREQUESTINFO;
 DECLARE_ASN1_FUNCTIONS(PKCS10_CERTIFICATIONREQUESTINFO)
 
-/* XXX this is untested! */
 typedef struct pkcs10_certificationrequest_st
 {
 	PKCS10_CERTIFICATIONREQUESTINFO *certificationRequestInfo;
@@ -692,8 +687,6 @@ typedef struct cmp_pkibody_st
 		STACK_OF(CRMF_CERTREQMSG)   *cr;   /* 2 */
 		CMP_CERTREPMESSAGE          *cp;   /* 3 */
         /* p10cr    [4]  CertificationRequest,   --imported from [PKCS10] */
-/* TODO */
-// ASN1_INTEGER *p10cr; /* 4 */
 		PKCS10_CERTIFICATIONREQUEST *p10cr;   /* 4 */
         /* popdecc  [5]  POPODecKeyChallContent, --pop Challenge */
 	/* POPODecKeyChallContent ::= SEQUENCE OF Challenge */
