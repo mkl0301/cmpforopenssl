@@ -62,6 +62,12 @@ openssl: $(OSSLSRC)/config-stamp FORCE
 
 .PHONY: openssl
 
+openssl-noconfig:
+	cd $(OSSLSRC) && \
+	make
+
+.PHONY: openssl-noconfig
+
 # this is forced to be sure it is rebuilt if any file in it was changed
 $(OSSLSRC)/config-stamp: FORCE
 	# force the objects to be updated
