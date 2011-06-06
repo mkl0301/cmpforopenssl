@@ -136,7 +136,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 				CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
 				goto err;
 			}
-			ASN1_TYPE_set1(algor->parameter, _algor->parameter->type, _algor->parameter->value.ptr);
+			ASN1_TYPE_set(algor->parameter, _algor->parameter->type, _algor->parameter->value.ptr);
 		}
 	}
 

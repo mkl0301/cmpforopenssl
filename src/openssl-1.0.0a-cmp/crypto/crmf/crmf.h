@@ -80,6 +80,10 @@
 extern "C" {
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x1000000fL 
+typedef STACK_OF(X509_EXTENSION) X509_EXTENSIONS;
+#endif
+
 /*
 Attributes ::= SET OF Attribute
 => X509_ATTRIBUTE

@@ -80,7 +80,35 @@
 #include <openssl/crmf.h>
 #include <openssl/safestack.h>
 
+#if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
 #include <openssl/ts.h>
+#else
+
+typedef struct ess_issuerserial_st
+{
+	GENERAL_NAMES *issuer;
+	ASN1_INTEGER  *serialNumber;
+} ESS_ISSUERSERIAL;
+DECLARE_ASN1_FUNCTIONS(ESS_ISSUERSERIAL)
+
+typedef struct ess_cert_id_st
+{
+	ASN1_OCTET_STRING *certHash;
+	ESS_ISSUERSERIAL  *issuerSerial;
+} ESS_CERT_ID;
+DECLARE_ASN1_FUNCTIONS(ESS_CERT_ID)
+DECLARE_STACK_OF(ESS_CERT_ID)
+DECLARE_ASN1_SET_OF(ESS_CERT_ID)
+
+typedef struct ess_signing_cert_st
+{
+	STACK_OF(ESS_CERTID) *certs;
+	STACK_OF(POLICYINFO)    *policies;
+} ESS_SIGNING_CERT;
+DECLARE_ASN1_FUNCTIONS(ESS_SIGNING_CERT)
+
+typedef STACK_OF(X509_EXTENSION) X509_EXTENSIONS;
+#endif
 
 #ifdef  __cplusplus
 extern "C" {

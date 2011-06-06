@@ -1083,17 +1083,19 @@ X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId)
 /* returns NULL on error or if no Certificate available                          */
 /* ############################################################################# */
 X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId, EVP_PKEY *pkey) {
-	CRMF_ENCRYPTEDVALUE *encCert      = NULL;
-	X509				*cert		  = NULL;	/* decrypted certificate */
-	EVP_CIPHER_CTX		*ctx		  = NULL;	/* context for symmetric encryption */
-	EVP_PKEY_CTX        *pkctx        = NULL;   /* private key context */
-	unsigned char		*ek			  = NULL;	/* decrypted symmetric encryption key */
-	const EVP_CIPHER	*cipher		  = NULL;	/* used cipher */
-	unsigned char		*iv			  = NULL;	/* initial vector for symmetric encryption */
-	unsigned char		*outbuf		  = NULL;	/* decryption output buffer */
-	const unsigned char *p			  = NULL;   /* needed for decoding ASN1 */
-	int                  keyAlg, symmAlg;       /* NIDs for key and symmetric algorithm */
-	int					 n, outlen	  = 0;
+	CRMF_ENCRYPTEDVALUE *encCert   = NULL;
+	X509                *cert      = NULL; /* decrypted certificate                   */
+	EVP_CIPHER_CTX      *ctx       = NULL; /* context for symmetric encryption        */
+	unsigned char       *ek        = NULL; /* decrypted symmetric encryption key      */
+	const EVP_CIPHER    *cipher    = NULL; /* used cipher                             */
+	unsigned char       *iv        = NULL; /* initial vector for symmetric encryption */
+	unsigned char       *outbuf    = NULL; /* decryption output buffer                */
+	const unsigned char *p         = NULL; /* needed for decoding ASN1                */
+	int                  keyAlg, symmAlg;  /* NIDs for key and symmetric algorithm    */
+	int                  n, outlen = 0;
+#if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
+	EVP_PKEY_CTX        *pkctx     = NULL;   /* private key context */
+#endif
 
 	CMP_printf("INFO: Received encrypted certificate, attempting to decrypt... \n");
 
@@ -1108,10 +1110,10 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 
 	/* first the symmetric key needs to be decrypted */
 
+#if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
 	if ((pkctx = EVP_PKEY_CTX_new(pkey, NULL)) && EVP_PKEY_decrypt_init(pkctx)) {
 		ASN1_BIT_STRING *encKey = encCert->encSymmKey;
 
-#if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
 		size_t eksize = 0;
 		if (EVP_PKEY_decrypt(pkctx, NULL, &eksize, encKey->data, encKey->length) <= 0
 				|| !(ek = OPENSSL_malloc(eksize))
@@ -1121,15 +1123,19 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 			goto err;
 		}
 		EVP_PKEY_CTX_free(pkctx);
-#else
-		ek = OPENSSL_malloc(encKey->length);
-		EVP_PKEY_decrypt(ek, encKey->data, encKey->length, pkey);
-#endif
 	}
 	else {
 		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_KEY);
 		goto err;
 	}
+#else
+    ASN1_BIT_STRING *encKey = encCert->encSymmKey;
+    ek = OPENSSL_malloc(encKey->length);
+    if (EVP_PKEY_decrypt(ek, encKey->data, encKey->length, pkey) == -1) {
+		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_KEY);
+		goto err;
+	}
+#endif
 
 	/* select cipher based on algorithm given in message */
 	if (!(cipher = EVP_get_cipherbynid(symmAlg))) {

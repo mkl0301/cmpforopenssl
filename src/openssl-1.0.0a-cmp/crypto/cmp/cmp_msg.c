@@ -319,6 +319,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		CMP_INFOTYPEANDVALUE *itav = NULL;
 		STACK_OF(ESS_SIGNING_CERT) *set = NULL;
 
+#if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
 		if (!X509_digest(ctx->clCert, EVP_sha1(), hash, &hashLen)) goto err;
 		essCertId = ESS_CERT_ID_new();
 		if (!ASN1_OCTET_STRING_set(essCertId->hash, hash, hashLen)) goto err;
@@ -336,6 +337,47 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		itav->infoType = OBJ_nid2obj( NID_id_smime_aa_signingCertificate);
 		itav->infoValue.signingCertificate = set;
 		CMP_PKIHEADER_generalInfo_item_push0( msg->header, itav);
+#else
+		unsigned char *itavValueDer=NULL;
+		size_t itavValueDerLen;
+		ASN1_STRING * itavValueStr=NULL;
+		unsigned char *itavValueDerSet=NULL;
+
+        if (!X509_digest(ctx->clCert, EVP_sha1(), hash, &hashLen)) goto err;
+		essCertId = ESS_CERT_ID_new();
+		if (!ASN1_OCTET_STRING_set(essCertId->certHash, hash, hashLen)) goto err;
+
+		signingCert = ESS_SIGNING_CERT_new();
+		if( !signingCert->certs) {
+			/* XXX free... */
+			if( !(signingCert->certs = sk_ESS_CERT_ID_new_null())) goto err;
+		}
+		if(!sk_ESS_CERT_ID_push(signingCert->certs, essCertId)) goto err;
+		itavValueDerLen = i2d_ESS_SIGNING_CERT( signingCert, &itavValueDer);
+
+		/* this is just wrong but CL does it:
+		 * prepend an ASN.1 set to the id-aa-signingCertificate sequence */
+		if( !(itavValueDerSet = OPENSSL_malloc( itavValueDerLen+2))) goto err;
+		itavValueDerSet[0] = 0x31;
+		itavValueDerSet[1] = itavValueDer[1]+2;
+		memcpy( itavValueDerSet+2, itavValueDer, itavValueDerLen);
+
+		itavValueStr = ASN1_STRING_new();
+#if 0
+		ASN1_STRING_set( itavValueStr, itavValueDer, itavValueDerLen);
+#endif
+		ASN1_STRING_set( itavValueStr, itavValueDerSet, itavValueDerLen+2);
+
+		itav = CMP_INFOTYPEANDVALUE_new();
+#if 0
+		CMP_INFOTYPEANDVALUE_set0(itav, OBJ_nid2obj(NID_id_smime_aa_signingCertificate), V_ASN1_SEQUENCE, itavValueStr);
+#endif
+		/* CMP_INFOTYPEANDVALUE_set0(itav, OBJ_nid2obj( NID_id_smime_aa_signingCertificate), V_ASN1_SET, itavValueStr); */
+		itav->infoType = OBJ_nid2obj( NID_id_smime_aa_signingCertificate);
+		itav->infoValue.signingCertificate = set;
+		CMP_PKIHEADER_generalInfo_item_push0( msg->header, itav);
+#endif
+
 	}
 
 	sk_CRMF_CERTREQMSG_push( msg->body->value.kur, certReq0);
