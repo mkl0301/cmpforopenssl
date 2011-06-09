@@ -146,7 +146,7 @@ $(CLSRC)/unzip-stamp: $(DLDIR)/cl$(CRYPTLIB_VERSION).zip
 
 openssl_patch_1.0.0d:
 	cd $(SRCDIR) && \
-	svn diff -r 87:BASE openssl-1.0.0d-cmp > patches/openssl-1.0.0d_cmp.diff
+	svn diff -r 178:BASE openssl-1.0.0d-cmp > patches/openssl-1.0.0d_cmp.diff
 
 .PHONY: openssl_patch_1.0.0d
 
