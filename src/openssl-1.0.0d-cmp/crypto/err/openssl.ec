@@ -35,6 +35,8 @@ L TS		crypto/ts/ts.h			crypto/ts/ts_err.c
 L HMAC		crypto/hmac/hmac.h		crypto/hmac/hmac_err.c
 L CMS		crypto/cms/cms.h		crypto/cms/cms_err.c
 L JPAKE		crypto/jpake/jpake.h		crypto/jpake/jpake_err.c
+L CMP		crypto/cmp/cmp.h		crypto/cmp/cmp_err.c
+L CRMF		crypto/crmf/crmf.h		crypto/crmf/crmf_err.c
 
 # additional header files to be scanned for function names
 L NONE		crypto/x509/x509_vfy.h		NONE
