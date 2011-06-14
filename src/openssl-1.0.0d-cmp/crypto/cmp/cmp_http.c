@@ -400,7 +400,7 @@ CMP_printf("totalRecvdLen %lu, totalMsgLen %lu, chunkLen %lu\n", (long unsigned 
 
 	/* TODO XXX - make sure we received the whole message */
 
-	CMP_printf("INFO: received contentLen = %d\n", contentLen);
+	CMP_printf("INFO: received contentLen = %lu\n", contentLen);
 	/* transform DER message to OPENSSL internal format */
 	if( (*ip = d2i_CMP_PKIMESSAGE( NULL, &derMessage, contentLen))) {
 		return 1;
