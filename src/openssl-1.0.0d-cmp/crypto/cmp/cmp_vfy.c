@@ -126,6 +126,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 	usedAlgorNid = OBJ_obj2nid(algorOID);
 	if (usedAlgorNid == NID_id_PasswordBasedMAC) {
 		/* need to have params for PBMAC, so check that we have them */
+        /* TODO: simplify this logic / check if it's even necessary*/
 		if (!algor->parameter || 
 				ASN1_TYPE_get(algor->parameter) == V_ASN1_UNDEF ||
 				ASN1_TYPE_get(algor->parameter) == V_ASN1_NULL) {
@@ -136,6 +137,8 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 				CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
 				goto err;
 			}
+            if (!algor->parameter)
+                algor->parameter = ASN1_TYPE_new();
 			ASN1_TYPE_set(algor->parameter, _algor->parameter->type, _algor->parameter->value.ptr);
 		}
 	}
