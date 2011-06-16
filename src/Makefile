@@ -80,7 +80,7 @@ $(OSSLSRC)/config-stamp: FORCE
 openssl_src: $(DLDIR)/openssl-$(OPENSSL_VERSION).tar.gz
 	tar xvfz $(DLDIR)/openssl-$(OPENSSL_VERSION).tar.gz -C $(SRCDIR)
 	-rm $(OSSLSRC)
-	ln -s --force openssl-$(OPENSSL_VERSION) $(OSSLSRC)
+	ln -s -f openssl-$(OPENSSL_VERSION) $(OSSLSRC)
 
 .PHONY: openssl_src
 
@@ -137,7 +137,7 @@ $(CLSRC)/unzip-stamp: $(DLDIR)/cl$(CRYPTLIB_VERSION).zip
 	-mkdir $(SRCDIR)/cryptlib-$(CRYPTLIB_VERSION)
 	unzip -a $(DLDIR)/cl$(CRYPTLIB_VERSION).zip -d $(SRCDIR)/cryptlib-$(CRYPTLIB_VERSION)
 	-rm $(CLSRC)
-	ln -s --force cryptlib-$(CRYPTLIB_VERSION) $(CLSRC)
+	ln -s -f cryptlib-$(CRYPTLIB_VERSION) $(CLSRC)
 	touch $(CLSRC)/unzip-stamp
 
 ################################################################################
@@ -161,7 +161,7 @@ curl: $(LIB_DIR)/libcurl.a
 $(CURLSRC)/unzip-stamp: $(CURL_TARBALL)
 	cd $(SRCDIR) && \
 	tar xvfj $(CURL_TARBALL)
-	ln -s --force curl-$(CURL_VERSION) $(CURLSRC)
+	ln -s -f curl-$(CURL_VERSION) $(CURLSRC)
 	touch $(CURLSRC)/unzip-stamp
 
 #TODO set configure options (installdir...)
