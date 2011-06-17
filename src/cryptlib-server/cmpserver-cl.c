@@ -109,7 +109,7 @@ void printErrorString( int status, CRYPT_SESSION myCryptSession) {
 	char errorString[1024];
 
 	printf("trying to get the Errorstring:\n");
-	status = cryptGetAttribute( myCryptSession, CRYPT_ATTRIBUTE_INT_ERRORCODE, &errorCode );
+	status = cryptGetAttribute( myCryptSession, CRYPT_ATTRIBUTE_ERRORTYPE, &errorCode );
 
 	if( cryptStatusError( status ) )
 	{
@@ -118,11 +118,11 @@ void printErrorString( int status, CRYPT_SESSION myCryptSession) {
 	}
 
 	printf("get errorStringLength:\n");
-	cryptGetAttributeString( myCryptSession, CRYPT_ATTRIBUTE_INT_ERRORMESSAGE, NULL, &errorStringLength );
+	cryptGetAttributeString( myCryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE, NULL, &errorStringLength );
 	printf("The ErrorStringLength:%d\n", errorStringLength);
 
 	printf("get errorString:\n");
-	cryptGetAttributeString( myCryptSession, CRYPT_ATTRIBUTE_INT_ERRORMESSAGE, errorString, &errorStringLength );
+	cryptGetAttributeString( myCryptSession, CRYPT_ATTRIBUTE_ERRORMESSAGE, errorString, &errorStringLength );
 	printf("The ErrorString: %s\n", errorString);
 }
 
