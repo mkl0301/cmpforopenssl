@@ -187,9 +187,10 @@ $(LIGHTTPDSRC)/unzip-stamp: $(LIGHTTPD_TARBALL)
 	cd $(SRCDIR)
 	rm -rf lighttpd-$(LIGHTTPD_VERSION) 
 	tar xvfj $(LIGHTTPD_TARBALL)
-	ln -sf lighttpd-$(LIGHTTPD_VERSION) $(LIGHTTPDSRC)
+	-rm $(LIGHTTPDSRC)
+	ln -s lighttpd-$(LIGHTTPD_VERSION) $(LIGHTTPDSRC)
 	patch -d $(LIGHTTPDSRC) -p1 < $(LIGHTTPDPATCH)
-	ln -sf $(LIGHTTPDMODSRC)/{*.c,*.h} $(LIGHTTPDSRC)/src
+	ln -s $(LIGHTTPDMODSRC)/{*.c,*.h} $(LIGHTTPDSRC)/src
 	touch $(LIGHTTPDSRC)/unzip_stamp
 
 $(BIN_DIR)/lighttpd: $(LIGHTTPDSRC)/unzip-stamp
