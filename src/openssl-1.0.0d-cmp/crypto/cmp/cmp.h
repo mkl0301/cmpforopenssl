@@ -80,6 +80,10 @@
 #include <openssl/crmf.h>
 #include <openssl/safestack.h>
 
+#ifdef HAVE_CURL
+#include <curl/curl.h>
+#endif
+
 #if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
 #include <openssl/ts.h>
 #else
@@ -1364,18 +1368,27 @@ int CMP_INFOTYPEANDVALUE_set0(CMP_INFOTYPEANDVALUE *itav, ASN1_OBJECT *aobj, int
 void CMP_INFOTYPEANDVALUE_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval, CMP_INFOTYPEANDVALUE *itav);
 #endif
 
+#ifdef HAVE_CURL
+typedef CURL CMPBIO;
+#else
+typedef BIO CMPBIO;
+#endif
+
 /* from cmp_http.c */
-int CMP_new_http_bio_ex(BIO **cbio, const char* serverName, const int port, const char *srcip);
-int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port);
-/* int CMP_PKIMESSAGE_http_bio_send(BIO *cbio, const char* serverName, const int serverPort, const CMP_PKIMESSAGE *msg); */
-int CMP_PKIMESSAGE_http_bio_send(BIO *cbio, const char *serverName, const int serverPort, const char *serverPath, const int compatibility, const CMP_PKIMESSAGE *msg);
-int CMP_PKIMESSAGE_http_bio_recv(BIO *cbio, CMP_PKIMESSAGE **ip, const int compatibility);
+int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx, 
+								const CMP_PKIMESSAGE *msg,
+								CMP_PKIMESSAGE **out);
+int CMP_new_http_bio_ex(CMPBIO **cbio, const char* serverName, const int port, const char *srcip);
+int CMP_new_http_bio(CMPBIO **cbio, const char* serverName, const int port);
+int CMP_delete_http_bio( CMPBIO *cbio);
+int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio, const char *serverName, const int serverPort, const char *serverPath, const int compatibility, const CMP_PKIMESSAGE *msg);
+int CMP_PKIMESSAGE_http_bio_recv(CMPBIO *cbio, CMP_PKIMESSAGE **ip, const int compatibility);
 
 /* from cmp_ses.c */
-X509 *CMP_doInitialRequestSeq( BIO *cbio, CMP_CTX *ctx);
-X509 *CMP_doCertificateRequestSeq( BIO *cbio, CMP_CTX *ctx);
-X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx);
-int CMP_doPKIInfoReqSeq( BIO *cbio, CMP_CTX *ctx);
+X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
+X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
+X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
+int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx);
 
 /* from cmp_ctx.c */
 int CMP_CTX_init( CMP_CTX *ctx);
@@ -1490,32 +1503,35 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_INFOTYPEANDVALUE_NEW_BY_DEF_NOVAL	 140
 #define CMP_F_CMP_IR_NEW				 141
 #define CMP_F_CMP_KUR_NEW				 142
-#define CMP_F_CMP_PKISTATUSINFO_PKISTATUS_GET_STRING	 143
-#define CMP_F_CMP_PROTECTION_NEW			 144
-#define CMP_F_CMP_PROTECTION_VERIFY			 145
-#define CMP_F_PKEY_DUP					 146
+#define CMP_F_CMP_PKIMESSAGE_HTTP_BIO_RECV		 143
+#define CMP_F_CMP_PKIMESSAGE_HTTP_BIO_SEND		 144
+#define CMP_F_CMP_PKISTATUSINFO_PKISTATUS_GET_STRING	 145
+#define CMP_F_CMP_PROTECTION_NEW			 146
+#define CMP_F_CMP_PROTECTION_VERIFY			 147
+#define CMP_F_PKEY_DUP					 148
 
 /* Reason codes. */
 #define CMP_R_CERTIFICATE_NOT_FOUND			 100
 #define CMP_R_CMPERROR					 101
-#define CMP_R_ERROR_DECODING_CERTIFICATE		 102
-#define CMP_R_ERROR_DECRYPTING_CERTIFICATE		 103
-#define CMP_R_ERROR_DECRYPTING_KEY			 104
-#define CMP_R_ERROR_DECRYPTING_SYMMETRIC_KEY		 105
-#define CMP_R_ERROR_PARSING_PKISTATUS			 106
-#define CMP_R_ERROR_RECEIVING_MESSAGE			 107
-#define CMP_R_ERROR_VALIDATING_PROTECTION		 108
-#define CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM	 109
-#define CMP_R_INVALID_CONTEXT				 110
-#define CMP_R_INVALID_KEY				 111
-#define CMP_R_NO_CERTIFICATE_RECEIVED			 112
-#define CMP_R_PKIBODY_ERROR				 113
-#define CMP_R_SUBJECT_NAME_NOT_SET			 114
-#define CMP_R_UNKNOWN_ALGORITHM_ID			 115
-#define CMP_R_UNKNOWN_CIPHER				 116
-#define CMP_R_UNKNOWN_PKISTATUS				 117
-#define CMP_R_UNSUPPORTED_ALGORITHM			 118
-#define CMP_R_UNSUPPORTED_KEY_TYPE			 119
+#define CMP_R_DEPRECATED_FUNCTION			 102
+#define CMP_R_ERROR_DECODING_CERTIFICATE		 103
+#define CMP_R_ERROR_DECRYPTING_CERTIFICATE		 104
+#define CMP_R_ERROR_DECRYPTING_KEY			 105
+#define CMP_R_ERROR_DECRYPTING_SYMMETRIC_KEY		 106
+#define CMP_R_ERROR_PARSING_PKISTATUS			 107
+#define CMP_R_ERROR_SENDING_REQUEST			 108
+#define CMP_R_ERROR_VALIDATING_PROTECTION		 109
+#define CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM	 110
+#define CMP_R_INVALID_CONTEXT				 111
+#define CMP_R_INVALID_KEY				 112
+#define CMP_R_NO_CERTIFICATE_RECEIVED			 113
+#define CMP_R_PKIBODY_ERROR				 114
+#define CMP_R_SUBJECT_NAME_NOT_SET			 115
+#define CMP_R_UNKNOWN_ALGORITHM_ID			 116
+#define CMP_R_UNKNOWN_CIPHER				 117
+#define CMP_R_UNKNOWN_PKISTATUS				 118
+#define CMP_R_UNSUPPORTED_ALGORITHM			 119
+#define CMP_R_UNSUPPORTED_KEY_TYPE			 120
 
 #ifdef  __cplusplus
 }

@@ -80,6 +80,140 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#ifdef HAVE_CURL
+
+typedef struct rdata_s {
+	char *memory;
+	size_t size;
+} rdata_t;
+
+static void *myrealloc(void *ptr, size_t size)
+{
+	/* There might be a realloc() out there that doesn't like reallocing
+	 *      NULL pointers, so we take care of it here */ 
+	if(ptr)
+		return realloc(ptr, size);
+	else
+		return calloc(1,size);
+}
+
+static size_t write_data(void *ptr, size_t size, size_t nmemb, void *data)
+{
+	size_t realsize = size * nmemb;
+	struct rdata_s *mem = (struct rdata_s *) data;
+
+	mem->memory = myrealloc(mem->memory, mem->size + realsize + 1);
+	if (mem->memory) {
+		memcpy(&(mem->memory[mem->size]), ptr, realsize);
+		mem->size += realsize;
+		mem->memory[mem->size] = 0;
+	}
+	return realsize;
+}
+
+
+int CMP_new_http_bio_ex( CMPBIO **bio, const char* proxyAddress, const int proxyPort, const char *srcip) {
+	struct curl_slist *slist=NULL;
+	CURL *curl;
+	
+	static int curl_initialized = 0;
+	if (curl_initialized == 0) {
+		curl_initialized = 1;
+		curl_global_init(CURL_GLOBAL_ALL);
+	}
+
+	if (!(curl=curl_easy_init())) goto err;
+
+	slist = curl_slist_append(slist, "Content-Type: application/pkixcmp");
+	slist = curl_slist_append(slist, "Expect:"); 
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+	if (srcip != NULL)
+		curl_easy_setopt(curl, CURLOPT_INTERFACE, srcip);
+	// TODO: use proxy if --proxy flag given
+	curl_easy_setopt(curl, CURLOPT_PROXY, "");
+
+	*bio = curl;
+	return 1;
+
+err:
+	return 0;
+}
+
+int CMP_new_http_bio( CMPBIO **cbio, const char* serverName, const int port) {
+	return CMP_new_http_bio_ex(cbio, serverName, port, NULL);
+}
+
+int CMP_delete_http_bio( CMPBIO *cbio) {
+	curl_easy_cleanup(cbio);
+	return 1;
+}
+
+int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx, 
+								const CMP_PKIMESSAGE *msg,
+								CMP_PKIMESSAGE **out)
+{
+	struct curl_httppost *form=NULL, *last=NULL;
+	unsigned char *derMsg = NULL, *pder = NULL;
+	int derLen = 0;
+	CURLcode res;
+
+	if (!curl || !ctx || !msg || !out)
+		goto err;
+
+	if (!ctx->serverName || !ctx->serverPath || ctx->serverPort == 0)
+		goto err;
+
+	derLen = i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, &derMsg);
+
+	char *url = malloc(strlen("http://") + strlen(ctx->serverName) + strlen(ctx->serverPath) + 2);
+	sprintf(url, "http://%s/%s", ctx->serverName, ctx->serverPath);
+
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP);
+	curl_easy_setopt(curl, CURLOPT_PORT, ctx->serverPort);
+
+	rdata_t rdata = {0,0};
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&rdata);
+
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, derMsg);
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, derLen);
+
+	res = curl_easy_perform(curl);
+
+	pder = (unsigned char*) rdata.memory;
+    *out = d2i_CMP_PKIMESSAGE( NULL, &pder, rdata.size);
+    if (*out == 0) goto err;
+
+	free(rdata.memory);
+    free(derMsg);
+    free(url);
+	return 1;
+
+err:
+	return 0;
+}
+
+int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio,
+				 const char *serverName,
+				 const int   serverPort,
+				 const char *serverPath,
+				 const int   compatibility,
+				 const CMP_PKIMESSAGE *msg) {
+	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_BIO_SEND, CMP_R_DEPRECATED_FUNCTION);
+	return 0;
+}
+
+int CMP_PKIMESSAGE_http_bio_recv( CMPBIO *cbio,
+				  CMP_PKIMESSAGE **ip,
+				  const int compatibility
+				  ) {
+	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_BIO_RECV, CMP_R_DEPRECATED_FUNCTION);
+	return 0;
+}
+
+#else
+
 static uint32_t gethostiplong(const char *host) {
 	unsigned char ip[4];
 
@@ -92,9 +226,10 @@ static uint32_t gethostiplong(const char *host) {
 			((unsigned long)ip[3]) );
 }
 
-int CMP_new_http_bio_ex(BIO **cbio, const char* serverName, const int port, const char *srcip) {
+int CMP_new_http_bio_ex(CMPBIO **bio, const char* serverName, const int port, const char *srcip) {
 	struct sockaddr_in svaddr;
 	int sockfd;
+	BIO *cbio;
 
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
 		goto err;
@@ -119,11 +254,15 @@ int CMP_new_http_bio_ex(BIO **cbio, const char* serverName, const int port, cons
 	if (connect(sockfd, (struct sockaddr *) &svaddr, sizeof(svaddr)) < 0)
 		goto err;
 
-	if (!(*cbio = BIO_new_socket(sockfd, 1)))
+	if (!(cbio = BIO_new_socket(sockfd, 1)))
 		goto err;
+
+	*bio = cbio;
 	return 1;
 
   err:
+    if (sockfd >= 0)
+        close(sockfd);
 	return 0;
 }
 
@@ -131,12 +270,38 @@ int CMP_new_http_bio_ex(BIO **cbio, const char* serverName, const int port, cons
 /* returns 1 on success, 0 on failure */
 /* @serverName holds a sting like "my.server.com" or "1.2.3.4" */
 /* ############################################################################ */
-int CMP_new_http_bio(BIO **cbio, const char* serverName, const int port) {
+int CMP_new_http_bio(CMPBIO **cbio, const char* serverName, const int port) {
 	return CMP_new_http_bio_ex(cbio, serverName, port, NULL);
 }
 
 /* ############################################################################ */
-int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
+int CMP_delete_http_bio( CMPBIO *cbio) {
+	BIO_free( cbio);
+	return 1;
+}
+
+/* ############################################################################ */
+int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx, 
+								const CMP_PKIMESSAGE *msg,
+								CMP_PKIMESSAGE **out)
+{
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort,
+									   ctx->serverPath, ctx->compatibility, msg))
+		goto err;
+
+	CMP_PKIMESSAGE *resp;
+	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &resp, ctx->compatibility))
+		goto err;
+
+	*out = resp;
+	return 1;
+err:
+	return 0;
+}
+
+
+/* ############################################################################ */
+int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio,
 				 const char *serverName,
 				 const int   serverPort,
 				 const char *serverPath,
@@ -277,7 +442,7 @@ int CMP_PKIMESSAGE_http_bio_send(BIO *cbio,
 /* ############################################################################ */
 /* for sure this could be done better */
 /* ############################################################################ */
-int CMP_PKIMESSAGE_http_bio_recv( BIO *cbio,
+int CMP_PKIMESSAGE_http_bio_recv( CMPBIO *cbio,
 				  CMP_PKIMESSAGE **ip,
 				  const int compatibility
 				  ) {
@@ -409,4 +574,6 @@ CMP_printf("totalRecvdLen %lu, totalMsgLen %lu, chunkLen %lu\n", (long unsigned 
 		return 0;
 	}
 }
+
+#endif
 
