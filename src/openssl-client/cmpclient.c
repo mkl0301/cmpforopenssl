@@ -225,7 +225,7 @@ err:
 /* ############################################################################ */
 void doIr() {
   EVP_PKEY *initialPkey=NULL;
-  BIO *cbio=NULL;
+  CMPBIO *cbio=NULL;
   X509 *initialClCert=NULL;
   X509 *extCert=NULL;
   CMP_CTX *cmp_ctx=NULL;
@@ -275,7 +275,7 @@ void doIr() {
   }
 
   initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
-  BIO_free(cbio);
+  CMP_delete_http_bio( cbio);
 
   if( initialClCert) {
     printf( "SUCCESS: received initial Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
@@ -303,7 +303,7 @@ void doIr() {
 /* ############################################################################ */
 void doCr() {
   EVP_PKEY *initialPkey=NULL;
-  BIO *cbio=NULL;
+  CMPBIO *cbio=NULL;
   X509 *initialClCert=NULL;
   CMP_CTX *cmp_ctx=NULL;
   X509 *updatedClCert=NULL;
@@ -349,7 +349,7 @@ void doCr() {
   }
 
   updatedClCert = CMP_doCertificateRequestSeq( cbio, cmp_ctx);
-  BIO_free(cbio);
+  CMP_delete_http_bio(cbio);
 
   if( updatedClCert) {
     printf( "SUCCESS: received renewed Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
@@ -372,7 +372,7 @@ void doKur() {
   X509 *initialClCert=NULL;
 
   EVP_PKEY *updatedPkey=NULL;
-  BIO *cbio=NULL;
+  CMPBIO *cbio=NULL;
   X509 *updatedClCert=NULL;
 
   CMP_CTX *cmp_ctx=NULL;
@@ -414,7 +414,7 @@ void doKur() {
   }
 
   updatedClCert = CMP_doKeyUpdateRequestSeq( cbio, cmp_ctx);
-  BIO_free(cbio);
+  CMP_delete_http_bio(cbio);
 
   if( updatedClCert) {
     printf( "SUCCESS: received updated Client Certificate, and %d CA certs in caPubs. FILE %s, LINE %d\n", 
@@ -442,7 +442,7 @@ void doKur() {
 /* ############################################################################ */
 /* ############################################################################ */
 void doInfo() {
-  BIO *cbio=NULL;
+  CMPBIO *cbio=NULL;
   CMP_CTX *cmp_ctx=NULL;
   int res=0;
 
@@ -462,7 +462,7 @@ void doInfo() {
   }
 
   res = CMP_doPKIInfoReqSeq( cbio, cmp_ctx);
-  BIO_free(cbio);
+  CMP_delete_http_bio(cbio);
 
   if( res) {
     printf( "SUCCESS: Doing PKI Information Request/Response. FILE %s, LINE %d\n", __FILE__, __LINE__);
