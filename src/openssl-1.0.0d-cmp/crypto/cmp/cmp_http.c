@@ -111,14 +111,74 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
+static char *get_server_port(CURL *curl) {
+	char *addr = NULL, *p;
+	int i, ret = 0;
+	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &addr);
 
-int CMP_new_http_bio_ex( CMPBIO **bio, const char* proxyAddress, const int proxyPort, const char *srcip) {
+	addr = strdup(addr);
+
+
+	/* find port number */
+	for (p = addr; *p != 0 && !(*p==':'&&p[1]!='/'); p++)
+		;
+	p++;
+	/* skip path if there is any */
+	for (i=0; isdigit(p[i]); i++)
+		;
+	p[i] = 0;
+
+	if (*p) ret = atoi(p);
+	return ret;
+}
+
+static char *get_server_addr(CURL *curl) {
+	char *addr = NULL, *p, tmp[8];
+	int i;
+	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &addr);
+
+	addr = strdup(addr);
+
+	/* skip the http:// part if it's there, 
+	 * curl will put it back on its own... */
+
+	for (i = 0; i <= 7; i++)
+		tmp[i] = tolower(addr[i]);
+	tmp[7] = 0;
+	if (!strcmp(tmp, "http://")) 
+		addr += 7;
+
+	/* cut off the url starting from port or path,
+	 * so we only get the server name */
+	for (p = addr; *p != 0; p++)
+		if (*p == ':' || *p == '/') {
+			*p = 0;
+			break;
+		}
+
+	return addr;
+}
+
+static void set_http_path(CURL *curl, const char *path) {
+	char *current_url = NULL, *url = NULL, *p;
+
+	current_url = get_server_addr(curl);
+	url = malloc(strlen(current_url) + strlen(path) + 2);
+	sprintf(url, "%s/%s", current_url, path);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+
+	// free(current_url);
+	free(url);
+}
+
+int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port, const char *srcip) {
 	struct curl_slist *slist=NULL;
 	CURL *curl;
+	char *url;
 	
 	static int curl_initialized = 0;
 	if (curl_initialized == 0) {
-		curl_initialized = 1;
+		curl_initialized =  1;
 		curl_global_init(CURL_GLOBAL_ALL);
 	}
 
@@ -130,7 +190,16 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* proxyAddress, const int proxy
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
 	if (srcip != NULL)
 		curl_easy_setopt(curl, CURLOPT_INTERFACE, srcip);
-	// TODO: use proxy if --proxy flag given
+
+	url = malloc(strlen(serverAddress) + 7);
+	sprintf(url, "%s:%d", serverAddress, port);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	free(url);
+
+	curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP);
+	curl_easy_setopt(curl, CURLOPT_PORT, port);
+
+	/* if proxy is used, it will be set in CMP_PKIMESSAGE_http_perform. */
 	curl_easy_setopt(curl, CURLOPT_PROXY, "");
 
 	*bio = curl;
@@ -155,6 +224,7 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 {
 	struct curl_httppost *form=NULL, *last=NULL;
 	unsigned char *derMsg = NULL, *pder = NULL;
+	char *srv = NULL;
 	int derLen = 0;
 	CURLcode res;
 
@@ -166,12 +236,24 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 
 	derLen = i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, &derMsg);
 
-	char *url = malloc(strlen("http://") + strlen(ctx->serverName) + strlen(ctx->serverPath) + 2);
-	sprintf(url, "http://%s/%s", ctx->serverName, ctx->serverPath);
+	/* check if we are using a proxy. */
+	srv = get_server_addr(curl);
+	if (strcmp(srv, ctx->serverName) != 0) {
+		/* XXX: this is done in this way only because we want to remain
+		 * compatible with the old HTTP code. when that is removed, this code
+		 * should be moved to the init function*/
 
-	curl_easy_setopt(curl, CURLOPT_URL, url);
-	curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP);
-	curl_easy_setopt(curl, CURLOPT_PORT, ctx->serverPort);
+		long proxyPort = get_server_port(curl);
+		// curl_easy_getinfo(curl, CURLINFO_PRIMARY_PORT, &proxyPort);
+		curl_easy_setopt(curl, CURLOPT_PROXY, srv);
+		curl_easy_setopt(curl, CURLOPT_PROXYPORT, proxyPort);
+
+		curl_easy_setopt(curl, CURLOPT_PORT, ctx->serverPort);
+		curl_easy_setopt(curl, CURLOPT_URL, ctx->serverName);
+	}
+	// free(srv);
+
+	set_http_path(curl, ctx->serverPath);
 
 	rdata_t rdata = {0,0};
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&rdata);
@@ -187,7 +269,6 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 
 	free(rdata.memory);
     free(derMsg);
-    free(url);
 	return 1;
 
 err:
