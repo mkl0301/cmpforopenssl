@@ -678,6 +678,18 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
+int CMP_CTX_set1_popoMethod( CMP_CTX *ctx, int method) {
+	if (!ctx) goto err;
+
+	ctx->popoMethod = method;
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_POPOMETHOD, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
 int CMP_CTX_set1_timeOut( CMP_CTX *ctx, int time) {
 	if (!ctx) goto err;
 
