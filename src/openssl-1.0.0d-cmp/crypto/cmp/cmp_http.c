@@ -260,6 +260,8 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, derMsg);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, derLen);
+	if (ctx->timeOut != 0)
+		curl_easy_setopt(curl, CURLOPT_TIMEOUT, ctx->timeOut);
 
 	res = curl_easy_perform(curl);
 

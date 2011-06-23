@@ -119,6 +119,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	* XXX not setting transactionID test for PKI INFO
 	 * int setTransactionID
 	 * int popoMethod
+	 * int timeOut
 	 */
 } ASN1_SEQUENCE_END(CMP_CTX)
 IMPLEMENT_ASN1_FUNCTIONS(CMP_CTX)
@@ -201,6 +202,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	/* XXX not setting transactionID test for PKI INFO */
 	ctx->setTransactionID  = 1;
 	ctx->popoMethod = CMP_POPO_SIGNATURE;
+	ctx->timeOut         = 2*60;
 	/* ctx->popoMethod = CMP_POPO_ENCRCERT; */
 
 #if 0
@@ -671,6 +673,18 @@ int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name) {
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_SERVERNAME, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_set1_timeOut( CMP_CTX *ctx, int time) {
+	if (!ctx) goto err;
+
+	ctx->timeOut = time;
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_TIMEOUT, CMP_R_CMPERROR);
 	return 0;
 }
 

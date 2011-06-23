@@ -1241,6 +1241,9 @@ typedef struct cmp_ctx_st
 #define CMP_POPO_ENCRCERT  2
 	/* Proof-of-posession mechanism used. Defaults to signature (POPOsignkingKey) */ 
 	int	popoMethod;
+	/* maximum time in secods to wait for an http transfer to complete
+	 * XXX note: only usable with libcurl! */
+	int	timeOut;
 } CMP_CTX;
 DECLARE_ASN1_FUNCTIONS(CMP_CTX)
 
@@ -1422,6 +1425,7 @@ int CMP_CTX_set1_protectionAlgor( CMP_CTX *ctx, const X509_ALGOR *algor);
 int CMP_CTX_set_compatibility( CMP_CTX *ctx, const int mode);
 int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
 int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
+int CMP_CTX_set1_timeOut( CMP_CTX *ctx, int time);
 int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path);
 #define CMP_ALG_PBMAC 1
 #define CMP_ALG_SIG   2
@@ -1491,6 +1495,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_SERVERPATH			 128
 #define CMP_F_CMP_CTX_SET1_SERVERPORT			 129
 #define CMP_F_CMP_CTX_SET1_SUBJECTNAME			 130
+#define CMP_F_CMP_CTX_SET1_TIMEOUT			 150
 #define CMP_F_CMP_CTX_SET1_TRANSACTIONID		 131
 #define CMP_F_CMP_CTX_SET_COMPATIBILITY			 132
 #define CMP_F_CMP_CTX_SET_PROTECTIONALGOR		 133
