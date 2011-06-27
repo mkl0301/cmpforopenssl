@@ -116,6 +116,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (!cbio) goto err;
 	if (!ctx) goto err;
 	if (!ctx->referenceValue) goto err;
+	/* for authentication we need either a password or factory and ca certificates */
 	if (!ctx->secretValue && (!ctx->extCert || !ctx->caCert)) goto err;
 	if (!ctx->pkey) goto err;
 

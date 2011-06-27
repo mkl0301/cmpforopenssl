@@ -416,7 +416,7 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
-	if (!ctx->caCert) goto err;
+	/* if (!ctx->caCert) goto err; */
 	if (!ctx->newClCert) goto err;
 	if ( (!ctx->pkey) && ((!ctx->referenceValue) && (!ctx->secretValue)) ) goto err;
 

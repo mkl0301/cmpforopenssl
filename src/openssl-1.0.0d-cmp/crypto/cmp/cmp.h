@@ -1187,6 +1187,8 @@ typedef struct cmp_ctx_st
 	/* subject name to be used in the cert template. note: if clcert or
 	 * extcert are set, subject name is read from there and this is ignored */
 	X509_NAME            *subjectName;
+	/* X509_NAME to set in PKIHEADER->recipient */ 
+	X509_NAME            *recipient;
 	/* names to be added to the cert template as the subjectAltName extension */
 	STACK_OF(GENERAL_NAME) *subjectAltNames;
 	/* Stack of CA certificates sent by the CA in a IP/KUP message */ 
@@ -1402,6 +1404,7 @@ int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size
 int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name);
+int CMP_CTX_set1_recipient( CMP_CTX *ctx, const X509_NAME *name);
 int CMP_CTX_subjectAltName_push1( CMP_CTX *ctx, const GENERAL_NAME *name);
 X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
 int CMP_CTX_caPubs_num( CMP_CTX *ctx);
@@ -1490,6 +1493,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_PKEY				 122
 #define CMP_F_CMP_CTX_SET1_POPOMETHOD			 123
 #define CMP_F_CMP_CTX_SET1_PROTECTIONALGOR		 124
+#define CMP_F_CMP_CTX_SET1_RECIPIENT			 152
 #define CMP_F_CMP_CTX_SET1_RECIPNONCE			 125
 #define CMP_F_CMP_CTX_SET1_REFERENCEVALUE		 126
 #define CMP_F_CMP_CTX_SET1_SECRETVALUE			 127

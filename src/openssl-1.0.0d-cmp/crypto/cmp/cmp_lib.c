@@ -475,7 +475,8 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 	/* set the CMP version */
 	CMP_PKIHEADER_set_version( hdr, CMP_VERSION);
 
-	/* in case there is no OLD client cert, the subject name is not set */
+	/* in case there is no OLD client cert and no subject name is set in ctx,
+	 * the subject name is not set */
 	if( ctx->clCert) {
 		if( !CMP_PKIHEADER_set1_sender( hdr, X509_get_subject_name( (X509*) ctx->clCert))) goto err;
 	} else if ( ctx->extCert) {
@@ -486,7 +487,9 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 
 	if( ctx->caCert) {
 		if( !CMP_PKIHEADER_set1_recipient( hdr, X509_get_subject_name( (X509*) ctx->caCert))) goto err;
-	} else {
+	} else if( ctx->recipient) {
+		if( !CMP_PKIHEADER_set1_recipient( hdr, ctx->recipient)) goto err;
+	}else {
 		if( !CMP_PKIHEADER_set1_recipient( hdr, NULL)) goto err;
 	}
 
