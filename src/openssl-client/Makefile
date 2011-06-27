@@ -5,7 +5,7 @@ CC = gcc
 RM = /bin/rm
 
 CFLAGS = -g -Wall
-LFLAGS = -lssl -lcrypto -ldl -g
+LFLAGS = -lssl -lcrypto -ldl -g -lcurl
 
 INCDIR = -I. -I$(OPENSSLDIR)/include
 LIBDIR = -L$(OPENSSLDIR)

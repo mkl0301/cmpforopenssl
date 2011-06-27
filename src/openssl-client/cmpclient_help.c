@@ -342,19 +342,19 @@ EVP_PKEY *HELP_generateRSAKey() {
 /* ############################################################################ */
 /* returns 0 on error */
 /* ############################################################################ */
-int HELP_savePrivKey(EVP_PKEY *pkey, const char * filename) {
+int HELP_savePrivKey(EVP_PKEY *pkey, const char * filename, const char *password) {
 	FILE *fp;
 
   if(!pkey) return 0;     /* mandatory parameter */
   if(!filename) return 0; /* mandatory parameter */
 
 printf("INFO: Writing Private Key to File %s\n", filename);
-printf("INFO: the passphrase is \"password\"\n");
+printf("INFO: the passphrase is \"%s\"\n", password);
 	if( !(fp = fopen(filename, "w"))) {
 		printf("ERROR: could not open file \"%s\" for writing.\n", filename);
 		return 0;
 	}
-	PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, 0, "password");
+	PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, 0, password);
 printf("INFO: private Key written\n");
 	fclose(fp);
 
@@ -385,20 +385,20 @@ printf("INFO: public Key written\n");
 /* ############################################################################ */
 /* returns NULL on error */
 /* ############################################################################ */
-EVP_PKEY *HELP_readPrivKey(const char * filename) {
+EVP_PKEY *HELP_readPrivKey(const char * filename, const char *password) {
 	FILE *fp;
 	EVP_PKEY *pkey;
 
   if(!filename) return NULL; /* mandatory parameter */
 
 printf("INFO: Reading Public Key from File %s\n", filename);
-printf("INFO: the passphrase is \"password\"...\n");
+printf("INFO: the passphrase is \"%s\"...\n", password);
 	if( !(fp = fopen(filename, "r"))) {
 		printf("ERROR: could not open file \"%s\" for reading.\n", filename);
 		return NULL;
 	}
 	/* XXX this is NOT encrypted */
-	pkey = PEM_read_PrivateKey(fp, NULL, NULL, "password");
+	pkey = PEM_read_PrivateKey(fp, NULL, NULL, password);
 	if( pkey)
 		IFSTAT( Reading PKEY)
 	fclose(fp);

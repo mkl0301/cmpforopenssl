@@ -111,7 +111,9 @@ static char* opt_clCertFile=NULL;
 static char* opt_extCertFile=NULL;
 static char* opt_newClCertFile=NULL;
 static char* opt_clKeyFile=NULL;
+static char* opt_clKeyPass=NULL;
 static char* opt_newClKeyFile=NULL;
+static char* opt_recipient=NULL;
 static char* opt_subjectName=NULL;
 static char* opt_user=NULL;
 static char* opt_password=NULL;
@@ -170,12 +172,15 @@ void printUsage( const char* cmdName) {
   printf(" --hex                 user and password are HEX, not ASCII\n");
   printf(" --subject NAME        X509 subject name for the certificate Template\n");
   printf("                       example: CN=MyName\n");
+  printf(" --recipient NAME      X509 name of the recipient. Can be used for the IR\n");
+  printf("                       if the client doesn't have the CA's certificate yet.\n");
   printf(" --clcert FILE         location of the client's certificate\n");
   printf("                       this is overwritten at IR\n");
   printf(" --newclcert FILE      location of the client's new certificate\n");
   printf("                       this is overwritten at KUR\n");
   printf(" --key FILE            location of the client's private key\n");
   printf("                       this is overwritten at IR\n");
+  printf(" --keypass PASSWORD    password of the client's private key\n");
   printf(" --newkey FILE         location of the client's new private key\n");
   printf("                       this is overwritten at KUR\n");
   printf(" --extracert FILE      certificate that will be added to the extraCerts field\n");
@@ -232,14 +237,33 @@ void doIr() {
 
   /* generate RSA key */
   if (opt_extCertFile) {
-	  if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile))) {
-		  printf("FATAL: could not read private client key!\n");
-		  exit(1);
-	  }
+    if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
+      printf("FATAL: could not read private client key!\n");
+      exit(1);
+    }
   } else {
-	  initialPkey = HELP_generateRSAKey();
-	  /* initialPkey = HELP_generateDSAKey(); */
-	  HELP_savePrivKey(initialPkey, opt_clKeyFile);
+    FILE *key = fopen(opt_clKeyFile, "r");
+    /* if keyfile exists, use it. otherwise generate a new key */
+    if (key != NULL) {
+      fclose(key);
+      printf("INFO: Using existing key file \"%s\"\n", opt_clKeyFile);
+      if (opt_engine) {
+        if (!(initialPkey = ENGINE_load_private_key (engine, opt_clKeyFile, NULL, opt_clKeyPass))) {
+          printf("FATAL: could not read private key /w engine\n");
+          exit(1);
+        }
+      } else { // no engine specified reading private key from file
+        if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
+          printf("FATAL: could not read private client key!\n");
+          exit(1);
+        }
+      }
+    }
+    else {
+      initialPkey = HELP_generateRSAKey();
+      /* initialPkey = HELP_generateDSAKey(); */
+      HELP_savePrivKey(initialPkey, opt_clKeyFile, opt_clKeyPass);
+    }
   }
 
   if (opt_extCertFile && !(extCert = HELP_read_der_cert(opt_extCertFile))) {
@@ -258,9 +282,16 @@ void doIr() {
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
   CMP_CTX_set1_extCert( cmp_ctx, extCert);
+  CMP_CTX_set1_timeOut( cmp_ctx, 60);
   if (opt_subjectName) {
     X509_NAME *subject = HELP_create_X509_NAME(opt_subjectName);
     CMP_CTX_set1_subjectName( cmp_ctx, subject);
+    X509_free(subject);
+  }
+  if (opt_recipient) {
+    X509_NAME *recipient = HELP_create_X509_NAME(opt_recipient);
+    CMP_CTX_set1_recipient( cmp_ctx, recipient);
+    X509_free(recipient);
   }
   if (opt_nExtraCerts > 0)
     CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
@@ -316,7 +347,7 @@ void doCr() {
       exit(1);
     }
   } else { // no engine specified reading private key from file
-    if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile))) {
+    if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
       printf("FATAL: could not read private client key!\n");
       exit(1);
     }
@@ -377,7 +408,7 @@ void doKur() {
 
   CMP_CTX *cmp_ctx=NULL;
 
-  if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile))) {
+  if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
     printf("FATAL: could not read private client key!\n");
     exit(1);
   }
@@ -389,7 +420,7 @@ void doKur() {
   /* generate RSA key */
   updatedPkey = HELP_generateRSAKey();
   /* updatedPkey = HELP_generateDSAKey(); */
-  if(!HELP_savePrivKey( updatedPkey, opt_newClKeyFile)) {
+  if(!HELP_savePrivKey( updatedPkey, opt_newClKeyFile, opt_clKeyPass)) {
     printf("FATAL: could not save private client key!");
     exit(1);
   }
@@ -498,9 +529,11 @@ void parseCLA( int argc, char **argv) {
     {"cacert",   required_argument,    0, 'g'},
     {"clcert",   required_argument,    0, 'h'},
     {"subject",  required_argument,    0, 'S'},
+    {"recipient",required_argument,    0, 'R'},
     {"capubs",   required_argument,    0, 'U'},
     {"help",     no_argument,          0, 'i'},
     {"key",      required_argument,    0, 'j'},
+    {"keypass",  required_argument,    0, 'J'},
     {"newkey",   required_argument,    0, 'k'},
     {"newclcert",required_argument,    0, 'l'},
     {"hex",      no_argument,          0, 'm'},
@@ -520,7 +553,7 @@ void parseCLA( int argc, char **argv) {
 
   while (1)
   {
-    c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:k:l:mno:pqrsS:tu:U:x:X:", long_options, &option_index);
+    c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:J:k:l:mno:pqrsS:R:tu:U:x:X:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -615,6 +648,10 @@ void parseCLA( int argc, char **argv) {
         opt_subjectName = (char*) malloc(strlen(optarg)+1);
         strcpy(opt_subjectName, optarg);
         break;
+      case 'R':
+        opt_recipient = (char*) malloc(strlen(optarg)+1);
+        strcpy(opt_recipient, optarg);
+        break;
       case 'i':
         printUsage( argv[0]);
         break;
@@ -625,6 +662,10 @@ void parseCLA( int argc, char **argv) {
       case 'j':
         opt_clKeyFile = (char*) malloc(strlen(optarg)+1);
         strcpy(opt_clKeyFile, optarg);
+        break;
+      case 'J':
+        opt_clKeyPass = (char*) malloc(strlen(optarg)+1);
+        strcpy(opt_clKeyPass, optarg);
         break;
       case 'k':
         opt_newClKeyFile = (char*) malloc(strlen(optarg)+1);
@@ -676,9 +717,18 @@ void parseCLA( int argc, char **argv) {
     printUsage( argv[0]);
   }
 
-  if (!(opt_serverName && opt_serverPort && opt_caCertFile)) {
-    printf("ERROR: setting server, port and cacert is mandatory for all sequences\n\n");
+  if (!(opt_serverName && opt_serverPort)) {
+    // printf("ERROR: setting server, port and cacert is mandatory for all sequences\n\n");
+    printf("ERROR: setting server and port is mandatory for all sequences\n\n");
     printUsage( argv[0]);
+  }
+  if (!opt_caCertFile && !opt_doIr) {
+    printf("ERROR: setting cacert is necessary for all sequences except IR\n\n");
+    printUsage( argv[0]);
+  }
+
+  if (!opt_clKeyPass) {
+    printf("WARNING: no key password given, using \"password\"");
   }
 
   if (!opt_sequenceSet) {
@@ -695,7 +745,11 @@ void parseCLA( int argc, char **argv) {
 
   if( opt_doIr) {
     if (!(opt_user && (opt_password || opt_extCertFile) && opt_clCertFile && opt_clKeyFile)) {
-      printf("ERROR: setting user, password/extcert, cacert, clcert and key is mandatory for IR\n\n");
+      printf("ERROR: setting user, password/extcert, clcert and key is mandatory for IR\n\n");
+      printUsage( argv[0]);
+    }
+    if (!opt_caCertFile && !opt_recipient) {
+      printf("ERROR: setting cacert or recipient is mandatory for IR\n\n");
       printUsage( argv[0]);
     }
     if (opt_extCertFile) opt_password = "";
@@ -804,7 +858,7 @@ int main(int argc, char **argv) {
   }
 
   /* read CA certificate */
-  if( !(caCert = HELP_read_der_cert(opt_caCertFile))) {
+  if(opt_caCertFile && !(caCert = HELP_read_der_cert(opt_caCertFile))) {
     printf("FATAL: could not read CA certificate!\n");
     exit(1);
   }
