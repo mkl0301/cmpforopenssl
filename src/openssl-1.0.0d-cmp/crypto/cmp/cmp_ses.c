@@ -81,6 +81,12 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 
+static int ossl_error_cb(const char *str, size_t len, void *u) {
+	CMP_CTX *ctx = (CMP_CTX*) u;
+	ctx->error_cb(str);
+	return 0;
+}
+
 /* ############################################################################ */
 /* Prints error data of the given CMP_PKIMESSAGE into a buffer specified by out */
 /* and returns pointer to the buffer.                                           */
@@ -133,14 +139,14 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* create Initialization Request - ir */
 	if (! (ir = CMP_ir_new(ctx))) goto err;
 
-	CMP_printf("INFO: Sending Initialization Request\n");
+	CMP_printf(ctx, "INFO: Sending Initialization Request\n");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, ir, &ip))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
 
 	if (CMP_protection_verify( ip, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), ctx->secretValue))
-		CMP_printf( "SUCCESS: validating protection of incoming message\n");
+		CMP_printf( ctx, "SUCCESS: validating protection of incoming message\n");
 	else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -161,7 +167,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* TODO - there could be two CERTrepmessages */
 	switch (CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0)) {
 		case CMP_PKISTATUS_grantedWithMods:
-			CMP_printf( "WARNING: got \"grantedWithMods\"\n");
+			CMP_printf( ctx, "WARNING: got \"grantedWithMods\"\n");
 		case CMP_PKISTATUS_accepted:
 			switch (CMP_CERTREPMESSAGE_certType_get(ip->body->value.ip, 0)) {
 				case CMP_CERTORENCCERT_CERTIFICATE:
@@ -194,7 +200,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 
-			CMP_printf("ERROR: unknown pkistatus %ld\n", CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0));
+			CMP_printf( ctx, "ERROR: unknown pkistatus %ld\n", CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0));
 			goto err;
 			break;
 		}
@@ -216,14 +222,14 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* create Certificate Confirmation - certConf */
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
-	CMP_printf("INFO: Sending Certificate Confirm\n");
+	CMP_printf( ctx, "INFO: Sending Certificate Confirm\n");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
 
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, NULL, ctx->secretValue))
-		CMP_printf( "SUCCESS: validating protection of incoming message\n");
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message\n");
 	else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -254,6 +260,10 @@ err:
 	if (ip) CMP_PKIMESSAGE_free(ip);
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
+
+	/* print out openssl and cmp errors to error_cb if it's set */
+	if (ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+
 	return NULL;
 }
 /* ############################################################################ */
@@ -278,7 +288,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* create Certificate Request - cr */
 	if (! (cr = CMP_cr_new(ctx))) goto err;
 
-	CMP_printf("INFO: Sending Certificate Request\n");
+	CMP_printf( ctx, "INFO: Sending Certificate Request\n");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, cr, &cp))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
@@ -293,7 +303,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 
 	if (CMP_protection_verify( cp, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
-		CMP_printf( "SUCCESS: validating protection of incoming message\n");
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message\n");
 	} else {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -301,7 +311,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	switch (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0)) {
 		case CMP_PKISTATUS_grantedWithMods:
-			CMP_printf( "WARNING: got \"grantedWithMods\"");
+			CMP_printf(  ctx, "WARNING: got \"grantedWithMods\"");
 		case CMP_PKISTATUS_accepted:
 			if( !(ctx->newClCert = CMP_CERTREPMESSAGE_cert_get1(cp->body->value.cp,0))) {
 				// old: "ERROR: could not find the certificate with certReqId=0"
@@ -339,14 +349,14 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* crate Certificate Confirmation - certConf */
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
-	CMP_printf("INFO: Sending Certificate Confirm\n");
+	CMP_printf( ctx, "INFO: Sending Certificate Confirm\n");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
 
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
-		CMP_printf( "SUCCESS: validating protection of incoming message\n");
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message\n");
 	} else {
 		/* old: "ERROR: validating protection of incoming message\n" */
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -377,6 +387,10 @@ err:
 	if (cp) CMP_PKIMESSAGE_free(cp);
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
+
+	/* print out openssl and cmp errors to error_cb if it's set */
+	if (ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+
 	return NULL;
 }
 
@@ -404,7 +418,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* create Key Update Request - kur */
 	if (! (kur = CMP_kur_new(ctx))) goto err;
 
-	CMP_printf("INFO: Sending Key Update Request\n");
+	CMP_printf( ctx, "INFO: Sending Key Update Request\n");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, kur, &kup))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
@@ -421,7 +435,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	if (CMP_protection_verify( kup, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
-		CMP_printf( "SUCCESS: validating protection of incoming message\n");
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message\n");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -429,7 +443,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	switch (CMP_CERTREPMESSAGE_PKIStatus_get( kup->body->value.kup, 0)) {
 		case CMP_PKISTATUS_grantedWithMods:
-			CMP_printf( "WARNING: got \"grantedWithMods\"");
+			CMP_printf( ctx,  "WARNING: got \"grantedWithMods\"");
 		case CMP_PKISTATUS_accepted:
 			if( !(ctx->newClCert = CMP_CERTREPMESSAGE_cert_get1(kup->body->value.kup,0))) {
 				CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
@@ -466,14 +480,14 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* crate Certificate Confirmation - certConf */
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
-	CMP_printf("INFO: Sending Certificate Confirm\n");
+	CMP_printf( ctx, "INFO: Sending Certificate Confirm\n");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
 
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
-		CMP_printf( "SUCCESS: validating protection of incoming message\n");
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message\n");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -502,6 +516,10 @@ err:
 	if (kup) CMP_PKIMESSAGE_free(kup);
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
+
+	/* print out openssl and cmp errors to error_cb if it's set */
+	if (ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+
 	return NULL;
 }
 
@@ -524,14 +542,14 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* crate GenMsgContent - genm*/
 	if (! (genm = CMP_genm_new(ctx))) goto err;
 
-	CMP_printf("INFO: Sending General Message\n");
+	CMP_printf( ctx, "INFO: Sending General Message\n");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
 
 	if (CMP_protection_verify( genp, ctx->protectionAlgor, NULL, ctx->secretValue))
-		CMP_printf( "SUCCESS: validating protection of incoming message\n");
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message\n");
 	else {
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -559,6 +577,10 @@ err:
 
 	if (genm) CMP_PKIMESSAGE_free(genm);
 	if (genp) CMP_PKIMESSAGE_free(genp);
+
+	/* print out openssl and cmp errors to error_cb if it's set */
+	if (ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+
 	return 0;
 }
 

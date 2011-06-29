@@ -206,6 +206,9 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->timeOut         = 2*60;
 	/* ctx->popoMethod = CMP_POPO_ENCRCERT; */
 
+	ctx->error_cb = NULL;
+	ctx->debug_cb = NULL;
+
 #if 0
 	ctx->referenceValue = NULL;
 	ctx->secretValue = NULL;
@@ -253,6 +256,26 @@ err:
 	CMPerr(CMP_F_CMP_CTX_CREATE, CMP_R_CMPERROR);
 	if (ctx) CMP_CTX_free(ctx);
 	return NULL;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_set_error_callback( CMP_CTX *ctx, cmp_logfn_t cb)
+{
+	if (!ctx || !cb) goto err;
+	ctx->error_cb = cb;
+err:
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_set_debug_callback( CMP_CTX *ctx, cmp_logfn_t cb)
+{
+	if (!ctx || !cb) goto err;
+	ctx->debug_cb = cb;
+err:
+	return 0;
 }
 
 /* ################################################################ */
@@ -855,3 +878,18 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val) {
 err:
 	return 0;
 }
+
+void CMP_printf(CMP_CTX *ctx, const char *fmt, ...)
+{
+	va_list arg_ptr;
+	va_start(arg_ptr, fmt);
+	if (ctx->debug_cb) {
+		char buf[1024];
+		vsnprintf(buf, sizeof(buf), fmt, arg_ptr);
+		ctx->debug_cb(buf);
+	}
+	else vfprintf(stdout, fmt, arg_ptr);
+	va_end(arg_ptr);
+}
+
+

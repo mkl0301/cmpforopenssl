@@ -1167,6 +1167,9 @@ RFC 4210                          CMP                     September 2005
      END -- of CMP module
 */
 
+typedef void (*cmp_logfn_t)(const char *msg);
+
+
 /* CMP_CTX definitions */
 /* XXX TODO work in progress */
 /* this structure is used to store the context for CMP sessions */
@@ -1246,7 +1249,11 @@ typedef struct cmp_ctx_st
 	/* maximum time in secods to wait for an http transfer to complete
 	 * XXX note: only usable with libcurl! */
 	int	timeOut;
+
+	/* log callback functions for error and debug messages */
+	cmp_logfn_t error_cb, debug_cb;
 } CMP_CTX;
+
 DECLARE_ASN1_FUNCTIONS(CMP_CTX)
 
 
@@ -1399,6 +1406,8 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx);
 int CMP_CTX_init( CMP_CTX *ctx);
 void CMP_CTX_delete(CMP_CTX *ctx);
 CMP_CTX *CMP_CTX_create(void);
+int CMP_CTX_set_error_callback( CMP_CTX *ctx, cmp_logfn_t cb);
+int CMP_CTX_set_debug_callback( CMP_CTX *ctx, cmp_logfn_t cb);
 int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t len);
 int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len);
 int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert);
@@ -1453,7 +1462,7 @@ int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
 
 #ifndef CMP_printf
 	#ifdef CMP_DEBUG
-		#define CMP_printf printf
+		void CMP_printf(CMP_CTX *ctx, const char *fmt, ...);
 	#else
 		#define CMP_printf(...) //
 	#endif
@@ -1516,6 +1525,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_KUR_NEW				 144
 #define CMP_F_CMP_PKIMESSAGE_HTTP_BIO_RECV		 145
 #define CMP_F_CMP_PKIMESSAGE_HTTP_BIO_SEND		 146
+#define CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM		 153
 #define CMP_F_CMP_PKISTATUSINFO_PKISTATUS_GET_STRING	 147
 #define CMP_F_CMP_POLLREQ_NEW				 148
 #define CMP_F_CMP_PROTECTION_NEW			 149
@@ -1525,6 +1535,7 @@ void ERR_load_CMP_strings(void);
 /* Reason codes. */
 #define CMP_R_CERTIFICATE_NOT_FOUND			 100
 #define CMP_R_CMPERROR					 101
+#define CMP_R_CURL_ERROR				 121
 #define CMP_R_DEPRECATED_FUNCTION			 102
 #define CMP_R_ERROR_DECODING_CERTIFICATE		 103
 #define CMP_R_ERROR_DECRYPTING_CERTIFICATE		 104

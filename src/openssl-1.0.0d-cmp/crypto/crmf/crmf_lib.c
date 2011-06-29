@@ -620,7 +620,6 @@ int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PK
 	if (! pkey) return 0;
 
 	if( !(newPopo = CRMF_PROOFOFPOSSESION_new())) goto err;
-	CRMF_printf("INFO: using popoMethod %d\n", popoMethod);
 
 	switch (popoMethod) {
 		case CMP_POPO_SIGNATURE:

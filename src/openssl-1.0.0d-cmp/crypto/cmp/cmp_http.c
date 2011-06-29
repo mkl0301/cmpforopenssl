@@ -67,6 +67,7 @@
 /* =========================== CHANGE LOG =============================
  * 2007 - Martin Peylo - Initial Creation
  * 6/10/2010 - Martin Peylo - fixed potential harmful sscanf conversion in CMP_PKIMESSAGE_hhtp_bio_recv()
+ * 6/20/2011 - Miikka Viljanen - implemented HTTP transport using libcurl
  */
 
 #include <openssl/asn1.h>
@@ -76,6 +77,7 @@
 #include <openssl/err.h>
 #include <openssl/cmp.h>
 
+#include <ctype.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -111,7 +113,7 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
-static char *get_server_port(CURL *curl) {
+static int get_server_port(CURL *curl) {
 	char *addr = NULL, *p;
 	int i, ret = 0;
 	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &addr);
@@ -160,7 +162,7 @@ static char *get_server_addr(CURL *curl) {
 }
 
 static void set_http_path(CURL *curl, const char *path) {
-	char *current_url = NULL, *url = NULL, *p;
+	char *current_url = NULL, *url = NULL;
 
 	current_url = get_server_addr(curl);
 	url = malloc(strlen(current_url) + strlen(path) + 2);
@@ -222,9 +224,8 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 								const CMP_PKIMESSAGE *msg,
 								CMP_PKIMESSAGE **out)
 {
-	struct curl_httppost *form=NULL, *last=NULL;
 	unsigned char *derMsg = NULL, *pder = NULL;
-	char *srv = NULL;
+	char *srv = NULL, *errorbuf = NULL;
 	int derLen = 0;
 	CURLcode res;
 
@@ -258,15 +259,18 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	rdata_t rdata = {0,0};
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&rdata);
 
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, derMsg);
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, (void*) derMsg);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, derLen);
 	if (ctx->timeOut != 0)
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, ctx->timeOut);
 
+	errorbuf = calloc(1, CURL_ERROR_SIZE);
 	res = curl_easy_perform(curl);
+	if (res == 0) free(errorbuf);
+	else goto err;
 
 	pder = (unsigned char*) rdata.memory;
-    *out = d2i_CMP_PKIMESSAGE( NULL, &pder, rdata.size);
+    *out = d2i_CMP_PKIMESSAGE( NULL, (const unsigned char**) &pder, rdata.size);
     if (*out == 0) goto err;
 
 	free(rdata.memory);
@@ -274,6 +278,9 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	return 1;
 
 err:
+	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_CURL_ERROR);
+	ERR_add_error_data(3, "CURL error message: \"", errorbuf, "\"");
+	free(errorbuf);
 	return 0;
 }
 
@@ -364,34 +371,14 @@ int CMP_delete_http_bio( CMPBIO *cbio) {
 }
 
 /* ############################################################################ */
-int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx, 
-								const CMP_PKIMESSAGE *msg,
-								CMP_PKIMESSAGE **out)
-{
-	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort,
-									   ctx->serverPath, ctx->compatibility, msg))
-		goto err;
-
-	CMP_PKIMESSAGE *resp;
-	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &resp, ctx->compatibility))
-		goto err;
-
-	*out = resp;
-	return 1;
-err:
-	return 0;
-}
-
-
-/* ############################################################################ */
-int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio,
-				 const char *serverName,
-				 const int   serverPort,
-				 const char *serverPath,
-				 const int   compatibility,
-				 const CMP_PKIMESSAGE *msg)
+static int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio, CMP_CTX *ctx, const CMP_PKIMESSAGE *msg)
 {
 	int derLen;
+
+	const char *serverName = ctx->serverName,
+		  *serverPath = ctx->serverPath;
+	const int serverPort = ctx->serverPort;
+	const int compatibility = ctx->compatibility,
 
 #ifdef SUPPORT_OLD_INSTA
 	unsigned int derLenUint;
@@ -527,7 +514,7 @@ int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio,
 /* ############################################################################ */
 int CMP_PKIMESSAGE_http_bio_recv( CMPBIO *cbio,
 				  CMP_PKIMESSAGE **ip,
-				  const int compatibility
+				  CMP_CTX *ctx
 				  ) {
 #define MAX_RECV_BYTE 10240
 	char tmpbuf[1024];
@@ -623,12 +610,12 @@ int CMP_PKIMESSAGE_http_bio_recv( CMPBIO *cbio,
 
 #ifdef SUPPORT_OLD_INSTA /* TODO remove completely one day */
 	/* skip TCP-Style INSTA < 3.3 header */
-	if( compatibility == CMP_COMPAT_INSTA) {
+	if( ctx->compatibility == CMP_COMPAT_INSTA) {
 		derMessage += 7;
 	}
 #endif /* SUPPORT_OLD_INSTA */
 
-CMP_printf("totalRecvdLen %lu, totalMsgLen %lu, chunkLen %lu\n", (long unsigned int)totalRecvdLen, (long unsigned int)totalMsgLen, (long unsigned int)chunkLen);
+CMP_printf(ctx, "totalRecvdLen %lu, totalMsgLen %lu, chunkLen %lu\n", (long unsigned int)totalRecvdLen, (long unsigned int)totalMsgLen, (long unsigned int)chunkLen);
 	/* if not already done, receive the rest of the message */
 	while( totalRecvdLen < totalMsgLen) {
 		/* TODO: make sure we don't receive too much */
@@ -657,6 +644,27 @@ CMP_printf("totalRecvdLen %lu, totalMsgLen %lu, chunkLen %lu\n", (long unsigned 
 		return 0;
 	}
 }
+
+/* ############################################################################ */
+int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx, 
+								const CMP_PKIMESSAGE *msg,
+								CMP_PKIMESSAGE **out)
+{
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort,
+									   ctx->serverPath, ctx->compatibility, msg))
+		goto err;
+
+	CMP_PKIMESSAGE *resp;
+	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &resp, ctx->compatibility))
+		goto err;
+
+	*out = resp;
+	return 1;
+err:
+	return 0;
+}
+
+
 
 #endif
 

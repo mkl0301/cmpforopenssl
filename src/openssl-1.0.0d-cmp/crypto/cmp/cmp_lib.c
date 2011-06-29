@@ -613,7 +613,7 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 
 
 	if ((md = EVP_get_digestbynid(usedAlgorNid)) != NULL) {
-		CMP_printf("INFO: protecting with pkey, algorithm %s\n", OBJ_nid2sn(usedAlgorNid));
+		// printf("INFO: protecting with pkey, algorithm %s\n", OBJ_nid2sn(usedAlgorNid));
 		if (!pkey) { /* EVP_SignFinal() will check that pkey type is correct for the algorithm */
 			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_INVALID_KEY);
 			ERR_add_error_data(1, "pkey was NULL although it is supposed to be used for generating protection");
@@ -631,7 +631,7 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 	else if (usedAlgorNid == NID_id_PasswordBasedMAC) {
 		/* there is no pmb set in this message */
 		if (!ppval) return NULL;
-		CMP_printf("INFO: protecting with PBMAC\n");
+		// printf("INFO: protecting with PBMAC\n");
 
 		pbmStr = (ASN1_STRING *)ppval;
 		pbmStrUchar = (unsigned char *)pbmStr->data;
@@ -682,7 +682,7 @@ int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 	if (!cert) goto err;
 
 	sigAlgID = OBJ_obj2nid(cert->sig_alg->algorithm);
-	CMP_printf("INFO: certificate signature algorithm used: \"%s\"\n", OBJ_nid2sn(sigAlgID));
+	// printf("INFO: certificate signature algorithm used: \"%s\"\n", OBJ_nid2sn(sigAlgID));
 
 	/* select algorithm based on the one used in the cert signature */
 	if ((md = EVP_get_digestbynid(sigAlgID))) {
@@ -1094,13 +1094,13 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	unsigned char       *iv        = NULL; /* initial vector for symmetric encryption */
 	unsigned char       *outbuf    = NULL; /* decryption output buffer                */
 	const unsigned char *p         = NULL; /* needed for decoding ASN1                */
-	int                  keyAlg, symmAlg;  /* NIDs for key and symmetric algorithm    */
+	int                  symmAlg;  /* NIDs for key and symmetric algorithm    */
 	int                  n, outlen = 0;
 #if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
 	EVP_PKEY_CTX        *pkctx     = NULL;   /* private key context */
 #endif
 
-	CMP_printf("INFO: Received encrypted certificate, attempting to decrypt... \n");
+	// printf("INFO: Received encrypted certificate, attempting to decrypt... \n");
 
 	CMP_CERTRESPONSE *certResponse = NULL;
 	if ( !(certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) )
@@ -1108,7 +1108,7 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 
 	encCert = certResponse->certifiedKeyPair->certOrEncCert->value.encryptedCert;
 
-	keyAlg  = OBJ_obj2nid(encCert->keyAlg->algorithm);
+	/* keyAlg  = OBJ_obj2nid(encCert->keyAlg->algorithm); */
 	symmAlg = OBJ_obj2nid(encCert->symmAlg->algorithm);
 
 	/* first the symmetric key needs to be decrypted */
