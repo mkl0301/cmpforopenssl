@@ -879,7 +879,7 @@ err:
 	return 0;
 }
 
-void CMP_printf(CMP_CTX *ctx, const char *fmt, ...)
+void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...)
 {
 	va_list arg_ptr;
 	va_start(arg_ptr, fmt);

@@ -1263,6 +1263,7 @@ DECLARE_ASN1_FUNCTIONS(CMP_CTX)
 /* cmp_msg.c */
 CMP_PKIMESSAGE *CMP_ir_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_cr_new( CMP_CTX *ctx);
+CMP_PKIMESSAGE *CMP_rr_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_certConf_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_kur_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx);
@@ -1393,8 +1394,6 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx,
 int CMP_new_http_bio_ex(CMPBIO **cbio, const char* serverName, const int port, const char *srcip);
 int CMP_new_http_bio(CMPBIO **cbio, const char* serverName, const int port);
 int CMP_delete_http_bio( CMPBIO *cbio);
-int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio, const char *serverName, const int serverPort, const char *serverPath, const int compatibility, const CMP_PKIMESSAGE *msg);
-int CMP_PKIMESSAGE_http_bio_recv(CMPBIO *cbio, CMP_PKIMESSAGE **ip, const int compatibility);
 
 /* from cmp_ses.c */
 X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
@@ -1462,7 +1461,7 @@ int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
 
 #ifndef CMP_printf
 	#ifdef CMP_DEBUG
-		void CMP_printf(CMP_CTX *ctx, const char *fmt, ...);
+		void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...);
 	#else
 		#define CMP_printf(...) //
 	#endif
@@ -1519,6 +1518,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_DOINITIALREQUESTSEQ			 138
 #define CMP_F_CMP_DOKEYUPDATEREQUESTSEQ			 139
 #define CMP_F_CMP_DOPKIINFOREQSEQ			 140
+#define CMP_F_CMP_DOREVOCATIONREQUESTSEQ		 154
 #define CMP_F_CMP_GENM_NEW				 141
 #define CMP_F_CMP_INFOTYPEANDVALUE_NEW_BY_DEF_NOVAL	 142
 #define CMP_F_CMP_IR_NEW				 143
@@ -1530,6 +1530,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_POLLREQ_NEW				 148
 #define CMP_F_CMP_PROTECTION_NEW			 149
 #define CMP_F_CMP_PROTECTION_VERIFY			 150
+#define CMP_F_CMP_RR_NEW				 155
 #define CMP_F_PKEY_DUP					 151
 
 /* Reason codes. */

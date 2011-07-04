@@ -81,6 +81,8 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+
 
 #ifdef HAVE_CURL
 
@@ -284,20 +286,14 @@ err:
 	return 0;
 }
 
-int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio,
-				 const char *serverName,
-				 const int   serverPort,
-				 const char *serverPath,
-				 const int   compatibility,
-				 const CMP_PKIMESSAGE *msg) {
+int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio, CMP_CTX *ctx,
+								 const CMP_PKIMESSAGE *msg) {
 	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_BIO_SEND, CMP_R_DEPRECATED_FUNCTION);
 	return 0;
 }
 
-int CMP_PKIMESSAGE_http_bio_recv( CMPBIO *cbio,
-				  CMP_PKIMESSAGE **ip,
-				  const int compatibility
-				  ) {
+int CMP_PKIMESSAGE_http_bio_recv( CMPBIO *cbio, CMP_CTX *ctx,
+				  CMP_PKIMESSAGE **ip) {
 	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_BIO_RECV, CMP_R_DEPRECATED_FUNCTION);
 	return 0;
 }
@@ -371,16 +367,16 @@ int CMP_delete_http_bio( CMPBIO *cbio) {
 }
 
 /* ############################################################################ */
-static int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio, CMP_CTX *ctx, const CMP_PKIMESSAGE *msg)
+static int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio, const CMP_CTX *ctx, const CMP_PKIMESSAGE *msg)
 {
 	int derLen;
 
 	const char *serverName = ctx->serverName,
 		  *serverPath = ctx->serverPath;
 	const int serverPort = ctx->serverPort;
-	const int compatibility = ctx->compatibility,
 
 #ifdef SUPPORT_OLD_INSTA
+	const int compatibility = ctx->compatibility;
 	unsigned int derLenUint;
 	size_t derLenUintSize;
 	unsigned char instaHeader[7] ;
@@ -513,9 +509,8 @@ static int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio, CMP_CTX *ctx, const CMP_PK
 /* for sure this could be done better */
 /* ############################################################################ */
 int CMP_PKIMESSAGE_http_bio_recv( CMPBIO *cbio,
-				  CMP_PKIMESSAGE **ip,
-				  CMP_CTX *ctx
-				  ) {
+				  const CMP_CTX *ctx,
+				  CMP_PKIMESSAGE **ip) {
 #define MAX_RECV_BYTE 10240
 	char tmpbuf[1024];
 	/* XXX this is not nice */
@@ -635,7 +630,7 @@ CMP_printf(ctx, "totalRecvdLen %lu, totalMsgLen %lu, chunkLen %lu\n", (long unsi
 
 	/* TODO XXX - make sure we received the whole message */
 
-	CMP_printf("INFO: received contentLen = %lu\n", contentLen);
+	CMP_printf(ctx,  "INFO: received contentLen = %lu\n", contentLen);
 	/* transform DER message to OPENSSL internal format */
 	if( (*ip = d2i_CMP_PKIMESSAGE( NULL, &derMessage, contentLen))) {
 		return 1;
@@ -650,12 +645,11 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx,
 								const CMP_PKIMESSAGE *msg,
 								CMP_PKIMESSAGE **out)
 {
-	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx->serverName, ctx->serverPort,
-									   ctx->serverPath, ctx->compatibility, msg))
+	if (! CMP_PKIMESSAGE_http_bio_send(cbio, ctx, msg))
 		goto err;
 
-	CMP_PKIMESSAGE *resp;
-	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, &resp, ctx->compatibility))
+	CMP_PKIMESSAGE *resp = NULL;
+	if (! CMP_PKIMESSAGE_http_bio_recv(cbio, ctx, &resp))
 		goto err;
 
 	*out = resp;

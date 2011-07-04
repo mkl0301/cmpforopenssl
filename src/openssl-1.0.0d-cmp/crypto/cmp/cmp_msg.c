@@ -193,6 +193,51 @@ err:
 
 /* ############################################################################ */
 /* ############################################################################ */
+CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
+	CMP_PKIMESSAGE  *msg=NULL;
+	CRMF_CERTTEMPLATE *certTpl=NULL;
+	X509_NAME *subject=NULL;
+
+	/* check if all necessary options are set */
+	if (!ctx) goto err;
+#if 0
+	if (!ctx->caCert) goto err;
+#endif
+	if (!ctx->clCert) goto err;
+	if (!ctx->pkey) goto err;
+
+	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
+
+	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
+
+	if (ctx->implicitConfirm)
+		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
+
+	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_RR);
+
+	/* Set the subject from the previous certificate */
+	subject = X509_get_subject_name(ctx->clCert);
+	X509_NAME_set(&certTpl->subject, subject);
+
+	X509_PUBKEY_set(&certTpl->publicKey, (EVP_PKEY*) ctx->pkey);
+
+	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
+	if (!msg->protection) goto err;
+
+	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
+
+	return msg;
+
+err:
+	CMPerr(CMP_F_CMP_RR_NEW, CMP_R_CMPERROR);
+	if (msg) CMP_PKIMESSAGE_free(msg);
+	if (certTpl) CRMF_CERTTEMPLATE_free(certTpl);
+	return NULL;
+}
+
+
+/* ############################################################################ */
+/* ############################################################################ */
 CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE  *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;

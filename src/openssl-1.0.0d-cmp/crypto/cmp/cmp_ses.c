@@ -266,6 +266,40 @@ err:
 
 	return NULL;
 }
+
+int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
+	CMP_PKIMESSAGE *rr=NULL;
+	CMP_PKIMESSAGE *rp=NULL;
+
+	if (!cbio) goto err;
+	if (!ctx) goto err;
+	if (!ctx->serverName) goto err;
+	if (!ctx->pkey) goto err;
+	if (!ctx->clCert) goto err;
+	if (!ctx->caCert) goto err;
+
+	/* set the protection Algor which will be used during the whole session */
+	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG);
+
+	/* create Key Update Request - kur */
+	if (! (rr = CMP_rr_new(ctx))) goto err;
+
+	CMP_printf( ctx, "INFO: Sending Revocation Request\n");
+	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, rr, &rp))) {
+		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		goto err;
+	}
+
+	return 1;
+
+err:
+	CMPerr( CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_CMPERROR);
+
+	if (ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	return 0;
+}
+
+
 /* ############################################################################ */
 /* ############################################################################ */
 X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
