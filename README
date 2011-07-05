@@ -57,6 +57,7 @@ The Makefile has several handy targets:
 - 'cmpserver': make cryptlib, build and install cmpserver-cl
 - 'openssl_patch_0.9.8g': calculate a CMP extension patch against the offical
                           OpenSSL release version 0.9.8g source.
+- 'lighttpd': add the cmpserver module to lighttpd src and compile 
 
 You need to have the utilities 'unzip' and 'svn' installed. Soon, 'wget' will be
 needed to download the most recent version of the Cryptlib source.
