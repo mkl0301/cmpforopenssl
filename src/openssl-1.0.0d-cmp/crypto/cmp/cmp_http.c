@@ -290,7 +290,7 @@ err:
 	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_CURL_ERROR);
 	if (errormsg) {
 		ERR_add_error_data(3, "Error: \"", errormsg, "\"");
-		free(errorbuf);
+		free(errormsg);
 	}
 	return 0;
 }
