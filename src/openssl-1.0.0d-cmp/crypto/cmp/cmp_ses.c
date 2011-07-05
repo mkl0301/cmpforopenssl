@@ -270,6 +270,8 @@ err:
 int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *rr=NULL;
 	CMP_PKIMESSAGE *rp=NULL;
+	CMP_PKIMESSAGE *certConf=NULL;
+	CMP_PKIMESSAGE *PKIconf=NULL;
 
 	if (!cbio) goto err;
 	if (!ctx) goto err;
@@ -278,16 +280,51 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (!ctx->clCert) goto err;
 	if (!ctx->caCert) goto err;
 
-	/* set the protection Algor which will be used during the whole session */
 	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG);
+	// CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
 
-	/* create Key Update Request - kur */
 	if (! (rr = CMP_rr_new(ctx))) goto err;
 
 	CMP_printf( ctx, "INFO: Sending Revocation Request\n");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, rr, &rp))) {
 		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
+	}
+
+	if (CMP_PKIMESSAGE_get_bodytype( rp) != V_CMP_PKIBODY_RP) {
+		char errmsg[256];
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
+		ERR_add_error_data(1, PKIError_data(rp, errmsg, sizeof(errmsg)));
+		goto err;
+	}
+
+
+	if (CMP_protection_verify( rp, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), ctx->secretValue)) {
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message\n");
+	} else {
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
+
+	switch (CMP_REVREP_PKIStatus_get( rp->body->value.rp, 0)) 
+	{
+		case CMP_PKISTATUS_grantedWithMods:
+			CMP_printf(  ctx, "WARNING: got \"grantedWithMods\"\n");
+		case CMP_PKISTATUS_accepted:
+			CMP_printf(  ctx, "INFO: revocation accepted\n");
+			break;
+		case CMP_PKISTATUS_rejection:
+		case CMP_PKISTATUS_waiting:
+		case CMP_PKISTATUS_revocationWarning:
+		case CMP_PKISTATUS_revocationNotification:
+		case CMP_PKISTATUS_keyUpdateWarning:
+			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_NO_CERTIFICATE_RECEIVED);
+			goto err;
+			break;
+		default:
+			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+			goto err;
+			break;
 	}
 
 	return 1;

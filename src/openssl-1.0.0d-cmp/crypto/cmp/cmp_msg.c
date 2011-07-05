@@ -207,21 +207,49 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	if (!ctx->pkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
+	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_RR);
+
+	{
+		int subjKeyIDLoc;
+		if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->clCert, 
+												 NID_subject_key_identifier, -1)) != -1) {
+			/* found a subject key ID */
+			ASN1_OCTET_STRING *subjKeyIDStr = NULL;
+			X509_EXTENSION *ex = NULL;
+			const unsigned char *subjKeyIDStrDer = NULL;
+
+			ex=sk_X509_EXTENSION_value( ctx->clCert->cert_info->extensions, subjKeyIDLoc);
+
+			subjKeyIDStrDer = (const unsigned char *) ex->value->data;
+			subjKeyIDStr = d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
+
+			CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
+
+			/* clean up */
+			ASN1_OCTET_STRING_free(subjKeyIDStr);
+		}
+	}
 
 	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
 
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
 
-	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_RR);
-
+	certTpl = CRMF_CERTTEMPLATE_new();
 	/* Set the subject from the previous certificate */
 	subject = X509_get_subject_name(ctx->clCert);
 	X509_NAME_set(&certTpl->subject, subject);
-
 	X509_PUBKEY_set(&certTpl->publicKey, (EVP_PKEY*) ctx->pkey);
+	certTpl->serialNumber = ASN1_INTEGER_dup(ctx->clCert->cert_info->serialNumber);
+	X509_NAME_set(&certTpl->issuer, ctx->clCert->cert_info->issuer);
 
-	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
+	CMP_REVDETAILS *rd = CMP_REVDETAILS_new();
+	rd->certDetails = certTpl;
+
+	if( !(msg->body->value.rr = sk_CMP_REVDETAILS_new_null())) goto err;
+	sk_CMP_REVDETAILS_push( msg->body->value.rr, rd);
+
+	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, ctx->secretValue);
 	if (!msg->protection) goto err;
 
 	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);

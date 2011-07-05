@@ -124,6 +124,7 @@ static int opt_sequenceSet=0;
 static int opt_doIr=0;
 static int opt_doCr=0;
 static int opt_doKur=0;
+static int opt_doRr=0;
 static int opt_doInfo=0;
 static int opt_compatibility=CMP_COMPAT_RFC;
 
@@ -162,6 +163,7 @@ void printUsage( const char* cmdName) {
   printf(" --ir   do initial certificate request sequence\n");
   printf(" --kur  do key update request sequence\n");
   printf(" --cr   do renewal of a certificate\n");
+  printf(" --rr   do revocation request sequence\n");
   printf(" --info do PKI Information request sequence\n");
   printf("\n");
   printf("The following OPTIONS have to be set when needed by CMD:\n");
@@ -291,7 +293,7 @@ void doIr() {
   if (opt_recipient) {
     X509_NAME *recipient = HELP_create_X509_NAME(opt_recipient);
     CMP_CTX_set1_recipient( cmp_ctx, recipient);
-    X509_free(recipient);
+    if (recipient) X509_free(recipient);
   }
   if (opt_nExtraCerts > 0)
     CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
@@ -332,6 +334,75 @@ void doIr() {
 
 /* ############################################################################ */
 /* ############################################################################ */
+void doRr() {
+  EVP_PKEY *initialPkey=NULL;
+  CMPBIO *cbio=NULL;
+  X509 *initialClCert=NULL;
+  CMP_CTX *cmp_ctx=NULL;
+  X509 *updatedClCert=NULL;
+
+  // ENGINE_load_private_key(e, path, NULL, "password"); 
+
+  if (opt_engine) {
+    if (!(initialPkey = ENGINE_load_private_key (engine, opt_clKeyFile, NULL, opt_clKeyPass))) {
+      printf("FATAL: could not read private key /w engine\n");
+      exit(1);
+    }
+  } else { // no engine specified reading private key from file
+    if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
+      printf("FATAL: could not read private client key!\n");
+      exit(1);
+    }
+  }
+  if(!(initialClCert = HELP_read_der_cert(opt_clCertFile))) {
+    printf("FATAL: could not read client certificate!\n");
+    exit(1);
+  }
+
+  /* XXX this is not freed yet */
+  cmp_ctx = CMP_CTX_create();
+  CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+  CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
+  CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
+  CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
+  CMP_CTX_set1_caCert( cmp_ctx, caCert);
+  CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
+  CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
+  CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
+  CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
+
+  if (opt_nExtraCerts > 0)
+    CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
+
+  /* CL does not support this, it just ignores it.
+   * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
+   */
+
+  if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
+    printf( "ERROR: setting up connection to server");
+    exit(1);
+  }
+
+  updatedClCert = CMP_doRevocationRequestSeq( cbio, cmp_ctx);
+  CMP_delete_http_bio(cbio);
+
+  if( updatedClCert) {
+    printf( "SUCCESS: received renewed Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
+  } else {
+    printf( "ERROR: received no renewed Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
+    exit(1);
+  }
+  if(!HELP_write_der_cert( updatedClCert, opt_newClCertFile)) {
+    printf("FATAL: could not write new client certificate!\n");
+    exit(1);
+  }
+
+  return;
+}
+
+
+/* ############################################################################ */
+/* ############################################################################ */
 void doCr() {
   EVP_PKEY *initialPkey=NULL;
   CMPBIO *cbio=NULL;
@@ -342,7 +413,7 @@ void doCr() {
   // ENGINE_load_private_key(e, path, NULL, "password"); 
 
   if (opt_engine) {
-    if (!(initialPkey = ENGINE_load_private_key (engine, opt_clKeyFile, NULL, "password"))) {
+    if (!(initialPkey = ENGINE_load_private_key (engine, opt_clKeyFile, NULL, opt_clKeyPass))) {
       printf("FATAL: could not read private key /w engine\n");
       exit(1);
     }
@@ -542,10 +613,11 @@ void parseCLA( int argc, char **argv) {
     {"proxy",    no_argument,          0, 'p'},
     {"cryptlib", no_argument,          0, 'q'},
 #ifdef SUPPORT_OLD_INSTA
-    {"insta",    no_argument,          0, 'r'},
+    {"insta",    no_argument,          0, 'I'},
 #endif /* SUPPORT_OLD_INSTA */
     {"insta3.3", no_argument,          0, 's'},
     {"cr",	     no_argument,          0, 't'},
+    {"rr",	     no_argument,          0, 'r'},
     {"engine",   required_argument,    0, 'u'},
     {"extracert",required_argument,    0, 'X'},
     {0, 0, 0, 0}
@@ -553,7 +625,7 @@ void parseCLA( int argc, char **argv) {
 
   while (1)
   {
-    c = getopt_long (argc, argv, "a:b:cde:f:g:h:ij:J:k:l:mno:pqrsS:R:tu:U:x:X:", long_options, &option_index);
+    c = getopt_long (argc, argv, "a:b:cde:f:g:h:iIj:J:k:l:mno:pqrsS:R:tu:U:x:X:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -601,6 +673,15 @@ void parseCLA( int argc, char **argv) {
         }
         opt_sequenceSet = 1;
         opt_doCr = 1;
+        break;
+
+      case 'r':
+        if( opt_sequenceSet) {
+          fprintf( stderr, "ERROR: only one message sequence can be set at once!\n");
+          printUsage( argv[0]);
+        }
+        opt_sequenceSet = 1;
+        opt_doRr = 1;
         break;
 
       case 'd':
@@ -689,7 +770,7 @@ void parseCLA( int argc, char **argv) {
         opt_compatibility = CMP_COMPAT_CRYPTLIB;
         break;
 #ifdef SUPPORT_OLD_INSTA
-      case 'r':
+      case 'I':
         opt_compatibility = CMP_COMPAT_INSTA;
         break;
 #endif /* SUPPORT_OLD_INSTA */
@@ -758,6 +839,17 @@ void parseCLA( int argc, char **argv) {
   if( opt_doCr) {
     if (!(opt_clCertFile && opt_clKeyFile)) {
       printf("ERROR: cacert, clcert and key is mandatory for CR\n\n");
+      printUsage( argv[0]);
+    }
+  }
+
+  if( opt_doRr) {
+    if (!opt_caCertFile && !opt_recipient) {
+      printf("ERROR: setting cacert or recipient is mandatory for RR\n\n");
+      printUsage( argv[0]);
+    }
+    if (!(opt_clCertFile && opt_clKeyFile)) {
+      printf("ERROR: clcert and key is mandatory for RR\n\n");
       printUsage( argv[0]);
     }
   }
@@ -897,6 +989,20 @@ int main(int argc, char **argv) {
 
   if( opt_doKur) {
     doKur();
+  }
+
+  if( opt_doRr) {
+    if (opt_hex) {
+      /* get str representation of hex passwords */
+      idStringLen = HELP_hex2str(opt_user, &idString);
+      passwordLen = HELP_hex2str(opt_password, &password);
+    } else {
+      idStringLen = strlen(opt_user);
+      idString = (unsigned char*) opt_user;
+      passwordLen = strlen(opt_password);
+      password = (unsigned char*) opt_password;
+    }
+    doRr();
   }
 
   if( opt_doInfo) {

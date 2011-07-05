@@ -206,8 +206,8 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->timeOut         = 2*60;
 	/* ctx->popoMethod = CMP_POPO_ENCRCERT; */
 
-	ctx->error_cb = NULL;
-	ctx->debug_cb = NULL;
+	ctx->error_cb = (cmp_logfn_t) puts;
+	ctx->debug_cb = (cmp_logfn_t) puts;
 
 #if 0
 	ctx->referenceValue = NULL;
@@ -881,14 +881,16 @@ err:
 
 void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...)
 {
+	if (!ctx->debug_cb) return;
+
 	va_list arg_ptr;
 	va_start(arg_ptr, fmt);
-	if (ctx->debug_cb) {
-		char buf[1024];
-		vsnprintf(buf, sizeof(buf), fmt, arg_ptr);
-		ctx->debug_cb(buf);
-	}
-	else vfprintf(stdout, fmt, arg_ptr);
+
+	char buf[1024];
+	vsnprintf(buf, sizeof(buf), fmt, arg_ptr);
+	ctx->debug_cb(buf);
+
+	// else vfprintf(stdout, fmt, arg_ptr);
 	va_end(arg_ptr);
 }
 

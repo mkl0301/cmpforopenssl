@@ -499,6 +499,31 @@ typedef struct cmp_revdetails_st
 	STACK_OF(X509_EXTENSION) *crlEntryDetails;
 } CMP_REVDETAILS;
 DECLARE_ASN1_FUNCTIONS(CMP_REVDETAILS)
+DECLARE_STACK_OF(CMP_REVDETAILS)
+
+
+/*
+     RevRepContent ::= SEQUENCE {
+         status       SEQUENCE SIZE (1..MAX) OF PKIStatusInfo,
+         -- in same order as was sent in RevReqContent
+         revCerts [0] SEQUENCE SIZE (1..MAX) OF CertId
+                                             OPTIONAL,
+         -- IDs for which revocation was requested
+         -- (same order as status)
+         crls     [1] SEQUENCE SIZE (1..MAX) OF CertificateList
+                                             OPTIONAL
+         -- the resulting CRLs (there may be more than one)
+     }
+     */
+
+typedef struct cmp_revrep_st
+{
+	STACK_OF(CMP_PKISTATUSINFO) *status;
+	STACK_OF(CRMF_CERTID)       *certId;
+	STACK_OF(X509)              *crls;
+} CMP_REVREP;
+DECLARE_ASN1_FUNCTIONS(CMP_REVREP)
+
 
 /*
      KeyRecRepContent ::= SEQUENCE {
@@ -737,7 +762,7 @@ typedef struct cmp_pkibody_st
         /* rr       [11] RevReqContent,          --Revocation Request */
 		STACK_OF(CMP_REVDETAILS)    *rr; /* 11 */
         /* rp       [12] RevRepContent,          --Revocation Response */
-		STACK_OF(CRMF_CERTREQMSG)   *rp; /* 12 */
+		CMP_REVREP   *rp; /* 12 */
         /* ccr      [13] CertReqMessages,        --Cross-Cert. Request */
 		STACK_OF(CRMF_CERTREQMSG)   *crr; /* 13 */
         /* ccp      [14] CertRepMessage,         --Cross-Cert. Response */
@@ -1276,6 +1301,7 @@ CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, 
 
 /* cmp_lib.c */
 
+long CMP_REVREP_PKIStatus_get( CMP_REVREP *revRep, long reqId);
 int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version);
 int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);

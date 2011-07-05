@@ -146,6 +146,7 @@ typedef struct crmf_certid_st
 	ASN1_INTEGER *serialNumber;
 } CRMF_CERTID;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTID)
+DECLARE_STACK_OF(CRMF_CERTID)
 
 /*
 EncryptedValue ::= SEQUENCE {

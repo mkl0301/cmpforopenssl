@@ -977,6 +977,25 @@ char *CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string( CMP_ERRORMSGCONTENT *error)
 }
 
 /* ############################################################################ */
+/* returns the PKIStatus of the given certReqId inside a Rev */
+/* returns -1 on error */
+/* ############################################################################ */
+#if 1
+long CMP_REVREP_PKIStatus_get( CMP_REVREP *revRep, long reqId) {
+	CMP_PKISTATUSINFO *status=NULL;
+	if (!revRep) return -1;
+
+	if ( (status = sk_CMP_PKISTATUSINFO_value( revRep->status, reqId)) ) {
+		return CMP_PKISTATUSINFO_PKIstatus_get(status);
+	}
+
+	/* did not find a CertResponse with the right certRep */
+	return -1;
+}
+#endif
+
+
+/* ############################################################################ */
 /* returns the PKIStatus of the given certReqId inside a CertRepMessage */
 /* returns -1 on error */
 /* ############################################################################ */
