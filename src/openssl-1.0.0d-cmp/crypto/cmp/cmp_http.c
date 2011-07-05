@@ -189,6 +189,7 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 	if (!(curl=curl_easy_init())) goto err;
 
 	slist = curl_slist_append(slist, "Content-Type: application/pkixcmp");
+	slist = curl_slist_append(slist, "Cache-control: no-cache");
 	slist = curl_slist_append(slist, "Expect:"); 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
@@ -227,7 +228,7 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 								CMP_PKIMESSAGE **out)
 {
 	unsigned char *derMsg = NULL, *pder = NULL;
-	char *srv = NULL, *errorbuf = NULL;
+	char *srv = NULL, *errormsg = NULL;
 	int derLen = 0;
 	CURLcode res;
 
@@ -266,14 +267,20 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	if (ctx->timeOut != 0)
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, ctx->timeOut);
 
-	errorbuf = calloc(1, CURL_ERROR_SIZE);
+	errormsg = calloc(1, CURL_ERROR_SIZE);
 	res = curl_easy_perform(curl);
-	if (res == 0) free(errorbuf);
+	if (res == 0) {
+		free(errormsg);
+		errormsg = 0;
+	}
 	else goto err;
 
 	pder = (unsigned char*) rdata.memory;
     *out = d2i_CMP_PKIMESSAGE( NULL, (const unsigned char**) &pder, rdata.size);
-    if (*out == 0) goto err;
+    if (*out == 0) {
+		errormsg = "Failed to decode PKIMESSAGE";
+		goto err;
+	}
 
 	free(rdata.memory);
     free(derMsg);
@@ -281,8 +288,10 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 
 err:
 	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_CURL_ERROR);
-	ERR_add_error_data(3, "CURL error message: \"", errorbuf, "\"");
-	free(errorbuf);
+	if (errormsg) {
+		ERR_add_error_data(3, "Error: \"", errormsg, "\"");
+		free(errorbuf);
+	}
 	return 0;
 }
 
