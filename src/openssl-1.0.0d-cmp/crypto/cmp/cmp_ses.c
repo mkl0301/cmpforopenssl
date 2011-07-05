@@ -262,7 +262,7 @@ err:
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
 
 	return NULL;
 }
@@ -295,7 +295,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 err:
 	CMPerr( CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_CMPERROR);
 
-	if (ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
 	return 0;
 }
 
@@ -423,7 +423,7 @@ err:
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
 
 	return NULL;
 }
@@ -552,7 +552,7 @@ err:
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
 
 	return NULL;
 }
@@ -613,7 +613,7 @@ err:
 	if (genp) CMP_PKIMESSAGE_free(genp);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
 
 	return 0;
 }
