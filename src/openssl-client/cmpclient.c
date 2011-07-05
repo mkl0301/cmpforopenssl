@@ -275,6 +275,10 @@ void doIr() {
 
   /* XXX this is not freed yet */
   cmp_ctx = CMP_CTX_create();
+  if (!cmp_ctx) {
+    printf("FATAL: could not create CMP_CTX\n");
+    exit(1);
+  }
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
@@ -361,6 +365,10 @@ void doRr() {
 
   /* XXX this is not freed yet */
   cmp_ctx = CMP_CTX_create();
+  if (!cmp_ctx) {
+    printf("FATAL: could not create CMP_CTX\n");
+    exit(1);
+  }
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
@@ -430,6 +438,10 @@ void doCr() {
 
   /* XXX this is not freed yet */
   cmp_ctx = CMP_CTX_create();
+  if (!cmp_ctx) {
+    printf("FATAL: could not create CMP_CTX\n");
+    exit(1);
+  }
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
@@ -498,6 +510,10 @@ void doKur() {
 
   /* XXX this is not freed yet */
   cmp_ctx = CMP_CTX_create();
+  if (!cmp_ctx) {
+    printf("FATAL: could not create CMP_CTX\n");
+    exit(1);
+  }
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
@@ -550,6 +566,10 @@ void doInfo() {
 
   /* XXX this is not freed yet */
   cmp_ctx = CMP_CTX_create();
+  if (!cmp_ctx) {
+    printf("FATAL: could not create CMP_CTX\n");
+    exit(1);
+  }
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
