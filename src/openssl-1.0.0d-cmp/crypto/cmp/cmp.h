@@ -1426,6 +1426,7 @@ int CMP_delete_http_bio( CMPBIO *cbio);
 /* from cmp_ses.c */
 X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
+int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx);
 

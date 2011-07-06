@@ -292,12 +292,12 @@ void doIr() {
   if (opt_subjectName) {
     X509_NAME *subject = HELP_create_X509_NAME(opt_subjectName);
     CMP_CTX_set1_subjectName( cmp_ctx, subject);
-    X509_free(subject);
+    X509_NAME_free(subject);
   }
   if (opt_recipient) {
     X509_NAME *recipient = HELP_create_X509_NAME(opt_recipient);
     CMP_CTX_set1_recipient( cmp_ctx, recipient);
-    if (recipient) X509_free(recipient);
+    X509_NAME_free(recipient);
   }
   if (opt_nExtraCerts > 0)
     CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
@@ -343,7 +343,6 @@ void doRr() {
   CMPBIO *cbio=NULL;
   X509 *initialClCert=NULL;
   CMP_CTX *cmp_ctx=NULL;
-  X509 *updatedClCert=NULL;
 
   // ENGINE_load_private_key(e, path, NULL, "password"); 
 
@@ -391,19 +390,8 @@ void doRr() {
     exit(1);
   }
 
-  updatedClCert = CMP_doRevocationRequestSeq( cbio, cmp_ctx);
+  CMP_doRevocationRequestSeq( cbio, cmp_ctx);
   CMP_delete_http_bio(cbio);
-
-  if( updatedClCert) {
-    printf( "SUCCESS: received renewed Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
-  } else {
-    printf( "ERROR: received no renewed Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
-    exit(1);
-  }
-  if(!HELP_write_der_cert( updatedClCert, opt_newClCertFile)) {
-    printf("FATAL: could not write new client certificate!\n");
-    exit(1);
-  }
 
   return;
 }

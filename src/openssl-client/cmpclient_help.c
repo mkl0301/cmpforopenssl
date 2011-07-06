@@ -169,6 +169,7 @@
 #include <openssl/dsa.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
+#include <openssl/err.h>
 
 /* ############################################################################ */
 /* convert hex string to string, return length */
@@ -271,7 +272,7 @@ DSA *generateDSA(const int length) {
 	int counter;
 	unsigned long h;
 	DSA *key = NULL;
-	BIO *bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
+	// BIO *bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
 
 	BN_GENCB_set(&cb, dsa_cb, NULL);
 	key = DSA_new();
@@ -354,7 +355,7 @@ printf("INFO: the passphrase is \"%s\"\n", password);
 		printf("ERROR: could not open file \"%s\" for writing.\n", filename);
 		return 0;
 	}
-	PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, 0, password);
+	PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, 0, (char*)password);
 printf("INFO: private Key written\n");
 	fclose(fp);
 
@@ -398,7 +399,7 @@ printf("INFO: the passphrase is \"%s\"...\n", password);
 		return NULL;
 	}
 	/* XXX this is NOT encrypted */
-	pkey = PEM_read_PrivateKey(fp, NULL, NULL, password);
+	pkey = PEM_read_PrivateKey(fp, NULL, NULL, (char*)password);
 	if( pkey)
 		IFSTAT( Reading PKEY)
 	fclose(fp);
