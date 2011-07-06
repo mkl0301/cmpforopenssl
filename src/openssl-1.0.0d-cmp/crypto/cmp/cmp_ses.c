@@ -139,14 +139,14 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* create Initialization Request - ir */
 	if (! (ir = CMP_ir_new(ctx))) goto err;
 
-	CMP_printf(ctx, "INFO: Sending Initialization Request\n");
+	CMP_printf(ctx, "INFO: Sending Initialization Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, ir, &ip))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
 
 	if (CMP_protection_verify( ip, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), ctx->secretValue))
-		CMP_printf( ctx, "SUCCESS: validating protection of incoming message\n");
+		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
 	else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -167,7 +167,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* TODO - there could be two CERTrepmessages */
 	switch (CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0)) {
 		case CMP_PKISTATUS_grantedWithMods:
-			CMP_printf( ctx, "WARNING: got \"grantedWithMods\"\n");
+			CMP_printf( ctx, "WARNING: got \"grantedWithMods\"");
 		case CMP_PKISTATUS_accepted:
 			switch (CMP_CERTREPMESSAGE_certType_get(ip->body->value.ip, 0)) {
 				case CMP_CERTORENCCERT_CERTIFICATE:
@@ -200,7 +200,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 
-			CMP_printf( ctx, "ERROR: unknown pkistatus %ld\n", CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0));
+			CMP_printf( ctx, "ERROR: unknown pkistatus %ld", CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0));
 			goto err;
 			break;
 		}
@@ -222,14 +222,14 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* create Certificate Confirmation - certConf */
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
-	CMP_printf( ctx, "INFO: Sending Certificate Confirm\n");
+	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
 
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, NULL, ctx->secretValue))
-		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message\n");
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -285,7 +285,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	if (! (rr = CMP_rr_new(ctx))) goto err;
 
-	CMP_printf( ctx, "INFO: Sending Revocation Request\n");
+	CMP_printf( ctx, "INFO: Sending Revocation Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, rr, &rp))) {
 		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
@@ -300,7 +300,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 
 	if (CMP_protection_verify( rp, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), ctx->secretValue)) {
-		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message\n");
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -309,9 +309,9 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	switch (CMP_REVREP_PKIStatus_get( rp->body->value.rp, 0)) 
 	{
 		case CMP_PKISTATUS_grantedWithMods:
-			CMP_printf(  ctx, "WARNING: got \"grantedWithMods\"\n");
+			CMP_printf(  ctx, "WARNING: got \"grantedWithMods\"");
 		case CMP_PKISTATUS_accepted:
-			CMP_printf(  ctx, "INFO: revocation accepted\n");
+			CMP_printf(  ctx, "INFO: revocation accepted");
 			break;
 		case CMP_PKISTATUS_rejection:
 		case CMP_PKISTATUS_waiting:
@@ -359,7 +359,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* create Certificate Request - cr */
 	if (! (cr = CMP_cr_new(ctx))) goto err;
 
-	CMP_printf( ctx, "INFO: Sending Certificate Request\n");
+	CMP_printf( ctx, "INFO: Sending Certificate Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, cr, &cp))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
@@ -374,7 +374,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 
 	if (CMP_protection_verify( cp, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
-		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message\n");
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -420,16 +420,16 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* crate Certificate Confirmation - certConf */
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
-	CMP_printf( ctx, "INFO: Sending Certificate Confirm\n");
+	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
 
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message\n");
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
-		/* old: "ERROR: validating protection of incoming message\n" */
+		/* old: "ERROR: validating protection of incoming message" */
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
@@ -489,7 +489,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* create Key Update Request - kur */
 	if (! (kur = CMP_kur_new(ctx))) goto err;
 
-	CMP_printf( ctx, "INFO: Sending Key Update Request\n");
+	CMP_printf( ctx, "INFO: Sending Key Update Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, kur, &kup))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
@@ -506,7 +506,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	if (CMP_protection_verify( kup, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message\n");
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -551,14 +551,14 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* crate Certificate Confirmation - certConf */
 	if (! (certConf = CMP_certConf_new(ctx))) goto err;
 
-	CMP_printf( ctx, "INFO: Sending Certificate Confirm\n");
+	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
 
 	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message\n");
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -613,14 +613,14 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* crate GenMsgContent - genm*/
 	if (! (genm = CMP_genm_new(ctx))) goto err;
 
-	CMP_printf( ctx, "INFO: Sending General Message\n");
+	CMP_printf( ctx, "INFO: Sending General Message");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
 
 	if (CMP_protection_verify( genp, ctx->protectionAlgor, NULL, ctx->secretValue))
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message\n");
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	else {
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
