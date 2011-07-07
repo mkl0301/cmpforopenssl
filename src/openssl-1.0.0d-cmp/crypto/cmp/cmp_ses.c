@@ -270,8 +270,6 @@ err:
 int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *rr=NULL;
 	CMP_PKIMESSAGE *rp=NULL;
-	CMP_PKIMESSAGE *certConf=NULL;
-	CMP_PKIMESSAGE *PKIconf=NULL;
 
 	if (!cbio) goto err;
 	if (!ctx) goto err;
