@@ -244,7 +244,6 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
     X509 *c = cert_find_by_serial(ctx, oldserial);
     if (c != NULL)
       clkey = c->cert_info->key->pkey;
-    clkey = NULL;
   }
 
   if (!CMP_protection_verify(msg, msg->header->protectionAlg, clkey,
