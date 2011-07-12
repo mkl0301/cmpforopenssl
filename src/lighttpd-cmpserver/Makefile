@@ -1,3 +1,3 @@
 all:
-	make -C ../lighttpd-1.4.26
+	make -C ../lighttpd-1.4.29
 
