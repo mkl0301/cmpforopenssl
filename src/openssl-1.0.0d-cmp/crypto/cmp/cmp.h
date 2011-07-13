@@ -111,7 +111,11 @@ typedef struct ess_signing_cert_st
 } ESS_SIGNING_CERT;
 DECLARE_ASN1_FUNCTIONS(ESS_SIGNING_CERT)
 
+// make sure this is defined only once if both cmp.h and crmf.h are included
+#ifndef HEADER_CRMF_H
 typedef STACK_OF(X509_EXTENSION) X509_EXTENSIONS;
+#endif
+
 #endif
 
 #ifdef  __cplusplus
