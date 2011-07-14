@@ -77,8 +77,16 @@
 #include <openssl/ossl_typ.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
-#include <openssl/crmf.h>
 #include <openssl/safestack.h>
+
+// make sure this is defined only once if both cmp.h and crmf.h are included
+#if OPENSSL_VERSION_NUMBER < 0x1000000fL 
+#ifndef HEADER_CRMF_H
+typedef STACK_OF(X509_EXTENSION) X509_EXTENSIONS;
+#endif
+#endif
+
+#include <openssl/crmf.h>
 
 #ifdef HAVE_CURL
 #include <curl/curl.h>
@@ -110,11 +118,6 @@ typedef struct ess_signing_cert_st
 	STACK_OF(POLICYINFO)    *policies;
 } ESS_SIGNING_CERT;
 DECLARE_ASN1_FUNCTIONS(ESS_SIGNING_CERT)
-
-// make sure this is defined only once if both cmp.h and crmf.h are included
-#ifndef HEADER_CRMF_H
-typedef STACK_OF(X509_EXTENSION) X509_EXTENSIONS;
-#endif
 
 #endif
 
