@@ -24,7 +24,7 @@ CURL_TARBALL = $(DLDIR)/curl-$(CURL_VERSION).tar.bz2
 LIGHTTPD_TARBALL = $(DLDIR)/lighttpd-$(LIGHTTPD_VERSION).tar.bz2
 
 LIBOSSL       = $(OSSLSRC)/libssl.a
-OPENSSLCFGOPT = -g no-asm no-idea no-fips no-rc5 no-mdc2 no-camellia -fomit-frame-pointer -fno-strict-aliasing
+OPENSSLCFGOPT = -ggdb curl no-asm no-idea no-fips no-rc5 no-mdc2 no-camellia -fomit-frame-pointer -fno-strict-aliasing
 
 #TODO do we have to set LIBDIR or CCFLAGS...?
 CURLCFGOPT = --prefix=$(ROOT) \
@@ -190,7 +190,8 @@ $(LIGHTTPDSRC)/unzip-stamp: $(LIGHTTPD_TARBALL)
 	-rm $(LIGHTTPDSRC)
 	ln -s lighttpd-$(LIGHTTPD_VERSION) $(LIGHTTPDSRC)
 	patch -d $(LIGHTTPDSRC) -p1 < $(LIGHTTPDPATCH)
-	ln -s $(LIGHTTPDMODSRC)/{*.c,*.h} $(LIGHTTPDSRC)/src
+	ln -s $(LIGHTTPDMODSRC)/*.c $(LIGHTTPDSRC)/src
+	ln -s $(LIGHTTPDMODSRC)/*.h $(LIGHTTPDSRC)/src
 	touch $(LIGHTTPDSRC)/unzip_stamp
 
 $(BIN_DIR)/lighttpd: $(LIGHTTPDSRC)/unzip-stamp
