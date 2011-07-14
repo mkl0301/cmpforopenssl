@@ -110,7 +110,9 @@ typedef struct ess_signing_cert_st
 } ESS_SIGNING_CERT;
 DECLARE_ASN1_FUNCTIONS(ESS_SIGNING_CERT)
 
+#ifndef HEADER_CRMF_H
 typedef STACK_OF(X509_EXTENSION) X509_EXTENSIONS;
+#endif
 #endif
 #include <openssl/crmf.h>
 
