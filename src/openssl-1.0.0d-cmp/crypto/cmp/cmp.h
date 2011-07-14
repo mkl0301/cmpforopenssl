@@ -78,7 +78,6 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include <openssl/safestack.h>
-#include <openssl/crmf.h>
 
 #ifdef HAVE_CURL
 #include <curl/curl.h>
@@ -113,6 +112,7 @@ DECLARE_ASN1_FUNCTIONS(ESS_SIGNING_CERT)
 
 typedef STACK_OF(X509_EXTENSION) X509_EXTENSIONS;
 #endif
+#include <openssl/crmf.h>
 
 #ifdef  __cplusplus
 extern "C" {
