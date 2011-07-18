@@ -184,7 +184,7 @@ lighttpd: $(BIN_DIR)/lighttpd
 .PHONY: lighttpd
 
 $(LIGHTTPDSRC)/unzip-stamp: $(LIGHTTPD_TARBALL)
-	cd $(SRCDIR)
+	cd $(SRCDIR) && \
 	rm -rf lighttpd-$(LIGHTTPD_VERSION) 
 	tar xvfj $(LIGHTTPD_TARBALL)
 	-rm $(LIGHTTPDSRC)
@@ -192,6 +192,8 @@ $(LIGHTTPDSRC)/unzip-stamp: $(LIGHTTPD_TARBALL)
 	patch -d $(LIGHTTPDSRC) -p1 < $(LIGHTTPDPATCH)
 	ln -s $(LIGHTTPDMODSRC)/*.c $(LIGHTTPDSRC)/src
 	ln -s $(LIGHTTPDMODSRC)/*.h $(LIGHTTPDSRC)/src
+	cd $(LIGHTTPDSRC) && \
+	autoreconf
 	touch $(LIGHTTPDSRC)/unzip_stamp
 
 $(BIN_DIR)/lighttpd: $(LIGHTTPDSRC)/unzip-stamp
