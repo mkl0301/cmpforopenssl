@@ -1,4 +1,9 @@
 
+  /***********************************************************************/
+  /* Copyright 2010-2011 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED. */
+  /* Written by Miikka Viljanen <mviljane@users.sourceforge.net>         */
+  /***********************************************************************/
+
 #include "mod_cmpsrv.h"
 
 #ifdef DEBUG
@@ -203,10 +208,10 @@ URIHANDLER_FUNC(mod_cmpsrv_uri_handler) {
   handleMessage(srv, con, ctx, pkiMsg, &resp);
 
   if (resp != NULL) {
-	dbgmsg("s", "sending response");
-	sendResponse(srv, con, resp);
-	CMP_PKIMESSAGE_free(resp); //XXX crashes if freeing a genp
-	// result = 1;
+    dbgmsg("s", "sending response");
+    sendResponse(srv, con, resp);
+    CMP_PKIMESSAGE_free(resp); //XXX crashes if freeing a genp
+    // result = 1;
   }
 
   log_cmperrors(srv);

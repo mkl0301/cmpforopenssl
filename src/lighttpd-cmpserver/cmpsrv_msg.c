@@ -1,4 +1,9 @@
 
+  /***********************************************************************/
+  /* Copyright 2010-2011 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED. */
+  /* Written by Miikka Viljanen <mviljane@users.sourceforge.net>         */
+  /***********************************************************************/
+
 #include "mod_cmpsrv.h"
 
 /* TODO: these functions will be moved to the CMP library.
@@ -69,7 +74,6 @@ CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx, X509 *cert)
 	// resp->caPubs = sk_X509_new_null();
 
 	msg->body->value.ip = resp;
-	msg->protection = CMP_protection_new(msg, NULL, NULL, ctx->secretValue);
 
 	return msg;
 
@@ -141,7 +145,6 @@ CMP_PKIMESSAGE * CMP_kup_new( CMP_CTX *ctx, X509 *cert)
 	// resp->caPubs = sk_X509_new_null();
 
 	msg->body->value.kup = resp;
-	msg->protection = CMP_protection_new(msg, NULL, NULL, ctx->secretValue);
 
 	return msg;
 

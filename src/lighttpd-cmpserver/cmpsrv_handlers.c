@@ -1,4 +1,9 @@
 
+  /***********************************************************************/
+  /* Copyright 2010-2011 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED. */
+  /* Written by Miikka Viljanen <mviljane@users.sourceforge.net>         */
+  /***********************************************************************/
+
 #include "mod_cmpsrv.h"
 
 #define CMPHANDLER_ARGS server *srv, cmpsrv_ctx *srv_ctx, CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out
@@ -11,7 +16,6 @@ cmp_messageHandler_t msg_handlers[V_CMP_PKIBODY_LAST];
 CMPHANDLER_FUNC(handlemsg_ir)
 {
   CMP_CTX *ctx = srv_ctx->cmp_ctx;
-  /* TODO store user data on disk etc etc etc */
 
   int numCertRequests = sk_CRMF_CERTREQMSG_num(msg->body->value.ir);
   dbgmsg("sd", "number of cert requests:", numCertRequests);
@@ -65,9 +69,6 @@ CMPHANDLER_FUNC(handlemsg_rr)
   sk_CMP_PKISTATUSINFO_push(rp->status, s);
 
   resp->body->value.rp = rp;
-
-  dbgmsg("s", "CMP_protection_new...");
-  resp->protection = CMP_protection_new(resp, NULL, NULL, ctx->secretValue);
 
   dbgmsg("s", "rr done");
   *out = resp;
@@ -126,7 +127,6 @@ CMPHANDLER_FUNC(handlemsg_certConf)
   ASN1_TYPE *t = ASN1_TYPE_new();
   ASN1_TYPE_set(t, V_ASN1_NULL, NULL);
   resp->body->value.pkiconf = t;
-  resp->protection = CMP_protection_new(resp, NULL, NULL, ctx->secretValue);
 
   *out = resp;
   return 0;
@@ -148,14 +148,21 @@ CMPHANDLER_FUNC(handlemsg_genm)
   itav->infoType = OBJ_nid2obj(NID_id_it_caKeyUpdateInfo);
 
   CMP_CAKEYUPDANNCONTENT *ckuann = CMP_CAKEYUPDANNCONTENT_new();
-  X509 *cert = X509_new();
-  X509_set_version(cert, 2);
-  ASN1_INTEGER_set(cert->cert_info->serialNumber, 0);
-  ASN1_TIME_set(cert->cert_info->validity->notBefore, time(0));
-  ASN1_TIME_set(cert->cert_info->validity->notAfter, time(0)+60*60*24*365);
-  ckuann->oldWithNew = cert;
-  ckuann->newWithOld = cert;
-  ckuann->newWithNew = cert;
+  // X509 *cert = X509_new();
+  // X509_set_version(cert, 2);
+  // ASN1_INTEGER_set(cert->cert_info->serialNumber, 0);
+  // ASN1_TIME_set(cert->cert_info->validity->notBefore, time(0));
+  // ASN1_TIME_set(cert->cert_info->validity->notAfter, time(0)+60*60*24*365);
+  char certfn[1024];
+  sprintf(certfn, "%s/ca_cert_oldwithnew.der", srv_ctx->certPath);
+  ckuann->oldWithNew = HELP_read_der_cert(certfn);
+
+  sprintf(certfn, "%s/ca_cert_newwithold.der", srv_ctx->certPath);
+  ckuann->newWithOld = HELP_read_der_cert(certfn);
+
+  sprintf(certfn, "%s/ca_cert_newwithnew.der", srv_ctx->certPath);
+  ckuann->newWithNew = HELP_read_der_cert(certfn);
+
   itav->infoValue.ptr = (void*) ckuann;
 
   CMP_ITAV_stack_item_push0( &resp->body->value.genm, itav);
@@ -215,17 +222,25 @@ char *V_CMP_TABLE[] = {
   (((unsigned int) (type) < sizeof(V_CMP_TABLE)/sizeof(V_CMP_TABLE[0])) \
    ? V_CMP_TABLE[(unsigned int)(type)] : "unknown")
 
+EVP_PKEY *clkey = NULL;
 int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out)
 {
   UNUSED(con);
 
   CMP_PKIMESSAGE *resp = 0;
   int result = 0;
-  EVP_PKEY *clkey = NULL;
+  // EVP_PKEY *clkey = NULL;
 
   int bodyType = CMP_PKIMESSAGE_get_bodytype(msg);
+  // CMP_CTX_set_protectionAlgor( ctx->cmp_ctx, CMP_ALG_SIG);
+  ctx->cmp_ctx->protectionAlgor = X509_ALGOR_dup(msg->header->protectionAlg);
+
+  if (ctx->cmp_ctx->transactionID != NULL)
+    ASN1_OCTET_STRING_free(ctx->transactionID);
+  ctx->cmp_ctx->transactionID = ASN1_STRING_dup(msg->header->transactionID);
+
   if (bodyType == V_CMP_PKIBODY_KUR) {
-    CMP_CTX_set_protectionAlgor( ctx->cmp_ctx, CMP_ALG_SIG);
+    // CMP_CTX_set_protectionAlgor( ctx->cmp_ctx, CMP_ALG_SIG);
 
     // get private key for verifying protection
     CRMF_CERTREQMSG *reqmsg = sk_CRMF_CERTREQMSG_value( msg->body->value.kur, 0);
@@ -256,8 +271,14 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
   else dbgmsg("s", "protection validated successfully");
 
   if (msg_handlers[bodyType] != 0) {
-    if (msg_handlers[bodyType](srv, ctx, msg, &resp) == 0)
+    if (msg_handlers[bodyType](srv, ctx, msg, &resp) == 0) {
       dbgmsg("ss", "successfully handled message: ", MSG_TYPE_STR(bodyType));
+      ASN1_UTF8STRING *idstr = ASN1_UTF8STRING_new();
+      const char *szidstr = "Using mod_cmpsrv test CMP responder.";
+      ASN1_STRING_set(idstr, szidstr, strlen(szidstr));
+      CMP_PKIHEADER_push0_freeText(resp->header, idstr);
+      resp->protection = CMP_protection_new(resp, NULL, ctx->cmp_ctx->pkey, ctx->cmp_ctx->secretValue);
+    }
     else
       dbgmsg("ss", "error handling message: ", MSG_TYPE_STR(bodyType));
   }

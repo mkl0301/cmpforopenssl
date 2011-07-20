@@ -1,4 +1,9 @@
 
+  /***********************************************************************/
+  /* Copyright 2010-2011 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED. */
+  /* Written by Miikka Viljanen <mviljane@users.sourceforge.net>         */
+  /***********************************************************************/
+
 #include "mod_cmpsrv.h"
 
 void dbgprintf(const char *fmt, ...) {

@@ -1,4 +1,9 @@
 
+  /***********************************************************************/
+  /* Copyright 2010-2011 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED. */
+  /* Written by Miikka Viljanen <mviljane@users.sourceforge.net>         */
+  /***********************************************************************/
+
 #include "mod_cmpsrv.h"
 
 static size_t str2hex(char *str, unsigned char *out, size_t outlen)
@@ -50,6 +55,7 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
   EVP_PKEY *caKey = HELP_readPrivKey(p->caKey->ptr, "");
   if (!caKey) goto err;
   ctx->caKey = caKey;
+  cmp_ctx->pkey = caKey;
 
   CMP_CTX_set_protectionAlgor( cmp_ctx, CMP_ALG_PBMAC);
 

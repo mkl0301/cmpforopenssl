@@ -1,4 +1,9 @@
 
+  /***********************************************************************/
+  /* Copyright 2010-2011 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED. */
+  /* Written by Miikka Viljanen <mviljane@users.sourceforge.net>         */
+  /***********************************************************************/
+
 #ifndef __MOD_CMPSRV_H__
 #define __MOD_CMPSRV_H__
 
@@ -58,6 +63,7 @@ typedef struct {
   EVP_PKEY *caKey;
   CMP_CTX *cmp_ctx;
   plugin_data *p_d;
+  ASN1_OCTET_STRING *transactionID;
 } cmpsrv_ctx;
 
 /* cmpsrv_ctx.c */
