@@ -24,7 +24,12 @@ CURL_TARBALL = $(DLDIR)/curl-$(CURL_VERSION).tar.bz2
 LIGHTTPD_TARBALL = $(DLDIR)/lighttpd-$(LIGHTTPD_VERSION).tar.bz2
 
 LIBOSSL       = $(OSSLSRC)/libssl.a
-OPENSSLCFGOPT = -ggdb curl no-asm no-idea no-fips no-rc5 no-mdc2 no-camellia -fomit-frame-pointer -fno-strict-aliasing
+
+# --with-curl-lib and --with-curl-include are only needed if CURL is not
+# available natively on the system
+OPENSSLCFGOPT = -ggdb curl no-asm no-idea no-fips no-rc5 no-mdc2 no-camellia -fomit-frame-pointer \
+								-fno-strict-aliasing \
+								--with-curl-lib=$(ROOT)/lib --with-curl-include=$(ROOT)/include
 
 #TODO do we have to set LIBDIR or CCFLAGS...?
 CURLCFGOPT = --prefix=$(ROOT) \
@@ -69,7 +74,7 @@ openssl-noconfig:
 .PHONY: openssl-noconfig
 
 # this is forced to be sure it is rebuilt if any file in it was changed
-$(OSSLSRC)/config-stamp: FORCE
+$(OSSLSRC)/config-stamp: curl FORCE
 	# force the objects to be updated
 	touch $(OSSLSRC)/crypto/objects/objects.txt
 	cd $(OSSLSRC) && \
@@ -86,11 +91,6 @@ openssl_src: $(DLDIR)/openssl-$(OPENSSL_VERSION).tar.gz
 
 $(DLDIR)/openssl-$(OPENSSL_VERSION).tar.gz:
 	wget --directory-prefix=$(DLDIR) http://www.openssl.org/source/openssl-$(OPENSSL_VERSION).tar.gz
-
-#TODO: is the following needed at all?
-update: $(OSSLSRC)/Makefile all
-
-.PHONY: update
 
 ################################################################################
 # CMPServer
@@ -154,6 +154,9 @@ openssl_patch_1.0.0d:
 # CURL
 ################################################################################
 
+# TODO if curl is detected to be available on the system, there wouldn't be a
+# need to use our own
+
 curl: $(LIB_DIR)/libcurl.a
 
 .PHONY: curl
@@ -196,7 +199,7 @@ $(LIGHTTPDSRC)/unzip-stamp: $(LIGHTTPD_TARBALL)
 	autoreconf
 	touch $(LIGHTTPDSRC)/unzip_stamp
 
-$(BIN_DIR)/lighttpd: $(LIGHTTPDSRC)/unzip-stamp
+$(BIN_DIR)/lighttpd: openssl $(LIGHTTPDSRC)/unzip-stamp
 	cd $(LIGHTTPDSRC) && ./configure $(LIGHTTPDCFGOPT)
 	make -C $(LIGHTTPDSRC) all install
 

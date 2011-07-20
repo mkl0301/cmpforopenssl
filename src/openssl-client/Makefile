@@ -1,14 +1,16 @@
-OPENSSLDIR = ../openssl
-BINDIR     = ../../bin
+ROOT       = ../..
+OPENSSLDIR = $(ROOT)/src/openssl
+BINDIR     = $(ROOT)/bin
 
 CC = gcc
 RM = /bin/rm
 
 CFLAGS = -g -Wall
-LFLAGS = -lssl -lcrypto -ldl -g -lcurl
+# -lcurl and -lrt is for curl
+LFLAGS = -lssl -lcrypto -ldl -g -lcurl -lrt
 
-INCDIR = -I. -I$(OPENSSLDIR)/include
-LIBDIR = -L$(OPENSSLDIR)
+INCDIR = -I. -I$(OPENSSLDIR)/include -I$(ROOT)/include
+LIBDIR = -L$(OPENSSLDIR) -L$(ROOT)/lib
 
 OBJ = cmpclient.o cmpclient_help.o
 BIN = cmpclient

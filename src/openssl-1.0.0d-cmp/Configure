@@ -1304,6 +1304,10 @@ if ($curl)
 		{
 		$lflags = "$lflags -lcurl";
 		}
+  if (defined($withargs{"curl-include"}))
+		{
+		$cflags=$withargs{"curl-include"}." $cflags";
+		}
 	}
 
 # You will find shlib_mark1 and shlib_mark2 explained in Makefile.org
