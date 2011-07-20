@@ -1,0 +1,4 @@
+README for "lighttpd-cmpserver" simple CMP responder
+
+Build Dependencies
+The SQLite library must be available on the system: http://www.sqlite.org/
