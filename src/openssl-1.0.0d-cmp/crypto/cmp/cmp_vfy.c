@@ -143,7 +143,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 		}
 	}
 
-	// printf("INFO: Verifying protection, algorithm %s\n", OBJ_nid2sn(OBJ_obj2nid(msg->header->protectionAlg->algorithm)));
+	printf("INFO: Verifying protection, algorithm %s\n", OBJ_nid2sn(OBJ_obj2nid(msg->header->protectionAlg->algorithm)));
 
 	if (usedAlgorNid == NID_id_PasswordBasedMAC)  {
 		/* password based Mac */ 

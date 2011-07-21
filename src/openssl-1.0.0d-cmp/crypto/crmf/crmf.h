@@ -428,41 +428,6 @@ typedef struct crmf_proofofpossesion_st
 } CRMF_PROOFOFPOSSESION;
 DECLARE_ASN1_FUNCTIONS(CRMF_PROOFOFPOSSESION)
 
-typedef struct crmf_attributetypeandvalue_st
-{
-	ASN1_OBJECT *type;
-	union {
-		/* NID_id_regCtrl_regToken */ 
-		ASN1_UTF8STRING *regToken;
-
-		/* NID_id_regCtrl_authenticator */ 
-		ASN1_UTF8STRING *authenticator;
-
-		/* NID_id_regCtrl_pkiPublicationInfo */
-		CRMF_PKIPUBLICATIONINFO *pkiPublicationInfo;
-
-		/* NID_id_regCtrl_pkiArchiveOptions */ 
-		CRMF_PKIARCHIVEOPTIONS *pkiArchiveOptions;
-
-		/* NID_id_regCtrl_oldCertID */
-		CRMF_CERTID     *oldCertId;
-
-		/* NID_id_regCtrl_protocolEncrKey */
-		X509_PUBKEY     *protocolEncrKey;
-
-		/* NID_id_regInfo_utf8Pairs */ 
-		ASN1_UTF8STRING *utf8pairs;
-
-		/* NID_id_regInfo_certReq */ 
-		struct CRMF_CERTREQUEST *certReq;
-
-		ASN1_TYPE *other;
-	} value;
-} CRMF_ATTRIBUTETYPEANDVALUE;
-DECLARE_ASN1_FUNCTIONS(CRMF_ATTRIBUTETYPEANDVALUE)
-DECLARE_STACK_OF(CRMF_ATTRIBUTETYPEANDVALUE)
-CRMF_ATTRIBUTETYPEANDVALUE *CRMF_ATTRIBUTETYPEANDVALUE_dup( CRMF_ATTRIBUTETYPEANDVALUE *atav);
-
 /* XXX looks like x509.h also just uses ASN1_TIME */
 /*
 OptionalValidity ::= SEQUENCE {
@@ -531,6 +496,41 @@ typedef struct crmf_certrequest_st
 } CRMF_CERTREQUEST;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTREQUEST)
 CRMF_CERTREQUEST *CRMF_CERTREQUEST_dup( CRMF_CERTREQUEST *atav);
+
+typedef struct crmf_attributetypeandvalue_st
+{
+	ASN1_OBJECT *type;
+	union {
+		/* NID_id_regCtrl_regToken */ 
+		ASN1_UTF8STRING *regToken;
+
+		/* NID_id_regCtrl_authenticator */ 
+		ASN1_UTF8STRING *authenticator;
+
+		/* NID_id_regCtrl_pkiPublicationInfo */
+		CRMF_PKIPUBLICATIONINFO *pkiPublicationInfo;
+
+		/* NID_id_regCtrl_pkiArchiveOptions */ 
+		CRMF_PKIARCHIVEOPTIONS *pkiArchiveOptions;
+
+		/* NID_id_regCtrl_oldCertID */
+		CRMF_CERTID     *oldCertId;
+
+		/* NID_id_regCtrl_protocolEncrKey */
+		X509_PUBKEY     *protocolEncrKey;
+
+		/* NID_id_regInfo_utf8Pairs */ 
+		ASN1_UTF8STRING *utf8pairs;
+
+		/* NID_id_regInfo_certReq */ 
+		CRMF_CERTREQUEST *certReq;
+
+		ASN1_TYPE *other;
+	} value;
+} CRMF_ATTRIBUTETYPEANDVALUE;
+DECLARE_ASN1_FUNCTIONS(CRMF_ATTRIBUTETYPEANDVALUE)
+DECLARE_STACK_OF(CRMF_ATTRIBUTETYPEANDVALUE)
+CRMF_ATTRIBUTETYPEANDVALUE *CRMF_ATTRIBUTETYPEANDVALUE_dup( CRMF_ATTRIBUTETYPEANDVALUE *atav);
 
 /*
 CertReqMessages ::= SEQUENCE SIZE (1..MAX) OF CertReqMsg

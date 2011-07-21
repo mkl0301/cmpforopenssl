@@ -123,6 +123,30 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
+	/* get the subject_key_id from the certificate to set it later as senderKID */
+	/* XXX this is actually not required by the RFC but CL does like that */
+	/*     Insta also seems to have problems when this is not set! */
+	if( ctx->extCert && (ctx->compatibility == CMP_COMPAT_CRYPTLIB || ctx->compatibility == CMP_COMPAT_INSTA_3_3))
+	{
+		int subjKeyIDLoc;
+		if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->extCert, NID_subject_key_identifier, -1)) != -1) {
+			/* found a subject key ID */
+			ASN1_OCTET_STRING *subjKeyIDStr = NULL;
+			X509_EXTENSION *ex = NULL;
+			const unsigned char *subjKeyIDStrDer = NULL;
+
+			ex=sk_X509_EXTENSION_value( ctx->extCert->cert_info->extensions, subjKeyIDLoc);
+
+			subjKeyIDStrDer = (const unsigned char *) ex->value->data;
+			subjKeyIDStr = d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
+
+			CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
+
+			/* clean up */
+			ASN1_OCTET_STRING_free(subjKeyIDStr);
+		}
+	}
+
 	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
 
 	if (ctx->implicitConfirm)
@@ -130,10 +154,10 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);
 
-	if (ctx->clCert)
-		subject = X509_get_subject_name(ctx->clCert);
-	else if (ctx->extCert)
+	if (ctx->extCert)
 		subject = X509_get_subject_name(ctx->extCert);
+	else if (ctx->clCert)
+		subject = X509_get_subject_name(ctx->clCert);
 	else
 		subject = ctx->subjectName;
 
@@ -197,6 +221,7 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE  *msg=NULL;
 	CRMF_CERTTEMPLATE *certTpl=NULL;
 	X509_NAME *subject=NULL;
+	CMP_REVDETAILS *rd=NULL;
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
@@ -243,7 +268,7 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	certTpl->serialNumber = ASN1_INTEGER_dup(ctx->clCert->cert_info->serialNumber);
 	X509_NAME_set(&certTpl->issuer, ctx->clCert->cert_info->issuer);
 
-	CMP_REVDETAILS *rd = CMP_REVDETAILS_new();
+	rd = CMP_REVDETAILS_new();
 	rd->certDetails = certTpl;
 
 	if( !(msg->body->value.rr = sk_CMP_REVDETAILS_new_null())) goto err;
@@ -533,11 +558,9 @@ err:
 
 /* ############################################################################ */
 /* ############################################################################ */
-CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
+CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid) {
 	CMP_PKIMESSAGE *msg=NULL;
-#if 1
 	CMP_INFOTYPEANDVALUE *itav=NULL;
-#endif
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
@@ -554,7 +577,7 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_GENM);
 
 	itav = CMP_INFOTYPEANDVALUE_new();
-	itav->infoType = OBJ_nid2obj(NID_id_it_preferredSymmAlg);
+	itav->infoType = OBJ_nid2obj(nid);
 	itav->infoValue.ptr = NULL;
 	CMP_PKIMESSAGE_genm_item_push0( msg, itav);
 

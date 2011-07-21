@@ -231,6 +231,7 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	char *srv = NULL, *errormsg = NULL;
 	int derLen = 0;
 	CURLcode res;
+	rdata_t rdata = {0,0};
 
 	if (!curl || !ctx || !msg || !out)
 		goto err;
@@ -259,7 +260,8 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 
 	set_http_path(curl, ctx->serverPath);
 
-	rdata_t rdata = {0,0};
+	// curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&rdata);
 
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, (void*) derMsg);

@@ -161,7 +161,9 @@ ASN1_ADB(CMP_INFOTYPEANDVALUE) = {
 	ADB_ENTRY(NID_id_it_signKeyPairTypes, ASN1_SEQUENCE_OF(CMP_INFOTYPEANDVALUE, infoValue.signKeyPairTypes, X509_ALGOR)),
 	ADB_ENTRY(NID_id_it_encKeyPairTypes,  ASN1_SEQUENCE_OF(CMP_INFOTYPEANDVALUE, infoValue.encKeyPairTypes,  X509_ALGOR)),
 	ADB_ENTRY(NID_id_it_preferredSymmAlg, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.preferredSymmAlg, X509_ALGOR)),
-	ADB_ENTRY(NID_id_it_caKeyUpdateInfo,  ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.caKeyUpdateInfo,  CMP_CAKEYUPDANNCONTENT)),
+	// ADB_ENTRY(NID_id_it_caKeyUpdateInfo,  ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.caKeyUpdateInfo,  CMP_CAKEYUPDANNCONTENT)),
+	/* XXX this is made opt in order to make it possible to request a CKUANN with an      empty caKeyUpdateInfo value */
+	ADB_ENTRY(NID_id_it_caKeyUpdateInfo,  ASN1_OPT(CMP_INFOTYPEANDVALUE,                  infoValue.caKeyUpdateInfo,  CMP_CAKEYUPDANNCONTENT)),
 	/* TODO: NID_id_it_currentCRL - CRL  */
 	ADB_ENTRY(NID_id_it_unsupportedOIDs, ASN1_SEQUENCE_OF(CMP_INFOTYPEANDVALUE, infoValue.unsupportedOIDs, ASN1_OBJECT)),
 	ADB_ENTRY(NID_id_it_keyPairParamReq, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.keyPairParamReq, ASN1_OBJECT)),

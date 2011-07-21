@@ -224,12 +224,6 @@ DECLARE_ASN1_FUNCTIONS(CMP_CAKEYUPDANNCONTENT)
 DECLARE_ASN1_ITEM(ESS_SIGNING_CERT)
 DECLARE_STACK_OF(ESS_SIGNING_CERT)
 
-	/*
-     InfoTypeAndValue ::= SEQUENCE {
-         infoType               OBJECT IDENTIFIER,
-         infoValue              ANY DEFINED BY infoType  OPTIONAL
-     }
-     */
 
 typedef struct cmp_infotypeandvalue_st
 {
@@ -262,7 +256,9 @@ typedef struct cmp_infotypeandvalue_st
 		/* NID_id_it_confirmWaitTime - ConfirmWaitTime  */
 		ASN1_GENERALIZEDTIME *confirmWaitTime;
 		/* NID_id_it_origPKIMessage - origPKIMessage  */
-		struct CMP_PKIMESSAGE *origPKIMessage;
+
+		// CMP_PKIMESSAGE *origPKIMessage;
+		struct cmp_pkiheader_st *origPKIMessage;
 
 		/* NID_id_smime_aa_signingCertificate */
 		STACK_OF(ESS_SIGNING_CERT) *signingCertificate; 
@@ -711,6 +707,99 @@ TODO: A LOT
          pollRep  [26] PollRepContent          --Polling response
 */
 
+#if 0
+XXX this does not work
+typedef ASN1_OCTET_STRING XXX_KEYIDENTIFIER;
+DECLARE_ASN1_FUNCTIONS(XXX_KEYIDENTIFIER)
+#endif
+
+/*
+
+     PKIProtection ::= BIT STRING
+
+     PKIMessages ::= SEQUENCE SIZE (1..MAX) OF PKIMessage
+
+      PKIMessage ::= SEQUENCE {
+         header           PKIHeader,
+         body             PKIBody,
+         protection   [0] PKIProtection OPTIONAL,
+         extraCerts   [1] SEQUENCE SIZE (1..MAX) OF CMPCertificate
+                          OPTIONAL
+     }
+
+*/
+
+#if 0
+XXX this does not work
+typedef ASN1_BIT_STRING CMP_PKIPROTECTION;
+DECLARE_ASN1_FUNCTIONS(CMP_PKIPROTECTION)
+#endif
+
+/*
+     PKIHeader ::= SEQUENCE {
+         pvno                INTEGER     { cmp1999(1), cmp2000(2) },
+         sender              GeneralName,
+         -- identifies the sender
+         recipient           GeneralName,
+         -- identifies the intended recipient
+         messageTime     [0] GeneralizedTime         OPTIONAL,
+         -- time of production of this message (used when sender
+         -- believes that the transport will be "suitable"; i.e.,
+         -- that the time will still be meaningful upon receipt)
+         protectionAlg   [1] AlgorithmIdentifier     OPTIONAL,
+         -- algorithm used for calculation of protection bits
+         senderKID       [2] KeyIdentifier           OPTIONAL,
+         recipKID        [3] KeyIdentifier           OPTIONAL,
+         -- to identify specific keys used for protection
+         transactionID   [4] OCTET STRING            OPTIONAL,
+         -- identifies the transaction; i.e., this will be the same in
+         -- corresponding request, response, certConf, and PKIConf
+         -- messages
+         senderNonce     [5] OCTET STRING            OPTIONAL,
+         recipNonce      [6] OCTET STRING            OPTIONAL,
+         -- nonces used to provide replay protection, senderNonce
+         -- is inserted by the creator of this message; recipNonce
+         -- is a nonce previously inserted in a related message by
+         -- the intended recipient of this message
+         freeText        [7] PKIFreeText             OPTIONAL,
+         -- this may be used to indicate context-specific instructions
+         -- (this field is intended for human consumption)
+         generalInfo     [8] SEQUENCE SIZE (1..MAX) OF
+                                InfoTypeAndValue     OPTIONAL
+         -- this may be used to convey context-specific information
+         -- (this field not primarily intended for human consumption)
+     }
+*/
+
+
+typedef struct cmp_pkiheader_st
+{
+	ASN1_INTEGER                  *pvno;
+	GENERAL_NAME                  *sender;
+	GENERAL_NAME                  *recipient;
+	ASN1_GENERALIZEDTIME          *messageTime;    /* 0 */
+	X509_ALGOR                    *protectionAlg;  /* 1 */
+	ASN1_OCTET_STRING             *senderKID;      /* 2 */
+	ASN1_OCTET_STRING             *recipKID;       /* 3 */
+	ASN1_OCTET_STRING             *transactionID;  /* 4 */
+	ASN1_OCTET_STRING             *senderNonce;    /* 5 */
+	ASN1_OCTET_STRING             *recipNonce;     /* 6 */
+	/* XXX is this right? */
+#if 0
+	CMP_PKIFREETEXT               *freeText;       /* 7 */
+#endif
+	STACK_OF(ASN1_UTF8STRING)               *freeText;       /* 7 */
+	STACK_OF(CMP_INFOTYPEANDVALUE) *generalInfo;    /* 8 */
+} CMP_PKIHEADER;
+DECLARE_ASN1_FUNCTIONS(CMP_PKIHEADER)
+
+	/*
+     InfoTypeAndValue ::= SEQUENCE {
+         infoType               OBJECT IDENTIFIER,
+         infoValue              ANY DEFINED BY infoType  OPTIONAL
+     }
+     */
+
 #define V_CMP_PKIBODY_IR	0
 #define V_CMP_PKIBODY_IP	1
 #define V_CMP_PKIBODY_CR	2
@@ -814,106 +903,6 @@ ASN1_INTEGER *pollRep; /* 26 */
 } CMP_PKIBODY;
 DECLARE_ASN1_FUNCTIONS(CMP_PKIBODY)
 
-
-/*
-     PKIHeader ::= SEQUENCE {
-         pvno                INTEGER     { cmp1999(1), cmp2000(2) },
-         sender              GeneralName,
-         -- identifies the sender
-         recipient           GeneralName,
-         -- identifies the intended recipient
-         messageTime     [0] GeneralizedTime         OPTIONAL,
-         -- time of production of this message (used when sender
-         -- believes that the transport will be "suitable"; i.e.,
-         -- that the time will still be meaningful upon receipt)
-         protectionAlg   [1] AlgorithmIdentifier     OPTIONAL,
-         -- algorithm used for calculation of protection bits
-         senderKID       [2] KeyIdentifier           OPTIONAL,
-         recipKID        [3] KeyIdentifier           OPTIONAL,
-         -- to identify specific keys used for protection
-         transactionID   [4] OCTET STRING            OPTIONAL,
-         -- identifies the transaction; i.e., this will be the same in
-         -- corresponding request, response, certConf, and PKIConf
-         -- messages
-         senderNonce     [5] OCTET STRING            OPTIONAL,
-         recipNonce      [6] OCTET STRING            OPTIONAL,
-         -- nonces used to provide replay protection, senderNonce
-         -- is inserted by the creator of this message; recipNonce
-         -- is a nonce previously inserted in a related message by
-         -- the intended recipient of this message
-         freeText        [7] PKIFreeText             OPTIONAL,
-         -- this may be used to indicate context-specific instructions
-         -- (this field is intended for human consumption)
-         generalInfo     [8] SEQUENCE SIZE (1..MAX) OF
-                                InfoTypeAndValue     OPTIONAL
-         -- this may be used to convey context-specific information
-         -- (this field not primarily intended for human consumption)
-     }
-*/
-
-#if 0
-XXX this does not work
-typedef ASN1_OCTET_STRING XXX_KEYIDENTIFIER;
-DECLARE_ASN1_FUNCTIONS(XXX_KEYIDENTIFIER)
-#endif
-
-typedef struct cmp_pkiheader_st
-{
-	ASN1_INTEGER                  *pvno;
-	GENERAL_NAME                  *sender;
-	GENERAL_NAME                  *recipient;
-	ASN1_GENERALIZEDTIME          *messageTime;    /* 0 */
-	X509_ALGOR                    *protectionAlg;  /* 1 */
-	ASN1_OCTET_STRING             *senderKID;      /* 2 */
-	ASN1_OCTET_STRING             *recipKID;       /* 3 */
-	ASN1_OCTET_STRING             *transactionID;  /* 4 */
-	ASN1_OCTET_STRING             *senderNonce;    /* 5 */
-	ASN1_OCTET_STRING             *recipNonce;     /* 6 */
-	/* XXX is this right? */
-#if 0
-	CMP_PKIFREETEXT               *freeText;       /* 7 */
-#endif
-	STACK_OF(ASN1_UTF8STRING)               *freeText;       /* 7 */
-	STACK_OF(CMP_INFOTYPEANDVALUE) *generalInfo;    /* 8 */
-} CMP_PKIHEADER;
-DECLARE_ASN1_FUNCTIONS(CMP_PKIHEADER)
-
-/*
-     ProtectedPart ::= SEQUENCE {
-         header    PKIHeader,
-         body      PKIBody
-     }
-     */
-typedef struct cmp_protectedpart_st
-{
-	CMP_PKIHEADER                *header;
-	CMP_PKIBODY                  *body;
-} CMP_PROTECTEDPART;
-DECLARE_ASN1_FUNCTIONS(CMP_PROTECTEDPART)
-
-
-/*
-
-     PKIProtection ::= BIT STRING
-
-     PKIMessages ::= SEQUENCE SIZE (1..MAX) OF PKIMessage
-
-      PKIMessage ::= SEQUENCE {
-         header           PKIHeader,
-         body             PKIBody,
-         protection   [0] PKIProtection OPTIONAL,
-         extraCerts   [1] SEQUENCE SIZE (1..MAX) OF CMPCertificate
-                          OPTIONAL
-     }
-
-*/
-
-#if 0
-XXX this does not work
-typedef ASN1_BIT_STRING CMP_PKIPROTECTION;
-DECLARE_ASN1_FUNCTIONS(CMP_PKIPROTECTION)
-#endif
-
 typedef struct cmp_pkimessage_st
 {
 	CMP_PKIHEADER                *header;
@@ -929,6 +918,18 @@ DECLARE_STACK_OF(CMP_PKIMESSAGE) /* PKIMessages */
 typedef STACK_OF(CMP_PKIMESSAGE) CMP_PKIMESSAGES;
 
 
+/*
+     ProtectedPart ::= SEQUENCE {
+         header    PKIHeader,
+         body      PKIBody
+     }
+     */
+typedef struct cmp_protectedpart_st
+{
+	CMP_PKIHEADER                *header;
+	CMP_PKIBODY                  *body;
+} CMP_PROTECTEDPART;
+DECLARE_ASN1_FUNCTIONS(CMP_PROTECTEDPART)
 
 
 /*
@@ -1295,7 +1296,7 @@ CMP_PKIMESSAGE *CMP_cr_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_rr_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_certConf_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_kur_new( CMP_CTX *ctx);
-CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx);
+CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid);
 #if 0
 CMP_PKIMESSAGE *CMP_ckuann_new( CMP_CTX *ctx);
 #endif
@@ -1431,6 +1432,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx);
+CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx);
 
 /* from cmp_ctx.c */
 int CMP_CTX_init( CMP_CTX *ctx);

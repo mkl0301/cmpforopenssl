@@ -594,6 +594,86 @@ err:
 
 /* ############################################################################ */
 /* ############################################################################ */
+CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
+{
+	CMP_PKIMESSAGE *genm=NULL;
+	CMP_PKIMESSAGE *genp=NULL;
+	CMP_INFOTYPEANDVALUE *itav=NULL;
+	CMP_CAKEYUPDANNCONTENT *cku=NULL;
+
+	/* check if all necessary options are set */
+	if (!cbio) goto err;
+	if (!ctx) goto err;
+	if (!ctx->caCert) goto err;
+	if (!ctx->referenceValue) goto err;
+	if (!ctx->secretValue) goto err;
+
+	/* set the protection Algor which will be used during the whole session */
+	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
+
+	/* crate GenMsgContent - genm*/
+	if (! (genm = CMP_genm_new(ctx, NID_id_it_caKeyUpdateInfo))) goto err;
+
+	CMP_printf( ctx, "INFO: Sending General Message");
+	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		goto err;
+	}
+
+	if (CMP_protection_verify( genp, ctx->protectionAlgor, NULL, ctx->secretValue))
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
+	else {
+		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
+
+	/* make sure the received messagetype indicates an GENP message */
+	if (CMP_PKIMESSAGE_get_bodytype(genp) != V_CMP_PKIBODY_GENP) {
+		STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(genp->body->value.ip, 0);
+		ASN1_UTF8STRING *status = NULL;
+
+		char errmsg[256];
+		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_PKIBODY_ERROR);
+		ERR_add_error_data(1, PKIError_data(genp, errmsg, sizeof(errmsg)));
+
+
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+		while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
+			ERR_add_error_data(3, "statusString=\"", status->data, "\"");
+		goto err;
+	}
+
+
+	itav = sk_CMP_INFOTYPEANDVALUE_value( genp->body->value.genp, 0);
+	cku = itav->infoValue.caKeyUpdateInfo;
+
+	CMP_printf( ctx, "INFO: Attempting to verify received ckuann certificates.");
+	printf("%08x\n", cku->newWithNew->cert_info->key);
+	printf("%08x\n", cku->newWithNew->cert_info->key->public_key);
+	
+	/*
+	EVP_PKEY *newpk = cku->newWithNew->cert_info->key->pkey;
+	EVP_PKEY *oldpk = cku->oldWithNew->cert_info->key->pkey;
+	printf("oldWithNew: %d\n", X509_verify(cku->oldWithNew, newpk));
+	printf("newWithold: %d\n", X509_verify(cku->newWithOld, oldpk));
+	*/
+
+	return itav->infoValue.caKeyUpdateInfo;
+err:
+	CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_CMPERROR);
+
+	if (genm) CMP_PKIMESSAGE_free(genm);
+	if (genp) CMP_PKIMESSAGE_free(genp);
+
+	/* print out openssl and cmp errors to error_cb if it's set */
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+
+	return 0;
+}
+
+
+/* ############################################################################ */
+/* ############################################################################ */
 int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *genm=NULL;
 	CMP_PKIMESSAGE *genp=NULL;
@@ -609,7 +689,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
 
 	/* crate GenMsgContent - genm*/
-	if (! (genm = CMP_genm_new(ctx))) goto err;
+	if (! (genm = CMP_genm_new(ctx, 0))) goto err;
 
 	CMP_printf( ctx, "INFO: Sending General Message");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {

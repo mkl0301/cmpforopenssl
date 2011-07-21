@@ -399,7 +399,7 @@ int CRMF_CERTREQMSG_set1_regInfo_certReq( CRMF_CERTREQMSG *msg, CRMF_CERTREQUEST
 	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())) goto err;
 
 	atav->type = OBJ_nid2obj(NID_id_regInfo_certReq);
-	atav->value.certReq = (struct CRMF_CERTREQUEST*) certReqDup;
+	atav->value.certReq = (CRMF_CERTREQUEST*) certReqDup;
 	certReqDup = NULL;
 
 	if( !CRMF_CERTREQMSG_push0_regInfo( msg, atav)) goto err;
