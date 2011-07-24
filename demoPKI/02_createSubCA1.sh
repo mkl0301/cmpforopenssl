@@ -1,14 +1,13 @@
-#!/bin/sh
+#!/bin/sh -x
 
 OSSL=../src/openssl/apps/openssl
-export OPENSSL_CONF=openssl.rootCA.cnf
+OPENSSL_CONF=openssl.rootCA.cnf
 
-ENTITY=rootCA
+ENTITY=subCA1
 
 CATOP=$ENTITY
-
 # create directory structure for CA
-mkdir -p $CATOP
+mkdir -p ${CATOP}
 mkdir -p ${CATOP}/certs
 mkdir -p ${CATOP}/crl
 mkdir -p ${CATOP}/newcerts
@@ -25,6 +24,6 @@ CSR=${CATOP}/request.${ENTITY}.csr
 CAKEY=rootCA/private/privkey.rootCA.pem
 
 $OSSL req -new -config $OPENSSL_CONF -keyout $KEY -out $CSR
-$OSSL ca  -config $OPENSSL_CONF -create_serial -out $CRT -days 3650 -batch -keyfile $CAKEY -selfsign -extensions v3_ca -infiles $CSR
+$OSSL ca  -config $OPENSSL_CONF -out $CRT -batch -keyfile $CAKEY -extensions v3_ca -infiles $CSR
 
 # vi: ts=8 noexpandtab tw=0
