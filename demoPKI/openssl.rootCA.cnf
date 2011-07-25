@@ -27,6 +27,14 @@ oid_section		= new_oids
 # Or use config file substitution like this:
 # testoid2=${testoid1}.5.6
 
+# XXX those OIDs are only good for informal testing
+# TODO get registered OIDs for testing
+
+ca_oid		= 1.1
+subca_oid	= ${ca_oid}.1
+ra_oid		= ${ca_oid}.2
+ee_oid		= ${ca_oid}.3
+
 
 ####################################################################
 [ ca ]
@@ -39,7 +47,7 @@ dir		= ./rootCA		# Where everything is kept
 certs		= $dir/certs		# Where the issued certs are kept
 crl_dir		= $dir/crl		# Where the issued crl are kept
 database	= $dir/index.txt	# database index file.
-#unique_subject	= no			# Set to 'no' to allow creation of
+unique_subject	= no			# Set to 'no' to allow creation of
 					# several ctificates with same subject.
 new_certs_dir	= $dir/newcerts		# default place for new certs.
 
@@ -83,6 +91,7 @@ policy		= policy_anything
 countryName		= optional
 organizationName	= optional
 organizationalUnitName	= optional
+localityName		= optional
 commonName		= supplied
 
 ####################################################################
@@ -137,6 +146,8 @@ basicConstraints=CA:FALSE
 # PKIX recommendations harmless if included in all certificates.
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid:always,issuer:always
+certificatePolicies             = critical,ee_oid
+
 
 
 [ v3_req ]
@@ -157,6 +168,24 @@ authorityKeyIdentifier=keyid:always,issuer:always
 #basicConstraints = critical,CA:true
 # So we do this instead.
 basicConstraints = CA:true
+
+certificatePolicies             = critical,ca_oid
+
+
+
+[ v3_subca ]
+# Extensions for a typical CA
+
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid:always,issuer:always
+
+# This is what PKIX recommends but some broken software chokes on critical
+# extensions.
+#basicConstraints = critical,CA:true
+# So we do this instead.
+basicConstraints = CA:true
+
+certificatePolicies             = critical,subca_oid
 
 # Key usage: this is typical for a CA certificate. However since it will
 # prevent it being used as an test self-signed certificate it is best
