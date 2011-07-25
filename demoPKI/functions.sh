@@ -20,6 +20,7 @@ function createCaDirStructure() {
   mkdir -p ${CATOP}/private
   # initialize needed CA "database" files 
   touch ${CATOP}/index.txt
+  touch ${CATOP}/index.txt.attr
   echo '01' > ${CATOP}/serial
   echo '01' > ${CATOP}/crlnumber
 }
