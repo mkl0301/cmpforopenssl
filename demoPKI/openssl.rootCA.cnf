@@ -172,6 +172,21 @@ basicConstraints = CA:true
 certificatePolicies             = critical,ca_oid
 
 
+[ v3_ra ]
+# Extensions for a typical CA
+
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid:always,issuer:always
+
+# This is what PKIX recommends but some broken software chokes on critical
+# extensions.
+#basicConstraints = critical,CA:true
+# So we do this instead.
+basicConstraints = CA:false
+
+certificatePolicies             = critical,ra_oid
+
+
 
 [ v3_subca ]
 # Extensions for a typical CA
