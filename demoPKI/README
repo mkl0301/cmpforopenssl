@@ -75,14 +75,43 @@ Sub CA 2
 Sub CA 2.1 EEs
 ####################
 
+################################################################################
+Verification
+################################################################################
+
+OpenSSL verify needs to have all the intermediate certificates up to the 
+self-signed trust anchor in one single file.  After having all the certificates
+generated, the easiest way to create that file is doing:
+
+$ find . -name cert.sub*.pem -exec cat {} \; > untrusted.txt
+
+
+Now, the certificates can be verified by e.g. doing:
+
+$ openssl verify -CAfile ./rootCA/cert.rootCA.pem \
+                 -untrusted ./untrusted.txt \
+                 ./sub1.1EEs/cert.sub1.1EE1.pem
 
 ################################################################################
 Files in this directory
 ################################################################################
-01_createRootCA.sh  -  script to create Root CA
-02_createSubCA1.sh  -  script to create Sub CA 1
-openssl.rootCA.cnf  -  OpenSSL configuration file for Root CA
-README              -  this file
+01_createRootCA.sh   -  script to create Root CA
+02_createSubCA1.sh   -  script to create Sub CA 1
+03_createSubCA2.sh   -  script to create Sub CA 2
+04_createRootRA.sh   -  script to create Root RA certificate
+05_createRootEE.sh   -  script to create Root CA EEs, takes a number as option
+06_createSubCA1.1.sh -  script to create Sub CA 1.1
+07_createSubCA1.1EE.sh -  script to create Sub CA 1.1 EEs, takes a number as option
+08_createSubCA2EE.sh -  script to create Sub CA 2 EEs, takes a number as option
+functions.sh         -  comon Shell script functions for the creation scripts
+openssl.rootCA.cnf   -  OpenSSL configuration file for Root CA
+openssl.subCA1.1.cnf -  OpenSSL configuration file for Sub CA 1.1
+openssl.subCA1.cnf   -  OpenSSL configuration file for Sub CA 1
+openssl.subCA2.cnf   -  OpenSSL configuration file for Sub CA 2
+README               -  this file
+untrusted.txt        -  if generate as explained in "Verification" above,
+                        contains all the intermediate certificates
+                        (Sub CA X certificates)
 
 
 ################################################################################
@@ -90,4 +119,4 @@ References
 ################################################################################
 [RFC 3280] http://tools.ietf.org/html/rfc3280
 
-vi: tw=80
+# vi: tw=80
