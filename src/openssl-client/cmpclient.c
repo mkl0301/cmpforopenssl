@@ -198,7 +198,7 @@ void printUsage( const char* cmdName) {
   printf("                       this is overwritten at KUR\n");
 /* XXX TODO: the following should be added */
 #if 0
-  printf(" --keypass PASSWORD    password of the client's new private key given in --newkey\n");
+  printf(" --newkeypass PASSWORD    password of the client's new private key given in --newkey\n");
 #endif
   printf(" --extracert FILE      certificate that will be added to the extraCerts field\n");
   printf("                       when sending any PKIMessage. can be given multiple times\n");
