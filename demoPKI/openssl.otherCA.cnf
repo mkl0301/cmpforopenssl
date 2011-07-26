@@ -43,7 +43,7 @@ default_ca	= CA_default		# The default ca section
 ####################################################################
 [ CA_default ]
 
-dir		= ./rootCA		# Where everything is kept
+dir		= ./otherCA		# Where everything is kept
 certs		= $dir/certs		# Where the issued certs are kept
 crl_dir		= $dir/crl		# Where the issued crl are kept
 database	= $dir/index.txt	# database index file.
@@ -51,12 +51,12 @@ unique_subject	= no			# Set to 'no' to allow creation of
 					# several ctificates with same subject.
 new_certs_dir	= $dir/newcerts		# default place for new certs.
 
-certificate	= $dir/cert.rootCA.pem 	# The CA certificate
+certificate	= $dir/cert.otherCA.pem 	# The CA certificate
 serial		= $dir/serial 		# The current serial number
 crlnumber	= $dir/crlnumber	# the current crl number
 					# must be commented out to leave a V1 CRL
 crl		= $dir/crl.pem 		# The current CRL
-private_key	= $dir/private/privkey.rootCA.pem # The private key
+private_key	= $dir/private/privkey.otherCA.pem # The private key
 RANDFILE	= $dir/private/.rand	# private random number file
 
 x509_extensions	= usr_cert		# The extentions to add to the cert
@@ -113,22 +113,19 @@ string_mask = utf8only
 
 [ req_distinguished_name ]
 countryName			= Country Name (2 letter code)
-countryName_default		= FI
+countryName_default		= PW
 countryName_min			= 2
 countryName_max			= 2
 
-localityName			= Locality Name (eg, city)
-localityName_default		= Espoo
-
 0.organizationName		= Organization Name (eg, company)
-0.organizationName_default	= NSN
+0.organizationName_default	= BeachTel
 
 # we can do this but it is not needed normally :-)
 #1.organizationName		= Second Organization Name (eg, company)
 #1.organizationName_default	= World Wide Web Pty Ltd
 
 organizationalUnitName		= Organizational Unit Name (eg, section)
-organizationalUnitName_default	= CTO
+organizationalUnitName_default	= Services
 
 commonName			= Common Name (eg, YOUR name)
 commonName_max			= 64

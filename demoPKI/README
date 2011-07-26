@@ -14,26 +14,28 @@ The test hierarchy enables to test the correct functionality of
 Hierarchy Structure
 ################################################################################
 
-          +----------+                              +-----+
-          | Root CA  |<---------------------------->| EEs |
-          +----------+                              +-----+
-            ^   ^   ^
-            |   |   |                        +---------+
-            |   |   +----------------------->| Root RA |
-            |   |                            +---------+
+        +---+      +-------------X-Certification----------+       +---+
+        |   v      |                                      v       v   |
+        | +----------+          +-----+                  +----------+ |
+        +-| Root CA  |--------->| EEs |                  | Other CA |-+
+          +----------+          +-----+                  +----------+
+            |   |   |                                            v      +-----+
+            |   |   |                +---------+                 +----->| EEs |
+            |   |   +--------------->| Root RA |                        +-----+
+            |   |                    +---------+         
             |   |                          
             |   +----------------------+
             |                          |
             v                          v
           +----------+             +----------+     +-----+
-          | Sub CA 1 |             | Sub CA 2 |<--->| EEs |
+          | Sub CA 1 |             | Sub CA 2 |---->| EEs |
           +----------+             +----------+     +-----+
-            ^
+            |
             |
             |
             v
           +------------+     +-----+
-          | Sub CA 1.1 |<--->| EEs |
+          | Sub CA 1.1 |---->| EEs |
           +------------+     +-----+
 
 ################################################################################
@@ -103,7 +105,11 @@ Files in this directory
 06_createSubCA1.1.sh -  script to create Sub CA 1.1
 07_createSubCA1.1EE.sh -  script to create Sub CA 1.1 EEs, takes a number as option
 08_createSubCA2EE.sh -  script to create Sub CA 2 EEs, takes a number as option
+09_createOtherCA.sh  -  script to create Other CA
+10_createOtherEE.sh  -  script to create Other CA EEs, takes a number as option
+11_crossCertificate.sh -  script to sign Other CA's public key by Root CA
 functions.sh         -  comon Shell script functions for the creation scripts
+openssl.otherCA.cnf  -  OpenSSL configuration file for Other CA
 openssl.rootCA.cnf   -  OpenSSL configuration file for Root CA
 openssl.subCA1.1.cnf -  OpenSSL configuration file for Sub CA 1.1
 openssl.subCA1.cnf   -  OpenSSL configuration file for Sub CA 1
