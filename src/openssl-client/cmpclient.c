@@ -837,10 +837,6 @@ void parseCLA( int argc, char **argv) {
     printUsage( argv[0]);
   }
 
-  if (!opt_clKeyPass) {
-    printf("WARNING: no key password given, using \"password\"");
-  }
-
   if (!opt_sequenceSet) {
     printf("ERROR: supply a CMD\n");
     printUsage( argv[0]);
@@ -856,7 +852,7 @@ void parseCLA( int argc, char **argv) {
   if( opt_doIr) {
     /* for IR, a mean for signing the CMP message has to be supplied */
     /* TODO ? in case both would be given, the user/password will be preferred */
-    if (!(opt_user && opt_password) || (opt_clCertFile && opt_clKeyFile && opt_clKeyPass)) {
+    if (!((opt_user && opt_password) || (opt_clCertFile && opt_clKeyFile && opt_clKeyPass))) {
       printf("ERROR: giving user/password or clcert/key/keypass CLI option is mandatory for IR\n\n");
       printUsage( argv[0]);
     }
