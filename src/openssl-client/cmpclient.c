@@ -158,6 +158,10 @@ void printUsage( const char* cmdName) {
   printf("The OPTIONAL COMMON OPTIONS may to be set:\n");
   printf(" --engine ENGINE    the OpenSSL engine\n");
   printf(" --capubs DIRECTORY the directory where received CA certificates will be saved\n");
+/*  XXX TODO: the following should be added */
+#if 0
+  printf(" --extraCerts DIRECTORY the directory where received certificates in the extraCerts field will be saved\n");
+#endif
   printf("\n");
   printf("One of the following can be used as CMD:\n");
   printf(" --ir   do initial certificate request sequence\n");
@@ -169,27 +173,39 @@ void printUsage( const char* cmdName) {
   printf("The following OPTIONS have to be set when needed by CMD:\n");
   printf(" --user USER           the user (reference) for an IR message\n");
   printf(" --password PASSWORD   the password (secret) for an IR message\n");
+/* XXX TODO: that should always be given in --clcert also for E.7 - this options should be removed*/
   printf(" --extcert FILE        location of another certificate to be used\n");
   printf("                       for initialization (if this is set, password is ignored)\n");
   printf(" --hex                 user and password are HEX, not ASCII\n");
+/* XXX TODO: OpenSSL commonly seems to use "/" as delimiter */
   printf(" --subject NAME        X509 subject name for the certificate Template\n");
   printf("                       example: CN=MyName\n");
+/* XXX TODO: OpenSSL commonly seems to use "/" as delimiter */
   printf(" --recipient NAME      X509 name of the recipient. Can be used for the IR\n");
   printf("                       if the client doesn't have the CA's certificate yet.\n");
+/* XXX TODO: that should always be used as Input and never overwritten */
   printf(" --clcert FILE         location of the client's certificate\n");
   printf("                       this is overwritten at IR\n");
+/* XXX TODO: that should always be the destination of the new cert and always overwritten if a new cert is received */
   printf(" --newclcert FILE      location of the client's new certificate\n");
   printf("                       this is overwritten at KUR\n");
+/* XXX TODO: that should always be the private key for the --clcert and never overwritten*/
   printf(" --key FILE            location of the client's private key\n");
   printf("                       this is overwritten at IR\n");
-  printf(" --keypass PASSWORD    password of the client's private key\n");
+  printf(" --keypass PASSWORD    password of the client's private key given in --key\n");
+/* XXX TODO: that should always be the private key for the new certificate and only created if it hasn't existed before - never overwritten */
   printf(" --newkey FILE         location of the client's new private key\n");
   printf("                       this is overwritten at KUR\n");
+/* XXX TODO: the following should be added */
+#if 0
+  printf(" --keypass PASSWORD    password of the client's new private key given in --newkey\n");
+#endif
   printf(" --extracert FILE      certificate that will be added to the extraCerts field\n");
   printf("                       when sending any PKIMessage. can be given multiple times\n");
   printf("                       in order to specify several certificates.\n");
   printf("\n");
   printf("Other options are:\n");
+/* XXX TODO: the compatibility options should be removed and replaced with fine-granular options */
   printf(" --cryptlib    be compatible to Cryptlib\n");
 #ifdef SUPPORT_OLD_INSTA
   printf(" --insta       be compatible to Insta Certifier < 3.3\n");
