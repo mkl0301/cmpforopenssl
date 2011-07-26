@@ -121,20 +121,16 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* check if all necessary options are set */
 	if (!cbio) goto err;
 	if (!ctx) goto err;
-	if (!ctx->referenceValue) goto err;
-	/* for authentication we need either a password or factory and ca certificates */
-	if (!ctx->secretValue && (!ctx->extCert || !ctx->caCert)) goto err;
-	if (!ctx->pkey) goto err;
-
-	/* this can not have been set here */
-	if (ctx->clCert) goto err;
+	/* for authentication we need either reference/secret or external identity certificate and private key */
+	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
+	if (!ctx->newPkey) goto err;
 
 	/* set the protection Algor which will be used during the whole session */
-	/* if extCert is set, try to use that for authentication (appendix E.7) instead of PBMAC */
-	if (ctx->extCert) {
+	/* E.7: if clCert is set, use that for signing instead of PBMAC */
+	if (! ctx->clCert)
+		CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
+	else 
 		if (!CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG)) goto err;
-	}
-	else if (!CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC)) goto err;
 
 	/* create Initialization Request - ir */
 	if (! (ir = CMP_ir_new(ctx))) goto err;
@@ -402,10 +398,12 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			break;
 	}
 
+#if 0 /* those can only come in an IR --> 5.3.2 */
 	/* if the CA returned certificates in the caPubs field, copy them
 	 * to the context so that they can be retrieved if necessary */
 	if (cp->body->value.cp->caPubs)
 		CMP_CTX_set1_caPubs(ctx, cp->body->value.cp->caPubs);
+#endif /* 0 */
 
 	/* copy any received extraCerts to context->caExtraCerts so
 	 * they can also be retrieved */
@@ -533,10 +531,12 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			break;
 	}
 
+#if 0 /* those can only come in an IR --> 5.3.2 */
 	/* if the CA returned certificates in the caPubs field, copy them
 	 * to the context so that they can be retrieved if necessary */
 	if (kup->body->value.kup->caPubs)
 		CMP_CTX_set1_caPubs(ctx, kup->body->value.kup->caPubs);
+#endif /* 0 */
 
 	/* copy any received extraCerts to context->caExtraCerts so
 	 * they can also be retrieved */
@@ -593,6 +593,7 @@ err:
 }
 
 /* ############################################################################ */
+/* TODO: make me more general --> sending of General Message */
 /* ############################################################################ */
 CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
 {

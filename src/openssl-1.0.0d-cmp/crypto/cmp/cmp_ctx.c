@@ -523,27 +523,6 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
-int CMP_CTX_set1_extCert( CMP_CTX *ctx, const X509 *cert) {
-	if (!ctx) goto err;
-
-	if (!cert) {
-		ctx->extCert = NULL;
-		return 1;
-	}
-
-	if (ctx->clCert) {
-		X509_free(ctx->extCert);
-		ctx->extCert = NULL;
-	}
-
-	if (!(ctx->extCert = X509_dup( (X509*)cert))) goto err;
-	return 1;
-err:
-	CMPerr(CMP_F_CMP_CTX_SET1_CLCERT, CMP_R_CMPERROR);
-	return 0;
-}
 
 /* ################################################################ */
 /* ################################################################ */
@@ -793,11 +772,9 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algID) {
 			nid = NID_id_PasswordBasedMAC;
 			break;
 		case CMP_ALG_SIG: {
-			X509 *cert=NULL;
 			/* first try to set algorithm based on the algorithm 
 			 * used in the certificate, if we already have one */
-			cert = ctx->clCert ? ctx->clCert : ctx->extCert;
-			if (cert && (ctx->protectionAlgor = cert->sig_alg) != NULL)
+			if (ctx->clCert && (ctx->protectionAlgor = ctx->clCert->sig_alg) != NULL)
 				return 1;
 
 			if (!ctx->pkey) goto err;

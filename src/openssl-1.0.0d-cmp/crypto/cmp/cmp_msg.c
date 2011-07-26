@@ -117,25 +117,27 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 #if 0
 	if (!ctx->caCert) goto err;
 #endif
-	if (!ctx->referenceValue) goto err;
-	if (!ctx->secretValue) goto err;
-	if (!ctx->pkey) goto err;
+	/* for authentication we need either a reference value/secret or external identity certificate and private key */
+	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
+	if (!ctx->newPkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	/* get the subject_key_id from the certificate to set it later as senderKID */
-	/* XXX this is actually not required by the RFC but CL does like that */
-	/*     Insta also seems to have problems when this is not set! */
-	if( ctx->extCert && (ctx->compatibility == CMP_COMPAT_CRYPTLIB || ctx->compatibility == CMP_COMPAT_INSTA_3_3))
+	/* E.7: get the subject_key_id from the external identity certificate to set it later as senderKID */
+	/* this actually seems to be explicity required not to be done by RFC 4210 (E.7, end of page 81)
+	 * HOWEVER, it seems as if the RFC is wrong here and it confuses the different
+   * use cases of the senderKID field (referenceNUM vs. Key Identifier) */
+  /* TODO: make this generic and bring it close together with CMP_protection_new() */
+	if(ctx->clCert)
 	{
 		int subjKeyIDLoc;
-		if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->extCert, NID_subject_key_identifier, -1)) != -1) {
+		if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->clCert, NID_subject_key_identifier, -1)) != -1) {
 			/* found a subject key ID */
 			ASN1_OCTET_STRING *subjKeyIDStr = NULL;
 			X509_EXTENSION *ex = NULL;
 			const unsigned char *subjKeyIDStrDer = NULL;
 
-			ex=sk_X509_EXTENSION_value( ctx->extCert->cert_info->extensions, subjKeyIDLoc);
+			ex=sk_X509_EXTENSION_value( ctx->clCert->cert_info->extensions, subjKeyIDLoc);
 
 			subjKeyIDStrDer = (const unsigned char *) ex->value->data;
 			subjKeyIDStr = d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
@@ -154,9 +156,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);
 
-	if (ctx->extCert)
-		subject = X509_get_subject_name(ctx->extCert);
-	else if (ctx->clCert)
+	if (ctx->clCert) /* E.7 */
 		subject = X509_get_subject_name(ctx->clCert);
 	else
 		subject = ctx->subjectName;
@@ -178,17 +178,18 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 		add_altname_extensions(&extensions, ctx->subjectAltNames);
 
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility, ctx->popoMethod, extensions))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->compatibility, ctx->popoMethod, extensions))) goto err;
 
 	if (extensions) sk_X509_EXTENSION_pop_free(extensions, X509_EXTENSION_free);
 
 	if( !(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.ir, certReq0);
 
-	/* if we have external cert, try to initialize with that. */
-	if (ctx->extCert) {
+  /* TODO: combine the following two blocks for adding extraCerts */
+	/* E.7: if we have external identity cert add to extraCerts */
+	if (ctx->clCert) {
 		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
-		sk_X509_push(msg->extraCerts, ctx->extCert);
+		sk_X509_push(msg->extraCerts, ctx->clCert);
 	}
 
 	/* add any extraCerts that are set in the context */
@@ -203,7 +204,8 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
 
-	/* XXX - should this be done somewhere else? */
+	/* TODO: make a generic function to create msg protection and set this, do
+   * this for all message types */
 	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
 
 	return msg;
@@ -349,6 +351,7 @@ err:
 
 
 /* ############################################################################ */
+/* TODO: KUR can actually also be done with MSG_MAC_ALG, check D.6, 2 */
 /* ############################################################################ */
 CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *msg=NULL;
@@ -364,9 +367,9 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
 	/* get the subject_key_id from the certificate to set it later as senderKID */
-	/* XXX this is actually not required by the RFC but CL does like that */
-	/*     Insta also seems to have problems when this is not set! */
-	if( ctx->compatibility == CMP_COMPAT_CRYPTLIB || ctx->compatibility == CMP_COMPAT_INSTA_3_3) {
+  /* this is not needed in case protection is done with MSG_MAC_ALG (what is not
+   * implemented so far) */
+	if( ctx->clCert ) {
 		int subjKeyIDLoc;
 		if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->clCert, NID_subject_key_identifier, -1)) != -1) {
 			/* found a subject key ID */
@@ -392,7 +395,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		if (! CMP_PKIMESSAGE_set_implicitConfirm( msg)) goto err;
 
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of kur and is freed there */
-	/* XXX setting the sender in a KUR message is not really required by the RFC */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, X509_get_subject_name( (X509*) ctx->clCert), ctx->compatibility, ctx->popoMethod, NULL))) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);

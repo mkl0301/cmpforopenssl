@@ -1214,21 +1214,21 @@ typedef struct cmp_ctx_st
 	ASN1_OCTET_STRING    *secretValue;
 	/* CA certificate used to identify the CA */
 	X509                 *caCert;
-	/* *current* CLIENT certificate used to identify the Client */
-	/* XXX this should be a stack since there could be more than one */
+	/* current client certificate used to identify and sign */
 	X509                 *clCert;
-	/* subject name to be used in the cert template. note: if clcert or
-	 * extcert are set, subject name is read from there and this is ignored */
+	/* subject name to be used in the cert template. note: if clcert is set,
+	 * subject name is read from there and this is ignored */
 	X509_NAME            *subjectName;
 	/* X509_NAME to set in PKIHEADER->recipient */ 
+  /* TODO check: this should only be used if the caCert is not present */
 	X509_NAME            *recipient;
 	/* names to be added to the cert template as the subjectAltName extension */
 	STACK_OF(GENERAL_NAME) *subjectAltNames;
-	/* Stack of CA certificates sent by the CA in a IP/KUP message */ 
+	/* Stack of CA certificates sent by the CA in a IP message */ 
 	STACK_OF(X509)       *caPubs;
 	/* stack of extraCerts the client will include when sending a PKI message */
 	STACK_OF(X509)       *extraCerts;
-	/* stack of extraCerts returned from the server in an IP/KUP message */ 
+	/* stack of extraCerts sent from the server in a message */ 
 	STACK_OF(X509)       *caExtraCerts;
 	/* EVP_PKEY holding the *current* keys */
 	/* XXX this is not an ASN.1 type */
@@ -1236,8 +1236,6 @@ typedef struct cmp_ctx_st
 	/* *new* CLIENT certificate received from the CA */
 	/* XXX this should be a stack since there could be more than one */
 	X509                 *newClCert;
-	/* certificate to be used for initialization with another CA */
-	X509                 *extCert;
 	/* EVP_PKEY holding the *new* keys */
 	/* XXX this is not an ASN.1 type */
 	EVP_PKEY             *newPkey;
@@ -1456,7 +1454,6 @@ int CMP_CTX_extraCerts_num( CMP_CTX *ctx);
 int CMP_CTX_set1_caExtraCerts( CMP_CTX *ctx, const STACK_OF(X509) *caExtraCerts);
 X509 *CMP_CTX_caExtraCerts_pop( CMP_CTX *ctx);
 int CMP_CTX_caExtraCerts_num( CMP_CTX *ctx);
-int CMP_CTX_set1_extCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_newClCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
 int CMP_CTX_set1_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
