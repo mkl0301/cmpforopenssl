@@ -14,11 +14,6 @@ INSTA_CACERT="${CERTDIR}/insta_ca_cert.der"
 INSTA_USER="3078"
 INSTA_PASS="insta"
 
-# for Cryptlib demo CA
-IZAC_SERVER="izac.de"
-IZAC_PORT="4711"
-IZAC_CACERT="${CERTDIR}/izac_ca_cert.der"
-
 # for private demo CA
 SERVER="172.16.0.101"
 PORT="4711"
