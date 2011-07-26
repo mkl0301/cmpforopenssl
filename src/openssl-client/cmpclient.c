@@ -108,10 +108,10 @@ int opt_httpProxyPort=0;
 static char* opt_caCertFile=NULL;
 static char* opt_caPubsDir=NULL;
 static char* opt_clCertFile=NULL;
-static char* opt_extCertFile=NULL;
 static char* opt_newClCertFile=NULL;
 static char* opt_clKeyFile=NULL;
 static char* opt_clKeyPass=NULL;
+static char* opt_newClKeyPass=NULL;
 static char* opt_newClKeyFile=NULL;
 static char* opt_recipient=NULL;
 static char* opt_subjectName=NULL;
@@ -158,6 +158,8 @@ void printUsage( const char* cmdName) {
   printf("The OPTIONAL COMMON OPTIONS may to be set:\n");
   printf(" --engine ENGINE    the OpenSSL engine\n");
   printf(" --capubs DIRECTORY the directory where received CA certificates will be saved\n");
+  printf("                    according to 5.3.2. those can only come in an IR protected with\n");
+  printf("                    \"shared secret information\"\n");
 /*  XXX TODO: the following should be added */
 #if 0
   printf(" --extraCerts DIRECTORY the directory where received certificates in the extraCerts field will be saved\n");
@@ -173,9 +175,6 @@ void printUsage( const char* cmdName) {
   printf("The following OPTIONS have to be set when needed by CMD:\n");
   printf(" --user USER           the user (reference) for an IR message\n");
   printf(" --password PASSWORD   the password (secret) for an IR message\n");
-/* XXX TODO: that should always be given in --clcert also for E.7 - this options should be removed*/
-  printf(" --extcert FILE        location of another certificate to be used\n");
-  printf("                       for initialization (if this is set, password is ignored)\n");
   printf(" --hex                 user and password are HEX, not ASCII\n");
 /* XXX TODO: OpenSSL commonly seems to use "/" as delimiter */
   printf(" --subject NAME        X509 subject name for the certificate Template\n");
@@ -184,17 +183,18 @@ void printUsage( const char* cmdName) {
   printf(" --recipient NAME      X509 name of the recipient. Can be used for the IR\n");
   printf("                       if the client doesn't have the CA's certificate yet.\n");
 /* XXX TODO: that should always be used as Input and never overwritten */
-  printf(" --clcert FILE         location of the client's certificate\n");
-  printf("                       this is overwritten at IR\n");
+  printf(" --clcert FILE         location of the client's certificate to be used to sign the CMP messages\n");
+  printf("                       also used as external identity certificate when doing IR according to RFC 4210 E.7\n");
 /* XXX TODO: that should always be the destination of the new cert and always overwritten if a new cert is received */
   printf(" --newclcert FILE      location of the client's new certificate\n");
-  printf("                       this is overwritten at KUR\n");
+  printf("                       this is created (respectively overwritten!) at IR,CR and KUR\n");
 /* XXX TODO: that should always be the private key for the --clcert and never overwritten*/
-  printf(" --key FILE            location of the client's private key\n");
-  printf("                       this is overwritten at IR\n");
+  printf(" --key FILE            location of the private key for the client certificate given in --clcert\n");
   printf(" --keypass PASSWORD    password of the client's private key given in --key\n");
 /* XXX TODO: that should always be the private key for the new certificate and only created if it hasn't existed before - never overwritten */
   printf(" --newkey FILE         location of the client's new private key\n");
+  printf("                       if file does not exist for IR, CR or KUR, this will be created with standard parameters\n");
+  printf(" --newkeypass PASSWORD password of the client's new private key given in --newkey\n");
   printf("                       this is overwritten at KUR\n");
 /* XXX TODO: the following should be added */
 #if 0
@@ -247,47 +247,12 @@ err:
 /* ############################################################################ */
 /* ############################################################################ */
 void doIr() {
-  EVP_PKEY *initialPkey=NULL;
+  EVP_PKEY *pkey=NULL;
+  EVP_PKEY *initialPkey=NULL; /* TODO: s/intialPkey/newPkey/ */
   CMPBIO *cbio=NULL;
-  X509 *initialClCert=NULL;
-  X509 *extCert=NULL;
+  X509 *initialClCert=NULL;   /* TODO: s/intialCLCert/newCLCert/ */
+  X509 *extIdCert=NULL;
   CMP_CTX *cmp_ctx=NULL;
-
-  /* generate RSA key */
-  if (opt_extCertFile) {
-    if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
-      printf("FATAL: could not read private client key!\n");
-      exit(1);
-    }
-  } else {
-    FILE *key = fopen(opt_clKeyFile, "r");
-    /* if keyfile exists, use it. otherwise generate a new key */
-    if (key != NULL) {
-      fclose(key);
-      printf("INFO: Using existing key file \"%s\"\n", opt_clKeyFile);
-      if (opt_engine) {
-        if (!(initialPkey = ENGINE_load_private_key (engine, opt_clKeyFile, NULL, opt_clKeyPass))) {
-          printf("FATAL: could not read private key /w engine\n");
-          exit(1);
-        }
-      } else { // no engine specified reading private key from file
-        if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
-          printf("FATAL: could not read private client key!\n");
-          exit(1);
-        }
-      }
-    }
-    else {
-      initialPkey = HELP_generateRSAKey();
-      /* initialPkey = HELP_generateDSAKey(); */
-      HELP_savePrivKey(initialPkey, opt_clKeyFile, opt_clKeyPass);
-    }
-  }
-
-  if (opt_extCertFile && !(extCert = HELP_read_der_cert(opt_extCertFile))) {
-	  printf("FATAL: could not read extra certificate!\n");
-	  exit(1);
-  }
 
   /* XXX this is not freed yet */
   cmp_ctx = CMP_CTX_create();
@@ -295,15 +260,15 @@ void doIr() {
     printf("FATAL: could not create CMP_CTX\n");
     exit(1);
   }
+
+  /* set to the context what we already know */
+  CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
+  CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
-  CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
-  CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
-  CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
-  CMP_CTX_set1_extCert( cmp_ctx, extCert);
   CMP_CTX_set1_timeOut( cmp_ctx, 60);
   if (opt_subjectName) {
     X509_NAME *subject = HELP_create_X509_NAME(opt_subjectName);
@@ -318,6 +283,48 @@ void doIr() {
   if (opt_nExtraCerts > 0)
     CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
 
+  /* using RFC4210's E.7 using external identity certificate */
+  if (opt_clCertFile) {
+    if(!(pkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
+      printf("FATAL: could not read external identity certificate private key from %s!\n", opt_clKeyFile);
+      exit(1);
+    }
+    CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
+
+    if (!(extIdCert = HELP_read_der_cert(opt_clCertFile))) {
+      printf("FATAL: could not read external identity certificate from %s!\n", opt_clCertFile);
+      exit(1);
+    }
+    CMP_CTX_set1_clCert( cmp_ctx, extIdCert);
+  }
+
+/* TODO: make this a generic function and use for IR, CR and KUR */
+  /* load key to be certificated from file or generate new if file is not there*/
+  FILE *key = fopen(opt_newClKeyFile, "r");
+  if (key != NULL) {
+    fclose(key);
+    printf("INFO: Using existing key file \"%s\"\n", opt_newClKeyFile);
+    if (opt_engine) {
+      if (!(initialPkey = ENGINE_load_private_key (engine, opt_newClKeyFile, NULL, opt_newClKeyPass))) {
+        printf("FATAL: could not read private key /w engine\n");
+        exit(1);
+      }
+    } else { // no engine specified reading private key from file
+      if(!(initialPkey = HELP_readPrivKey(opt_newClKeyFile, opt_newClKeyPass))) {
+        printf("FATAL: could not read private client key!\n");
+        exit(1);
+      }
+    }
+  } else {
+    /* generate new private key */
+    initialPkey = HELP_generateRSAKey();
+    /* initialPkey = HELP_generateDSAKey(); */
+    HELP_savePrivKey(initialPkey, opt_newClKeyFile, opt_newClKeyPass);
+  }
+
+  CMP_CTX_set0_newPkey( cmp_ctx, initialPkey);
+
+  /* TODO: create CLI option for implicit confim */
   /* CL does not support this, it just ignores it.
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
    */
@@ -338,8 +345,8 @@ void doIr() {
     ERR_print_errors_fp(stderr);
     exit(1);
   }
-  if(!HELP_write_der_cert(initialClCert, opt_clCertFile)) {
-    printf("FATAL: could not write client certificate!\n");
+  if(!HELP_write_der_cert(initialClCert, opt_newClCertFile)) {
+    printf("FATAL: could not write new client certificate to %s!\n", opt_newClCertFile);
     exit(1);
   }
 
@@ -355,9 +362,9 @@ void doIr() {
 /* ############################################################################ */
 /* ############################################################################ */
 void doRr() {
-  EVP_PKEY *initialPkey=NULL;
+  EVP_PKEY *initialPkey=NULL; /* TODO: s/intitialPkey/pkey/ */
   CMPBIO *cbio=NULL;
-  X509 *initialClCert=NULL;
+  X509 *initialClCert=NULL;   /* TODO: s/initialClCert/clCert/ */
   CMP_CTX *cmp_ctx=NULL;
 
   // ENGINE_load_private_key(e, path, NULL, "password"); 
@@ -416,11 +423,14 @@ void doRr() {
 /* ############################################################################ */
 /* ############################################################################ */
 void doCr() {
-  EVP_PKEY *initialPkey=NULL;
+  EVP_PKEY *initialPkey=NULL; /* TODO: s/initialPkey/pkey/ */
   CMPBIO *cbio=NULL;
-  X509 *initialClCert=NULL;
+  X509 *initialClCert=NULL;   /* TODO: s/initialClCert/clCert/ */
   CMP_CTX *cmp_ctx=NULL;
-  X509 *updatedClCert=NULL;
+  X509 *updatedClCert=NULL;   /* TODO: s/updatedClCert/newClCert/ */
+
+  /* XXX TODO: where is the newPkey?  Shouldn't CR be used to get new
+   * certificates (possibly also for new keys) ? XXX TODO */
 
   // ENGINE_load_private_key(e, path, NULL, "password"); 
 
@@ -486,8 +496,8 @@ void doCr() {
 /* ############################################################################ */
 /* ############################################################################ */
 void doKur() {
-  EVP_PKEY *initialPkey=NULL;
-  X509 *initialClCert=NULL;
+  EVP_PKEY *initialPkey=NULL;  /* TODO: s/initialPkey/pkey/ */
+  X509 *initialClCert=NULL;    /* TODO: s/initialClCert/clCert/ */
 
   EVP_PKEY *updatedPkey=NULL;
   CMPBIO *cbio=NULL;
@@ -507,7 +517,7 @@ void doKur() {
   /* generate RSA key */
   updatedPkey = HELP_generateRSAKey();
   /* updatedPkey = HELP_generateDSAKey(); */
-  if(!HELP_savePrivKey( updatedPkey, opt_newClKeyFile, opt_clKeyPass)) {
+  if(!HELP_savePrivKey( updatedPkey, opt_newClKeyFile, opt_newClKeyPass)) {
     printf("FATAL: could not save private client key!");
     exit(1);
   }
@@ -552,12 +562,6 @@ void doKur() {
     exit(1);
   }
 
-  /* if the option caPubsDir was given, see if we received certificates in
-   * the caPubs field and write them into the given directory */
-  if (opt_caPubsDir) {
-    writeCaPubsCertificates(opt_caPubsDir, cmp_ctx);
-	}
-
   return;
 }
 
@@ -577,6 +581,7 @@ void doInfo() {
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
+  /* TODO XXX: can't we sign with the clCert also? XXX TODO */
   CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
   CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
@@ -620,7 +625,6 @@ void parseCLA( int argc, char **argv) {
     {"kur",      no_argument,          0, 'd'},
     {"user",     required_argument,    0, 'e'},
     {"password", required_argument,    0, 'f'},
-    {"extcert",  required_argument,    0, 'x'},
     {"cacert",   required_argument,    0, 'g'},
     {"clcert",   required_argument,    0, 'h'},
     {"subject",  required_argument,    0, 'S'},
@@ -630,6 +634,7 @@ void parseCLA( int argc, char **argv) {
     {"key",      required_argument,    0, 'j'},
     {"keypass",  required_argument,    0, 'J'},
     {"newkey",   required_argument,    0, 'k'},
+    {"newkeypass",required_argument,   0, 'P'},
     {"newclcert",required_argument,    0, 'l'},
     {"hex",      no_argument,          0, 'm'},
     {"info",     no_argument,          0, 'n'},
@@ -649,7 +654,7 @@ void parseCLA( int argc, char **argv) {
 
   while (1)
   {
-    c = getopt_long (argc, argv, "a:b:cde:f:g:h:iIj:J:k:l:mno:pqrsS:R:tu:U:x:X:", long_options, &option_index);
+    c = getopt_long (argc, argv, "a:b:cde:f:g:h:iIj:J:k:l:mno:pP:qrR:sS:tu:U:X:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -760,10 +765,6 @@ void parseCLA( int argc, char **argv) {
       case 'i':
         printUsage( argv[0]);
         break;
-      case 'x':
-        opt_extCertFile = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_extCertFile, optarg);
-        break;
       case 'j':
         opt_clKeyFile = (char*) malloc(strlen(optarg)+1);
         strcpy(opt_clKeyFile, optarg);
@@ -771,6 +772,10 @@ void parseCLA( int argc, char **argv) {
       case 'J':
         opt_clKeyPass = (char*) malloc(strlen(optarg)+1);
         strcpy(opt_clKeyPass, optarg);
+        break;
+      case 'P':
+        opt_newClKeyPass = (char*) malloc(strlen(optarg)+1);
+        strcpy(opt_newClKeyPass, optarg);
         break;
       case 'k':
         opt_newClKeyFile = (char*) malloc(strlen(optarg)+1);
@@ -849,15 +854,22 @@ void parseCLA( int argc, char **argv) {
   }
 
   if( opt_doIr) {
-    if (!(opt_user && (opt_password || opt_extCertFile) && opt_clCertFile && opt_clKeyFile)) {
-      printf("ERROR: setting user, password/extcert, clcert and key is mandatory for IR\n\n");
+    /* for IR, a mean for signing the CMP message has to be supplied */
+    /* TODO ? in case both would be given, the user/password will be preferred */
+    if (!(opt_user && opt_password) || (opt_clCertFile && opt_clKeyFile && opt_clKeyPass)) {
+      printf("ERROR: giving user/password or clcert/key/keypass CLI option is mandatory for IR\n\n");
+      printUsage( argv[0]);
+    }
+    /* for IR, a a place to store the new certificate and the location for the
+     * (new key) have to be supplied */
+    if (!(opt_newClCertFile && opt_newClKeyFile && opt_newClKeyPass)) {
+      printf("ERROR: giving newclcert/newkey/newkeypass is mandatory for IR\n\n");
       printUsage( argv[0]);
     }
     if (!opt_caCertFile && !opt_recipient) {
       printf("ERROR: setting cacert or recipient is mandatory for IR\n\n");
       printUsage( argv[0]);
     }
-    if (opt_extCertFile) opt_password = "";
   }
 
   if( opt_doCr) {
