@@ -833,6 +833,8 @@ void parseCLA( int argc, char **argv) {
     printUsage( argv[0]);
   }
   if (!opt_caCertFile && !opt_doIr) {
+    /* TODO: actually that could be done with --recipient when protection is
+     * done with preshared keys for all (?) messages */
     printf("ERROR: setting cacert is necessary for all sequences except IR\n\n");
     printUsage( argv[0]);
   }
@@ -843,8 +845,8 @@ void parseCLA( int argc, char **argv) {
   }
 
   if( opt_doKur) {
-    if (!(opt_clCertFile && opt_clKeyFile && opt_newClCertFile && opt_newClKeyFile)) {
-      printf("ERROR: setting cacert, clcert, newclcert, key and newkey is mandatory for KUP\n\n");
+    if (!(opt_clCertFile && opt_clKeyFile)) {
+      printf("ERROR: setting cacert, clcert, and key is mandatory for KUP\n\n");
       printUsage( argv[0]);
     }
   }
@@ -852,14 +854,8 @@ void parseCLA( int argc, char **argv) {
   if( opt_doIr) {
     /* for IR, a mean for signing the CMP message has to be supplied */
     /* TODO ? in case both would be given, the user/password will be preferred */
-    if (!((opt_user && opt_password) || (opt_clCertFile && opt_clKeyFile && opt_clKeyPass))) {
+    if (!((opt_user && opt_password) || (opt_clCertFile && opt_clKeyFile))) {
       printf("ERROR: giving user/password or clcert/key/keypass CLI option is mandatory for IR\n\n");
-      printUsage( argv[0]);
-    }
-    /* for IR, a a place to store the new certificate and the location for the
-     * (new key) have to be supplied */
-    if (!(opt_newClCertFile && opt_newClKeyFile && opt_newClKeyPass)) {
-      printf("ERROR: giving newclcert/newkey/newkeypass is mandatory for IR\n\n");
       printUsage( argv[0]);
     }
     if (!opt_caCertFile && !opt_recipient) {
@@ -870,7 +866,7 @@ void parseCLA( int argc, char **argv) {
 
   if( opt_doCr) {
     if (!(opt_clCertFile && opt_clKeyFile)) {
-      printf("ERROR: cacert, clcert and key is mandatory for CR\n\n");
+      printf("ERROR: clcert and key is mandatory for CR\n\n");
       printUsage( argv[0]);
     }
   }
@@ -892,6 +888,26 @@ void parseCLA( int argc, char **argv) {
       printUsage( argv[0]);
     }
   }
+
+  if( opt_doIr || opt_doCr || opt_doKur) {
+    /* for IR,CR,Kur a a place to store the new certificate and the location for the
+     * (new) key and its password have to be supplied */
+    if (!(opt_newClCertFile && opt_newClKeyFile && opt_newClKeyPass)) {
+      printf("ERROR: giving newclcert/newkey/newkeypass is mandatory for trying to get a new Certificate through IR/CR/KUR\n\n");
+      printUsage( argv[0]);
+    }
+  }
+
+  if(opt_clKeyFile && !opt_clKeyPass) {
+    printf("ERROR: giving keypass is mandatory when giving key\n\n");
+    printUsage( argv[0]);
+  }
+
+  if(opt_newClKeyFile && !opt_newClKeyPass) {
+    printf("ERROR: giving newkeypass is mandatory when giving newkey\n\n");
+    printUsage( argv[0]);
+  }
+
 
   return;
 }
