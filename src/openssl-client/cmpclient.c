@@ -126,6 +126,7 @@ static int opt_doCr=0;
 static int opt_doKur=0;
 static int opt_doRr=0;
 static int opt_doInfo=0;
+static int opt_doCKUAnn=0;
 static int opt_compatibility=CMP_COMPAT_RFC;
 
 static char** opt_extraCerts=NULL;
@@ -171,6 +172,7 @@ void printUsage( const char* cmdName) {
   printf(" --cr   do renewal of a certificate\n");
   printf(" --rr   do revocation request sequence\n");
   printf(" --info do PKI Information request sequence\n");
+  // printf(" --ckuann do CA Key Update request sequence\n");
   printf("\n");
   printf("The following OPTIONS have to be set when needed by CMD:\n");
   printf(" --user USER           the user (reference) for an IR message\n");
@@ -609,6 +611,52 @@ void doInfo() {
 
 /* ############################################################################ */
 /* ############################################################################ */
+void doCKUAnn() {
+  CMPBIO *cbio=NULL;
+  CMP_CTX *cmp_ctx=NULL;
+  CMP_CAKEYUPDANNCONTENT *cku = NULL;
+
+  /* XXX this is not freed yet */
+  cmp_ctx = CMP_CTX_create();
+  if (!cmp_ctx) {
+    printf("FATAL: could not create CMP_CTX\n");
+    exit(1);
+  }
+  CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+  CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
+  CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
+  CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
+  CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
+  CMP_CTX_set1_caCert( cmp_ctx, caCert);
+  CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
+
+  if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
+    printf( "ERROR: setting up connection to server");
+    exit(1);
+  }
+
+  cku = CMP_doCAKeyUpdateReq( cbio, cmp_ctx);
+  CMP_delete_http_bio(cbio);
+
+  if( cku) {
+    printf( "SUCCESS requesting CKUAnn. FILE %s, LINE %d\n", __FILE__, __LINE__);
+#if 0
+    HELP_write_der_cert(cku->oldWithNew, "oldWithNew.der");
+    HELP_write_der_cert(cku->newWithOld, "newWithOld.der");
+    HELP_write_der_cert(cku->newWithNew, "newWithNew.der");
+#endif
+  } else {
+    printf( "ERROR requesting CKUAnn. FILE %s, LINE %d\n", __FILE__, __LINE__);
+    ERR_load_crypto_strings();
+    ERR_print_errors_fp(stderr);
+    exit(1);
+  }
+
+  return;
+}
+
+/* ############################################################################ */
+/* ############################################################################ */
 void parseCLA( int argc, char **argv) {
   /* manage command line options */
   int c;
@@ -638,6 +686,7 @@ void parseCLA( int argc, char **argv) {
     {"newclcert",required_argument,    0, 'l'},
     {"hex",      no_argument,          0, 'm'},
     {"info",     no_argument,          0, 'n'},
+    // {"ckuann",   no_argument,          0, 'C'},
     {"path",     required_argument,    0, 'o'},
     {"proxy",    no_argument,          0, 'p'},
     {"cryptlib", no_argument,          0, 'q'},
@@ -721,6 +770,17 @@ void parseCLA( int argc, char **argv) {
         opt_sequenceSet = 1;
         opt_doKur = 1;
         break;
+
+#if 0
+      case 'C':
+        if( opt_sequenceSet) {
+          fprintf( stderr, "ERROR: only one message sequence can be set at once!\n");
+          printUsage( argv[0]);
+        }
+        opt_sequenceSet = 1;
+        opt_doCKUAnn = 1;
+        break;
+#endif
 
       case 'n':
         if( opt_sequenceSet) {
@@ -885,6 +945,13 @@ void parseCLA( int argc, char **argv) {
   if( opt_doInfo) {
     if (!(opt_user && opt_password )) {
       printf("ERROR: setting user and password is mandatory for PKIInfo\n\n");
+      printUsage( argv[0]);
+    }
+  }
+
+  if( opt_doCKUAnn) {
+    if (!(opt_user && opt_password )) {
+      printf("ERROR: setting user and password is mandatory for CKUAnn\n\n");
       printUsage( argv[0]);
     }
   }
@@ -1065,6 +1132,20 @@ int main(int argc, char **argv) {
       password = (unsigned char*) opt_password;
     }
     doInfo();
+  }
+
+  if( opt_doCKUAnn) {
+    if (opt_hex) {
+      /* get str representation of hex passwords */
+      idStringLen = HELP_hex2str(opt_user, &idString);
+      passwordLen = HELP_hex2str(opt_password, &password);
+    } else {
+      idStringLen = strlen(opt_user);
+      idString = (unsigned char*) opt_user;
+      passwordLen = strlen(opt_password);
+      password = (unsigned char*) opt_password;
+    }
+    doCKUAnn();
   }
 
   return 0;
