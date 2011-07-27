@@ -698,6 +698,25 @@ void doCKUAnn() {
 }
 
 /* ############################################################################ */
+/* allocate appropriate space for CLI argument strings and copy them */
+/* ############################################################################ */
+char * createOptStr(char ** opt) {
+  size_t len = strlen(optarg);
+
+  if( *opt!=NULL) free(*opt); 
+  if (! (*opt = (char*) malloc(len+1))) {
+    printf( "FATAL failed to allocate mememory to store CLI option string, aborting");
+    exit(1);
+  }
+  strncpy(*opt, optarg, len);
+  (*opt)[len] = '\0';
+
+  return *opt;
+}
+
+
+
+/* ############################################################################ */
 /* ############################################################################ */
 void parseCLA( int argc, char **argv) {
   /* manage command line options */
@@ -765,13 +784,11 @@ void parseCLA( int argc, char **argv) {
         break;
 
       case 'U':
-        opt_caPubsDir = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_caPubsDir, optarg);
+        createOptStr( &opt_caPubsDir);
         break;
 
       case 'a':
-        opt_serverName = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_serverName, optarg);
+        createOptStr( &opt_serverName);
         break;
 
       case 'b':
@@ -836,64 +853,51 @@ void parseCLA( int argc, char **argv) {
 
       case 'X':
         opt_extraCerts = (char**) realloc(opt_extraCerts, (opt_nExtraCerts+1) * sizeof(char*));
-        opt_extraCerts[opt_nExtraCerts] = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_extraCerts[opt_nExtraCerts], optarg);
+        createOptStr( &opt_extraCerts[opt_nExtraCerts]);
         opt_nExtraCerts++;
         break;
 
       case 'e':
-        opt_user = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_user, optarg);
+        createOptStr( &opt_user);
         break;
       case 'f':
-        opt_password = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_password, optarg);
+        createOptStr( &opt_password);
         break;
       case 'g':
-        opt_caCertFile = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_caCertFile, optarg);
+        createOptStr( &opt_caCertFile);
         break;
       case 'h':
-        opt_clCertFile = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_clCertFile, optarg);
+        createOptStr( &opt_clCertFile);
         break;
       case 'S':
-        opt_subjectName = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_subjectName, optarg);
+        createOptStr( &opt_subjectName);
         break;
       case 'R':
-        opt_recipient = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_recipient, optarg);
+        createOptStr( &opt_recipient);
         break;
       case 'i':
         printUsage( argv[0]);
         break;
       case 'j':
-        opt_clKeyFile = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_clKeyFile, optarg);
+        createOptStr( &opt_clKeyFile);
         break;
       case 'J':
-        opt_clKeyPass = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_clKeyPass, optarg);
+        createOptStr( &opt_clKeyPass);
         break;
       case 'P':
-        opt_newClKeyPass = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_newClKeyPass, optarg);
+        createOptStr( &opt_newClKeyPass);
         break;
       case 'k':
-        opt_newClKeyFile = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_newClKeyFile, optarg);
+        createOptStr( &opt_newClKeyFile);
         break;
       case 'l':
-        opt_newClCertFile = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_newClCertFile, optarg);
+        createOptStr( &opt_newClCertFile);
         break;
       case 'm':
         opt_hex = 1;
         break;
       case 'o':
-        opt_serverPath = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_serverPath, optarg);
+        createOptStr( &opt_serverPath);
         break;
       case 'p':
         opt_proxy = 1;
@@ -910,12 +914,10 @@ void parseCLA( int argc, char **argv) {
         opt_compatibility = CMP_COMPAT_INSTA_3_3;
         break;
       case 'u':
-        opt_engine = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_engine, optarg);
+        createOptStr( &opt_engine);
         break;
       case 'O':
-        opt_extCertsOutDir = (char*) malloc(strlen(optarg)+1);
-        strcpy(opt_extCertsOutDir, optarg);
+        createOptStr( &opt_extCertsOutDir);
         break;
 
       case '?':
