@@ -71,7 +71,8 @@ CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx, X509 *cert)
 	resp->response = sk_CMP_CERTRESPONSE_new_null();
 	sk_CMP_CERTRESPONSE_push(resp->response, cr);
 	
-	// resp->caPubs = sk_X509_new_null();
+	resp->caPubs = sk_X509_new_null();
+	//todo send cacert
 
 	msg->body->value.ip = resp;
 

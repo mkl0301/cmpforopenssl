@@ -57,6 +57,13 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
   ctx->caKey = caKey;
   cmp_ctx->pkey = caKey;
 
+  ctx->extraCerts = sk_X509_new_null();
+  for (unsigned int i=0; i < p->extraCerts->used; i++) {
+    data_string *ds = (data_string*) p->extraCerts->data[i];
+    X509 *ec = HELP_read_der_cert(ds->value->ptr);
+    if (ec) sk_X509_push(ctx->extraCerts, ec);
+  }
+
   CMP_CTX_set_protectionAlgor( cmp_ctx, CMP_ALG_PBMAC);
 
   ctx->cmp_ctx = cmp_ctx;

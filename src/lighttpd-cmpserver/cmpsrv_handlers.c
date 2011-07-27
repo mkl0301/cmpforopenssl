@@ -13,6 +13,23 @@ typedef int (*cmp_messageHandler_t)(CMPHANDLER_ARGS);
 #define V_CMP_PKIBODY_LAST (V_CMP_PKIBODY_POLLREP+1)
 cmp_messageHandler_t msg_handlers[V_CMP_PKIBODY_LAST];
 
+static STACK_OF(X509)* X509_stack_dup(const STACK_OF(X509)* stack)
+{
+    STACK_OF(X509) *newsk = NULL;
+    int i;
+
+    if (!stack) goto err;
+    if (!(newsk = sk_X509_new_null())) goto err;
+
+    for (i = 0; i < sk_X509_num(stack); i++)
+        sk_X509_push(newsk, X509_dup(sk_X509_value(stack, i)));
+
+    return newsk;
+err:
+    return 0;
+}
+
+
 CMPHANDLER_FUNC(handlemsg_ir)
 {
   CMP_CTX *ctx = srv_ctx->cmp_ctx;
@@ -34,6 +51,7 @@ CMPHANDLER_FUNC(handlemsg_ir)
   CRMF_CERTTEMPLATE_free(tpl);
 
   *out = CMP_ip_new(ctx, cert);
+  (*out)->extraCerts = X509_stack_dup(srv_ctx->extraCerts);
 
   // char filename[1024];
   // EVP_PKEY *p = X509_PUBKEY_get(cert->cert_info->key);
@@ -108,6 +126,7 @@ CMPHANDLER_FUNC(handlemsg_kur)
   CRMF_CERTTEMPLATE_free(tpl);
 
   *out = CMP_kup_new(ctx, cert);
+  (*out)->extraCerts = X509_stack_dup(srv_ctx->extraCerts);
 
   int r = cert_save(srv_ctx, cert);
   dbgmsg("sd", "cert_save:", r);
@@ -277,6 +296,9 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
       const char *szidstr = "Using mod_cmpsrv test CMP responder.";
       ASN1_STRING_set(idstr, szidstr, strlen(szidstr));
       CMP_PKIHEADER_push0_freeText(resp->header, idstr);
+
+      resp->header->recipient = GENERAL_NAME_dup(msg->header->sender);
+
       resp->protection = CMP_protection_new(resp, NULL, ctx->cmp_ctx->pkey, ctx->cmp_ctx->secretValue);
     }
     else
