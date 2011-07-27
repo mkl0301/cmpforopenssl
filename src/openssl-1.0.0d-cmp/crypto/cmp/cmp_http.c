@@ -280,7 +280,7 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	pder = (unsigned char*) rdata.memory;
     *out = d2i_CMP_PKIMESSAGE( NULL, (const unsigned char**) &pder, rdata.size);
     if (*out == 0) {
-		errormsg = "Failed to decode PKIMESSAGE";
+		errormsg = strdup("Failed to decode PKIMESSAGE");
 		goto err;
 	}
 
