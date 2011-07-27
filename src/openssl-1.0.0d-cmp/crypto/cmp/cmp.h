@@ -1226,10 +1226,10 @@ typedef struct cmp_ctx_st
 	STACK_OF(GENERAL_NAME) *subjectAltNames;
 	/* Stack of CA certificates sent by the CA in a IP message */ 
 	STACK_OF(X509)       *caPubs;
-	/* stack of extraCerts the client will include when sending a PKI message */
-	STACK_OF(X509)       *extraCerts;
-	/* stack of extraCerts sent from the server in a message */ 
-	STACK_OF(X509)       *caExtraCerts;
+	/* stack of extraCerts to be included when sending a PKI message */
+	STACK_OF(X509)       *extraCertsOut;
+	/* stack of extraCerts received from remote */ 
+	STACK_OF(X509)       *extraCertsIn;
 	/* EVP_PKEY holding the *current* keys */
 	/* XXX this is not an ASN.1 type */
 	EVP_PKEY             *pkey;
@@ -1448,12 +1448,14 @@ int CMP_CTX_subjectAltName_push1( CMP_CTX *ctx, const GENERAL_NAME *name);
 X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
 int CMP_CTX_caPubs_num( CMP_CTX *ctx);
 int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs);
-int CMP_CTX_set1_extraCerts( CMP_CTX *ctx, const STACK_OF(X509) *extraCerts);
-int CMP_CTX_extraCerts_push1( CMP_CTX *ctx, const X509 *val);
-int CMP_CTX_extraCerts_num( CMP_CTX *ctx);
-int CMP_CTX_set1_caExtraCerts( CMP_CTX *ctx, const STACK_OF(X509) *caExtraCerts);
-X509 *CMP_CTX_caExtraCerts_pop( CMP_CTX *ctx);
-int CMP_CTX_caExtraCerts_num( CMP_CTX *ctx);
+
+int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOut);
+int CMP_CTX_extraCertsOut_push1( CMP_CTX *ctx, const X509 *val);
+int CMP_CTX_extraCertsOut_num( CMP_CTX *ctx);
+int CMP_CTX_set1_extraCertsIn( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsIn);
+X509 *CMP_CTX_extraCertsIn_pop( CMP_CTX *ctx);
+int CMP_CTX_extraCertsIn_num( CMP_CTX *ctx);
+
 int CMP_CTX_set1_newClCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
 int CMP_CTX_set1_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey);

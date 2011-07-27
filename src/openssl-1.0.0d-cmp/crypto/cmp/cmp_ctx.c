@@ -97,8 +97,8 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, recipient, X509_NAME),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, subjectAltNames, GENERAL_NAME),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, caPubs, X509),
-	ASN1_SEQUENCE_OF_OPT(CMP_CTX, extraCerts, X509),
-	ASN1_SEQUENCE_OF_OPT(CMP_CTX, caExtraCerts, X509),
+	ASN1_SEQUENCE_OF_OPT(CMP_CTX, extraCertsOut, X509),
+	ASN1_SEQUENCE_OF_OPT(CMP_CTX, extraCertsIn, X509),
 	/* EVP_PKEY *pkey */
 	ASN1_OPT(CMP_CTX, newClCert, X509),
 	/* EVP_PKEY *newPkey */
@@ -310,11 +310,11 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
-X509 *CMP_CTX_caExtraCerts_pop( CMP_CTX *ctx)
+X509 *CMP_CTX_extraCertsIn_pop( CMP_CTX *ctx)
 {
 	if (!ctx) goto err;
-	if (!ctx->caExtraCerts) return NULL;
-	return sk_X509_pop(ctx->caExtraCerts);
+	if (!ctx->extraCertsIn) return NULL;
+	return sk_X509_pop(ctx->extraCertsIn);
 err:
 	CMPerr(CMP_F_CMP_CTX_CAEXTRACERTS_POP, CMP_R_CMPERROR);
 	return NULL;
@@ -322,11 +322,11 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
-int CMP_CTX_caExtraCerts_num( CMP_CTX *ctx)
+int CMP_CTX_extraCertsIn_num( CMP_CTX *ctx)
 {
 	if (!ctx) goto err;
-	if (!ctx->caExtraCerts) return 0;
-	return sk_X509_num(ctx->caExtraCerts);
+	if (!ctx->extraCertsIn) return 0;
+	return sk_X509_num(ctx->extraCertsIn);
   err:
 	CMPerr(CMP_F_CMP_CTX_CAEXTRACERTS_NUM, CMP_R_CMPERROR);
 	return 0;
@@ -334,16 +334,17 @@ int CMP_CTX_caExtraCerts_num( CMP_CTX *ctx)
 
 /* ################################################################ */
 /* ################################################################ */
-int CMP_CTX_set1_caExtraCerts( CMP_CTX *ctx, const STACK_OF(X509) *caExtraCerts) {
+int CMP_CTX_set1_extraCertsIn( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsIn) {
 	if (!ctx) goto err;
-	if (!caExtraCerts) goto err;
+	if (!extraCertsIn) goto err;
 
-	if (ctx->caExtraCerts) {
-		sk_X509_pop_free(ctx->caExtraCerts, X509_free);
-		ctx->caExtraCerts = NULL;
+/* if there are already inbound extraCerts on the stack deleten them */
+	if (ctx->extraCertsIn) {
+		sk_X509_pop_free(ctx->extraCertsIn, X509_free);
+		ctx->extraCertsIn = NULL;
 	}
 
-	if (!(ctx->caExtraCerts = X509_stack_dup(caExtraCerts))) goto err;
+	if (!(ctx->extraCertsIn = X509_stack_dup(extraCertsIn))) goto err;
 
 	return 1;
 err:
@@ -353,11 +354,11 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
-int CMP_CTX_extraCerts_push1( CMP_CTX *ctx, const X509 *val)
+int CMP_CTX_extraCertsOut_push1( CMP_CTX *ctx, const X509 *val)
 {
 	if (!ctx) goto err;
-	if (!ctx->extraCerts && !(ctx->extraCerts = sk_X509_new_null())) return 0;
-	return sk_X509_push(ctx->extraCerts, X509_dup((X509*)val));
+	if (!ctx->extraCertsOut && !(ctx->extraCertsOut = sk_X509_new_null())) return 0;
+	return sk_X509_push(ctx->extraCertsOut, X509_dup((X509*)val));
 err:
 	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_PUSH1, CMP_R_CMPERROR);
 	return 0;
@@ -365,11 +366,11 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
-int CMP_CTX_extraCerts_num( CMP_CTX *ctx)
+int CMP_CTX_extraCertsOut_num( CMP_CTX *ctx)
 {
 	if (!ctx) goto err;
-	if (!ctx->extraCerts) return 0;
-	return sk_X509_num(ctx->extraCerts);
+	if (!ctx->extraCertsOut) return 0;
+	return sk_X509_num(ctx->extraCertsOut);
   err:
 	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_NUM, CMP_R_CMPERROR);
 	return 0;
@@ -377,16 +378,16 @@ int CMP_CTX_extraCerts_num( CMP_CTX *ctx)
 
 /* ################################################################ */
 /* ################################################################ */
-int CMP_CTX_set1_extraCerts( CMP_CTX *ctx, const STACK_OF(X509) *extraCerts) {
+int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOut) {
 	if (!ctx) goto err;
-	if (!extraCerts) goto err;
+	if (!extraCertsOut) goto err;
 
-	if (ctx->extraCerts) {
-		sk_X509_pop_free(ctx->extraCerts, X509_free);
-		ctx->extraCerts = NULL;
+	if (ctx->extraCertsOut) {
+		sk_X509_pop_free(ctx->extraCertsOut, X509_free);
+		ctx->extraCertsOut = NULL;
 	}
 
-	if (!(ctx->extraCerts = X509_stack_dup(extraCerts))) goto err;
+	if (!(ctx->extraCertsOut = X509_stack_dup(extraCertsOut))) goto err;
 
 	return 1;
 err:

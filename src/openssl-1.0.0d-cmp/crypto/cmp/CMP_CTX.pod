@@ -26,12 +26,12 @@
  CMP_CTX_caPubs_pop,
  CMP_CTX_caPubs_num,
  CMP_CTX_set1_caPubs,
- CMP_CTX_set1_extraCerts,
- CMP_CTX_extraCerts_push1, 
- CMP_CTX_extraCerts_num,
- CMP_CTX_set1_caExtraCerts,
- CMP_CTX_caExtraCerts_pop,
- CMP_CTX_caExtraCerts_num
+ CMP_CTX_set1_extraCertsOut,
+ CMP_CTX_extraCertsOut_push1, 
+ CMP_CTX_extraCertsOut_num,
+ CMP_CTX_set1_extraCertsIn,
+ CMP_CTX_extraCertsIn_pop,
+ CMP_CTX_extraCertsIn_num
 
 =head1 SYNOPSIS
 
@@ -61,11 +61,12 @@
  int CMP_CTX_caPubs_num( CMP_CTX *ctx);
  int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs);
 
- int CMP_CTX_set1_extraCerts( CMP_CTX *ctx, const STACK_OF(X509) *extraCerts);
- int CMP_CTX_extraCerts_push1( CMP_CTX *ctx, const X509 *val);
- int CMP_CTX_extraCerts_num( CMP_CTX *ctx);
- X509 *CMP_CTX_caExtraCerts_pop( CMP_CTX *ctx);
- int CMP_CTX_caExtraCerts_num( CMP_CTX *ctx);
+ int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOut);
+ int CMP_CTX_extraCertsOut_push1( CMP_CTX *ctx, const X509 *val);
+ int CMP_CTX_extraCertsOut_num( CMP_CTX *ctx);
+ int CMP_CTX_set1_extraCertsIn( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsIn);
+ X509 *CMP_CTX_extraCertsIn_pop( CMP_CTX *ctx);
+ int CMP_CTX_extraCertsIn_num( CMP_CTX *ctx);
 
  #define CMP_ALG_PBMAC 1
  #define CMP_ALG_SIG   2
@@ -136,15 +137,18 @@ CMP_CTX_caPubs_pop() pops one CA certificates of the stack of received CA certs 
 
 CMP_CTX_set1_caPubs() copies the given caPubs stack to the context so that it may be accessed later by CMP_CTX_caPubs_num() and CMP_CTX_caPubs_pop().
 
-CMP_CTX_set1_extraCerts() sets the stack of extraCerts that will be sent by the client with an initial/key update/certification requiest.
+CMP_CTX_set1_extraCertsOut() sets the stack of extraCerts that will be sent to remote.
 
-CMP_CTX_extraCerts_push1() adds the given certificate to the extraCerts stack, without consuming the pointer.
+CMP_CTX_extraCertsOut_push1() adds the given certificate to the outbound extraCerts stack, without consuming the pointer.
  
-CMP_CTX_extraCerts_num() returns the number of certificates in the extraCerts stack.
+CMP_CTX_extraCertsOut_num() returns the number of certificates in the outbound extraCerts stack.
 
-CMP_CTX_caExtraCerts_num() returns the number of certificates that were received from the CA in an initialization/certification/key update response.
+CMP_CTX_set1_extraCertsIn() sets the stack of extraCerts that was received from remote.
 
-CMP_CTX_caExtraCerts_pop() pops and returns one certificate off the stack of extra certificates received from the CA.
+CMP_CTX_extraCertsIn_pop() pops and returns one certificate off the stack of extra certificates received from remote.
+
+CMP_CTX_extraCertsIn_num() returns the number of certificates that were received from remote.
+
 
 =head1 NOTES
 

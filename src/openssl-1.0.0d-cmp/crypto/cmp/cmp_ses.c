@@ -207,10 +207,9 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (ip->body->value.ip->caPubs)
 		CMP_CTX_set1_caPubs(ctx, ip->body->value.ip->caPubs);
 
-	/* copy any received extraCerts to context->caExtraCerts so
-	 * they can also be retrieved */
+	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (ip->extraCerts)
-		CMP_CTX_set1_caExtraCerts(ctx, ip->extraCerts);
+		CMP_CTX_set1_extraCertsIn(ctx, ip->extraCerts);
 
 	/* check if implicit confirm is set in generalInfo */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(ip)) goto cleanup;
@@ -405,10 +404,9 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		CMP_CTX_set1_caPubs(ctx, cp->body->value.cp->caPubs);
 #endif /* 0 */
 
-	/* copy any received extraCerts to context->caExtraCerts so
-	 * they can also be retrieved */
+	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (cp->extraCerts)
-		CMP_CTX_set1_caExtraCerts(ctx, cp->extraCerts);
+		CMP_CTX_set1_extraCertsIn(ctx, cp->extraCerts);
 
 	/* check if implicit confirm is set in generalInfo */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(cp)) goto cleanup;
@@ -538,10 +536,9 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		CMP_CTX_set1_caPubs(ctx, kup->body->value.kup->caPubs);
 #endif /* 0 */
 
-	/* copy any received extraCerts to context->caExtraCerts so
-	 * they can also be retrieved */
+	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (kup->extraCerts)
-		CMP_CTX_set1_caExtraCerts(ctx, kup->extraCerts);
+		CMP_CTX_set1_extraCertsIn(ctx, kup->extraCerts);
 
 	/* check if implicit confirm is set in generalInfo */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(kup)) goto cleanup;
