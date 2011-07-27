@@ -1034,13 +1034,17 @@ void parseCLA( int argc, char **argv) {
 int getHttpProxy( char **name, int *port) {
   char *proxy=NULL;
   char *colon=NULL;
+  char format[32];
+  size_t maxlen;
 
   if( opt_httpProxy) {
     proxy = opt_httpProxy;
   } else {
     if( !opt_proxy) return 0;
     if( getenv("http_proxy")) {
-      proxy = strdup(getenv("http_proxy"));
+      if( !(proxy = strdup(getenv("http_proxy")))) {
+        printf( "FATAL failed to allocate mememory to proxy string, aborting");
+      }
     } else {
       /* no proxy setting found */
       return 0;
@@ -1053,12 +1057,18 @@ int getHttpProxy( char **name, int *port) {
   }
 
   /* this will be long enough */
-  *name = malloc(strlen(proxy)+1);
+  maxlen = strlen(proxy) + 1;
+  *name = malloc(maxlen);
+  name[maxlen] = '\0';
 
-  if( (sscanf( proxy, "http //%s %d", *name, port) < 1)) {
+  snprintf(format, 32, "http //%%%us %%d", maxlen);
+
+  if( (sscanf( proxy, format, *name, port) < 1)) {
     /* maybe it is set without leading http:// */
-    if( (sscanf( proxy, "%s %d", *name, port) < 1)) {
+    snprintf(format, 32, "%%%us %%d", maxlen);
+    if( (sscanf( proxy, format, *name, port) < 1)) {
       printf("ERROR: Failed to determine proxy from \"%s\"\n", proxy);
+      free(proxy);
       return 0;
     }
   }
@@ -1123,7 +1133,10 @@ int main(int argc, char **argv) {
   /* read given extraCerts, if any */
   if( opt_nExtraCerts > 0) {
     int i;
-    extraCerts = sk_X509_new_null();
+    if( !(extraCerts = sk_X509_new_null())) {
+      printf("FATAL: could not create structure to store extra certificates!\n");
+      exit(1);
+    }
     for (i = 0; i < opt_nExtraCerts; i++) {
       X509 *cert = HELP_read_der_cert(opt_extraCerts[i]);
       if (!cert) {
