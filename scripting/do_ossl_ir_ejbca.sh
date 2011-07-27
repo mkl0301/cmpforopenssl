@@ -3,16 +3,21 @@ myDir=`dirname $0`
 . $myDir/settings.sh
 
 if [ -z $1 ] || [ -z $2 ] || [ "$1" == "-help" ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
-	echo "Usage: $0 USER PASSWORD"
-	exit 1
+        echo "Usage: $0 USER PASSWORD"
+        exit 1
 fi
 
-#echo "${CMPCLIENT} --ir --server ${SERVER} --port ${PORT} --cacert ${CACERT} --key ${CLKEY} --clcert ${CLCERT} --hex --user $1 --password $2"
 set -x
-${CMPCLIENT} --ir --server ${SERVER} --port ${PORT} \
-        --cacert ${CACERT} \
-	    --key ${CLKEY} --clcert ${CLCERT} \
-	    --subject "CN=user;UID=user" \
-	    --user "$1" --password "$2" --path ejbca/publicweb/cmp
+${CMPCLIENT} --ir --server ${SERVER} \
+                  --port ${PORT} \
+                  --cacert ${CACERT} \
+                  --newkey ${CLKEY} \
+                  --newkeypass "password" \
+                  --newclcert ${CLCERT} \
+                  --subject "CN=user;UID=user" \
+                  --user "$1" \
+                  --password "$2" \
+                  --path ejbca/publicweb/cmp
 set +x
 
+# vi: ts=8 expandtab
