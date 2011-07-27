@@ -118,6 +118,7 @@ static char* opt_subjectName=NULL;
 static char* opt_user=NULL;
 static char* opt_password=NULL;
 static char* opt_engine=NULL;
+static char* opt_extCertsOutDir=NULL;
 static int opt_hex=0;
 static int opt_proxy=0;
 static int opt_sequenceSet=0;
@@ -157,14 +158,17 @@ void printUsage( const char* cmdName) {
   printf(" --cacert           location of the CA's certificate\n");
   printf("\n");
   printf("The OPTIONAL COMMON OPTIONS may to be set:\n");
-  printf(" --engine ENGINE    the OpenSSL engine\n");
-  printf(" --capubs DIRECTORY the directory where received CA certificates will be saved\n");
-  printf("                    according to 5.3.2. those can only come in an IR protected with\n");
-  printf("                    \"shared secret information\"\n");
-/*  XXX TODO: the following should be added */
+  printf(" --engine ENGINE       the OpenSSL engine\n");
+  printf(" --extcertsout DIR     directory where received certificates\n"); 
+  printf("                       located in the \"extraCerts\" field will be saved\n");
+  printf("                       with a [8Byte subject hash].0 filename\n");
+  printf("                       NB: multiple certificates with same DN but other Serial have the same hash!\n");
+  /* XXX TODO: add the following */
 #if 0
-  printf(" --extraCerts DIRECTORY the directory where received certificates in the extraCerts field will be saved\n");
-#endif
+  printf(" --extcertsin DIR    directory where extra certificates needed"\n); 
+  printf("                     for path validation of own and other's certificates\n");
+  printf("                     is located\n");
+#endif 
   printf("\n");
   printf("One of the following can be used as CMD:\n");
   printf(" --ir   do initial certificate request sequence\n");
@@ -203,8 +207,13 @@ void printUsage( const char* cmdName) {
   printf(" --newkeypass PASSWORD    password of the client's new private key given in --newkey\n");
 #endif
   printf(" --extracert FILE      certificate that will be added to the extraCerts field\n");
-  printf("                       when sending any PKIMessage. can be given multiple times\n");
+  printf("                       when sending any PKIMessage.  Can be given multiple times\n");
   printf("                       in order to specify several certificates.\n");
+  printf("\n");
+  printf("Optional options only for IR with the --ir CMD:\n");
+  printf(" --capubs DIRECTORY the directory where received CA certificates will be saved\n");
+  printf("                    according to 5.3.2. those can only come in an IR protected with\n");
+  printf("                    \"shared secret information\"\n");
   printf("\n");
   printf("Other options are:\n");
 /* XXX TODO: the compatibility options should be removed and replaced with fine-granular options */
@@ -237,6 +246,33 @@ int writeCaPubsCertificates( char *destDir, CMP_CTX *cmp_ctx) {
   printf( "Received %d CA certificates, saving to %s\n", CMP_CTX_caPubs_num(cmp_ctx), destDir);
   while ( (cert=CMP_CTX_caPubs_pop(cmp_ctx)) != NULL) {
     snprintf(certFile, CERTFILEPATHLEN, "%s/cacert%d.der", destDir, ++n);
+    if(!HELP_write_der_cert(cert, certFile)) {
+      printf("ERROR: could not write CA certificate number %d to %s!\n", n, certFile);
+    }
+  }
+  return n;
+err:
+  return 0;
+}
+
+/* ############################################################################ */
+/* this function writes all the certificates from the extCerts field of received
+ * messages into the given directory */
+/* ############################################################################ */
+int writeExtraCerts( char *destDir, CMP_CTX *cmp_ctx) {
+#define CERTFILEPATHLEN 512
+		X509 *cert = NULL;
+		char certFile[CERTFILEPATHLEN];
+		int n = 0;
+
+  if (!destDir) goto err;
+
+  printf( "Received %d certificates in extCerts, saving to %s\n", CMP_CTX_extraCertsIn_num(cmp_ctx), destDir);
+  while ( (cert=CMP_CTX_extraCertsIn_pop(cmp_ctx)) != NULL) {
+    /* construct the filename by using the "new-style" openssl subject hash as */
+    /* TODO: what when there are 2 certificates with the same subject hash?
+     * Catch that ! */
+    snprintf(certFile, CERTFILEPATHLEN, "%s/%lu.der", destDir, X509_subject_name_hash(cert) );
     if(!HELP_write_der_cert(cert, certFile)) {
       printf("ERROR: could not write CA certificate number %d to %s!\n", n, certFile);
     }
@@ -283,7 +319,7 @@ void doIr() {
     X509_NAME_free(recipient);
   }
   if (opt_nExtraCerts > 0)
-    CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
+    CMP_CTX_set1_extraCertsOut( cmp_ctx, extraCerts);
 
   /* using RFC4210's E.7 using external identity certificate */
   if (opt_clCertFile) {
@@ -358,6 +394,12 @@ void doIr() {
     writeCaPubsCertificates(opt_caPubsDir, cmp_ctx);
 	}
 
+  /* if the option extcertsout was given, see if we received certificates in
+   * the extCerts field and write them into the given directory */
+  if (opt_extCertsOutDir) {
+    writeExtraCerts(opt_extCertsOutDir, cmp_ctx);
+	}
+
   return;
 }
 
@@ -404,7 +446,7 @@ void doRr() {
   CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
 
   if (opt_nExtraCerts > 0)
-    CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
+    CMP_CTX_set1_extraCertsOut( cmp_ctx, extraCerts);
 
   /* CL does not support this, it just ignores it.
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
@@ -467,7 +509,7 @@ void doCr() {
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
   if (opt_nExtraCerts > 0)
-    CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
+    CMP_CTX_set1_extraCertsOut( cmp_ctx, extraCerts);
 
   /* CL does not support this, it just ignores it.
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
@@ -540,7 +582,7 @@ void doKur() {
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
   if (opt_nExtraCerts > 0)
-    CMP_CTX_set1_extraCerts( cmp_ctx, extraCerts);
+    CMP_CTX_set1_extraCertsOut( cmp_ctx, extraCerts);
 
   if (!CMP_new_http_bio( &cbio, opt_httpProxyName, opt_httpProxyPort)) {
     printf( "ERROR: setting up connection to server");
@@ -698,12 +740,13 @@ void parseCLA( int argc, char **argv) {
     {"rr",	     no_argument,          0, 'r'},
     {"engine",   required_argument,    0, 'u'},
     {"extracert",required_argument,    0, 'X'},
+    {"extcertsout",required_argument,  0, 'O'},
     {0, 0, 0, 0}
   };
 
   while (1)
   {
-    c = getopt_long (argc, argv, "a:b:cde:f:g:h:iIj:J:k:l:mno:pP:qrR:sS:tu:U:X:", long_options, &option_index);
+    c = getopt_long (argc, argv, "a:b:cde:f:g:h:iIj:J:k:l:mno:O:pP:qrR:sS:tu:U:X:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -870,6 +913,11 @@ void parseCLA( int argc, char **argv) {
         opt_engine = (char*) malloc(strlen(optarg)+1);
         strcpy(opt_engine, optarg);
         break;
+      case 'O':
+        opt_extCertsOutDir = (char*) malloc(strlen(optarg)+1);
+        strcpy(opt_extCertsOutDir, optarg);
+        break;
+
       case '?':
         /* getopt_long already printed an error message. */
         break;
