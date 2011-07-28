@@ -122,7 +122,6 @@ static int get_server_port(CURL *curl) {
 
 	addr = strdup(addr);
 
-
 	/* find port number */
 	for (p = addr; *p != 0 && !(*p==':'&&p[1]!='/'); p++)
 		;
@@ -133,6 +132,7 @@ static int get_server_port(CURL *curl) {
 	p[i] = 0;
 
 	if (*p) ret = atoi(p);
+	free(addr);
 	return ret;
 }
 
