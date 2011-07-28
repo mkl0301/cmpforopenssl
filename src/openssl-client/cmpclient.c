@@ -323,7 +323,7 @@ void doIr() {
 
   /* using RFC4210's E.7 using external identity certificate */
   if (opt_clCertFile) {
-    if(!(pkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
+    if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
       printf("FATAL: could not read external identity certificate private key from %s!\n", opt_clKeyFile);
       exit(1);
     }
@@ -1148,15 +1148,17 @@ int main(int argc, char **argv) {
   }
 
   if( opt_doIr) {
-    if (opt_hex) {
-      /* get str representation of hex passwords */
-      idStringLen = HELP_hex2str(opt_user, &idString);
-      passwordLen = HELP_hex2str(opt_password, &password);
-    } else {
-      idStringLen = strlen(opt_user);
-      idString = (unsigned char*) opt_user;
-      passwordLen = strlen(opt_password);
-      password = (unsigned char*) opt_password;
+    if (opt_user && opt_password) {
+      if (opt_hex) {
+        /* get str representation of hex passwords */
+        idStringLen = HELP_hex2str(opt_user, &idString);
+        passwordLen = HELP_hex2str(opt_password, &password);
+      } else {
+        idStringLen = strlen(opt_user);
+        idString = (unsigned char*) opt_user;
+        passwordLen = strlen(opt_password);
+        password = (unsigned char*) opt_password;
+      }
     }
     doIr();
   }
