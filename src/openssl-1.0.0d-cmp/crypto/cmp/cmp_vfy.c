@@ -1,3 +1,4 @@
+/* vim: set noet ts=4 sts=4 sw=4: */
 /* crypto/cmp/cmp_vfy.c
  * Functions to verify CMP (RFC 4210) messages for OpenSSL
  */
@@ -168,3 +169,173 @@ err:
 	CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_CMPERROR);
 	return 0;
 }
+
+typedef struct {
+    X509_STORE_CTX cert_ctx;
+    CMP_CTX *cmp_ctx;
+    STACK_OF(X509) *chain;
+} X509_STORE_CTX_ext;
+
+int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *untrusted_chain, X509 *cert, STACK_OF(X509) **valid_chain)
+    {
+    int i=0,ret=0;
+    X509_STORE *ctx = cmp_ctx->trusted_store;
+    X509_STORE_CTX *csc;
+    X509_STORE_CTX_ext cscex;
+    STACK_OF(X509) *uchain = NULL;
+
+    if (ctx == NULL || cert == NULL) goto end;
+
+    csc = X509_STORE_CTX_new();
+    if (csc == NULL)
+        {
+        ERR_print_errors_fp(stderr);
+        goto end;
+        }
+
+    if (untrusted_chain)
+        uchain = sk_X509_dup(untrusted_chain);
+    else 
+        uchain = sk_X509_new_null();
+
+    /* If untrusted_chain has been specified, add those certs to uchain */
+    if (cmp_ctx->untrusted_chain)
+        for (i=0; i < sk_X509_num(cmp_ctx->untrusted_chain); i++)
+            sk_X509_push(uchain, sk_X509_value(cmp_ctx->untrusted_chain, i));
+
+    X509_STORE_set_flags(ctx, 0);
+    if(!X509_STORE_CTX_init(csc, ctx, cert, uchain))
+        {
+        ERR_print_errors_fp(stderr);
+        goto end;
+        }
+
+    // if(tchain) X509_STORE_CTX_trusted_stack(csc, tchain);
+    // if (crls) X509_STORE_CTX_set0_crls(csc, crls);
+
+    cscex.cert_ctx = *csc;
+    cscex.cmp_ctx = cmp_ctx;
+    if (valid_chain)
+        cscex.chain = sk_X509_new_null();
+    else 
+        cscex.chain = NULL;
+    i=X509_verify_cert((X509_STORE_CTX*) &cscex);
+
+    if (valid_chain) *valid_chain = cscex.chain;
+
+    X509_STORE_CTX_free(csc);
+
+    ret=0;
+end:
+    if (uchain) sk_X509_free(uchain);
+    if (i > 0)
+        {
+        fprintf(stdout,"OK\n");
+        ret=1;
+        }
+    else
+        ERR_print_errors_fp(stderr);
+
+    return(ret);
+    }
+
+static void nodes_print(BIO *out, const char *name,
+    STACK_OF(X509_POLICY_NODE) *nodes)
+    {
+    X509_POLICY_NODE *node;
+    int i;
+    BIO_printf(out, "%s Policies:", name);
+    if (nodes)
+        {
+        BIO_puts(out, "\n");
+        for (i = 0; i < sk_X509_POLICY_NODE_num(nodes); i++)
+            {
+            node = sk_X509_POLICY_NODE_value(nodes, i);
+            X509_POLICY_NODE_print(out, node, 2);
+            }
+        }
+    else
+        BIO_puts(out, " <empty>\n");
+    }
+
+
+static void policies_print(BIO *out, X509_STORE_CTX *ctx)
+    {
+    X509_POLICY_TREE *tree;
+    int explicit_policy;
+    int free_out = 0;
+    if (out == NULL)
+        {
+        out = BIO_new_fp(stderr, BIO_NOCLOSE);
+        free_out = 1;
+        }
+    tree = X509_STORE_CTX_get0_policy_tree(ctx);
+    explicit_policy = X509_STORE_CTX_get_explicit_policy(ctx);
+
+    BIO_printf(out, "Require explicit Policy: %s\n", explicit_policy ? "True" : "False");
+
+    nodes_print(out, "Authority", X509_policy_tree_get0_policies(tree));
+    nodes_print(out, "User", X509_policy_tree_get0_user_policies(tree));
+    if (free_out)
+        BIO_free(out);
+    }
+
+int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
+    {
+    X509_STORE_CTX_ext *ctxext = (X509_STORE_CTX_ext*) ctx;
+    int cert_error = X509_STORE_CTX_get_error(ctx);
+    X509 *current_cert = X509_STORE_CTX_get_current_cert(ctx);
+
+    if (ok && ctxext->chain && current_cert)
+        sk_X509_push(ctxext->chain, current_cert);
+
+    if (!ok)
+        {
+        if (current_cert)
+            {
+            X509_NAME_print_ex_fp(stdout,
+                X509_get_subject_name(current_cert),
+                0, XN_FLAG_ONELINE);
+            printf("\n");
+            }
+
+        CMP_printf(ctxext->cmp_ctx, "%serror %d at %d depth lookup:%s\n",
+            X509_STORE_CTX_get0_parent_ctx(ctx) ? "[CRL path]" : "",
+            cert_error,
+            X509_STORE_CTX_get_error_depth(ctx),
+            X509_verify_cert_error_string(cert_error));
+        switch(cert_error)
+            {
+            case X509_V_ERR_NO_EXPLICIT_POLICY:
+                // policies_print(NULL, ctx);
+            case X509_V_ERR_CERT_HAS_EXPIRED:
+
+            /* since we are just checking the certificates, it is
+             * ok if they are self signed. But we should still warn
+             * the user.
+             */
+
+            case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+            /* Continue after extension errors too */
+            case X509_V_ERR_INVALID_CA:
+            case X509_V_ERR_INVALID_NON_CA:
+            case X509_V_ERR_PATH_LENGTH_EXCEEDED:
+            case X509_V_ERR_INVALID_PURPOSE:
+            case X509_V_ERR_CRL_HAS_EXPIRED:
+            case X509_V_ERR_CRL_NOT_YET_VALID:
+            case X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION:
+            ok = 1;
+
+            }
+
+        CMP_printf(ctxext->cmp_ctx, "cert_error = %d\n", cert_error);
+
+        return ok;
+
+        }
+    if (cert_error == X509_V_OK && ok == 2)
+        policies_print(NULL, ctx);
+
+    return(ok);
+    }
+

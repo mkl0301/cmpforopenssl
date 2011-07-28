@@ -1280,6 +1280,12 @@ typedef struct cmp_ctx_st
 
 	/* log callback functions for error and debug messages */
 	cmp_logfn_t error_cb, debug_cb;
+
+	/* */
+	X509_STORE *trusted_store;
+	/* STACK_OF(X509) *trusted_chain; */
+	/* X509_STORE *untrusted_store; */
+	STACK_OF(X509) *untrusted_chain;
 } CMP_CTX;
 
 DECLARE_ASN1_FUNCTIONS(CMP_CTX)
@@ -1369,6 +1375,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 			    X509_ALGOR *algor,
 			    EVP_PKEY *pkey,
 			    const ASN1_OCTET_STRING *secret);
+int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *untrusted_chain, X509 *cert, STACK_OF(X509) **valid_chain);
 
 /* cmp_itav.c */
 /* CA Protocol Encryption Certificate */
@@ -1434,6 +1441,8 @@ CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx);
 
 /* from cmp_ctx.c */
 int CMP_CTX_init( CMP_CTX *ctx);
+int CMP_CTX_set_trustedPath( CMP_CTX *ctx, char *dir);
+int CMP_CTX_set_untrustedPath( CMP_CTX *ctx, char *dir);
 void CMP_CTX_delete(CMP_CTX *ctx);
 CMP_CTX *CMP_CTX_create(void);
 int CMP_CTX_set_error_callback( CMP_CTX *ctx, cmp_logfn_t cb);

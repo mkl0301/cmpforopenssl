@@ -77,6 +77,7 @@
 #include <openssl/x509v3.h>
 #include <openssl/err.h>
 #include <string.h>
+#include <dirent.h>
 
  /* NAMING
   * The 0 version uses the supplied structure pointer directly in the parent and
@@ -178,6 +179,81 @@ err:
 }
 
 ;
+
+static X509 *HELP_read_der_cert( const char *filename) {
+	X509 *cert;
+	BIO  *bio;
+
+  if(!filename) return 0; /* mandatory parameter */
+
+  if ((bio=BIO_new(BIO_s_file())) == NULL)
+	  return NULL;
+
+  if (!BIO_read_filename(bio,filename)) {
+  	  BIO_free(bio);
+	  return NULL;
+  }
+
+  cert = d2i_X509_bio(bio,NULL);
+
+  BIO_free(bio);
+  return cert;
+}
+
+static X509_STORE *create_cert_store(char *dir) {
+    X509_STORE *cert_ctx=NULL;
+    X509_LOOKUP *lookup=NULL;
+
+    cert_ctx=X509_STORE_new();
+    if (cert_ctx == NULL) goto err;
+
+int CMP_cert_callback(int ok, X509_STORE_CTX *ctx);
+    X509_STORE_set_verify_cb(cert_ctx, CMP_cert_callback);
+
+    lookup = X509_STORE_add_lookup(cert_ctx, X509_LOOKUP_hash_dir());
+    if (lookup == NULL) goto err;
+
+    // XXX PEM or DER format?
+    // X509_LOOKUP_add_dir(lookup, ctx.trusted_dir, X509_FILETYPE_PEM);
+    X509_LOOKUP_add_dir(lookup, dir, X509_FILETYPE_ASN1);
+
+    return cert_ctx;
+
+err:
+    return NULL;
+}
+
+int CMP_CTX_set_untrustedPath( CMP_CTX *ctx, char *untrusted_dir) {
+	DIR *dir = opendir(untrusted_dir);
+	struct dirent *de = NULL, *buf = (struct dirent*) calloc(1, sizeof(struct dirent));
+	ctx->untrusted_chain = sk_X509_new_null(); 
+	while (readdir_r(dir, buf, &de) == 0 && de != NULL) {
+		if (!strcmp(&de->d_name[ strlen(de->d_name) - 2 ], ".0")) {
+			int fnlen = strlen(untrusted_dir) + strlen(de->d_name) + 2;
+			char *fnbuf = (char*) malloc(fnlen);
+			snprintf(fnbuf, fnlen, "%s/%s", untrusted_dir, de->d_name);
+			X509 *cert = HELP_read_der_cert(fnbuf);
+			if (cert) {
+				CMP_printf(ctx, "INFO: Adding certificate %s to untrusted store.\n", fnbuf);
+				sk_X509_push(ctx->untrusted_chain, cert);
+			}
+			free(fnbuf);
+		}
+	}
+	free(buf);
+	free(de);
+	closedir(dir);
+	return 1;
+}
+
+
+int CMP_CTX_set_trustedPath( CMP_CTX *ctx, char *dir) {
+	ctx->trusted_store = create_cert_store(dir);
+	if (ctx->trusted_store)
+		return 1;
+	return 0;
+}
+
 /* ################################################################ */
 /* ################################################################ */
 int CMP_CTX_init( CMP_CTX *ctx) {
@@ -209,6 +285,10 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->error_cb = (cmp_logfn_t) puts;
 	ctx->debug_cb = (cmp_logfn_t) puts;
 
+	ctx->trusted_store   = NULL;
+	/* ctx->trusted_chain   = NULL; */
+	ctx->untrusted_chain = NULL;
+
 #if 0
 	ctx->referenceValue = NULL;
 	ctx->secretValue = NULL;
@@ -223,6 +303,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	/* initialize OpenSSL */
 	OpenSSL_add_all_ciphers();
 	OpenSSL_add_all_digests();
+	ERR_load_crypto_strings();
 
 	return 1;
 
@@ -859,7 +940,7 @@ err:
 
 void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...)
 {
-	if (!ctx->debug_cb) return;
+	if (!ctx || !ctx->debug_cb) return;
 
 	va_list arg_ptr;
 	va_start(arg_ptr, fmt);

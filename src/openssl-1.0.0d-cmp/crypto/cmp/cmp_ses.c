@@ -122,7 +122,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (!cbio) goto err;
 	if (!ctx) goto err;
 	/* for authentication we need either reference/secret or external identity certificate and private key */
-	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
+	if (!(ctx->referenceValue && ctx->secretValue) && !(ctx->pkey && ctx->clCert)) goto err;
 	if (!ctx->newPkey) goto err;
 
 	/* set the protection Algor which will be used during the whole session */
@@ -646,8 +646,8 @@ CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
 	cku = itav->infoValue.caKeyUpdateInfo;
 
 	CMP_printf( ctx, "INFO: Attempting to verify received ckuann certificates.");
-	printf("%08x\n", cku->newWithNew->cert_info->key);
-	printf("%08x\n", cku->newWithNew->cert_info->key->public_key);
+	// printf("%08x\n", cku->newWithNew->cert_info->key);
+	// printf("%08x\n", cku->newWithNew->cert_info->key->public_key);
 	
 	/*
 	EVP_PKEY *newpk = cku->newWithNew->cert_info->key->pkey;
@@ -656,7 +656,7 @@ CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
 	printf("newWithold: %d\n", X509_verify(cku->newWithOld, oldpk));
 	*/
 
-	return itav->infoValue.caKeyUpdateInfo;
+	return cku;
 err:
 	CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_CMPERROR);
 
