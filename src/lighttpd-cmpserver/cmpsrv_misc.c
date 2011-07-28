@@ -10,9 +10,11 @@ void dbgprintf(const char *fmt, ...) {
   va_list arg_ptr;
   va_start(arg_ptr, fmt);
   FILE *f = fopen("/tmp/cmpsrv.log", "a");
-  vfprintf(f, fmt, arg_ptr);
-  fprintf(f, "\n");
-  fclose(f);
+  if (f) {
+    vfprintf(f, fmt, arg_ptr);
+    fprintf(f, "\n");
+    fclose(f);
+  }
   va_end(arg_ptr);
 }
 
