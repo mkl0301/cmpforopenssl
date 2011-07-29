@@ -1134,6 +1134,7 @@ int main(int argc, char **argv) {
       passwordLen = strlen(opt_password);
       password = (unsigned char*) opt_password;
     }
+  }
 
   if( opt_doIr) {
     doIr(cmp_ctx);
