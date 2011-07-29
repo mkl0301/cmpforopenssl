@@ -119,6 +119,8 @@ static char* opt_user=NULL;
 static char* opt_password=NULL;
 static char* opt_engine=NULL;
 static char* opt_extCertsOutDir=NULL;
+static char* opt_trustedDir=NULL;
+static char* opt_untrustedDir=NULL;
 static int opt_hex=0;
 static int opt_proxy=0;
 static int opt_sequenceSet=0;
@@ -163,6 +165,10 @@ void printUsage( const char* cmdName) {
   printf("                       located in the \"extraCerts\" field will be saved\n");
   printf("                       with a [8Byte subject hash].0 filename\n");
   printf("                       NB: multiple certificates with same DN but other Serial have the same hash!\n");
+  printf(" --trusted DIR         directory of trusted certificates. the certificates should have names\n");
+  printf("                       of the form hash.0, where 'hash' is the hashed certificate subject name.\n");
+  printf("                       see the -hash option of OpenSSL's x509 utility.\n");
+  printf(" --untrusted DIR       same as above, but for untrusted certificates.\n");
   /* XXX TODO: add the following */
 #if 0
   printf(" --extcertsin DIR    directory where extra certificates needed"\n); 
@@ -176,7 +182,7 @@ void printUsage( const char* cmdName) {
   printf(" --cr   do renewal of a certificate\n");
   printf(" --rr   do revocation request sequence\n");
   printf(" --info do PKI Information request sequence\n");
-  // printf(" --ckuann do CA Key Update request sequence\n");
+  /* printf(" --ckuann do CA Key Update request sequence\n"); */
   printf("\n");
   printf("The following OPTIONS have to be set when needed by CMD:\n");
   printf(" --user USER           the user (reference) for an IR message\n");
@@ -756,12 +762,14 @@ void parseCLA( int argc, char **argv) {
     {"engine",   required_argument,    0, 'u'},
     {"extracert",required_argument,    0, 'X'},
     {"extcertsout",required_argument,  0, 'O'},
+    {"trusted",required_argument,  0, 'T'},
+    {"untrusted",required_argument,  0, 'N'},
     {0, 0, 0, 0}
   };
 
   while (1)
   {
-    c = getopt_long (argc, argv, "a:b:cde:f:g:h:iIj:J:k:l:mno:O:pP:qrR:sS:tu:U:X:", long_options, &option_index);
+    c = getopt_long (argc, argv, "a:b:cde:f:g:h:iIj:J:k:l:mno:O:pP:qrR:sS:tT:N:u:U:X:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -777,6 +785,14 @@ void parseCLA( int argc, char **argv) {
         if (optarg)
           printf (" with arg %s", optarg);
         printf ("\n");
+        break;
+
+      case 'N':
+        createOptStr( &opt_untrustedDir);
+        break;
+
+      case 'T':
+        createOptStr( &opt_trustedDir);
         break;
 
       case 'U':
