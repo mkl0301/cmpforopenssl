@@ -290,20 +290,12 @@ err:
 
 /* ############################################################################ */
 /* ############################################################################ */
-void doIr() {
-  EVP_PKEY *pkey=NULL;
+void doIr(CMP_CTX *cmp_ctx) {
+  /* EVP_PKEY *pkey=NULL; */
   EVP_PKEY *newPkey=NULL;
   CMPBIO *cbio=NULL;
   X509 *newClCert=NULL;
   X509 *extIdCert=NULL;
-  CMP_CTX *cmp_ctx=NULL;
-
-  /* XXX this is not freed yet */
-  cmp_ctx = CMP_CTX_create();
-  if (!cmp_ctx) {
-    printf("FATAL: could not create CMP_CTX\n");
-    exit(1);
-  }
 
   /* set to the context what we already know */
   CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
@@ -411,11 +403,10 @@ void doIr() {
 
 /* ############################################################################ */
 /* ############################################################################ */
-void doRr() {
+void doRr(CMP_CTX *cmp_ctx) {
   EVP_PKEY *initialPkey=NULL; /* TODO: s/intitialPkey/pkey/ */
   CMPBIO *cbio=NULL;
   X509 *initialClCert=NULL;   /* TODO: s/initialClCert/clCert/ */
-  CMP_CTX *cmp_ctx=NULL;
 
   // ENGINE_load_private_key(e, path, NULL, "password"); 
 
@@ -435,12 +426,6 @@ void doRr() {
     exit(1);
   }
 
-  /* XXX this is not freed yet */
-  cmp_ctx = CMP_CTX_create();
-  if (!cmp_ctx) {
-    printf("FATAL: could not create CMP_CTX\n");
-    exit(1);
-  }
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
@@ -472,11 +457,10 @@ void doRr() {
 
 /* ############################################################################ */
 /* ############################################################################ */
-void doCr() {
+void doCr(CMP_CTX *cmp_ctx) {
   EVP_PKEY *initialPkey=NULL; /* TODO: s/initialPkey/pkey/ */
   CMPBIO *cbio=NULL;
   X509 *initialClCert=NULL;   /* TODO: s/initialClCert/clCert/ */
-  CMP_CTX *cmp_ctx=NULL;
   X509 *updatedClCert=NULL;   /* TODO: s/updatedClCert/newClCert/ */
 
   /* XXX TODO: where is the newPkey?  Shouldn't CR be used to get new
@@ -500,12 +484,6 @@ void doCr() {
     exit(1);
   }
 
-  /* XXX this is not freed yet */
-  cmp_ctx = CMP_CTX_create();
-  if (!cmp_ctx) {
-    printf("FATAL: could not create CMP_CTX\n");
-    exit(1);
-  }
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
@@ -545,15 +523,13 @@ void doCr() {
 
 /* ############################################################################ */
 /* ############################################################################ */
-void doKur() {
+void doKur(CMP_CTX *cmp_ctx) {
   EVP_PKEY *initialPkey=NULL;  /* TODO: s/initialPkey/pkey/ */
   X509 *initialClCert=NULL;    /* TODO: s/initialClCert/clCert/ */
 
   EVP_PKEY *updatedPkey=NULL;
   CMPBIO *cbio=NULL;
   X509 *updatedClCert=NULL;
-
-  CMP_CTX *cmp_ctx=NULL;
 
   if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
     printf("FATAL: could not read private client key!\n");
@@ -572,12 +548,6 @@ void doKur() {
     exit(1);
   }
 
-  /* XXX this is not freed yet */
-  cmp_ctx = CMP_CTX_create();
-  if (!cmp_ctx) {
-    printf("FATAL: could not create CMP_CTX\n");
-    exit(1);
-  }
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
@@ -617,17 +587,10 @@ void doKur() {
 
 /* ############################################################################ */
 /* ############################################################################ */
-void doInfo() {
+void doInfo(CMP_CTX *cmp_ctx) {
   CMPBIO *cbio=NULL;
-  CMP_CTX *cmp_ctx=NULL;
   int res=0;
 
-  /* XXX this is not freed yet */
-  cmp_ctx = CMP_CTX_create();
-  if (!cmp_ctx) {
-    printf("FATAL: could not create CMP_CTX\n");
-    exit(1);
-  }
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
@@ -659,17 +622,10 @@ void doInfo() {
 
 /* ############################################################################ */
 /* ############################################################################ */
-void doCKUAnn() {
+void doCKUAnn(CMP_CTX *cmp_ctx) {
   CMPBIO *cbio=NULL;
-  CMP_CTX *cmp_ctx=NULL;
   CMP_CAKEYUPDANNCONTENT *cku = NULL;
 
-  /* XXX this is not freed yet */
-  cmp_ctx = CMP_CTX_create();
-  if (!cmp_ctx) {
-    printf("FATAL: could not create CMP_CTX\n");
-    exit(1);
-  }
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
@@ -1115,8 +1071,9 @@ int set_engine (const char* e)
 /* ############################################################################ */
 /* ############################################################################ */
 int main(int argc, char **argv) {
-  char *httpProxyName;
-  int httpProxyPort;
+  char *httpProxyName = NULL;
+  int httpProxyPort = 0;
+  CMP_CTX *cmp_ctx = NULL;
 
   parseCLA(argc, argv);
 
@@ -1159,6 +1116,13 @@ int main(int argc, char **argv) {
     }
   }
 
+  /* XXX this is not freed yet */
+  cmp_ctx = CMP_CTX_create();
+  if (!cmp_ctx) {
+    printf("FATAL: could not create CMP_CTX\n");
+    exit(1);
+  }
+
   if( opt_doIr) {
     if (opt_user && opt_password) {
       if (opt_hex) {
@@ -1172,15 +1136,15 @@ int main(int argc, char **argv) {
         password = (unsigned char*) opt_password;
       }
     }
-    doIr();
+    doIr(cmp_ctx);
   }
 
   if( opt_doCr) {
-    doCr();
+    doCr(cmp_ctx);
   }
 
   if( opt_doKur) {
-    doKur();
+    doKur(cmp_ctx);
   }
 
   if( opt_doRr) {
@@ -1194,7 +1158,7 @@ int main(int argc, char **argv) {
       passwordLen = strlen(opt_password);
       password = (unsigned char*) opt_password;
     }
-    doRr();
+    doRr(cmp_ctx);
   }
 
   if( opt_doInfo) {
@@ -1208,7 +1172,7 @@ int main(int argc, char **argv) {
       passwordLen = strlen(opt_password);
       password = (unsigned char*) opt_password;
     }
-    doInfo();
+    doInfo(cmp_ctx);
   }
 
   if( opt_doCKUAnn) {
@@ -1222,7 +1186,7 @@ int main(int argc, char **argv) {
       passwordLen = strlen(opt_password);
       password = (unsigned char*) opt_password;
     }
-    doCKUAnn();
+    doCKUAnn(cmp_ctx);
   }
 
   return 0;
