@@ -292,9 +292,9 @@ err:
 /* ############################################################################ */
 void doIr() {
   EVP_PKEY *pkey=NULL;
-  EVP_PKEY *initialPkey=NULL; /* TODO: s/intialPkey/newPkey/ */
+  EVP_PKEY *newPkey=NULL;
   CMPBIO *cbio=NULL;
-  X509 *initialClCert=NULL;   /* TODO: s/intialCLCert/newCLCert/ */
+  X509 *newClCert=NULL;
   X509 *extIdCert=NULL;
   CMP_CTX *cmp_ctx=NULL;
 
@@ -329,11 +329,11 @@ void doIr() {
 
   /* using RFC4210's E.7 using external identity certificate */
   if (opt_clCertFile) {
-    if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
+    if(!(newPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
       printf("FATAL: could not read external identity certificate private key from %s!\n", opt_clKeyFile);
       exit(1);
     }
-    CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
+    CMP_CTX_set0_pkey( cmp_ctx, newPkey);
 
     if (!(extIdCert = HELP_read_der_cert(opt_clCertFile))) {
       printf("FATAL: could not read external identity certificate from %s!\n", opt_clCertFile);
@@ -349,24 +349,24 @@ void doIr() {
     fclose(key);
     printf("INFO: Using existing key file \"%s\"\n", opt_newClKeyFile);
     if (opt_engine) {
-      if (!(initialPkey = ENGINE_load_private_key (engine, opt_newClKeyFile, NULL, opt_newClKeyPass))) {
+      if (!(newPkey = ENGINE_load_private_key (engine, opt_newClKeyFile, NULL, opt_newClKeyPass))) {
         printf("FATAL: could not read private key /w engine\n");
         exit(1);
       }
     } else { // no engine specified reading private key from file
-      if(!(initialPkey = HELP_readPrivKey(opt_newClKeyFile, opt_newClKeyPass))) {
+      if(!(newPkey = HELP_readPrivKey(opt_newClKeyFile, opt_newClKeyPass))) {
         printf("FATAL: could not read private client key!\n");
         exit(1);
       }
     }
   } else {
     /* generate new private key */
-    initialPkey = HELP_generateRSAKey();
-    /* initialPkey = HELP_generateDSAKey(); */
-    HELP_savePrivKey(initialPkey, opt_newClKeyFile, opt_newClKeyPass);
+    newPkey = HELP_generateRSAKey();
+    /* newPkey = HELP_generateDSAKey(); */
+    HELP_savePrivKey(newPkey, opt_newClKeyFile, opt_newClKeyPass);
   }
 
-  CMP_CTX_set0_newPkey( cmp_ctx, initialPkey);
+  CMP_CTX_set0_newPkey( cmp_ctx, newPkey);
 
   /* TODO: create CLI option for implicit confim */
   /* CL does not support this, it just ignores it.
@@ -378,10 +378,10 @@ void doIr() {
     exit(1);
   }
 
-  initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
+  newClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
   CMP_delete_http_bio( cbio);
 
-  if( initialClCert) {
+  if( newClCert) {
     printf( "SUCCESS: received initial Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
   } else {
     printf( "ERROR: received no initial Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
@@ -389,7 +389,7 @@ void doIr() {
     ERR_print_errors_fp(stderr);
     exit(1);
   }
-  if(!HELP_write_der_cert(initialClCert, opt_newClCertFile)) {
+  if(!HELP_write_der_cert(newClCert, opt_newClCertFile)) {
     printf("FATAL: could not write new client certificate to %s!\n", opt_newClCertFile);
     exit(1);
   }
