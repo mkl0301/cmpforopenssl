@@ -170,12 +170,21 @@ err:
 	return 0;
 }
 
+/* ############################################################################ *
+ * Structure to hold the X509_STORE_CTX and an extra pointer where to
+ * store the entire validated chain for the certificate. We can then use this
+ * information to send the valid intermediate certs in extraCerts
+ * ############################################################################ */
 typedef struct {
     X509_STORE_CTX cert_ctx;
     CMP_CTX *cmp_ctx;
     STACK_OF(X509) *chain;
 } X509_STORE_CTX_ext;
 
+/* ############################################################################ *
+ * Attempt to validate certificate path. returns 1 if the path was
+ * validated successfully and 0 if not.
+ * ############################################################################ */
 int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *untrusted_chain, X509 *cert, STACK_OF(X509) **valid_chain)
     {
     int i=0,ret=0;
@@ -280,11 +289,19 @@ static void policies_print(BIO *out, X509_STORE_CTX *ctx)
         BIO_free(out);
     }
 
+/* ############################################################################ *
+ * This is called for every valid certificate (?). Also used to build the
+ * certificate chain that is returned by CMP_validate_cert_path()
+ * ############################################################################ */
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
     {
     X509_STORE_CTX_ext *ctxext = (X509_STORE_CTX_ext*) ctx;
     int cert_error = X509_STORE_CTX_get_error(ctx);
     X509 *current_cert = X509_STORE_CTX_get_current_cert(ctx);
+
+    /* TODO print out debug messages properly using CMP_printf() */
+
+    /* XXX should we check policies here? */
 
     if (ok && ctxext->chain && current_cert)
         sk_X509_push(ctxext->chain, current_cert);

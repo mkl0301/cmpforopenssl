@@ -200,6 +200,10 @@ static X509 *HELP_read_der_cert( const char *filename) {
   return cert;
 }
 
+/* ############################################################################ *
+ * Creates an X509_STORE structure for looking up certs within a directory,
+ * using the 'hash'.0 naming format.
+ * ############################################################################ */
 static X509_STORE *create_cert_store(char *dir) {
     X509_STORE *cert_ctx=NULL;
     X509_LOOKUP *lookup=NULL;
@@ -207,7 +211,6 @@ static X509_STORE *create_cert_store(char *dir) {
     cert_ctx=X509_STORE_new();
     if (cert_ctx == NULL) goto err;
 
-int CMP_cert_callback(int ok, X509_STORE_CTX *ctx);
     X509_STORE_set_verify_cb(cert_ctx, CMP_cert_callback);
 
     lookup = X509_STORE_add_lookup(cert_ctx, X509_LOOKUP_hash_dir());
@@ -223,6 +226,12 @@ err:
     return NULL;
 }
 
+/* ############################################################################ *
+ * Load stack of untrusted certificates from the given directory. The certificates
+ * must be in DER format and be named with the 'hash'.0 format.
+ * XXX Investigate if this can be done using the X509_STORE structures as we do with
+ *     the trusted certs.
+ * ############################################################################ */
 int CMP_CTX_set_untrustedPath( CMP_CTX *ctx, char *untrusted_dir) {
 	DIR *dir = opendir(untrusted_dir);
 	struct dirent *de = NULL, *buf = (struct dirent*) calloc(1, sizeof(struct dirent));

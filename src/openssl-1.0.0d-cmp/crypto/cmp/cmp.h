@@ -1375,6 +1375,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 			    X509_ALGOR *algor,
 			    EVP_PKEY *pkey,
 			    const ASN1_OCTET_STRING *secret);
+int CMP_cert_callback(int ok, X509_STORE_CTX *ctx);
 int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *untrusted_chain, X509 *cert, STACK_OF(X509) **valid_chain);
 
 /* cmp_itav.c */
