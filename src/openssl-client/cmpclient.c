@@ -1123,19 +1123,19 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  if( opt_doIr) {
-    if (opt_user && opt_password) {
-      if (opt_hex) {
-        /* get str representation of hex passwords */
-        idStringLen = HELP_hex2str(opt_user, &idString);
-        passwordLen = HELP_hex2str(opt_password, &password);
-      } else {
-        idStringLen = strlen(opt_user);
-        idString = (unsigned char*) opt_user;
-        passwordLen = strlen(opt_password);
-        password = (unsigned char*) opt_password;
-      }
+  if (opt_user && opt_password) {
+    if (opt_hex) {
+      /* get str representation of hex passwords */
+      idStringLen = HELP_hex2str(opt_user, &idString);
+      passwordLen = HELP_hex2str(opt_password, &password);
+    } else {
+      idStringLen = strlen(opt_user);
+      idString = (unsigned char*) opt_user;
+      passwordLen = strlen(opt_password);
+      password = (unsigned char*) opt_password;
     }
+
+  if( opt_doIr) {
     doIr(cmp_ctx);
   }
 
@@ -1148,44 +1148,14 @@ int main(int argc, char **argv) {
   }
 
   if( opt_doRr) {
-    if (opt_hex) {
-      /* get str representation of hex passwords */
-      idStringLen = HELP_hex2str(opt_user, &idString);
-      passwordLen = HELP_hex2str(opt_password, &password);
-    } else {
-      idStringLen = strlen(opt_user);
-      idString = (unsigned char*) opt_user;
-      passwordLen = strlen(opt_password);
-      password = (unsigned char*) opt_password;
-    }
     doRr(cmp_ctx);
   }
 
   if( opt_doInfo) {
-    if (opt_hex) {
-      /* get str representation of hex passwords */
-      idStringLen = HELP_hex2str(opt_user, &idString);
-      passwordLen = HELP_hex2str(opt_password, &password);
-    } else {
-      idStringLen = strlen(opt_user);
-      idString = (unsigned char*) opt_user;
-      passwordLen = strlen(opt_password);
-      password = (unsigned char*) opt_password;
-    }
     doInfo(cmp_ctx);
   }
 
   if( opt_doCKUAnn) {
-    if (opt_hex) {
-      /* get str representation of hex passwords */
-      idStringLen = HELP_hex2str(opt_user, &idString);
-      passwordLen = HELP_hex2str(opt_password, &password);
-    } else {
-      idStringLen = strlen(opt_user);
-      idString = (unsigned char*) opt_user;
-      passwordLen = strlen(opt_password);
-      password = (unsigned char*) opt_password;
-    }
     doCKUAnn(cmp_ctx);
   }
 
