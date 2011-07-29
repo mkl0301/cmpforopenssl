@@ -682,11 +682,7 @@ void doCKUAnn() {
 
   if( cku) {
     printf( "SUCCESS requesting CKUAnn. FILE %s, LINE %d\n", __FILE__, __LINE__);
-#if 0
-    HELP_write_der_cert(cku->oldWithNew, "oldWithNew.der");
-    HELP_write_der_cert(cku->newWithOld, "newWithOld.der");
-    HELP_write_der_cert(cku->newWithNew, "newWithNew.der");
-#endif
+    /* TODO: write out received CA certs to a directory ? */
   } else {
     printf( "ERROR requesting CKUAnn. FILE %s, LINE %d\n", __FILE__, __LINE__);
     ERR_load_crypto_strings();
