@@ -7,7 +7,7 @@ RM = /bin/rm
 
 CFLAGS = -g -Wall
 # -lcurl and -lrt is for curl
-LFLAGS = -lssl -lcrypto -ldl -g -lcurl -lrt
+LFLAGS = -lssl -lcrypto -ldl -g -lcurl -lrt -lidn
 
 INCDIR = -I. -I$(OPENSSLDIR)/include -I$(ROOT)/include
 LIBDIR = -L$(OPENSSLDIR) -L$(ROOT)/lib
