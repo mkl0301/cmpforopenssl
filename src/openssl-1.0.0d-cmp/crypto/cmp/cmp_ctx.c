@@ -947,6 +947,9 @@ err:
 	return 0;
 }
 
+/* ################################################################ *
+ * Function used for printing debug messages.
+ * ################################################################ */
 void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...)
 {
 	if (!ctx || !ctx->debug_cb) return;

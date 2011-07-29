@@ -562,17 +562,21 @@ err:
 
 /* ############################################################################ */
 /* ############################################################################ */
-CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid) {
+CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value) {
 	CMP_PKIMESSAGE *msg=NULL;
 	CMP_INFOTYPEANDVALUE *itav=NULL;
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
 
+#if 0
+	/* XXX What were these for and are they still useful??? */
+
 	/* XXX not setting senderNonce test for PKI INFO */
-	ctx->setSenderNonce  = 0;
+	ctx->setSenderNonce  = 1;
 	/* XXX not setting transactionID test for PKI INFO */
 	ctx->setTransactionID  = 1;
+#endif
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
@@ -582,7 +586,7 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid) {
 
 	itav = CMP_INFOTYPEANDVALUE_new();
 	itav->infoType = OBJ_nid2obj(nid);
-	itav->infoValue.ptr = NULL;
+	itav->infoValue.ptr = value;
 	CMP_PKIMESSAGE_genm_item_push0( msg, itav);
 
 #if 0

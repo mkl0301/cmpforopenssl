@@ -1300,7 +1300,7 @@ CMP_PKIMESSAGE *CMP_cr_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_rr_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_certConf_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_kur_new( CMP_CTX *ctx);
-CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid);
+CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value);
 #if 0
 CMP_PKIMESSAGE *CMP_ckuann_new( CMP_CTX *ctx);
 #endif
@@ -1438,6 +1438,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx);
+char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value);
 CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx);
 
 /* from cmp_ctx.c */
@@ -1557,6 +1558,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET_PROTECTIONALGOR		 135
 #define CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH1		 136
 #define CMP_F_CMP_DOCERTIFICATEREQUESTSEQ		 137
+#define CMP_F_CMP_DOGENERALMESSAGESEQ			 156
 #define CMP_F_CMP_DOINITIALREQUESTSEQ			 138
 #define CMP_F_CMP_DOKEYUPDATEREQUESTSEQ			 139
 #define CMP_F_CMP_DOPKIINFOREQSEQ			 140

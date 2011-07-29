@@ -589,15 +589,35 @@ err:
 	return NULL;
 }
 
+CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
+{
+#if 0
+	itav = sk_CMP_INFOTYPEANDVALUE_value( genp->body->value.genp, 0);
+	cku = itav->infoValue.caKeyUpdateInfo;
+
+	CMP_printf( ctx, "INFO: Attempting to verify received ckuann certificates.");
+	// printf("%08x\n", cku->newWithNew->cert_info->key);
+	// printf("%08x\n", cku->newWithNew->cert_info->key->public_key);
+	
+	/*
+	EVP_PKEY *newpk = cku->newWithNew->cert_info->key->pkey;
+	EVP_PKEY *oldpk = cku->oldWithNew->cert_info->key->pkey;
+	printf("oldWithNew: %d\n", X509_verify(cku->oldWithNew, newpk));
+	printf("newWithold: %d\n", X509_verify(cku->newWithOld, oldpk));
+	*/
+#endif
+
+	return (CMP_CAKEYUPDANNCONTENT*) CMP_doGeneralMessageSeq( cbio, ctx, NID_id_it_caKeyUpdateInfo, NULL);
+}
+
 /* ############################################################################ */
 /* TODO: make me more general --> sending of General Message */
 /* ############################################################################ */
-CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
+char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 {
 	CMP_PKIMESSAGE *genm=NULL;
 	CMP_PKIMESSAGE *genp=NULL;
 	CMP_INFOTYPEANDVALUE *itav=NULL;
-	CMP_CAKEYUPDANNCONTENT *cku=NULL;
 
 	/* check if all necessary options are set */
 	if (!cbio) goto err;
@@ -610,7 +630,8 @@ CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
 	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
 
 	/* crate GenMsgContent - genm*/
-	if (! (genm = CMP_genm_new(ctx, NID_id_it_caKeyUpdateInfo))) goto err;
+	// if (! (genm = CMP_genm_new(ctx, NID_id_it_caKeyUpdateInfo))) goto err;
+	if (! (genm = CMP_genm_new(ctx, nid, value))) goto err;
 
 	CMP_printf( ctx, "INFO: Sending General Message");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
@@ -641,24 +662,12 @@ CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
 		goto err;
 	}
 
-
 	itav = sk_CMP_INFOTYPEANDVALUE_value( genp->body->value.genp, 0);
-	cku = itav->infoValue.caKeyUpdateInfo;
+	if (!itav) goto err;
 
-	CMP_printf( ctx, "INFO: Attempting to verify received ckuann certificates.");
-	// printf("%08x\n", cku->newWithNew->cert_info->key);
-	// printf("%08x\n", cku->newWithNew->cert_info->key->public_key);
-	
-	/*
-	EVP_PKEY *newpk = cku->newWithNew->cert_info->key->pkey;
-	EVP_PKEY *oldpk = cku->oldWithNew->cert_info->key->pkey;
-	printf("oldWithNew: %d\n", X509_verify(cku->oldWithNew, newpk));
-	printf("newWithold: %d\n", X509_verify(cku->newWithOld, oldpk));
-	*/
-
-	return cku;
+	return itav->infoValue.ptr;
 err:
-	CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_CMPERROR);
 
 	if (genm) CMP_PKIMESSAGE_free(genm);
 	if (genp) CMP_PKIMESSAGE_free(genp);
@@ -666,7 +675,7 @@ err:
 	/* print out openssl and cmp errors to error_cb if it's set */
 	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
 
-	return 0;
+	return NULL;
 }
 
 
@@ -687,7 +696,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
 
 	/* crate GenMsgContent - genm*/
-	if (! (genm = CMP_genm_new(ctx, 0))) goto err;
+	if (! (genm = CMP_genm_new(ctx, 0, NULL))) goto err;
 
 	CMP_printf( ctx, "INFO: Sending General Message");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
