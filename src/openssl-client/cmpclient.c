@@ -458,10 +458,10 @@ void doRr(CMP_CTX *cmp_ctx) {
 /* ############################################################################ */
 /* ############################################################################ */
 void doCr(CMP_CTX *cmp_ctx) {
-  EVP_PKEY *initialPkey=NULL; /* TODO: s/initialPkey/pkey/ */
+  EVP_PKEY *pkey=NULL;
   CMPBIO *cbio=NULL;
-  X509 *initialClCert=NULL;   /* TODO: s/initialClCert/clCert/ */
-  X509 *updatedClCert=NULL;   /* TODO: s/updatedClCert/newClCert/ */
+  X509 *clCert=NULL;
+  X509 *newClCert=NULL;
 
   /* XXX TODO: where is the newPkey?  Shouldn't CR be used to get new
    * certificates (possibly also for new keys) ? XXX TODO */
@@ -469,17 +469,17 @@ void doCr(CMP_CTX *cmp_ctx) {
   // ENGINE_load_private_key(e, path, NULL, "password"); 
 
   if (opt_engine) {
-    if (!(initialPkey = ENGINE_load_private_key (engine, opt_clKeyFile, NULL, opt_clKeyPass))) {
+    if (!(pkey = ENGINE_load_private_key (engine, opt_clKeyFile, NULL, opt_clKeyPass))) {
       printf("FATAL: could not read private key /w engine\n");
       exit(1);
     }
   } else { // no engine specified reading private key from file
-    if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
+    if(!(pkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
       printf("FATAL: could not read private client key!\n");
       exit(1);
     }
   }
-  if(!(initialClCert = HELP_read_der_cert(opt_clCertFile))) {
+  if(!(clCert = HELP_read_der_cert(opt_clCertFile))) {
     printf("FATAL: could not read client certificate!\n");
     exit(1);
   }
@@ -487,9 +487,9 @@ void doCr(CMP_CTX *cmp_ctx) {
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
-  CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
+  CMP_CTX_set0_pkey( cmp_ctx, pkey);
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
-  CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
+  CMP_CTX_set1_clCert( cmp_ctx, clCert);
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
   if (opt_nExtraCerts > 0)
@@ -504,16 +504,16 @@ void doCr(CMP_CTX *cmp_ctx) {
     exit(1);
   }
 
-  updatedClCert = CMP_doCertificateRequestSeq( cbio, cmp_ctx);
+  newClCert = CMP_doCertificateRequestSeq( cbio, cmp_ctx);
   CMP_delete_http_bio(cbio);
 
-  if( updatedClCert) {
+  if( newClCert) {
     printf( "SUCCESS: received renewed Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
   } else {
     printf( "ERROR: received no renewed Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
     exit(1);
   }
-  if(!HELP_write_der_cert( updatedClCert, opt_newClCertFile)) {
+  if(!HELP_write_der_cert( newClCert, opt_newClCertFile)) {
     printf("FATAL: could not write new client certificate!\n");
     exit(1);
   }
@@ -524,18 +524,18 @@ void doCr(CMP_CTX *cmp_ctx) {
 /* ############################################################################ */
 /* ############################################################################ */
 void doKur(CMP_CTX *cmp_ctx) {
-  EVP_PKEY *initialPkey=NULL;  /* TODO: s/initialPkey/pkey/ */
-  X509 *initialClCert=NULL;    /* TODO: s/initialClCert/clCert/ */
+  EVP_PKEY *pkey=NULL;
+  X509 *clCert=NULL;
 
   EVP_PKEY *updatedPkey=NULL;
   CMPBIO *cbio=NULL;
   X509 *updatedClCert=NULL;
 
-  if(!(initialPkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
+  if(!(pkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
     printf("FATAL: could not read private client key!\n");
     exit(1);
   }
-  if(!(initialClCert = HELP_read_der_cert(opt_clCertFile))) {
+  if(!(clCert = HELP_read_der_cert(opt_clCertFile))) {
     printf("FATAL: could not read client certificate!\n");
     exit(1);
   }
@@ -551,9 +551,9 @@ void doKur(CMP_CTX *cmp_ctx) {
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
-  CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
+  CMP_CTX_set0_pkey( cmp_ctx, pkey);
   CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
-  CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
+  CMP_CTX_set1_clCert( cmp_ctx, clCert);
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
@@ -1122,6 +1122,8 @@ int main(int argc, char **argv) {
     printf("FATAL: could not create CMP_CTX\n");
     exit(1);
   }
+
+  /* TODO set common options for cmp_ctx here */
 
   if (opt_user && opt_password) {
     if (opt_hex) {
