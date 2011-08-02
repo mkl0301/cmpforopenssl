@@ -213,6 +213,7 @@ static X509_STORE *create_cert_store(char *dir) {
 
     X509_STORE_set_verify_cb(cert_ctx, CMP_cert_callback);
 
+	/* TODO what happens if we have two certificates with the same subject name? (i.e. same hash) */
     lookup = X509_STORE_add_lookup(cert_ctx, X509_LOOKUP_hash_dir());
     if (lookup == NULL) goto err;
 
@@ -237,6 +238,7 @@ int CMP_CTX_set_untrustedPath( CMP_CTX *ctx, char *untrusted_dir) {
 	struct dirent *de = NULL, *buf = (struct dirent*) calloc(1, sizeof(struct dirent));
 	ctx->untrusted_chain = sk_X509_new_null(); 
 	while (readdir_r(dir, buf, &de) == 0 && de != NULL) {
+		/* TODO what happens if we have two certificates with the same subject name? */
 		if (!strcmp(&de->d_name[ strlen(de->d_name) - 2 ], ".0")) {
 			int fnlen = strlen(untrusted_dir) + strlen(de->d_name) + 2;
 			char *fnbuf = (char*) malloc(fnlen);

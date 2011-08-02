@@ -104,6 +104,15 @@ static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL
 	return 1;
 }
 
+/* ############################################################################ 
+ * Returns the trust chain for a given certificate up to and including the trust anchor
+ * ############################################################################ */
+static STACK_OF(X509) *get_cert_chain(CMP_CTX *ctx, X509 *cert) {
+	STACK_OF(X509) *chain = NULL;
+	CMP_validate_cert_path(ctx, NULL, cert, &chain);
+	return chain;
+}
+
 /* ############################################################################ */
 /* ############################################################################ */
 CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
@@ -189,6 +198,20 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	/* E.7: if we have external identity cert add to extraCerts */
 	if (ctx->clCert) {
 		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+
+		/* if we have trusted and untrusted store, try to add the entire trust chain */
+		if (ctx->trusted_store && ctx->untrusted_chain) {
+			STACK_OF(X509) *chain = get_cert_chain(ctx, ctx->clCert);
+			int i;
+			if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+			/* first certificate is the trust anchor, so we skip that. also skip the last once,
+			 * since it will be our own certificate which is added below even when we don't have
+			 * trusted store set. */
+			for(i = 1; i < sk_X509_num(chain)-1; i++)
+				sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
+			sk_X509_free(chain);
+		}
+
 		sk_X509_push(msg->extraCerts, ctx->clCert);
 	}
 
@@ -490,6 +513,17 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
 		for (i = 0; i < sk_X509_num(ctx->extraCertsOut); i++)
 			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCertsOut, i)));
+	}
+
+	if (ctx->trusted_store && ctx->untrusted_chain) {
+		/* attempt to get the trust chain for our certificate and send it along */
+		STACK_OF(X509) *chain = get_cert_chain(ctx, ctx->clCert);
+		int i;
+		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+		/* first certificate is the trust anchor, so we skip that. */
+		for(i = 1; i < sk_X509_num(chain); i++)
+			sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
+		sk_X509_free(chain);
 	}
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
