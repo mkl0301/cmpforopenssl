@@ -1123,7 +1123,14 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  /* TODO set common options for cmp_ctx here */
+  /* TODO move the handling of all common options such as server ip, port etc. here */
+
+  if (opt_trustedDir)
+    CMP_CTX_set_trustedPath(cmp_ctx, opt_trustedDir);
+
+  if (opt_untrustedDir)
+    CMP_CTX_set_untrustedPath(cmp_ctx, opt_untrustedDir);
+
 
   if (opt_user && opt_password) {
     if (opt_hex) {
