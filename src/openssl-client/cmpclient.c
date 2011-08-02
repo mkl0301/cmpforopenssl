@@ -1009,9 +1009,11 @@ int getHttpProxy( char **name, int *port) {
     proxy = opt_httpProxy;
   } else {
     if( !opt_proxy) return 0;
-    if( getenv("http_proxy")) {
-      if( !(proxy = strdup(getenv("http_proxy")))) {
+    proxy = getenv("http_proxy");
+    if( proxy) {
+      if( !(proxy = strdup(proxy))) {
         printf( "FATAL failed to allocate mememory to proxy string, aborting");
+        exit(0);
       }
     } else {
       /* no proxy setting found */
