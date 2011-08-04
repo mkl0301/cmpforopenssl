@@ -180,26 +180,6 @@ err:
 
 ;
 
-static X509 *HELP_read_der_cert( const char *filename) {
-	X509 *cert;
-	BIO  *bio;
-
-  if(!filename) return 0; /* mandatory parameter */
-
-  if ((bio=BIO_new(BIO_s_file())) == NULL)
-	  return NULL;
-
-  if (!BIO_read_filename(bio,filename)) {
-  	  BIO_free(bio);
-	  return NULL;
-  }
-
-  cert = d2i_X509_bio(bio,NULL);
-
-  BIO_free(bio);
-  return cert;
-}
-
 /* ############################################################################ *
  * Creates an X509_STORE structure for looking up certs within a directory,
  * using the 'hash'.0 naming format.
