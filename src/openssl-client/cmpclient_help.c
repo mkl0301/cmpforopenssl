@@ -275,7 +275,8 @@ DSA *generateDSA(const int length) {
 	// BIO *bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
 
 	BN_GENCB_set(&cb, dsa_cb, NULL);
-	key = DSA_new();
+	if( !(key = DSA_new()))
+		return NULL;
 	DSA_generate_parameters_ex(key, length, NULL, 0, &counter, &h, &cb);
 	DSA_generate_key(key);
 
@@ -308,10 +309,13 @@ RSA *generateRSA(const int length) {
 	RSA *RSAkey=NULL;
 	BIGNUM *bn;
 
-	bn = BN_new();
+	if( !(bn = BN_new()))
+		return NULL;
 	BN_set_word(bn, RSA_F4);
 
-	RSAkey = RSA_new();
+	if( !(RSAkey = RSA_new()))
+		return NULL;
+
 	printf("INFO: Generating (%d bit) RSA key\n",length);
 	if(!RSA_generate_key_ex(RSAkey,length,bn,NULL))
 	{
