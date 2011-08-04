@@ -190,7 +190,14 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
     X509_STORE_CTX *csc;
     X509_STORE_CTX_ext cscex;
 
-    if (ctx == NULL || cert == NULL) goto end;
+    if (cmp_ctx == NULL || cert == NULL) goto end;
+
+    if (!cmp_ctx->trusted_store && !tchain) {
+        CMPerr(CMP_F_CMP_VALIDATE_CERT_PATH, CMP_R_NO_TRUSTED_CERTIFICATES_SET);
+        goto end;
+    }
+    if (!cmp_ctx->trusted_store)
+        cmp_ctx->trusted_store = ctx = X509_STORE_new();
 
     csc = X509_STORE_CTX_new();
     if (csc == NULL)
@@ -209,7 +216,17 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
         goto end;
         }
 
-    if(tchain) X509_STORE_CTX_trusted_stack(csc, tchain);
+    /* add whatever stuff we have in tcain to the trusted store.
+     * it we set tchain using X509_STORE_CTX_trusted_stack the
+     * trusted_store will be ignored, so we do it this way... */
+    for (i=0; i < sk_X509_num(tchain); i++) {
+        X509_OBJECT *o = (X509_OBJECT*) malloc(sizeof(X509_OBJECT));
+        o->type = 1;
+        o->data.x509 = X509_dup(sk_X509_value(tchain, i));
+        sk_X509_OBJECT_push(cmp_ctx->trusted_store->objs, o);
+    }
+
+    // if(tchain) X509_STORE_CTX_trusted_stack(csc, tchain);
 
     /* TODO handle CRLs? */
     // if (crls) X509_STORE_CTX_set0_crls(csc, crls);
@@ -222,7 +239,6 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
 
     ret=0;
 end:
-    if (uchain) sk_X509_free(uchain);
     if (i > 0)
         {
         fprintf(stdout,"OK\n");

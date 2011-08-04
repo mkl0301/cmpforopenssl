@@ -126,6 +126,7 @@ static ERR_STRING_DATA CMP_str_functs[]=
 {ERR_FUNC(CMP_F_CMP_PROTECTION_NEW),	"CMP_protection_new"},
 {ERR_FUNC(CMP_F_CMP_PROTECTION_VERIFY),	"CMP_protection_verify"},
 {ERR_FUNC(CMP_F_CMP_RR_NEW),	"CMP_rr_new"},
+{ERR_FUNC(CMP_F_CMP_VALIDATE_CERT_PATH),	"CMP_validate_cert_path"},
 {ERR_FUNC(CMP_F_PKEY_DUP),	"PKEY_DUP"},
 {0,NULL}
 	};
@@ -134,6 +135,7 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 	{
 {ERR_REASON(CMP_R_CERTIFICATE_NOT_FOUND) ,"certificate not found"},
 {ERR_REASON(CMP_R_CMPERROR)              ,"cmperror"},
+{ERR_REASON(CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH),"could not validate certificate path"},
 {ERR_REASON(CMP_R_CURL_ERROR)            ,"curl error"},
 {ERR_REASON(CMP_R_DEPRECATED_FUNCTION)   ,"deprecated function"},
 {ERR_REASON(CMP_R_ERROR_DECODING_CERTIFICATE),"error decoding certificate"},
@@ -142,11 +144,13 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_ERROR_DECRYPTING_SYMMETRIC_KEY),"error decrypting symmetric key"},
 {ERR_REASON(CMP_R_ERROR_PARSING_PKISTATUS),"error parsing pkistatus"},
 {ERR_REASON(CMP_R_ERROR_SENDING_REQUEST) ,"error sending request"},
+{ERR_REASON(CMP_R_ERROR_VALIDATING_CERTIFICATE_PATH),"error validating certificate path"},
 {ERR_REASON(CMP_R_ERROR_VALIDATING_PROTECTION),"error validating protection"},
 {ERR_REASON(CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM),"failed to determine protection algorithm"},
 {ERR_REASON(CMP_R_INVALID_CONTEXT)       ,"invalid context"},
 {ERR_REASON(CMP_R_INVALID_KEY)           ,"invalid key"},
 {ERR_REASON(CMP_R_NO_CERTIFICATE_RECEIVED),"no certificate received"},
+{ERR_REASON(CMP_R_NO_TRUSTED_CERTIFICATES_SET),"no trusted certificates set"},
 {ERR_REASON(CMP_R_PATH_VALIDATION_ENABLED_BUT_TRUST_STORE_NOT_SET),"path validation enabled but trust store not set"},
 {ERR_REASON(CMP_R_PKIBODY_ERROR)         ,"pkibody error"},
 {ERR_REASON(CMP_R_SUBJECT_NAME_NOT_SET)  ,"subject name not set"},

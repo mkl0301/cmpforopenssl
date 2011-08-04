@@ -87,20 +87,6 @@ static int ossl_error_cb(const char *str, size_t len, void *u) {
 	return 0;
 }
 
-static int validate_path(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
-{
-	if (!ctx || !msg) goto err;
-
-	if (!ctx->trusted_store) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PATH_VALIDATION_ENABLED_BUT_TRUST_STORE_NOT_SET);
-		goto err;
-	}
-	/* TODO if we have untrusted_store, combine its contents with the certificates from extraCerts. */
-
-err:
-	return -1;
-}
-
 /* ############################################################################ */
 /* Prints error data of the given CMP_PKIMESSAGE into a buffer specified by out */
 /* and returns pointer to the buffer.                                           */
@@ -153,6 +139,15 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, ir, &ip))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
+	}
+
+	if (ctx->validatePath && ctx->caCert) {
+		CMP_printf(ctx, "INFO: validating CA certificate path");
+		if( CMP_validate_cert_path(ctx, ip->body->value.ip->caPubs, ip->extraCerts, ctx->caCert)
+			== 0) {
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
+			goto err;
+		}
 	}
 
 	if (CMP_protection_verify( ip, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), ctx->secretValue))
@@ -501,6 +496,15 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, kur, &kup))) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
+	}
+
+	if (ctx->validatePath && ctx->caCert) {
+		CMP_printf(ctx, "INFO: validating CA certificate path");
+		if( CMP_validate_cert_path(ctx, NULL, kup->extraCerts, ctx->caCert)
+			== 0) {
+			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
+			goto err;
+		}
 	}
 
 	if (CMP_PKIMESSAGE_get_bodytype( kup) != V_CMP_PKIBODY_KUP) {
