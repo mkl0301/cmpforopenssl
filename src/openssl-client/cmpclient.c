@@ -1028,8 +1028,7 @@ int getHttpProxy( char **name, int *port) {
 
   /* this will be long enough */
   maxlen = strlen(proxy) + 1;
-  *name = malloc(maxlen);
-  name[maxlen] = '\0';
+  *name = calloc(1, maxlen);
 
   snprintf(format, 32, "http //%%%us %%d", maxlen);
 
