@@ -1042,6 +1042,7 @@ int getHttpProxy( char **name, int *port) {
     }
   }
   printf("INFO: found proxy setting, Name=%s, Port=%d\n", *name, *port);
+  free(proxy);
   return 1;
 }
 
