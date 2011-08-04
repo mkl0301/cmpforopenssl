@@ -171,21 +171,19 @@ err:
 }
 
 /* ############################################################################ *
- * Structure to hold the X509_STORE_CTX and an extra pointer where to
- * store the entire validated chain for the certificate. We can then use this
- * information to send the valid intermediate certs in extraCerts
+ * Structure to hold the X509_STORE_CTX and a pointer to CMP_CTX so that we can
+ * provide extra data to the cert validation callback
  * ############################################################################ */
 typedef struct {
     X509_STORE_CTX cert_ctx;
     CMP_CTX *cmp_ctx;
-    STACK_OF(X509) *chain;
 } X509_STORE_CTX_ext;
 
 /* ############################################################################ *
  * Attempt to validate certificate path. returns 1 if the path was
  * validated successfully and 0 if not.
  * ############################################################################ */
-int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *uchain, X509 *cert, STACK_OF(X509) **valid_chain)
+int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X509) *uchain, X509 *cert)
     {
     int i=0,ret=0;
     X509_STORE *ctx = cmp_ctx->trusted_store;
@@ -201,7 +199,8 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *uchain, X509 *cert,
         goto end;
         }
 
-    /* TODO include the certs in ctx->untrusted_store in the validation process */
+    /* TODO include the certs in ctx->untrusted_store in the validation process.
+     * right now we only use the certs provided in uchain (which come from the extracerts field) */
 
     X509_STORE_set_flags(ctx, 0);
     if(!X509_STORE_CTX_init(csc, ctx, cert, uchain))
@@ -210,19 +209,14 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *uchain, X509 *cert,
         goto end;
         }
 
-    // if(tchain) X509_STORE_CTX_trusted_stack(csc, tchain);
+    if(tchain) X509_STORE_CTX_trusted_stack(csc, tchain);
+
     /* TODO handle CRLs? */
     // if (crls) X509_STORE_CTX_set0_crls(csc, crls);
 
     cscex.cert_ctx = *csc;
     cscex.cmp_ctx = cmp_ctx;
-    if (valid_chain)
-        cscex.chain = sk_X509_new_null();
-    else 
-        cscex.chain = NULL;
     i=X509_verify_cert((X509_STORE_CTX*) &cscex);
-
-    if (valid_chain) *valid_chain = cscex.chain;
 
     X509_STORE_CTX_free(csc);
 
@@ -294,9 +288,6 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
     /* TODO print out debug messages properly using CMP_printf() */
 
     /* XXX should we check policies here? */
-
-    if (ok && ctxext->chain && current_cert)
-        sk_X509_push(ctxext->chain, current_cert);
 
     if (!ok)
         {

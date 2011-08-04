@@ -1268,6 +1268,9 @@ typedef struct cmp_ctx_st
 	int	setTransactionID;
 	/* XXX not setting senderNonce test for PKI INFO */
 	int	setSenderNonce;
+	/* if this is enabled, we will try to verify the entire CA certificate until
+	 * the trust anchor, and if this fails we reject the message */
+	int validatePath;
 
 #define CMP_POPO_NONE      0
 #define CMP_POPO_SIGNATURE 1
@@ -1374,7 +1377,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 			    EVP_PKEY *pkey,
 			    const ASN1_OCTET_STRING *secret);
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx);
-int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *untrusted_chain, X509 *cert, STACK_OF(X509) **valid_chain);
+int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X509) *uchain, X509 *cert);
 
 /* cmp_itav.c */
 /* CA Protocol Encryption Certificate */
@@ -1487,6 +1490,7 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algId);
 #define CMP_CTX_OPT_SET             1
 #define CMP_CTX_OPT_IMPLICITCONFIRM 1
 #define CMP_CTX_OPT_POPMETHOD       2
+#define CMP_CTX_OPT_VALIDATEPATH    3
 int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 #if 0
 int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
@@ -1591,6 +1595,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_R_INVALID_CONTEXT				 111
 #define CMP_R_INVALID_KEY				 112
 #define CMP_R_NO_CERTIFICATE_RECEIVED			 113
+#define CMP_R_PATH_VALIDATION_ENABLED_BUT_TRUST_STORE_NOT_SET 122
 #define CMP_R_PKIBODY_ERROR				 114
 #define CMP_R_SUBJECT_NAME_NOT_SET			 115
 #define CMP_R_UNKNOWN_ALGORITHM_ID			 116

@@ -250,6 +250,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->popoMethod = CMP_POPO_SIGNATURE;
 	ctx->timeOut         = 2*60;
 	/* ctx->popoMethod = CMP_POPO_ENCRCERT; */
+	ctx->validatePath    = 0;
 
 	ctx->error_cb = (cmp_logfn_t) puts;
 	ctx->debug_cb = (cmp_logfn_t) puts;
@@ -896,6 +897,9 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val) {
 			break;
 		case CMP_CTX_OPT_POPMETHOD:
 			ctx->popoMethod = val;
+			break;
+		case CMP_CTX_OPT_VALIDATEPATH:
+			ctx->validatePath = val;
 			break;
 		default:
 			goto err;

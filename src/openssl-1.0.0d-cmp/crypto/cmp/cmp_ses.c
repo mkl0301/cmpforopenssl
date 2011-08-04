@@ -87,6 +87,20 @@ static int ossl_error_cb(const char *str, size_t len, void *u) {
 	return 0;
 }
 
+static int validate_path(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
+{
+	if (!ctx || !msg) goto err;
+
+	if (!ctx->trusted_store) {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PATH_VALIDATION_ENABLED_BUT_TRUST_STORE_NOT_SET);
+		goto err;
+	}
+	/* TODO if we have untrusted_store, combine its contents with the certificates from extraCerts. */
+
+err:
+	return -1;
+}
+
 /* ############################################################################ */
 /* Prints error data of the given CMP_PKIMESSAGE into a buffer specified by out */
 /* and returns pointer to the buffer.                                           */
