@@ -235,7 +235,6 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 		if (ctx->untrusted_store) {
 			STACK_OF(X509) *chain = build_cert_chain(ctx->untrusted_store, ctx->clCert);
 			int i;
-			if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
 			for(i = 0; i < sk_X509_num(chain); i++)
 				sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
 			sk_X509_free(chain);
