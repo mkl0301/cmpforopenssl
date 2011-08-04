@@ -1030,7 +1030,7 @@ int getHttpProxy( char **name, int *port) {
   maxlen = strlen(proxy) + 1;
   *name = calloc(1, maxlen);
 
-  snprintf(format, 32, "http //%%%us %%d", maxlen);
+  snprintf(format, 32, "http //%%%us %%d", (unsigned int) maxlen);
 
   if( (sscanf( proxy, format, *name, port) < 1)) {
     /* maybe it is set without leading http:// */

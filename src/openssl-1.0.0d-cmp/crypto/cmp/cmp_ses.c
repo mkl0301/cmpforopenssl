@@ -103,7 +103,7 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
 			BIO_snprintf(out, outsize, "received NO message");
 			break;
 		default:
-			BIO_snprintf(out, outsize, "received neither IP nor ERROR, but message=%d", CMP_PKIMESSAGE_get_bodytype( msg));
+			BIO_snprintf(out, outsize, "received unexpected message of type %d", CMP_PKIMESSAGE_get_bodytype( msg));
 			break;
 	}
 	return out;

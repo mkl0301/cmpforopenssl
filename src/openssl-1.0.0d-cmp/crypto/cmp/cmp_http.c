@@ -149,8 +149,8 @@ static char *get_server_addr(CURL *curl) {
 	for (i = 0; i <= 7; i++)
 		tmp[i] = tolower(addr[i]);
 	tmp[7] = 0;
-	if (!strcmp(tmp, "http://")) 
-		addr += 7;
+	if (!strcmp(tmp, "http://"))
+		strcpy(addr, addr+7);
 
 	/* cut off the url starting from port or path,
 	 * so we only get the server name */
@@ -171,7 +171,7 @@ static void set_http_path(CURL *curl, const char *path) {
 	sprintf(url, "%s/%s", current_url, path);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 
-	// free(current_url);
+	free(current_url);
 	free(url);
 }
 
