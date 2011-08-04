@@ -185,13 +185,12 @@ typedef struct {
  * Attempt to validate certificate path. returns 1 if the path was
  * validated successfully and 0 if not.
  * ############################################################################ */
-int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *untrusted_chain, X509 *cert, STACK_OF(X509) **valid_chain)
+int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *uchain, X509 *cert, STACK_OF(X509) **valid_chain)
     {
     int i=0,ret=0;
     X509_STORE *ctx = cmp_ctx->trusted_store;
     X509_STORE_CTX *csc;
     X509_STORE_CTX_ext cscex;
-    STACK_OF(X509) *uchain = NULL;
 
     if (ctx == NULL || cert == NULL) goto end;
 
@@ -202,15 +201,7 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *untrusted_chain, X5
         goto end;
         }
 
-    if (untrusted_chain)
-        uchain = sk_X509_dup(untrusted_chain);
-    else 
-        uchain = sk_X509_new_null();
-
-    /* If untrusted_chain has been specified, add those certs to uchain */
-    if (cmp_ctx->untrusted_chain)
-        for (i=0; i < sk_X509_num(cmp_ctx->untrusted_chain); i++)
-            sk_X509_push(uchain, sk_X509_value(cmp_ctx->untrusted_chain, i));
+    /* TODO include the certs in ctx->untrusted_store in the validation process */
 
     X509_STORE_set_flags(ctx, 0);
     if(!X509_STORE_CTX_init(csc, ctx, cert, uchain))
@@ -220,6 +211,7 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *untrusted_chain, X5
         }
 
     // if(tchain) X509_STORE_CTX_trusted_stack(csc, tchain);
+    /* TODO handle CRLs? */
     // if (crls) X509_STORE_CTX_set0_crls(csc, crls);
 
     cscex.cert_ctx = *csc;

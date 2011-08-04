@@ -107,11 +107,43 @@ static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL
 /* ############################################################################ 
  * Returns the trust chain for a given certificate up to and including the trust anchor
  * ############################################################################ */
-static STACK_OF(X509) *get_cert_chain(CMP_CTX *ctx, X509 *cert) {
-	STACK_OF(X509) *chain = NULL;
-	CMP_validate_cert_path(ctx, NULL, cert, &chain);
+STACK_OF(X509) *build_cert_chain(X509_STORE *store, X509 *cert) {
+	X509_STORE_CTX *csc = X509_STORE_CTX_new();
+	STACK_OF(X509) *chain = sk_X509_new_null(), *certs = NULL;
+	X509 *last_cert = cert;
+	int i;
+	X509_STORE_set_flags(store, 0);
+
+	if(!X509_STORE_CTX_init(csc,store,cert,NULL))
+		goto err;
+
+	sk_X509_push(chain, X509_dup(cert));
+	while ((certs = X509_STORE_get1_certs(csc, X509_get_issuer_name(last_cert))) != NULL) {
+		X509 *issuer = NULL;
+		for (i = 0; i < sk_X509_num(certs); i++) {
+			X509 *current_cert = sk_X509_value(certs, i);
+			EVP_PKEY *pubkey = X509_get_pubkey(current_cert);
+			if (X509_verify(last_cert, pubkey)) {
+				EVP_PKEY_free(pubkey);
+				issuer = current_cert;
+				break;
+			}
+			EVP_PKEY_free(pubkey);
+		}
+		sk_X509_pop_free(certs, X509_free);
+		if (issuer == last_cert || issuer == NULL) break;
+		last_cert = issuer;
+		sk_X509_push(chain, X509_dup(last_cert));
+	}
+	X509_STORE_CTX_free(csc);
+
 	return chain;
+err:
+	X509_STORE_CTX_free(csc);
+	sk_X509_free(chain);
+	return NULL;
 }
+
 
 /* ############################################################################ */
 /* ############################################################################ */
@@ -199,15 +231,12 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	if (ctx->clCert) {
 		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
 
-		/* if we have trusted and untrusted store, try to add the entire trust chain */
-		if (ctx->trusted_store && ctx->untrusted_chain) {
-			STACK_OF(X509) *chain = get_cert_chain(ctx, ctx->clCert);
+		/* if we have untrusted store, try to add all the intermediate certs and our own */
+		if (ctx->untrusted_store) {
+			STACK_OF(X509) *chain = build_cert_chain(ctx->untrusted_store, ctx->clCert);
 			int i;
 			if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
-			/* first certificate is the trust anchor, so we skip that. also skip the last once,
-			 * since it will be our own certificate which is added below even when we don't have
-			 * trusted store set. */
-			for(i = 1; i < sk_X509_num(chain)-1; i++)
+			for(i = 0; i < sk_X509_num(chain); i++)
 				sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
 			sk_X509_free(chain);
 		}
@@ -515,13 +544,12 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCertsOut, i)));
 	}
 
-	if (ctx->trusted_store && ctx->untrusted_chain) {
+	if (ctx->untrusted_store) {
 		/* attempt to get the trust chain for our certificate and send it along */
-		STACK_OF(X509) *chain = get_cert_chain(ctx, ctx->clCert);
+		STACK_OF(X509) *chain = build_cert_chain(ctx->untrusted_store, ctx->clCert);
 		int i;
 		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
-		/* first certificate is the trust anchor, so we skip that. */
-		for(i = 1; i < sk_X509_num(chain); i++)
+		for(i = 0; i < sk_X509_num(chain); i++)
 			sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
 		sk_X509_free(chain);
 	}

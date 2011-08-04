@@ -1283,9 +1283,7 @@ typedef struct cmp_ctx_st
 
 	/* */
 	X509_STORE *trusted_store;
-	/* STACK_OF(X509) *trusted_chain; */
-	/* X509_STORE *untrusted_store; */
-	STACK_OF(X509) *untrusted_chain;
+	X509_STORE *untrusted_store;
 } CMP_CTX;
 
 DECLARE_ASN1_FUNCTIONS(CMP_CTX)

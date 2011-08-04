@@ -227,34 +227,12 @@ err:
     return NULL;
 }
 
-/* ############################################################################ *
- * Load stack of untrusted certificates from the given directory. The certificates
- * must be in DER format and be named with the 'hash'.0 format.
- * XXX Investigate if this can be done using the X509_STORE structures as we do with
- *     the trusted certs.
- * ############################################################################ */
-int CMP_CTX_set_untrustedPath( CMP_CTX *ctx, char *untrusted_dir) {
-	DIR *dir = opendir(untrusted_dir);
-	struct dirent *de = NULL, *buf = (struct dirent*) calloc(1, sizeof(struct dirent));
-	ctx->untrusted_chain = sk_X509_new_null(); 
-	while (readdir_r(dir, buf, &de) == 0 && de != NULL) {
-		/* TODO what happens if we have two certificates with the same subject name? */
-		if (!strcmp(&de->d_name[ strlen(de->d_name) - 2 ], ".0")) {
-			int fnlen = strlen(untrusted_dir) + strlen(de->d_name) + 2;
-			char *fnbuf = (char*) malloc(fnlen);
-			snprintf(fnbuf, fnlen, "%s/%s", untrusted_dir, de->d_name);
-			X509 *cert = HELP_read_der_cert(fnbuf);
-			if (cert) {
-				CMP_printf(ctx, "INFO: Adding certificate %s to untrusted store.\n", fnbuf);
-				sk_X509_push(ctx->untrusted_chain, cert);
-			}
-			free(fnbuf);
-		}
-	}
-	free(buf);
-	free(de);
-	closedir(dir);
-	return 1;
+int CMP_CTX_set_untrustedPath( CMP_CTX *ctx, char *dir) 
+{
+	ctx->untrusted_store = create_cert_store(dir);
+	if (ctx->untrusted_store)
+		return 1;
+	return 0;
 }
 
 
@@ -297,8 +275,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->debug_cb = (cmp_logfn_t) puts;
 
 	ctx->trusted_store   = NULL;
-	/* ctx->trusted_chain   = NULL; */
-	ctx->untrusted_chain = NULL;
+	ctx->untrusted_store = NULL;
 
 #if 0
 	ctx->referenceValue = NULL;
