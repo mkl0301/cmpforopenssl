@@ -141,7 +141,8 @@ static char *get_server_addr(CURL *curl) {
 	int i;
 	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &addr);
 
-	addr = strdup(addr);
+	if( !(addr = strdup(addr)))
+		return NULL;
 
 	/* skip the http:// part if it's there, 
 	 * curl will put it back on its own... */
@@ -163,16 +164,21 @@ static char *get_server_addr(CURL *curl) {
 	return addr;
 }
 
-static void set_http_path(CURL *curl, const char *path) {
+static int set_http_path(CURL *curl, const char *path) {
 	char *current_url = NULL, *url = NULL;
 
-	current_url = get_server_addr(curl);
-	url = malloc(strlen(current_url) + strlen(path) + 2);
+	if( !(current_url = get_server_addr(curl)))
+		return 0;
+	if( !(url = malloc(strlen(current_url) + strlen(path) + 2)))
+		return 0;
+
 	sprintf(url, "%s/%s", current_url, path);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 
 	free(current_url);
 	free(url);
+
+	return 1;
 }
 
 int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port, const char *srcip) {
@@ -196,7 +202,8 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 	if (srcip != NULL)
 		curl_easy_setopt(curl, CURLOPT_INTERFACE, srcip);
 
-	url = malloc(strlen(serverAddress) + 7);
+	if( !(url = malloc(strlen(serverAddress) + 7)))
+		return 0;
 	sprintf(url, "%s:%d", serverAddress, port);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	free(url);
@@ -256,7 +263,7 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 		curl_easy_setopt(curl, CURLOPT_PORT, ctx->serverPort);
 		curl_easy_setopt(curl, CURLOPT_URL, ctx->serverName);
 	}
-	// free(srv);
+	free(srv);
 
 	set_http_path(curl, ctx->serverPath);
 
