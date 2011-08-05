@@ -52,7 +52,6 @@ CMPHANDLER_FUNC(handlemsg_ir)
 
   *out = CMP_ip_new(ctx, cert);
   (*out)->extraCerts = X509_stack_dup(srv_ctx->extraCerts);
-  sk_X509_push((*out)->body->value.ip->caPubs, HELP_read_der_cert("/home/mv/cmp/certs/rootCA.der"));
 
   // char filename[1024];
   // EVP_PKEY *p = X509_PUBKEY_get(cert->cert_info->key);
