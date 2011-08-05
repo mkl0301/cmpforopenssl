@@ -169,8 +169,10 @@ static int set_http_path(CURL *curl, const char *path) {
 
 	if( !(current_url = get_server_addr(curl)))
 		return 0;
-	if( !(url = malloc(strlen(current_url) + strlen(path) + 2)))
+	if( !(url = malloc(strlen(current_url) + strlen(path) + 2))) {
+		free(current_url);
 		return 0;
+	}
 
 	sprintf(url, "%s/%s", current_url, path);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
@@ -250,6 +252,7 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 
 	/* check if we are using a proxy. */
 	srv = get_server_addr(curl);
+	if (srv == NULL) goto err;
 	if (strcmp(srv, ctx->serverName) != 0) {
 		/* XXX: this is done in this way only because we want to remain
 		 * compatible with the old HTTP code. when that is removed, this code

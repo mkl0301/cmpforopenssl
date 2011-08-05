@@ -108,11 +108,18 @@ static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL
  * Returns the trust chain for a given certificate up to and including the trust anchor
  * ############################################################################ */
 STACK_OF(X509) *build_cert_chain(X509_STORE *store, X509 *cert) {
-	X509_STORE_CTX *csc = X509_STORE_CTX_new();
-	STACK_OF(X509) *chain = sk_X509_new_null(), *certs = NULL;
+	X509_STORE_CTX *csc;
+	STACK_OF(X509) *chain, *certs = NULL;
 	X509 *last_cert = cert;
 	int i;
 	X509_STORE_set_flags(store, 0);
+
+	if( !(csc = X509_STORE_CTX_new()))
+		return NULL;
+	if( !(chain = sk_X509_new_null())) {
+		X509_STORE_CTX_free(csc);
+		return NULL;
+	}
 
 	if(!X509_STORE_CTX_init(csc,store,cert,NULL))
 		goto err;

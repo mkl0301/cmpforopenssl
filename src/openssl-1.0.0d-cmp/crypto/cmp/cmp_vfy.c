@@ -186,7 +186,7 @@ typedef struct {
 int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X509) *uchain, X509 *cert)
     {
     int i=0,ret=0;
-    X509_STORE *ctx = cmp_ctx->trusted_store;
+    X509_STORE *ctx;
     X509_STORE_CTX *csc;
     X509_STORE_CTX_ext cscex;
 
@@ -196,8 +196,12 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
         CMPerr(CMP_F_CMP_VALIDATE_CERT_PATH, CMP_R_NO_TRUSTED_CERTIFICATES_SET);
         goto end;
     }
+
     if (!cmp_ctx->trusted_store)
         cmp_ctx->trusted_store = ctx = X509_STORE_new();
+    else
+        ctx = cmp_ctx->trusted_store;
+    if (!ctx) goto end;
 
     csc = X509_STORE_CTX_new();
     if (csc == NULL)
@@ -221,9 +225,11 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
      * trusted_store will be ignored, so we do it this way... */
     for (i=0; i < sk_X509_num(tchain); i++) {
         X509_OBJECT *o = (X509_OBJECT*) malloc(sizeof(X509_OBJECT));
-        o->type = 1;
-        o->data.x509 = X509_dup(sk_X509_value(tchain, i));
-        sk_X509_OBJECT_push(cmp_ctx->trusted_store->objs, o);
+        if (o) {
+            o->type = 1;
+            o->data.x509 = X509_dup(sk_X509_value(tchain, i));
+            sk_X509_OBJECT_push(cmp_ctx->trusted_store->objs, o);
+        }
     }
 
     // if(tchain) X509_STORE_CTX_trusted_stack(csc, tchain);
