@@ -150,6 +150,7 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_INVALID_CONTEXT)       ,"invalid context"},
 {ERR_REASON(CMP_R_INVALID_KEY)           ,"invalid key"},
 {ERR_REASON(CMP_R_NO_CERTIFICATE_RECEIVED),"no certificate received"},
+{ERR_REASON(CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC),"no secret value given for pbmac"},
 {ERR_REASON(CMP_R_NO_TRUSTED_CERTIFICATES_SET),"no trusted certificates set"},
 {ERR_REASON(CMP_R_PATH_VALIDATION_ENABLED_BUT_TRUST_STORE_NOT_SET),"path validation enabled but trust store not set"},
 {ERR_REASON(CMP_R_PKIBODY_ERROR)         ,"pkibody error"},

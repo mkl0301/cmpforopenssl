@@ -628,7 +628,11 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 	}
 	else if (usedAlgorNid == NID_id_PasswordBasedMAC) {
 		/* there is no pmb set in this message */
-		if (!ppval) return NULL;
+		if (!ppval) return NULL; /* TODO return meaningful error message */
+		if (!secret) {
+			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC);
+			goto err;
+		}
 		// printf("INFO: protecting with PBMAC\n");
 
 		pbmStr = (ASN1_STRING *)ppval;
