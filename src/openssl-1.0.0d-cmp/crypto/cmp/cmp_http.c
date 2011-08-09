@@ -120,7 +120,8 @@ static int get_server_port(CURL *curl) {
 	int i, ret = 0;
 	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &addr);
 
-	addr = strdup(addr);
+	if( !(addr = strdup(addr)))
+		return 0;
 
 	/* find port number */
 	for (p = addr; *p != 0 && !(*p==':'&&p[1]!='/'); p++)
