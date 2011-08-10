@@ -130,6 +130,7 @@ static int opt_doKur=0;
 static int opt_doRr=0;
 static int opt_doInfo=0;
 static int opt_doCKUAnn=0;
+static int opt_doPathValidation=0;
 static int opt_compatibility=CMP_COMPAT_RFC;
 
 static char** opt_extraCerts=NULL;
@@ -169,6 +170,7 @@ void printUsage( const char* cmdName) {
   printf("                       of the form hash.0, where 'hash' is the hashed certificate subject name.\n");
   printf("                       see the -hash option of OpenSSL's x509 utility.\n");
   printf(" --untrusted DIR       same as above, but for untrusted certificates.\n");
+  printf(" --validate_path       enable validation of the CA certificate's trust chain.\n");
   /* XXX TODO: add the following */
 #if 0
   printf(" --extcertsin DIR    directory where extra certificates needed"\n); 
@@ -706,6 +708,7 @@ void parseCLA( int argc, char **argv) {
     {"hex",      no_argument,          0, 'm'},
     {"info",     no_argument,          0, 'n'},
     // {"ckuann",   no_argument,          0, 'C'},
+    {"validate_path",no_argument,      0, 'V'},
     {"path",     required_argument,    0, 'o'},
     {"proxy",    no_argument,          0, 'p'},
     {"cryptlib", no_argument,          0, 'q'},
@@ -761,6 +764,10 @@ void parseCLA( int argc, char **argv) {
 
       case 'b':
         opt_serverPort = atoi(optarg);
+        break;
+
+      case 'V':
+        opt_doPathValidation = 1;
         break;
 
       case 'c':
@@ -1133,6 +1140,8 @@ int main(int argc, char **argv) {
   if (opt_untrustedDir)
     CMP_CTX_set_untrustedPath(cmp_ctx, opt_untrustedDir);
 
+  if (opt_doPathValidation)
+    CMP_CTX_set_option(cmp_ctx, CMP_CTX_OPT_VALIDATEPATH, 1);
 
   if (opt_user && opt_password) {
     if (opt_hex) {
