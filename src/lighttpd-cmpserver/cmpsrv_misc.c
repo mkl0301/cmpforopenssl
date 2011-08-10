@@ -7,6 +7,7 @@
 #include "mod_cmpsrv.h"
 
 void dbgprintf(const char *fmt, ...) {
+  return;
   va_list arg_ptr;
   va_start(arg_ptr, fmt);
   FILE *f = fopen("/tmp/cmpsrv.log", "a");
