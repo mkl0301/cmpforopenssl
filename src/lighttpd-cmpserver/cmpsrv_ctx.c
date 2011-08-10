@@ -35,14 +35,16 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
   unsigned char referenceVal[32], secretVal[32];
   size_t refLen, secLen;
 
-  refLen = str2hex(p->userID->ptr, referenceVal, sizeof(referenceVal));
-  secLen = str2hex(p->secretKey->ptr, secretVal, sizeof(secretVal));
+  // refLen = str2hex(p->userID->ptr, referenceVal, sizeof(referenceVal));
+  // secLen = str2hex(p->secretKey->ptr, secretVal, sizeof(secretVal));
 
   // CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   // CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   // CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
-  CMP_CTX_set1_referenceValue( cmp_ctx, referenceVal, refLen);
-  CMP_CTX_set1_secretValue( cmp_ctx, secretVal, secLen);
+  // CMP_CTX_set1_referenceValue( cmp_ctx, referenceVal, refLen);
+  // CMP_CTX_set1_secretValue( cmp_ctx, secretVal, secLen);
+ CMP_CTX_set1_referenceValue( cmp_ctx, p->userID->ptr, strlen(p->userID->ptr));
+  CMP_CTX_set1_secretValue( cmp_ctx, p->secretKey->ptr, strlen(p->secretKey->ptr));
   // CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
   // CMP_CTX_set1_caCert( cmp_ctx, caCert);
   // CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
