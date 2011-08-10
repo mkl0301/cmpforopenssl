@@ -30,6 +30,7 @@ INIT_FUNC(mod_cmpsrv_init) {
   p->userID = buffer_init();
   p->secretKey = buffer_init();
   p->certPath = buffer_init();
+  p->certdb = buffer_init();
   p->caCert = buffer_init();
   p->caKey = buffer_init();
   p->extraCerts = array_init();
@@ -62,6 +63,7 @@ FREE_FUNC(mod_cmpsrv_free) {
   buffer_free(p->userID);
   buffer_free(p->secretKey);
   buffer_free(p->certPath);
+  buffer_free(p->certdb);
   buffer_free(p->caCert);
   buffer_free(p->caKey);
   array_free(p->extraCerts);
@@ -81,9 +83,10 @@ SETDEFAULTS_FUNC(mod_cmpsrv_set_defaults) {
 	{ "cmpsrv.userID",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 0 */
 	{ "cmpsrv.secretKey",  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 1 */
 	{ "cmpsrv.certPath",   NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 2 */
-	{ "cmpsrv.caCert",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 3 */
-	{ "cmpsrv.caKey",      NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 4 */
-	{ "cmpsrv.extraCerts", NULL, T_CONFIG_ARRAY,  T_CONFIG_SCOPE_SERVER }, /* 5 */
+	{ "cmpsrv.certdb",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 3 */
+	{ "cmpsrv.caCert",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 4 */
+	{ "cmpsrv.caKey",      NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 5 */
+	{ "cmpsrv.extraCerts", NULL, T_CONFIG_ARRAY,  T_CONFIG_SCOPE_SERVER }, /* 6 */
 	{ NULL,                NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
   };
 
@@ -100,9 +103,10 @@ SETDEFAULTS_FUNC(mod_cmpsrv_set_defaults) {
 	cv[0].destination = p->userID;
 	cv[1].destination = p->secretKey;
 	cv[2].destination = p->certPath;
-	cv[3].destination = p->caCert;
-	cv[4].destination = p->caKey;
-	cv[5].destination = p->extraCerts;
+	cv[3].destination = p->certdb;
+	cv[4].destination = p->caCert;
+	cv[5].destination = p->caKey;
+	cv[6].destination = p->extraCerts;
 
 	p->config_storage[i] = s;
 

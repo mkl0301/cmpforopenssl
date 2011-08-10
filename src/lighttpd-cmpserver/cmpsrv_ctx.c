@@ -23,6 +23,7 @@ void cmpsrv_ctx_delete(cmpsrv_ctx *ctx)
   CMP_CTX_delete(ctx->cmp_ctx);
   EVP_PKEY_free(ctx->caKey);
   free(ctx->certPath);
+  free(ctx->certdb);
   free(ctx);
 }
 
@@ -30,6 +31,7 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
 {
   cmpsrv_ctx *ctx = calloc(1, sizeof(cmpsrv_ctx));
   ctx->certPath = strdup(p->certPath->ptr);
+  ctx->certdb = strdup(p->certdb->ptr);
 
   CMP_CTX *cmp_ctx = CMP_CTX_create();
   unsigned char referenceVal[32], secretVal[32];

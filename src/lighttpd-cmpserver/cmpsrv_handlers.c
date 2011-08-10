@@ -185,7 +185,6 @@ CMPHANDLER_FUNC(handlemsg_genm)
   itav->infoValue.ptr = (void*) ckuann;
 
   CMP_ITAV_stack_item_push0( &resp->body->value.genm, itav);
-  dbgmsg("s", "itsa done");
 
   *out = resp;
   return 0;
