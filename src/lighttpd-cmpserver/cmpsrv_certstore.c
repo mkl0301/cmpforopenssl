@@ -59,8 +59,7 @@ static sqlite3 *open_db(cmpsrv_ctx *ctx)
 {
   sqlite3 *db = NULL;
   char dbfile[1024];
-  // sprintf(dbfile, "%s/certs.db", ctx->certPath);
-  sprintf(dbfile, "%s", ctx->certdb);
+  sprintf(dbfile, "%s/certs.db", ctx->certPath);
   int rc = sqlite3_open(dbfile, &db);
   if (rc != SQLITE_OK) return NULL;
   return db;

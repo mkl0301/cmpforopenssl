@@ -50,7 +50,6 @@ typedef struct {
   buffer *userID;
   buffer *secretKey;
   buffer *certPath;
-  buffer *certdb;
   buffer *caCert;
   buffer *caKey;
   array *extraCerts;
@@ -61,10 +60,9 @@ typedef struct {
 } plugin_data;
 
 typedef struct {
-  CMP_CTX *cmp_ctx;
   char *certPath;
-  char *certdb;
   EVP_PKEY *caKey;
+  CMP_CTX *cmp_ctx;
   plugin_data *p_d;
   ASN1_OCTET_STRING *transactionID;
   STACK_OF(X509) *extraCerts;
