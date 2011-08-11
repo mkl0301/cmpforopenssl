@@ -1,4 +1,25 @@
 README for "lighttpd-cmpserver" simple CMP responder
 
 Build Dependencies
+------------------
 The SQLite library must be available on the system: http://www.sqlite.org/
+
+
+Compiling
+---------
+The CMP responder module can be compiled by running "make lighttpd" in the
+parent directory (cmpforopenssl/src).
+
+Configuration
+-------------
+The responder is configured via lighttpd's config file. An example config file
+is provided with comments explaining the configuration variables.
+
+Running
+-------
+Once lighttpd and the responder module have been compiled successfully, you can
+simply go to the top-level directory of cmpforopenssl and run the following command:
+    "sbin/lighttpd -D -f src/lighttpd-cmpserver/lighttpd.conf"
+
+Error messages will be printed out into the file specified by server.errorlog
+in the config file.
