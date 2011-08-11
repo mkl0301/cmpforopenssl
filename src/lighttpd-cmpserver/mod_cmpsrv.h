@@ -15,6 +15,8 @@
 
 #include "plugin.h"
 
+#include "sqlite3.h"
+
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -92,5 +94,6 @@ int cert_save(cmpsrv_ctx *ctx, X509 *cert);
 int cert_remove(cmpsrv_ctx *ctx, int serialNo);
 X509 *cert_find_by_serial(cmpsrv_ctx *ctx, int serialNo);
 X509 *cert_find_by_name(cmpsrv_ctx *ctx, X509_NAME *name);
+sqlite3 *open_db(cmpsrv_ctx *ctx);
 
 #endif

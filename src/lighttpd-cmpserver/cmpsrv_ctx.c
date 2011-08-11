@@ -32,8 +32,8 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
   ctx->certPath = strdup(p->certPath->ptr);
 
   CMP_CTX *cmp_ctx = CMP_CTX_create();
-  unsigned char referenceVal[32], secretVal[32];
-  size_t refLen, secLen;
+  // unsigned char referenceVal[32], secretVal[32];
+  // size_t refLen, secLen;
 
   // refLen = str2hex(p->userID->ptr, referenceVal, sizeof(referenceVal));
   // secLen = str2hex(p->secretKey->ptr, secretVal, sizeof(secretVal));
@@ -43,8 +43,8 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
   // CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
   // CMP_CTX_set1_referenceValue( cmp_ctx, referenceVal, refLen);
   // CMP_CTX_set1_secretValue( cmp_ctx, secretVal, secLen);
- CMP_CTX_set1_referenceValue( cmp_ctx, p->userID->ptr, strlen(p->userID->ptr));
-  CMP_CTX_set1_secretValue( cmp_ctx, p->secretKey->ptr, strlen(p->secretKey->ptr));
+  CMP_CTX_set1_referenceValue( cmp_ctx, (const unsigned char*)p->userID->ptr, strlen(p->userID->ptr));
+  CMP_CTX_set1_secretValue( cmp_ctx, (const unsigned char*)p->secretKey->ptr, strlen(p->secretKey->ptr));
   // CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
   // CMP_CTX_set1_caCert( cmp_ctx, caCert);
   // CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
@@ -70,6 +70,13 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
 
   ctx->cmp_ctx = cmp_ctx;
   ctx->p_d = p;
+
+  sqlite3 *db = open_db(ctx);
+  if (db) {
+    sqlite3_exec(db, "create table certs (serial int not null primary key, name varchar not null, cert blob not null);", 0, 0, 0);
+    sqlite3_close(db);
+  }
+  else return NULL;
 
   return ctx;
 

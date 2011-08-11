@@ -55,7 +55,7 @@ static int get_name_digest(X509_NAME *name, char **digest, unsigned int *len)
   return 1;
 }
 
-static sqlite3 *open_db(cmpsrv_ctx *ctx)
+sqlite3 *open_db(cmpsrv_ctx *ctx)
 {
   sqlite3 *db = NULL;
   char dbfile[1024];
