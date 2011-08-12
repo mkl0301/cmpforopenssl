@@ -187,7 +187,13 @@ URIHANDLER_FUNC(mod_cmpsrv_uri_handler) {
 	dbgmsg("s", "invalid chunkqueue_length");
 	return HANDLER_GO_ON;
   }
+
   msg = get_content(con->request_content_queue);
+  if (!msg) {
+	dbgmsg("s", "error getting message content");
+	return HANDLER_GO_ON;
+  }
+
   if (msg->used != (off_t)con->request.content_length+1) {
 	dbgmsg("sd", "too many chunks", msg->used);
 	return HANDLER_GO_ON;

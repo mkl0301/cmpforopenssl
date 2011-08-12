@@ -144,32 +144,37 @@ int cert_save(cmpsrv_ctx *ctx, X509 *cert)
   int derLen = i2d_X509(cert, &derCert);
 
   sqlite3 *db = open_db(ctx);
-  if (!db) return -1;
+  if (!db) goto err;
 
   sqlite3_stmt *q;
   const char *insert_sql = "insert into certs values (?, ?, ?)";
   int rc;
 
   rc = sqlite3_prepare(db, insert_sql, -1, &q, NULL);
-  if (rc != SQLITE_OK) return rc;
+  if (rc != SQLITE_OK) goto err;
 
   rc = sqlite3_bind_int(q, 1, ASN1_INTEGER_get(cert->cert_info->serialNumber));
-  if (rc != SQLITE_OK) return rc;
+  if (rc != SQLITE_OK) goto err;
 
   rc = sqlite3_bind_text(q, 2, nameDigest, mdlen*2, NULL);
-  if (rc != SQLITE_OK) return rc;
+  if (rc != SQLITE_OK) goto err;
 
   rc = sqlite3_bind_blob(q, 3, derCert, derLen, NULL);
-  if (rc != SQLITE_OK) return -1;
+  if (rc != SQLITE_OK) goto err;
 
   rc = sqlite3_step(q);
-  if (rc != SQLITE_OK) return rc;
+  if (rc != SQLITE_OK) goto err;
 
   rc = sqlite3_finalize(q);
-  if (rc != SQLITE_OK) return rc;
+  if (rc != SQLITE_OK) goto err;
 
   sqlite3_close(db);
 
   return 0;
+
+err:
+  if (db) sqlite3_close(db);
+  free(nameDigest);
+  return rc;
 }
 
