@@ -111,63 +111,64 @@ static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKE
 int CMP_protection_verify(CMP_PKIMESSAGE *msg, 
 			    X509_ALGOR *_algor,
 			    EVP_PKEY *senderPkey,
-			    const ASN1_OCTET_STRING *secret) {
-	ASN1_BIT_STRING *protection=NULL;
-	X509_ALGOR *algor=NULL;
-	ASN1_OBJECT *algorOID=NULL;
-	int valid = 0;
+			    const ASN1_OCTET_STRING *secret)
+{
+    ASN1_BIT_STRING *protection=NULL;
+    X509_ALGOR *algor=NULL;
+    ASN1_OBJECT *algorOID=NULL;
+    int valid = 0;
 
-	int usedAlgorNid;
+    int usedAlgorNid;
 
-	if (!msg->protection) goto err;
-	if (!msg->header->protectionAlg) goto err;
-	if (!(algor = X509_ALGOR_dup(msg->header->protectionAlg))) goto err;
+    if (!msg->protection) goto err;
+    if (!msg->header->protectionAlg) goto err;
+    if (!(algor = X509_ALGOR_dup(msg->header->protectionAlg))) goto err;
 
-	X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
-	usedAlgorNid = OBJ_obj2nid(algorOID);
-	if (usedAlgorNid == NID_id_PasswordBasedMAC) {
-		/* need to have params for PBMAC, so check that we have them */
+    X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
+    usedAlgorNid = OBJ_obj2nid(algorOID);
+    if (usedAlgorNid == NID_id_PasswordBasedMAC) {
+        /* need to have params for PBMAC, so check that we have them */
         /* TODO: simplify this logic / check if it's even necessary*/
-		if (!algor->parameter || 
-				ASN1_TYPE_get(algor->parameter) == V_ASN1_UNDEF ||
-				ASN1_TYPE_get(algor->parameter) == V_ASN1_NULL) {
-			/* if parameter is not given in PKIMessage, then try to use parameter from arguments */
-			if (!_algor || algor->algorithm->nid != _algor->algorithm->nid || 
-					ASN1_TYPE_get(_algor->parameter) == V_ASN1_UNDEF || 
-					ASN1_TYPE_get(_algor->parameter) == V_ASN1_NULL) {
-				CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
-				goto err;
-			}
+        if (!algor->parameter || 
+            ASN1_TYPE_get(algor->parameter) == V_ASN1_UNDEF ||
+            ASN1_TYPE_get(algor->parameter) == V_ASN1_NULL) {
+            /* if parameter is not given in PKIMessage, then try to use parameter from arguments */
+            if (!_algor || algor->algorithm->nid != _algor->algorithm->nid || 
+                ASN1_TYPE_get(_algor->parameter) == V_ASN1_UNDEF || 
+                ASN1_TYPE_get(_algor->parameter) == V_ASN1_NULL) {
+                CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
+                goto err;
+            }
             if (!algor->parameter)
                 algor->parameter = ASN1_TYPE_new();
-			ASN1_TYPE_set(algor->parameter, _algor->parameter->type, _algor->parameter->value.ptr);
-		}
-	}
+            ASN1_TYPE_set(algor->parameter, _algor->parameter->type, _algor->parameter->value.ptr);
+        }
+    }
 
-	printf("INFO: Verifying protection, algorithm %s\n", OBJ_nid2sn(OBJ_obj2nid(msg->header->protectionAlg->algorithm)));
+    printf("INFO: Verifying protection, algorithm %s\n", OBJ_nid2sn(OBJ_obj2nid(msg->header->protectionAlg->algorithm)));
 
-	if (usedAlgorNid == NID_id_PasswordBasedMAC)  {
-		/* password based Mac */ 
-		if (!(protection = CMP_protection_new( msg, algor, NULL, secret)))
-			goto err; /* failed to generate protection string! */
-		if (!M_ASN1_BIT_STRING_cmp( protection, msg->protection))
-			/* protection is valid */
-			valid = 1;
-		else
-			/* strings are not equal */
-			valid = 0;
-	}
-	else
-		valid = CMP_verify_signature(msg, algor, senderPkey);
+    if (usedAlgorNid == NID_id_PasswordBasedMAC)  {
+        /* password based Mac */ 
+        if (!(protection = CMP_protection_new( msg, algor, NULL, secret)))
+            goto err; /* failed to generate protection string! */
+        if (!M_ASN1_BIT_STRING_cmp( protection, msg->protection))
+            /* protection is valid */
+            valid = 1;
+        else
+            /* strings are not equal */
+            valid = 0;
+    }
+    else
+        valid = CMP_verify_signature(msg, algor, senderPkey);
 
-	X509_ALGOR_free(algor);
+    X509_ALGOR_free(algor);
 
-	return valid;
+    return valid;
 
 err:
-	if (algor) X509_ALGOR_free(algor);
-	CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_CMPERROR);
-	return 0;
+    if (algor) X509_ALGOR_free(algor);
+    CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_CMPERROR);
+    return 0;
 }
 
 /* ############################################################################ *
@@ -184,7 +185,7 @@ typedef struct {
  * validated successfully and 0 if not.
  * ############################################################################ */
 int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X509) *uchain, X509 *cert)
-    {
+{
     int i=0,ret=0;
     X509_STORE *ctx;
     X509_STORE_CTX *csc;
@@ -205,20 +206,20 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
 
     csc = X509_STORE_CTX_new();
     if (csc == NULL)
-        {
+    {
         ERR_print_errors_fp(stderr);
         goto end;
-        }
+    }
 
     /* TODO include the certs in ctx->untrusted_store in the validation process.
      * right now we only use the certs provided in uchain (which come from the extracerts field) */
 
     X509_STORE_set_flags(ctx, 0);
     if(!X509_STORE_CTX_init(csc, ctx, cert, uchain))
-        {
+    {
         ERR_print_errors_fp(stderr);
         goto end;
-        }
+    }
 
     /* add whatever stuff we have in tcain to the trusted store.
      * it we set tchain using X509_STORE_CTX_trusted_stack the
@@ -246,16 +247,17 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
     ret=0;
 end:
     if (i > 0)
-        {
+    {
         fprintf(stdout,"OK\n");
         ret=1;
-        }
+    }
     else
         ERR_print_errors_fp(stderr);
 
     return(ret);
-    }
+}
 
+#if 0
 static void nodes_print(BIO *out, const char *name,
     STACK_OF(X509_POLICY_NODE) *nodes)
     {
@@ -296,49 +298,50 @@ static void policies_print(BIO *out, X509_STORE_CTX *ctx)
     if (free_out)
         BIO_free(out);
     }
+#endif
 
 /* ############################################################################ *
  * This is called for every valid certificate (?). Also used to build the
  * certificate chain that is returned by CMP_validate_cert_path()
  * ############################################################################ */
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
-    {
+{
     X509_STORE_CTX_ext *ctxext = (X509_STORE_CTX_ext*) ctx;
     int cert_error = X509_STORE_CTX_get_error(ctx);
     X509 *current_cert = X509_STORE_CTX_get_current_cert(ctx);
 
-    /* TODO print out debug messages properly using CMP_printf() */
-
     /* XXX should we check policies here? */
 
     if (!ok)
-        {
+    {
+        char cert_name[512] = {0};
         if (current_cert)
-            {
-            X509_NAME_print_ex_fp(stdout,
-                X509_get_subject_name(current_cert),
-                0, XN_FLAG_ONELINE);
-            printf("\n");
-            }
+        {
+            BIO *bio = BIO_new(BIO_s_mem());
+            X509_NAME_print(bio, X509_get_subject_name(current_cert), XN_FLAG_ONELINE);
+            BIO_read(bio, cert_name, sizeof(cert_name));
+            BIO_free(bio);
+        }
 
-        CMP_printf(ctxext->cmp_ctx, "%serror %d at %d depth lookup:%s\n",
-            X509_STORE_CTX_get0_parent_ctx(ctx) ? "[CRL path]" : "",
-            cert_error,
-            X509_STORE_CTX_get_error_depth(ctx),
-            X509_verify_cert_error_string(cert_error));
+        CMP_printf(ctxext->cmp_ctx, "Certificate '%s': %serror %d at %d depth lookup:%s\n",
+                   cert_name,
+                   X509_STORE_CTX_get0_parent_ctx(ctx) ? "[CRL path]" : "",
+                   cert_error,
+                   X509_STORE_CTX_get_error_depth(ctx),
+                   X509_verify_cert_error_string(cert_error));
         switch(cert_error)
-            {
+        {
             case X509_V_ERR_NO_EXPLICIT_POLICY:
                 // policies_print(NULL, ctx);
             case X509_V_ERR_CERT_HAS_EXPIRED:
 
-            /* since we are just checking the certificates, it is
-             * ok if they are self signed. But we should still warn
-             * the user.
-             */
+                /* since we are just checking the certificates, it is
+                 * ok if they are self signed. But we should still warn
+                 * the user.
+                 */
 
             case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-            /* Continue after extension errors too */
+                /* Continue after extension errors too */
             case X509_V_ERR_INVALID_CA:
             case X509_V_ERR_INVALID_NON_CA:
             case X509_V_ERR_PATH_LENGTH_EXCEEDED:
@@ -346,18 +349,20 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
             case X509_V_ERR_CRL_HAS_EXPIRED:
             case X509_V_ERR_CRL_NOT_YET_VALID:
             case X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION:
-            ok = 1;
+                ok = 1;
 
-            }
+        }
 
         CMP_printf(ctxext->cmp_ctx, "cert_error = %d\n", cert_error);
 
         return ok;
 
-        }
+    }
+#if 0
     if (cert_error == X509_V_OK && ok == 2)
         policies_print(NULL, ctx);
+#endif
 
     return(ok);
-    }
+}
 
