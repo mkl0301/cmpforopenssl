@@ -176,36 +176,36 @@ URIHANDLER_FUNC(mod_cmpsrv_uri_handler) {
   dbgmsg("s", "mod_cmpsrv_uri_handler called");
 
   if (0 == con->request.http_content_type ||
-	  0 != strncmp(con->request.http_content_type, CMP_CONTENT_TYPE, sizeof(CMP_CONTENT_TYPE)-1)) {
-	dbgmsg("s", "invalid content type");
-	return HANDLER_GO_ON;
+      0 != strncmp(con->request.http_content_type, CMP_CONTENT_TYPE, sizeof(CMP_CONTENT_TYPE)-1)) {
+    dbgmsg("s", "invalid content type");
+    return HANDLER_GO_ON;
   }
 
 
   /* TODO: handle multiple chunks correctly */
   if (chunkqueue_length(con->request_content_queue) != (off_t)con->request.content_length) {
-	dbgmsg("s", "invalid chunkqueue_length");
-	return HANDLER_GO_ON;
+    dbgmsg("s", "invalid chunkqueue_length");
+    return HANDLER_GO_ON;
   }
 
   msg = get_content(con->request_content_queue);
   if (!msg) {
-	dbgmsg("s", "error getting message content");
-	return HANDLER_GO_ON;
+    dbgmsg("s", "error getting message content");
+    return HANDLER_GO_ON;
   }
 
   if (msg->used != (off_t)con->request.content_length+1) {
-	dbgmsg("sd", "too many chunks", msg->used);
-	return HANDLER_GO_ON;
+    dbgmsg("sd", "too many chunks", msg->used);
+    return HANDLER_GO_ON;
   }
 
   dbgmsg("s", "decoding DER message ...");
 
   CMP_PKIMESSAGE *pkiMsg = decodeMessage(msg);
   if (!pkiMsg) {
-	dbgmsg("s", "ERROR decoding message");
-	log_cmperrors(srv);
-	return HANDLER_GO_ON;
+    dbgmsg("s", "ERROR decoding message");
+    log_cmperrors(srv);
+    return HANDLER_GO_ON;
   }
 
   /* handle the received PKI message */
