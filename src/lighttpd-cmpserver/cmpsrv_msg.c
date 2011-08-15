@@ -40,20 +40,20 @@ CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx, X509 *cert)
 
 	/* Generate X509 certificate */
 	/*
-	   int			X509_set_version(X509 *x,long version);
-	   int			X509_set_serialNumber(X509 *x, ASN1_INTEGER *serial);
-	   ASN1_INTEGER *	X509_get_serialNumber(X509 *x);
-	   int			X509_set_issuer_name(X509 *x, X509_NAME *name);
-	   X509_NAME *	X509_get_issuer_name(X509 *a);
-	   int			X509_set_subject_name(X509 *x, X509_NAME *name);
-	   X509_NAME *	X509_get_subject_name(X509 *a);
-	   int			X509_set_notBefore(X509 *x, const ASN1_TIME *tm);
-	   int			X509_set_notAfter(X509 *x, const ASN1_TIME *tm);
-	   int			X509_set_pubkey(X509 *x, EVP_PKEY *pkey);
-	   EVP_PKEY *	X509_get_pubkey(X509 *x);
-	   ASN1_BIT_STRING * X509_get0_pubkey_bitstr(const X509 *x);
-	   int		X509_certificate_type(X509 *x,EVP_PKEY *pubkey optional );
-	   */
+		 int			X509_set_version(X509 *x,long version);
+		 int			X509_set_serialNumber(X509 *x, ASN1_INTEGER *serial);
+		 ASN1_INTEGER *	X509_get_serialNumber(X509 *x);
+		 int			X509_set_issuer_name(X509 *x, X509_NAME *name);
+		 X509_NAME *	X509_get_issuer_name(X509 *a);
+		 int			X509_set_subject_name(X509 *x, X509_NAME *name);
+		 X509_NAME *	X509_get_subject_name(X509 *a);
+		 int			X509_set_notBefore(X509 *x, const ASN1_TIME *tm);
+		 int			X509_set_notAfter(X509 *x, const ASN1_TIME *tm);
+		 int			X509_set_pubkey(X509 *x, EVP_PKEY *pkey);
+		 EVP_PKEY *	X509_get_pubkey(X509 *x);
+		 ASN1_BIT_STRING * X509_get0_pubkey_bitstr(const X509 *x);
+		 int		X509_certificate_type(X509 *x,EVP_PKEY *pubkey optional );
+		 */
 
 	// CRMF_CERTREQMSG *reqmsg = sk_CRMF_CERTREQMSG_value( msg->body->value.ir, 0);
 	// CMP_PKIHEADER_set1_recipient( msg->header, reqmsg->certReq->certTemplate->subject);
@@ -112,20 +112,20 @@ CMP_PKIMESSAGE * CMP_kup_new( CMP_CTX *ctx, X509 *cert)
 
 	/* Generate X509 certificate */
 	/*
-	   int			X509_set_version(X509 *x,long version);
-	   int			X509_set_serialNumber(X509 *x, ASN1_INTEGER *serial);
-	   ASN1_INTEGER *	X509_get_serialNumber(X509 *x);
-	   int			X509_set_issuer_name(X509 *x, X509_NAME *name);
-	   X509_NAME *	X509_get_issuer_name(X509 *a);
-	   int			X509_set_subject_name(X509 *x, X509_NAME *name);
-	   X509_NAME *	X509_get_subject_name(X509 *a);
-	   int			X509_set_notBefore(X509 *x, const ASN1_TIME *tm);
-	   int			X509_set_notAfter(X509 *x, const ASN1_TIME *tm);
-	   int			X509_set_pubkey(X509 *x, EVP_PKEY *pkey);
-	   EVP_PKEY *	X509_get_pubkey(X509 *x);
-	   ASN1_BIT_STRING * X509_get0_pubkey_bitstr(const X509 *x);
-	   int		X509_certificate_type(X509 *x,EVP_PKEY *pubkey optional );
-	   */
+		 int			X509_set_version(X509 *x,long version);
+		 int			X509_set_serialNumber(X509 *x, ASN1_INTEGER *serial);
+		 ASN1_INTEGER *	X509_get_serialNumber(X509 *x);
+		 int			X509_set_issuer_name(X509 *x, X509_NAME *name);
+		 X509_NAME *	X509_get_issuer_name(X509 *a);
+		 int			X509_set_subject_name(X509 *x, X509_NAME *name);
+		 X509_NAME *	X509_get_subject_name(X509 *a);
+		 int			X509_set_notBefore(X509 *x, const ASN1_TIME *tm);
+		 int			X509_set_notAfter(X509 *x, const ASN1_TIME *tm);
+		 int			X509_set_pubkey(X509 *x, EVP_PKEY *pkey);
+		 EVP_PKEY *	X509_get_pubkey(X509 *x);
+		 ASN1_BIT_STRING * X509_get0_pubkey_bitstr(const X509 *x);
+		 int		X509_certificate_type(X509 *x,EVP_PKEY *pubkey optional );
+		 */
 
 	// CRMF_CERTREQMSG *reqmsg = sk_CRMF_CERTREQMSG_value( msg->body->value.ir, 0);
 	// CMP_PKIHEADER_set1_recipient( msg->header, reqmsg->certReq->certTemplate->subject);

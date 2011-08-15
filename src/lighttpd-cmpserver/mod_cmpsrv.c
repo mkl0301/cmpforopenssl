@@ -46,17 +46,17 @@ FREE_FUNC(mod_cmpsrv_free) {
   if (!p) return HANDLER_GO_ON;
 
   if (p->config_storage) {
-	size_t i;
+    size_t i;
 
-	for (i = 0; i < srv->config_context->used; i++) {
-	  plugin_config *s = p->config_storage[i];
+    for (i = 0; i < srv->config_context->used; i++) {
+      plugin_config *s = p->config_storage[i];
 
-	  if (!s) continue;
+      if (!s) continue;
 
-	  free(s);
-	}
+      free(s);
+    }
 
-	free(p->config_storage);
+    free(p->config_storage);
   }
 
   buffer_free(p->userID);
@@ -78,13 +78,13 @@ SETDEFAULTS_FUNC(mod_cmpsrv_set_defaults) {
   size_t i = 0;
 
   config_values_t cv[] = {
-	{ "cmpsrv.userID",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 0 */
-	{ "cmpsrv.secretKey",  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 1 */
-	{ "cmpsrv.certPath",   NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 2 */
-	{ "cmpsrv.caCert",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 3 */
-	{ "cmpsrv.caKey",      NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 4 */
-	{ "cmpsrv.extraCerts", NULL, T_CONFIG_ARRAY,  T_CONFIG_SCOPE_SERVER }, /* 5 */
-	{ NULL,                NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
+    { "cmpsrv.userID",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 0 */
+    { "cmpsrv.secretKey",  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 1 */
+    { "cmpsrv.certPath",   NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 2 */
+    { "cmpsrv.caCert",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 3 */
+    { "cmpsrv.caKey",      NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 4 */
+    { "cmpsrv.extraCerts", NULL, T_CONFIG_ARRAY,  T_CONFIG_SCOPE_SERVER }, /* 5 */
+    { NULL,                NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
   };
 
   if (!p) return HANDLER_ERROR;
@@ -92,23 +92,23 @@ SETDEFAULTS_FUNC(mod_cmpsrv_set_defaults) {
   p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
 
   for (i = 0; i < srv->config_context->used; i++) {
-	plugin_config *s;
+    plugin_config *s;
 
-	s = calloc(1, sizeof(plugin_config));
-	// s->match    = array_init();
+    s = calloc(1, sizeof(plugin_config));
+    // s->match    = array_init();
 
-	cv[0].destination = p->userID;
-	cv[1].destination = p->secretKey;
-	cv[2].destination = p->certPath;
-	cv[3].destination = p->caCert;
-	cv[4].destination = p->caKey;
-	cv[5].destination = p->extraCerts;
+    cv[0].destination = p->userID;
+    cv[1].destination = p->secretKey;
+    cv[2].destination = p->certPath;
+    cv[3].destination = p->caCert;
+    cv[4].destination = p->caKey;
+    cv[5].destination = p->extraCerts;
 
-	p->config_storage[i] = s;
+    p->config_storage[i] = s;
 
-	if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
-	  return HANDLER_ERROR;
-	}
+    if (0 != config_insert_values_global(srv, ((data_config *)srv->config_context->data[i])->value, cv)) {
+      return HANDLER_ERROR;
+    }
   }
 
   return HANDLER_GO_ON;
@@ -131,7 +131,7 @@ static int mod_cmpsrv_patch_connection(server *srv, connection *con, plugin_data
 static buffer *get_content(chunkqueue *cq) 
 {
   if (cq->first && cq->first->mem && cq->first->mem->used > 0)
-	return cq->first->mem;
+    return cq->first->mem;
   return 0;
 }
 

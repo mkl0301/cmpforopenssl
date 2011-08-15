@@ -15,18 +15,18 @@ cmp_messageHandler_t msg_handlers[V_CMP_PKIBODY_LAST];
 
 static STACK_OF(X509)* X509_stack_dup(const STACK_OF(X509)* stack)
 {
-    STACK_OF(X509) *newsk = NULL;
-    int i;
+  STACK_OF(X509) *newsk = NULL;
+  int i;
 
-    if (!stack) goto err;
-    if (!(newsk = sk_X509_new_null())) goto err;
+  if (!stack) goto err;
+  if (!(newsk = sk_X509_new_null())) goto err;
 
-    for (i = 0; i < sk_X509_num(stack); i++)
-        sk_X509_push(newsk, X509_dup(sk_X509_value(stack, i)));
+  for (i = 0; i < sk_X509_num(stack); i++)
+    sk_X509_push(newsk, X509_dup(sk_X509_value(stack, i)));
 
-    return newsk;
+  return newsk;
 err:
-    return 0;
+  return 0;
 }
 
 
