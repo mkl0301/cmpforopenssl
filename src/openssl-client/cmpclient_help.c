@@ -411,6 +411,7 @@ printf("INFO: the passphrase is \"%s\"...\n", password);
 	return pkey;
 }
 
+#if 0
 X509_NAME* HELP_create_X509_NAME(char *string)
 {
 	X509_NAME* subject = X509_NAME_new();
@@ -433,4 +434,149 @@ X509_NAME* HELP_create_X509_NAME(char *string)
 err:
 	return NULL;
 }
+#endif
 
+/*
+ * subject is expected to be in the format type0=value0,type1=value1,type2=...
+ * where characters may be escaped by \
+ * Note: taken from openssl/apps/apps.c and adapted slightly to use commas instead
+ *       of forward slashes as separator
+ */
+X509_NAME* HELP_create_X509_NAME(char *subject)
+{
+	size_t buflen = strlen(subject)+1; /* to copy the types and values into. due to escaping, the copy can only become shorter */
+	char *buf = OPENSSL_malloc(buflen);
+	size_t max_ne = buflen / 2 + 1; /* maximum number of name elements */
+	char **ne_types = OPENSSL_malloc(max_ne * sizeof (char *));
+	char **ne_values = OPENSSL_malloc(max_ne * sizeof (char *));
+	int *mval = OPENSSL_malloc (max_ne * sizeof (int));
+
+	char *sp = subject, *bp = buf;
+	int i, ne_num = 0;
+
+	X509_NAME *n = NULL;
+	int nid;
+
+	if (!buf || !ne_types || !ne_values)
+	{
+		fprintf(stderr, "malloc error\n");
+		goto error;
+	}	
+
+#if 0
+	if (*subject != '/')
+	{
+		fprintf(stderr, "Subject does not start with '/'.\n");
+		goto error;
+	}
+	sp++; /* skip leading / */
+#endif
+
+	/* no multivalued RDN by default */
+	mval[ne_num] = 0;
+
+	while (*sp)
+	{
+		/* collect type */
+		ne_types[ne_num] = bp;
+		while (*sp)
+		{
+			if (*sp == '\\') /* is there anything to escape in the type...? */
+			{
+				if (*++sp)
+					*bp++ = *sp++;
+				else	
+				{
+					fprintf(stderr, "escape character at end of string\n");
+					goto error;
+				}
+			}	
+			else if (*sp == '=')
+			{
+				sp++;
+				*bp++ = '\0';
+				break;
+			}
+			else
+				*bp++ = *sp++;
+		}
+		if (!*sp)
+		{
+			fprintf(stderr, "end of string encountered while processing type of subject name element #%d\n", ne_num);
+			goto error;
+		}
+		ne_values[ne_num] = bp;
+		while (*sp)
+		{
+			if (*sp == '\\')
+			{
+				if (*++sp)
+					*bp++ = *sp++;
+				else
+				{
+					fprintf(stderr, "escape character at end of string\n");
+					goto error;
+				}
+			}
+			else if (*sp == ',')
+			{
+				sp++;
+				/* no multivalued RDN by default */
+				mval[ne_num+1] = 0;
+				/* skip whitspace after separator */
+				while (*sp == ' ' || *sp == '\t') sp++;
+				break;
+			}
+			/* XXX multivalued RDN's not supported for now */
+#if 0
+			else if (*sp == '+' /*&& multirdn*/)
+			{
+				/* a not escaped + signals a mutlivalued RDN */
+				sp++;
+				mval[ne_num+1] = -1;
+				break;
+			}
+#endif
+			else
+				*bp++ = *sp++;
+		}
+		*bp++ = '\0';
+		ne_num++;
+	}	
+
+	if (!(n = X509_NAME_new()))
+		goto error;
+
+	for (i = 0; i < ne_num; i++)
+	{
+		if ((nid=OBJ_txt2nid(ne_types[i])) == NID_undef)
+		{
+			fprintf(stderr, "Subject Attribute %s has no known NID, skipped\n", ne_types[i]);
+			continue;
+		}
+
+		if (!*ne_values[i])
+		{
+			fprintf(stderr, "No value provided for Subject Attribute %s, skipped\n", ne_types[i]);
+			continue;
+		}
+
+		if (!X509_NAME_add_entry_by_NID(n, nid, MBSTRING_ASC, (unsigned char*)ne_values[i], -1,-1,mval[i]))
+			goto error;
+	}
+
+	OPENSSL_free(ne_values);
+	OPENSSL_free(ne_types);
+	OPENSSL_free(buf);
+	return n;
+
+error:
+	X509_NAME_free(n);
+	if (ne_values)
+		OPENSSL_free(ne_values);
+	if (ne_types)
+		OPENSSL_free(ne_types);
+	if (buf)
+		OPENSSL_free(buf);
+	return NULL;
+}
