@@ -170,7 +170,7 @@ void printUsage( const char* cmdName) {
   printf("                       of the form hash.0, where 'hash' is the hashed certificate subject name.\n");
   printf("                       see the -hash option of OpenSSL's x509 utility.\n");
   printf(" --untrusted DIR       same as above, but for untrusted certificates.\n");
-  printf(" --validate_path       enable validation of the CA certificate's trust chain.\n");
+  printf(" --validate_chain      enable validation of the CA certificate's trust chain.\n");
   /* XXX TODO: add the following */
 #if 0
   printf(" --extcertsin DIR    directory where extra certificates needed"\n); 
@@ -708,7 +708,7 @@ void parseCLA( int argc, char **argv) {
     {"hex",      no_argument,          0, 'm'},
     {"info",     no_argument,          0, 'n'},
     // {"ckuann",   no_argument,          0, 'C'},
-    {"validate_path",no_argument,      0, 'V'},
+    {"validate_chain",no_argument,     0, 'V'},
     {"path",     required_argument,    0, 'o'},
     {"proxy",    no_argument,          0, 'p'},
     {"cryptlib", no_argument,          0, 'q'},
