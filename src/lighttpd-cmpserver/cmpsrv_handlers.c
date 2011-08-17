@@ -153,39 +153,61 @@ CMPHANDLER_FUNC(handlemsg_certConf)
 
 CMPHANDLER_FUNC(handlemsg_genm)
 {
-  UNUSED(msg);
+  CMP_INFOTYPEANDVALUE *msg_itav = sk_CMP_INFOTYPEANDVALUE_pop(msg->body->value.genm);
+  if (!msg_itav) return 0;
+
+  CMP_PKIMESSAGE *resp=NULL;
 
   CMP_CTX *ctx = srv_ctx->cmp_ctx;
-  CMP_PKIMESSAGE *resp=NULL;
-  CMP_INFOTYPEANDVALUE *itav=NULL;
 
   resp = CMP_PKIMESSAGE_new();
   CMP_PKIHEADER_set1(resp->header, ctx);
   CMP_PKIMESSAGE_set_bodytype(resp, V_CMP_PKIBODY_GENP);
 
-  itav = CMP_INFOTYPEANDVALUE_new();
-  itav->infoType = OBJ_nid2obj(NID_id_it_caKeyUpdateInfo);
+  int infoType = OBJ_obj2nid(msg_itav->infoType);
 
-  CMP_CAKEYUPDANNCONTENT *ckuann = CMP_CAKEYUPDANNCONTENT_new();
-  // X509 *cert = X509_new();
-  // X509_set_version(cert, 2);
-  // ASN1_INTEGER_set(cert->cert_info->serialNumber, 0);
-  // ASN1_TIME_set(cert->cert_info->validity->notBefore, time(0));
-  // ASN1_TIME_set(cert->cert_info->validity->notAfter, time(0)+60*60*24*365);
-  char certfn[1024];
-  sprintf(certfn, "%s/ca_cert_oldwithnew.der", srv_ctx->certPath);
-  ckuann->oldWithNew = HELP_read_der_cert(certfn);
+  if (infoType == NID_id_it_caKeyUpdateInfo) {
+    dbgmsg("s", "genm type is caKeyUpdateInfo");
+    CMP_INFOTYPEANDVALUE *itav = CMP_INFOTYPEANDVALUE_new();
+    CMP_CAKEYUPDANNCONTENT *ckuann = CMP_CAKEYUPDANNCONTENT_new();
+    itav->infoType = OBJ_nid2obj(NID_id_it_caKeyUpdateInfo);
 
-  sprintf(certfn, "%s/ca_cert_newwithold.der", srv_ctx->certPath);
-  ckuann->newWithOld = HELP_read_der_cert(certfn);
+    // X509 *cert = X509_new();
+    // X509_set_version(cert, 2);
+    // ASN1_INTEGER_set(cert->cert_info->serialNumber, 0);
+    // ASN1_TIME_set(cert->cert_info->validity->notBefore, time(0));
+    // ASN1_TIME_set(cert->cert_info->validity->notAfter, time(0)+60*60*24*365);
+    char certfn[1024];
+    sprintf(certfn, "%s/ca_cert_oldwithnew.der", srv_ctx->certPath);
+    ckuann->oldWithNew = HELP_read_der_cert(certfn);
 
-  sprintf(certfn, "%s/ca_cert_newwithnew.der", srv_ctx->certPath);
-  ckuann->newWithNew = HELP_read_der_cert(certfn);
+    sprintf(certfn, "%s/ca_cert_newwithold.der", srv_ctx->certPath);
+    ckuann->newWithOld = HELP_read_der_cert(certfn);
 
-  itav->infoValue.ptr = (void*) ckuann;
+    sprintf(certfn, "%s/ca_cert_newwithnew.der", srv_ctx->certPath);
+    ckuann->newWithNew = HELP_read_der_cert(certfn);
 
-  CMP_ITAV_stack_item_push0( &resp->body->value.genm, itav);
-  dbgmsg("s", "itsa done");
+    itav->infoValue.caKeyUpdateInfo = ckuann;
+
+    CMP_ITAV_stack_item_push0( &resp->body->value.genp, itav);
+  }
+  else if (infoType == NID_id_it_currentCRL) {
+    dbgmsg("s", "genm type is currentCRL");
+    //TODO return an actual CRL instead of just an empty structure
+    CMP_INFOTYPEANDVALUE *itav = CMP_INFOTYPEANDVALUE_new();
+    X509_CRL *curcrl = X509_CRL_new();
+    curcrl->crl = X509_CRL_INFO_new();
+    ASN1_TIME_set(curcrl->crl->lastUpdate, time(0));
+
+    itav->infoType = OBJ_nid2obj(NID_id_it_currentCRL);
+    itav->infoValue.currentCRL = curcrl;
+    CMP_ITAV_stack_item_push0( &resp->body->value.genp, itav);
+  }
+  else {
+    dbgmsg("sd", "Unknown info type received in GeneralMessage: ", infoType);
+    CMP_PKIMESSAGE_free(resp);
+    resp = NULL;
+  }
 
   *out = resp;
   return 0;
