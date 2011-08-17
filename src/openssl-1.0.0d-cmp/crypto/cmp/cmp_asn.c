@@ -163,8 +163,8 @@ ASN1_ADB(CMP_INFOTYPEANDVALUE) = {
 	ADB_ENTRY(NID_id_it_preferredSymmAlg, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.preferredSymmAlg, X509_ALGOR)),
 	// ADB_ENTRY(NID_id_it_caKeyUpdateInfo,  ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.caKeyUpdateInfo,  CMP_CAKEYUPDANNCONTENT)),
 	/* XXX this is made opt in order to make it possible to request a CKUANN with an      empty caKeyUpdateInfo value */
-	ADB_ENTRY(NID_id_it_caKeyUpdateInfo,  ASN1_OPT(CMP_INFOTYPEANDVALUE,                  infoValue.caKeyUpdateInfo,  CMP_CAKEYUPDANNCONTENT)),
-	/* TODO: NID_id_it_currentCRL - CRL  */
+	ADB_ENTRY(NID_id_it_caKeyUpdateInfo, ASN1_OPT(CMP_INFOTYPEANDVALUE,         infoValue.caKeyUpdateInfo, CMP_CAKEYUPDANNCONTENT)),
+	ADB_ENTRY(NID_id_it_currentCRL,      ASN1_OPT(CMP_INFOTYPEANDVALUE,         infoValue.currentCRL,      X509_CRL)),
 	ADB_ENTRY(NID_id_it_unsupportedOIDs, ASN1_SEQUENCE_OF(CMP_INFOTYPEANDVALUE, infoValue.unsupportedOIDs, ASN1_OBJECT)),
 	ADB_ENTRY(NID_id_it_keyPairParamReq, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.keyPairParamReq, ASN1_OBJECT)),
 	ADB_ENTRY(NID_id_it_keyPairParamRep, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.keyPairParamRep, X509_ALGOR)),
@@ -323,8 +323,7 @@ ASN1_CHOICE(CMP_PKIBODY) = {
 	ASN1_EXP(CMP_PKIBODY, value.ckuann, CMP_CAKEYUPDANNCONTENT, 15),
 	ASN1_EXP(CMP_PKIBODY, value.cann, X509, 16),
 	ASN1_EXP(CMP_PKIBODY, value.rann, CMP_REVANNCONTENT, 17),
-/* TODO */
-ASN1_EXP(CMP_PKIBODY, value.crlann, ASN1_INTEGER, 18),
+	ASN1_EXP_SEQUENCE_OF(CMP_PKIBODY, value.crlann, X509_CRL, 18),
 #if 0
 	/* CMP_PKICONFIRMCONTENT would be only a typedfef of ASN1_NULL */
 	/* ASN1_EXP(CMP_PKIBODY, value.pkiconf, CMP_PKICONFIRMCONTENT, 19), */

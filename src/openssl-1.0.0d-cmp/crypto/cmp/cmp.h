@@ -241,7 +241,8 @@ typedef struct cmp_infotypeandvalue_st
 		X509_ALGOR *preferredSymmAlg;
 		/* NID_id_it_caKeyUpdateInfo - Updated CA Key Pair  */
 		CMP_CAKEYUPDANNCONTENT *caKeyUpdateInfo;
-		/* TODO: NID_id_it_currentCRL - CRL  */
+		/* NID_id_it_currentCRL - CRL  */
+		X509_CRL *currentCRL;
 		/* NID_id_it_unsupportedOIDs - Unsupported Object Identifiers  */
 		STACK_OF(ASN1_OBJECT) *unsupportedOIDs;
 		/* NID_id_it_keyPairParamReq - Key Pair Parameters Request  */
@@ -868,9 +869,7 @@ typedef struct cmp_pkibody_st
 		CMP_REVANNCONTENT          *rann; /* 17 */
         /* crlann   [18] CRLAnnContent,          --CRL Announcement */
         /* CRLAnnContent ::= SEQUENCE OF CertificateList */
-	/* XXX what is CertificateList? */
-/* TODO */
-ASN1_INTEGER *crlann; /* 18 */
+        STACK_OF(X509_CRL)         *crlann;
         /* pkiconf  [19] PKIConfirmContent,      --Confirmation */
 	/* CMP_PKICONFIRMCONTENT would be only a typedfef of ASN1_NULL */
 	/* CMP_CONFIRMCONTENT *pkiconf; */
