@@ -135,6 +135,7 @@ int cert_remove(cmpsrv_ctx *ctx, int serialNo)
 int cert_save(cmpsrv_ctx *ctx, X509 *cert)
 {
   UNUSED(cert);
+  int rc = -1;
 
   char *nameDigest;
   unsigned int mdlen;
@@ -148,7 +149,6 @@ int cert_save(cmpsrv_ctx *ctx, X509 *cert)
 
   sqlite3_stmt *q;
   const char *insert_sql = "insert into certs values (?, ?, ?)";
-  int rc;
 
   rc = sqlite3_prepare(db, insert_sql, -1, &q, NULL);
   if (rc != SQLITE_OK) goto err;
