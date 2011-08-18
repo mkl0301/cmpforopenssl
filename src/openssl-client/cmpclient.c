@@ -763,7 +763,8 @@ void parseCLA( int argc, char **argv) {
         break;
 
       case 'b':
-        opt_serverPort = atoi(optarg);
+        if (optarg)
+          opt_serverPort = atoi(optarg);
         break;
 
       case 'V':
