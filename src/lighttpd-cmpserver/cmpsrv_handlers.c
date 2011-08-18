@@ -51,6 +51,7 @@ CMPHANDLER_FUNC(handlemsg_ir)
   CRMF_CERTTEMPLATE_free(tpl);
 
   *out = CMP_ip_new(ctx, cert);
+  if (!*out) return -1;
   (*out)->extraCerts = X509_stack_dup(srv_ctx->extraCerts);
 
   // char filename[1024];
@@ -126,6 +127,10 @@ CMPHANDLER_FUNC(handlemsg_kur)
   CRMF_CERTTEMPLATE_free(tpl);
 
   *out = CMP_kup_new(ctx, cert);
+  if (!*out) {
+    X509_free(cert);
+    return -1;
+  }
   (*out)->extraCerts = X509_stack_dup(srv_ctx->extraCerts);
 
   int r = cert_save(srv_ctx, cert);
