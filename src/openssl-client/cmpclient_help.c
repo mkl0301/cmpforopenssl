@@ -359,7 +359,7 @@ printf("INFO: the passphrase is \"%s\"\n", password);
 		printf("ERROR: could not open file \"%s\" for writing.\n", filename);
 		return 0;
 	}
-	PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, 0, (char*)password);
+	PEM_write_PrivateKey(fp, pkey, NULL, (unsigned char*)password, 0, 0, 0);
 printf("INFO: private Key written\n");
 	fclose(fp);
 
