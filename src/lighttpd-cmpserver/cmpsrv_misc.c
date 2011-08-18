@@ -34,8 +34,7 @@ EVP_PKEY *HELP_readPrivKey(const char * filename, const char *password)
   }
   /* XXX this is NOT encrypted */
   pkey = PEM_read_PrivateKey(fp, NULL, NULL, (char*) password);
-  if( pkey)
-    fclose(fp);
+  fclose(fp);
 
   return pkey;
 }
