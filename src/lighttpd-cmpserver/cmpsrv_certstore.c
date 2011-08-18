@@ -170,6 +170,7 @@ int cert_save(cmpsrv_ctx *ctx, X509 *cert)
 
   sqlite3_close(db);
 
+  free(nameDigest);
   return 0;
 
 err:

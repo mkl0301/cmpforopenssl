@@ -76,7 +76,10 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
     sqlite3_exec(db, "create table certs (serial int not null primary key, name varchar not null, cert blob not null);", 0, 0, 0);
     sqlite3_close(db);
   }
-  else return NULL;
+  else {
+    free(ctx);
+    return NULL;
+  }
 
   return ctx;
 
