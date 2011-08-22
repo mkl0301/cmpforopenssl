@@ -238,25 +238,52 @@ void printUsage( const char* cmdName) {
   exit(1);
 }
 
+char *getCertFilename(X509 *cert, char *destDir) {
+#define CERTFILEPATHLEN 512
+  char certFile[CERTFILEPATHLEN];
+  FILE *f = NULL;
+  X509 *existingCert = NULL;
+  int n = 0;
+  unsigned long hash = X509_subject_name_hash(cert);
+  /* for certificates with the same subject name we only try
+   * names from hash.0 to hash.9 */
+  do {
+    snprintf(certFile, CERTFILEPATHLEN, "%s/%8lx.%d", destDir, hash, n++);
+    existingCert = HELP_read_der_cert(certFile);
+    if (existingCert) {
+      /* check if we already have this exact same cert */
+      int cmp = X509_cmp(cert, existingCert);
+      X509_free(existingCert);
+      if (cmp == 0) return NULL;
+    }
+  } while (existingCert != NULL && n < 10);
+
+  if (!existingCert)
+    return strdup(certFile);
+
+  printf("ERROR: unable to get a suitable filename for saving certificate\n");
+  return NULL;
+}
 
 /* ############################################################################ */
 /* this function writes all the certificates from the caPubs field of a received
  * ip or kup message into the given directory */
 /* ############################################################################ */
 int writeCaPubsCertificates( char *destDir, CMP_CTX *cmp_ctx) {
-#define CERTFILEPATHLEN 512
-		X509 *cert = NULL;
-		char certFile[CERTFILEPATHLEN];
-		int n = 0;
+  X509 *cert = NULL;
+  int n = 0;
 
   if (!destDir) goto err;
 
   printf( "Received %d CA certificates, saving to %s\n", CMP_CTX_caPubs_num(cmp_ctx), destDir);
   while ( (cert=CMP_CTX_caPubs_pop(cmp_ctx)) != NULL) {
-    snprintf(certFile, CERTFILEPATHLEN, "%s/cacert%d.der", destDir, ++n);
+    char *certFile = getCertFilename(cert, destDir);
+    if (!certFile) continue;
+
     if(!HELP_write_der_cert(cert, certFile)) {
       printf("ERROR: could not write CA certificate number %d to %s!\n", n, certFile);
     }
+    free(certFile);
   }
   return n;
 err:
@@ -268,22 +295,20 @@ err:
  * messages into the given directory */
 /* ############################################################################ */
 int writeExtraCerts( char *destDir, CMP_CTX *cmp_ctx) {
-#define CERTFILEPATHLEN 512
-		X509 *cert = NULL;
-		char certFile[CERTFILEPATHLEN];
-		int n = 0;
+  X509 *cert = NULL;
+  int n = 0;
 
   if (!destDir) goto err;
 
   printf( "Received %d certificates in extCerts, saving to %s\n", CMP_CTX_extraCertsIn_num(cmp_ctx), destDir);
   while ( (cert=CMP_CTX_extraCertsIn_pop(cmp_ctx)) != NULL) {
-    /* construct the filename by using the "new-style" openssl subject hash as */
-    /* TODO: what when there are 2 certificates with the same subject hash?
-     * Catch that ! */
-    snprintf(certFile, CERTFILEPATHLEN, "%s/%lu.der", destDir, X509_subject_name_hash(cert) );
+    char *certFile = getCertFilename(cert, destDir);
+    if (!certFile) continue;
+
     if(!HELP_write_der_cert(cert, certFile)) {
       printf("ERROR: could not write CA certificate number %d to %s!\n", n, certFile);
     }
+    free(certFile);
   }
   return n;
 err:
