@@ -11,10 +11,39 @@
 
 /* ############################################################################ */
 /* ############################################################################ */
+CMP_PKIMESSAGE * CMP_pollRep_new( CMP_CTX *ctx) {
+    CMP_PKIMESSAGE *msg = NULL;
+    CMP_POLLREP    *prep = NULL;
+    if (!ctx) goto err;
+
+    if (!(msg = CMP_PKIMESSAGE_new())) goto err;
+
+    if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
+
+    CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_POLLREP);
+
+    prep = CMP_POLLREP_new();
+    /* TODO support multiple cert request ids to poll */
+    ASN1_INTEGER_set(prep->certReqId, 0);
+    ASN1_INTEGER_set(prep->checkAfter, 5);
+    msg->body->value.pollRep = sk_CMP_POLLREP_new_null();
+    sk_CMP_POLLREP_push(msg->body->value.pollRep, prep);
+
+    if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
+
+    /* TODO: make a generic function to create msg protection and set this, do
+     * this for all message types */
+    CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
+    return msg;
+
+err:
+    return NULL;
+}
+
+/* ############################################################################ */
+/* ############################################################################ */
 CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx, X509 *cert)
 {
-	UNUSED(ctx);
-
 	CMP_PKIMESSAGE *msg=NULL;
 
 	// if (!ctx) goto err;

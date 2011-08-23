@@ -4,6 +4,8 @@
   /* Written by Miikka Viljanen <mviljane@users.sourceforge.net>         */
   /***********************************************************************/
 
+#undef TEST_POLLREQ
+
 #include "mod_cmpsrv.h"
 
 #define CMPHANDLER_ARGS server *srv, cmpsrv_ctx *srv_ctx, CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out
@@ -29,6 +31,10 @@ err:
   return 0;
 }
 
+#ifdef TEST_POLLREQ
+/* This is pretty dumb but it's only meant for testing the polling stuff. */
+CMP_PKIMESSAGE *waiting_msg = NULL;
+#endif
 
 CMPHANDLER_FUNC(handlemsg_ir)
 {
@@ -50,9 +56,39 @@ CMPHANDLER_FUNC(handlemsg_ir)
   X509 *cert = cert_create(srv_ctx, tpl);
   CRMF_CERTTEMPLATE_free(tpl);
 
+#ifdef TEST_POLLREQ
+
+  {
+    CMP_PKIMESSAGE *msg = CMP_PKIMESSAGE_new();
+    CMP_PKIHEADER_set1(msg->header, ctx);
+    CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IP);
+    CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*)ctx->caCert));
+
+    CMP_CERTREPMESSAGE *resp = CMP_CERTREPMESSAGE_new();
+
+    CMP_CERTRESPONSE *cr = CMP_CERTRESPONSE_new();
+    ASN1_INTEGER_set(cr->certReqId, 0);
+    ASN1_INTEGER_set(cr->status->status, CMP_PKISTATUS_waiting);
+
+    resp->response = sk_CMP_CERTRESPONSE_new_null();
+    sk_CMP_CERTRESPONSE_push(resp->response, cr);
+
+    msg->body->value.ip = resp;
+
+    *out = msg;
+    (*out)->extraCerts = X509_stack_dup(srv_ctx->extraCerts);
+
+    waiting_msg = CMP_ip_new(ctx, cert);
+    waiting_msg->extraCerts = X509_stack_dup(srv_ctx->extraCerts);
+  }
+
+#else
+
   *out = CMP_ip_new(ctx, cert);
   if (!*out) return -1;
   (*out)->extraCerts = X509_stack_dup(srv_ctx->extraCerts);
+
+#endif
 
   // char filename[1024];
   // EVP_PKEY *p = X509_PUBKEY_get(cert->cert_info->key);
@@ -218,6 +254,29 @@ CMPHANDLER_FUNC(handlemsg_genm)
   return 0;
 }
 
+
+CMPHANDLER_FUNC(handlemsg_pollReq)
+{
+#ifdef TEST_POLLREQ
+  static int n = 0;
+
+  CMP_PKIMESSAGE *resp=NULL;
+  CMP_CTX *ctx = srv_ctx->cmp_ctx;
+
+  if (!n) {
+    resp = CMP_pollRep_new(ctx);
+    *out = resp;
+  } else if (waiting_msg) {
+    *out = waiting_msg;
+    waiting_msg = NULL;
+  }
+
+  n = !n;
+#endif
+
+  return 0;
+}
+
 void init_handler_table(void)
 {
   for (int i = 0; i < V_CMP_PKIBODY_LAST; i++)
@@ -228,6 +287,7 @@ void init_handler_table(void)
   msg_handlers[V_CMP_PKIBODY_KUR]      = handlemsg_kur;
   msg_handlers[V_CMP_PKIBODY_CERTCONF] = handlemsg_certConf;
   msg_handlers[V_CMP_PKIBODY_GENM]     = handlemsg_genm;
+  msg_handlers[V_CMP_PKIBODY_POLLREQ]  = handlemsg_pollReq;
 }
 
 

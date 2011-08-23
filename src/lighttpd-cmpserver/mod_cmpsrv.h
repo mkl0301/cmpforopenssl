@@ -87,6 +87,7 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
 /* cmpsrv_msg.c */
 CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx, X509 *cert);
 CMP_PKIMESSAGE * CMP_kup_new( CMP_CTX *ctx, X509 *cert);
+CMP_PKIMESSAGE * CMP_pollRep_new( CMP_CTX *ctx);
 
 /* cmpsrv_certstore.c */
 X509 *cert_create(cmpsrv_ctx *ctx, CRMF_CERTTEMPLATE *tpl);
