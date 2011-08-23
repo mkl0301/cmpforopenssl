@@ -28,7 +28,7 @@ LIBOSSL       = $(OSSLSRC)/libssl.a
 # --with-curl-lib and --with-curl-include are only needed if CURL is not
 # available natively on the system
 OPENSSLCFGOPT = -ggdb curl no-asm no-idea no-fips no-rc5 no-mdc2 no-camellia -fomit-frame-pointer \
-								-fno-strict-aliasing \
+								-fPIC -fno-strict-aliasing \
 								--with-curl-lib=$(ROOT)/lib --with-curl-include=$(ROOT)/include
 
 #TODO do we have to set LIBDIR or CCFLAGS...?
