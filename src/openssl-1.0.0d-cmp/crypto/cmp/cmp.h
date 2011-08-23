@@ -772,6 +772,15 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKIPROTECTION)
      }
 */
 
+typedef struct cmp_pollreq_st {
+	ASN1_INTEGER *certReqId;
+} CMP_POLLREQ;
+
+typedef struct cmp_pollrep_st {
+	ASN1_INTEGER *certReqId;
+	ASN1_INTEGER *checkAfter;
+	STACK_OF(ASN1_UTF8STRING) *reason;
+} CMP_POLLREP;
 
 typedef struct cmp_pkiheader_st
 {
