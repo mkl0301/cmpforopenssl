@@ -882,9 +882,11 @@ void parseCLA( int argc, char **argv) {
         createOptStr( &opt_clKeyFile);
         break;
       case 'J':
+        opt_clKeyPass=NULL;
         createOptStr( &opt_clKeyPass);
         break;
       case 'P':
+        opt_newClKeyPass=NULL;
         createOptStr( &opt_newClKeyPass);
         break;
       case 'k':
