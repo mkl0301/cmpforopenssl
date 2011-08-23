@@ -775,12 +775,16 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKIPROTECTION)
 typedef struct cmp_pollreq_st {
 	ASN1_INTEGER *certReqId;
 } CMP_POLLREQ;
+DECLARE_ASN1_FUNCTIONS(CMP_POLLREQ)
+DECLARE_STACK_OF(CMP_POLLREQ)
 
 typedef struct cmp_pollrep_st {
 	ASN1_INTEGER *certReqId;
 	ASN1_INTEGER *checkAfter;
 	STACK_OF(ASN1_UTF8STRING) *reason;
 } CMP_POLLREP;
+DECLARE_ASN1_FUNCTIONS(CMP_POLLREP)
+DECLARE_STACK_OF(CMP_POLLREP)
 
 typedef struct cmp_pkiheader_st
 {
@@ -901,12 +905,10 @@ typedef struct cmp_pkibody_st
         /* certConf [24] CertConfirmContent,     --Certificate confirm */
 	 	/* CMP_CERTCONFIRMCONTENT      *certConf; / * 24 */
 	 	STACK_OF(CMP_CERTSTATUS)       *certConf; /* 24 */
-	/* pollReq  [25] PollReqContent,         --Polling request */
-/* TODO */
-ASN1_INTEGER *pollReq; /* 25 */
+		/* pollReq  [25] PollReqContent,         --Polling request */
+	 	STACK_OF(CMP_POLLREQ)          *pollReq;
         /* pollRep  [26] PollRepContent          --Polling response */
-/* TODO */
-ASN1_INTEGER *pollRep; /* 26 */
+	 	STACK_OF(CMP_POLLREP)          *pollRep;
 	} value;
 } CMP_PKIBODY;
 DECLARE_ASN1_FUNCTIONS(CMP_PKIBODY)
@@ -1314,6 +1316,7 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value);
 CMP_PKIMESSAGE *CMP_ckuann_new( CMP_CTX *ctx);
 #endif
 CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey);
+CMP_PKIMESSAGE *CMP_pollReq_new( CMP_CTX *ctx);
 
 /* cmp_lib.c */
 
@@ -1610,6 +1613,8 @@ void ERR_load_CMP_strings(void);
 #define CMP_R_NO_TRUSTED_CERTIFICATES_SET		 124
 #define CMP_R_PATH_VALIDATION_ENABLED_BUT_TRUST_STORE_NOT_SET 122
 #define CMP_R_PKIBODY_ERROR				 114
+#define CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ	 128
+#define CMP_R_REQUEST_REJECTED_BY_CA			 127
 #define CMP_R_SUBJECT_NAME_NOT_SET			 115
 #define CMP_R_UNKNOWN_ALGORITHM_ID			 116
 #define CMP_R_UNKNOWN_CIPHER				 117

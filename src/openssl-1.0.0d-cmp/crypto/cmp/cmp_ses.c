@@ -170,6 +170,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* make sure the PKIStatus for the *first* CERTrepmessage indicates a certificate was granted */
 	/* TODO - there could be two CERTrepmessages */
+received_ip:
 	switch (CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0)) {
 		case CMP_PKISTATUS_grantedWithMods:
 			CMP_printf( ctx, "WARNING: got \"grantedWithMods\"");
@@ -190,7 +191,47 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			}
 			break;
 		case CMP_PKISTATUS_rejection:
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_REQUEST_REJECTED_BY_CA);
+			goto err;
+			break;
 		case CMP_PKISTATUS_waiting:
+			{ 
+				int i;
+				CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
+				/* TODO make number of attempts configurable */
+				for (i = 0; i < 2; i++) {
+					CMP_PKIMESSAGE *preq = CMP_pollReq_new(ctx);
+					CMP_PKIMESSAGE *prep = NULL;
+					CMP_POLLREP *pollRep = NULL;
+					if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+						goto err;
+					}
+					/* TODO handle multiple pollreqs */
+					if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_IP) {
+						ip = prep;
+						CMP_PKIMESSAGE_free(preq);
+						goto received_ip;
+					}
+					else if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_POLLREP) {
+						int checkAfter;
+						pollRep = sk_CMP_POLLREP_value(prep->body->value.pollRep, 0);
+						checkAfter = ASN1_INTEGER_get(pollRep->checkAfter);
+						CMP_printf(ctx, "INFO: Waiting %ld seconds before sending pollReq...\n", checkAfter);
+						sleep(checkAfter);
+					}
+					else {
+						CMP_PKIMESSAGE_free(preq);
+						CMP_PKIMESSAGE_free(prep);
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ);
+						goto err;
+					}
+					CMP_PKIMESSAGE_free(preq);
+					CMP_PKIMESSAGE_free(prep);
+				}
+			}
+			goto err;
+			break;
 		case CMP_PKISTATUS_revocationWarning:
 		case CMP_PKISTATUS_revocationNotification:
 		case CMP_PKISTATUS_keyUpdateWarning:
