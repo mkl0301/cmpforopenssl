@@ -110,8 +110,8 @@ static char* opt_caPubsDir=NULL;
 static char* opt_clCertFile=NULL;
 static char* opt_newClCertFile=NULL;
 static char* opt_clKeyFile=NULL;
-static char* opt_clKeyPass=NULL;
-static char* opt_newClKeyPass=NULL;
+static char* opt_clKeyPass="";
+static char* opt_newClKeyPass="";
 static char* opt_newClKeyFile=NULL;
 static char* opt_recipient=NULL;
 static char* opt_subjectName=NULL;
@@ -241,7 +241,6 @@ void printUsage( const char* cmdName) {
 char *getCertFilename(X509 *cert, char *destDir) {
 #define CERTFILEPATHLEN 512
   char certFile[CERTFILEPATHLEN];
-  FILE *f = NULL;
   X509 *existingCert = NULL;
   int n = 0;
   unsigned long hash = X509_subject_name_hash(cert);
@@ -1010,12 +1009,13 @@ void parseCLA( int argc, char **argv) {
   if( opt_doIr || opt_doCr || opt_doKur) {
     /* for IR,CR,Kur a a place to store the new certificate and the location for the
      * (new) key and its password have to be supplied */
-    if (!(opt_newClCertFile && opt_newClKeyFile && opt_newClKeyPass)) {
-      printf("ERROR: giving newclcert/newkey/newkeypass is mandatory for trying to get a new Certificate through IR/CR/KUR\n\n");
+    if (!(opt_newClCertFile && opt_newClKeyFile)) {
+      printf("ERROR: giving newclcert/newkey is mandatory for trying to get a new Certificate through IR/CR/KUR\n\n");
       printUsage( argv[0]);
     }
   }
 
+#if 0
   if(opt_clKeyFile && !opt_clKeyPass) {
     printf("ERROR: giving keypass is mandatory when giving key\n\n");
     printUsage( argv[0]);
@@ -1025,7 +1025,7 @@ void parseCLA( int argc, char **argv) {
     printf("ERROR: giving newkeypass is mandatory when giving newkey\n\n");
     printUsage( argv[0]);
   }
-
+#endif
 
   return;
 }
