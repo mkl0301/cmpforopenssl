@@ -669,6 +669,11 @@ CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
 	return (CMP_CAKEYUPDANNCONTENT*) CMP_doGeneralMessageSeq( cbio, ctx, NID_id_it_caKeyUpdateInfo, NULL);
 }
 
+X509_CRL *CMP_doCurrentCRLReq( CMPBIO *cbio, CMP_CTX *ctx)
+{
+	return (X509_CRL*) CMP_doGeneralMessageSeq( cbio, ctx, NID_id_it_currentCRL, NULL);
+}
+
 /* ############################################################################ */
 /* TODO: make me more general --> sending of General Message */
 /* ############################################################################ */

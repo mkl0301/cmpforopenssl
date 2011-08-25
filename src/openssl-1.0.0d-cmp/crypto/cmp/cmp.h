@@ -1452,6 +1452,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx);
 char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value);
 CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx);
+X509_CRL *CMP_doCurrentCRLReq( CMPBIO *cbio, CMP_CTX *ctx);
 
 /* from cmp_ctx.c */
 int CMP_CTX_init( CMP_CTX *ctx);
