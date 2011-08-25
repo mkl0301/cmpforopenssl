@@ -129,7 +129,7 @@ static int opt_doCr=0;
 static int opt_doKur=0;
 static int opt_doRr=0;
 static int opt_doInfo=0;
-static int opt_doCKUAnn=0;
+static int opt_doGenM=0;
 static int opt_doPathValidation=0;
 static int opt_compatibility=CMP_COMPAT_RFC;
 
@@ -648,9 +648,9 @@ void doInfo(CMP_CTX *cmp_ctx) {
 
 /* ############################################################################ */
 /* ############################################################################ */
-void doCKUAnn(CMP_CTX *cmp_ctx) {
+void doGenM(CMP_CTX *cmp_ctx, int genm_type, void *value) {
   CMPBIO *cbio=NULL;
-  CMP_CAKEYUPDANNCONTENT *cku = NULL;
+  char *resp = NULL;
 
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
@@ -665,14 +665,40 @@ void doCKUAnn(CMP_CTX *cmp_ctx) {
     exit(1);
   }
 
-  cku = CMP_doCAKeyUpdateReq( cbio, cmp_ctx);
+  resp = CMP_doGeneralMessageSeq( cbio, cmp_ctx, genm_type, NULL);
   CMP_delete_http_bio(cbio);
 
-  if( cku) {
-    printf( "SUCCESS requesting CKUAnn. FILE %s, LINE %d\n", __FILE__, __LINE__);
-    /* TODO: write out received CA certs to a directory ? */
+  if( resp) {
+    printf( "SUCCESS sending General Message. FILE %s, LINE %d\n", __FILE__, __LINE__);
+
+    switch (opt_doGenM) {
+      case NID_id_it_caKeyUpdateInfo:
+        {
+          /* CMP_CAKEYUPDANNCONTENT *cku = (CMP_CAKEYUPDANNCONTENT*) resp; */
+          /* TODO write out the received certs! */
+        }
+        break;
+
+      case NID_id_it_currentCRL:
+        {
+          /* TODO write out the received CRL! */
+#if 0
+          X509_CRL *crl = (X509_CRL*) resp;
+          BIO  *bio;
+          bio=BIO_new(BIO_s_file());
+          BIO_write_filename(bio, "/tmp/crl.der");
+          i2d_X509_CRL_bio(bio, crl);
+          BIO_free(bio);
+#endif
+        }
+        break;
+
+      default:
+        break;
+    }
+
   } else {
-    printf( "ERROR requesting CKUAnn. FILE %s, LINE %d\n", __FILE__, __LINE__);
+    printf( "ERROR sending General Message. FILE %s, LINE %d\n", __FILE__, __LINE__);
     ERR_load_crypto_strings();
     ERR_print_errors_fp(stderr);
     exit(1);
@@ -716,6 +742,7 @@ void parseCLA( int argc, char **argv) {
     {"port",     required_argument,    0, 'b'},
     {"ir",       no_argument,          0, 'c'},
     {"kur",      no_argument,          0, 'd'},
+    {"genm",     required_argument,    0, 'G'},
     {"user",     required_argument,    0, 'e'},
     {"password", required_argument,    0, 'f'},
     {"cacert",   required_argument,    0, 'g'},
@@ -731,7 +758,6 @@ void parseCLA( int argc, char **argv) {
     {"newclcert",required_argument,    0, 'l'},
     {"hex",      no_argument,          0, 'm'},
     {"info",     no_argument,          0, 'n'},
-    // {"ckuann",   no_argument,          0, 'C'},
     {"validate_chain",no_argument,     0, 'V'},
     {"path",     required_argument,    0, 'o'},
     {"proxy",    no_argument,          0, 'p'},
@@ -752,7 +778,7 @@ void parseCLA( int argc, char **argv) {
 
   while (1)
   {
-    c = getopt_long (argc, argv, "a:b:cde:f:g:h:iIj:J:k:l:mno:O:pP:qrR:sS:tT:N:u:U:X:", long_options, &option_index);
+    c = getopt_long (argc, argv, "a:b:cde:f:g:G:h:iIj:J:k:l:mno:O:pP:qrR:sS:tT:N:u:U:X:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -831,16 +857,27 @@ void parseCLA( int argc, char **argv) {
         opt_doKur = 1;
         break;
 
-#if 0
-      case 'C':
+      case 'G':
         if( opt_sequenceSet) {
           fprintf( stderr, "ERROR: only one message sequence can be set at once!\n");
           printUsage( argv[0]);
         }
+        {
+          char *genm_type = NULL;
+          createOptStr( &genm_type);
+          if (!strcmp(genm_type, "ckuann")) {
+            opt_doGenM = NID_id_it_caKeyUpdateInfo;
+          }
+          else if (!strcmp(genm_type, "curcrl")) {
+            opt_doGenM = NID_id_it_currentCRL;
+          }
+          else {
+            fprintf( stderr, "ERROR: unknown/unsupported General Message '%s'\n", genm_type);
+            exit(1);
+          }
+        }
         opt_sequenceSet = 1;
-        opt_doCKUAnn = 1;
         break;
-#endif
 
       case 'n':
         if( opt_sequenceSet) {
@@ -1001,9 +1038,9 @@ void parseCLA( int argc, char **argv) {
     }
   }
 
-  if( opt_doCKUAnn) {
+  if( opt_doGenM) {
     if (!(opt_user && opt_password )) {
-      printf("ERROR: setting user and password is mandatory for CKUAnn\n\n");
+      printf("ERROR: setting user and password is mandatory for a GenM\n\n");
       printUsage( argv[0]);
     }
   }
@@ -1038,7 +1075,7 @@ int getHttpProxy( char **name, int *port) {
   char *proxy=NULL;
   char *colon=NULL;
   char format[32];
-  size_t maxlen;
+  unsigned int maxlen;
 
   if( opt_httpProxy) {
     proxy = opt_httpProxy;
@@ -1204,8 +1241,8 @@ int main(int argc, char **argv) {
     doInfo(cmp_ctx);
   }
 
-  if( opt_doCKUAnn) {
-    doCKUAnn(cmp_ctx);
+  if( opt_doGenM) {
+    doGenM(cmp_ctx, opt_doGenM, NULL);
   }
 
   return 0;
