@@ -184,7 +184,8 @@ void printUsage( const char* cmdName) {
   printf(" --cr   do renewal of a certificate\n");
   printf(" --rr   do revocation request sequence\n");
   printf(" --info do PKI Information request sequence\n");
-  /* printf(" --ckuann do CA Key Update request sequence\n"); */
+  printf(" --genm MSG send a General Message containing given MSG type\n");
+  printf("            supported messages: ckuann, currentcrl\n");
   printf("\n");
   printf("The following OPTIONS have to be set when needed by CMD:\n");
   printf(" --user USER           the user (reference) for an IR message\n");
