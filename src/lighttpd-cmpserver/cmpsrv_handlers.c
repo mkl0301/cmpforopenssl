@@ -192,6 +192,36 @@ CMPHANDLER_FUNC(handlemsg_certConf)
   return 0;
 }
 
+static int create_ckuann_certs(EVP_PKEY *oldkey, X509 *old, X509 **oldwithnew, X509 **newwithold, X509 **newwithnew) {
+  EVP_PKEY *newkey = HELP_generateRSAKey();
+  const EVP_MD *md = EVP_get_digestbynid(NID_sha1WithRSAEncryption);
+  X509_NAME *subject = X509_get_subject_name(old),
+            *issuer = X509_get_issuer_name(old);
+
+  X509 *new = X509_new();
+  X509_set_version(new, 2);
+  unsigned int serial = 0;
+  RAND_bytes((unsigned char*)&serial, sizeof(unsigned int));
+  ASN1_INTEGER_set(new->cert_info->serialNumber, abs(serial));
+  ASN1_TIME_set(new->cert_info->validity->notBefore, time(0));
+  ASN1_TIME_set(new->cert_info->validity->notAfter, time(0)+60*60*24*365*10);
+  X509_set_subject_name(new, subject);
+  X509_set_issuer_name(new, issuer);
+  X509_set_pubkey(new, newkey);
+  X509_ALGOR_set0(new->sig_alg, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
+  X509_sign(new, newkey, md);
+
+  *newwithnew = new;
+
+  *oldwithnew = X509_dup(old);
+  X509_sign(old, newkey, md);
+
+  *newwithold = X509_dup(new);
+  X509_sign(new, oldkey, md);
+
+  return 0;
+}
+
 CMPHANDLER_FUNC(handlemsg_genm)
 {
   CMP_INFOTYPEANDVALUE *msg_itav = sk_CMP_INFOTYPEANDVALUE_pop(msg->body->value.genm);
@@ -218,6 +248,7 @@ CMPHANDLER_FUNC(handlemsg_genm)
     // ASN1_INTEGER_set(cert->cert_info->serialNumber, 0);
     // ASN1_TIME_set(cert->cert_info->validity->notBefore, time(0));
     // ASN1_TIME_set(cert->cert_info->validity->notAfter, time(0)+60*60*24*365);
+#if 0
     char certfn[1024];
     sprintf(certfn, "%s/ca_cert_oldwithnew.der", srv_ctx->certPath);
     ckuann->oldWithNew = HELP_read_der_cert(certfn);
@@ -227,6 +258,10 @@ CMPHANDLER_FUNC(handlemsg_genm)
 
     sprintf(certfn, "%s/ca_cert_newwithnew.der", srv_ctx->certPath);
     ckuann->newWithNew = HELP_read_der_cert(certfn);
+#endif
+
+    create_ckuann_certs(srv_ctx->caKey, ctx->caCert, &ckuann->oldWithNew, &ckuann->newWithOld, &ckuann->newWithNew);
+
 
     itav->infoValue.caKeyUpdateInfo = ckuann;
 

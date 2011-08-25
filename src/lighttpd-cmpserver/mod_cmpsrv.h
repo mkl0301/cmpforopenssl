@@ -79,6 +79,7 @@ X509 *HELP_read_der_cert( const char *file);
 EVP_PKEY *HELP_readPrivKey(const char * filename, const char *password);
 int HELP_write_der_cert( X509 *cert, const char *filename);
 void dbgprintf(const char *fmt, ...);
+EVP_PKEY *HELP_generateRSAKey();
 
 /* cmpsrv_handlers.c */
 void init_handler_table(void);

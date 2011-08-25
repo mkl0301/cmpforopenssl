@@ -19,6 +19,40 @@ void dbgprintf(const char *fmt, ...) {
   va_end(arg_ptr);
 }
 
+static RSA *generateRSA(const int length) {
+  RSA *RSAkey=NULL;
+  BIGNUM *bn;
+
+  if( !(bn = BN_new()))
+    return NULL;
+  BN_set_word(bn, RSA_F4);
+
+  if( !(RSAkey = RSA_new()))
+    return NULL;
+
+  if(!RSA_generate_key_ex(RSAkey,length,bn,NULL))
+  {
+    RSA_free(RSAkey);
+    return NULL;
+  }
+
+  return RSAkey;
+}
+EVP_PKEY *HELP_generateRSAKey() {
+  RSA *RSAkey=NULL;
+  EVP_PKEY *pkey=NULL;
+
+  /* generate RSA key */
+  if(! (RSAkey = generateRSA(1024))) return NULL;
+  if( (pkey = EVP_PKEY_new()) )
+    EVP_PKEY_set1_RSA(pkey, RSAkey);
+
+  RSA_free(RSAkey);
+
+  return pkey;
+}
+
+
 EVP_PKEY *HELP_readPrivKey(const char * filename, const char *password)
 {
   FILE *fp;
