@@ -258,6 +258,8 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->trusted_store   = NULL;
 	ctx->untrusted_store = NULL;
 
+	ctx->maxPollCount = 3;
+
 #if 0
 	ctx->referenceValue = NULL;
 	ctx->secretValue = NULL;

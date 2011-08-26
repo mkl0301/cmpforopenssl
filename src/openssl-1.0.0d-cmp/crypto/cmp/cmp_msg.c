@@ -153,7 +153,7 @@ err:
 
 /* ############################################################################ */
 /* ############################################################################ */
-CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx) {
+CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 	CMP_PKIMESSAGE *msg = NULL;
 	CMP_POLLREQ    *preq = NULL;
 	if (!ctx) goto err;
@@ -166,7 +166,7 @@ CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx) {
 
 	preq = CMP_POLLREQ_new();
 	/* TODO support multiple cert request ids to poll */
-	ASN1_INTEGER_set(preq->certReqId, 0);
+	ASN1_INTEGER_set(preq->certReqId, reqId);
 	msg->body->value.pollReq = sk_CMP_POLLREQ_new_null();
 	sk_CMP_POLLREQ_push(msg->body->value.pollReq, preq);
 

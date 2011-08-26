@@ -1291,6 +1291,10 @@ typedef struct cmp_ctx_st
 	 * XXX note: only usable with libcurl! */
 	int	timeOut;
 
+	/* maximum number of times we attempt to poll the server for a response 
+	 * if a 'waiting' PKIStatus is received*/
+	int maxPollCount;
+
 	/* log callback functions for error and debug messages */
 	cmp_logfn_t error_cb, debug_cb;
 
@@ -1316,7 +1320,7 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value);
 CMP_PKIMESSAGE *CMP_ckuann_new( CMP_CTX *ctx);
 #endif
 CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey);
-CMP_PKIMESSAGE *CMP_pollReq_new( CMP_CTX *ctx);
+CMP_PKIMESSAGE *CMP_pollReq_new( CMP_CTX *ctx, int reqId);
 
 /* cmp_lib.c */
 

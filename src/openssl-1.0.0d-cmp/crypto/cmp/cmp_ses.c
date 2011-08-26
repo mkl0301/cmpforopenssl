@@ -81,11 +81,50 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 
+#include <unistd.h>
+
 static int ossl_error_cb(const char *str, size_t len, void *u) {
 	CMP_CTX *ctx = (CMP_CTX*) u;
 	ctx->error_cb(str);
 	return 0;
 }
+
+// {{{ char V_CMP_TABLE[] 
+
+char *V_CMP_TABLE[] = {
+  "IR",
+  "IP",
+  "CR",
+  "CP",
+  "P10CR",
+  "POPDECC",
+  "POPDECR",
+  "KUR",
+  "KUP",
+  "KRR",
+  "KRP",
+  "RR",
+  "RP",
+  "CCR",
+  "CCP",
+  "CKUANN",
+  "CANN",
+  "RANN",
+  "CRLANN",
+  "PKICONF",
+  "NESTED",
+  "GENM",
+  "GENP",
+  "ERROR",
+  "CERTCONF",
+  "POLLREQ",
+  "POLLREP",
+};
+
+//      }}}
+#define MSG_TYPE_STR(type)  \
+  (((unsigned int) (type) < sizeof(V_CMP_TABLE)/sizeof(V_CMP_TABLE[0])) \
+   ? V_CMP_TABLE[(unsigned int)(type)] : "unknown")
 
 /* ############################################################################ */
 /* Prints error data of the given CMP_PKIMESSAGE into a buffer specified by out */
@@ -103,7 +142,7 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
 			BIO_snprintf(out, outsize, "received NO message");
 			break;
 		default:
-			BIO_snprintf(out, outsize, "received unexpected message of type %d", CMP_PKIMESSAGE_get_bodytype( msg));
+			BIO_snprintf(out, outsize, "received unexpected message of type '%s'", MSG_TYPE_STR(CMP_PKIMESSAGE_get_bodytype( msg)));
 			break;
 	}
 	return out;
@@ -198,9 +237,8 @@ received_ip:
 			{ 
 				int i;
 				CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
-				/* TODO make number of attempts configurable */
-				for (i = 0; i < 2; i++) {
-					CMP_PKIMESSAGE *preq = CMP_pollReq_new(ctx);
+				for (i = 0; i < ctx->maxPollCount; i++) {
+					CMP_PKIMESSAGE *preq = CMP_pollReq_new(ctx, 0);
 					CMP_PKIMESSAGE *prep = NULL;
 					CMP_POLLREP *pollRep = NULL;
 					if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
@@ -357,6 +395,8 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			CMP_printf(  ctx, "INFO: revocation accepted");
 			break;
 		case CMP_PKISTATUS_rejection:
+			goto err;
+			break;
 		case CMP_PKISTATUS_waiting:
 		case CMP_PKISTATUS_revocationWarning:
 		case CMP_PKISTATUS_revocationNotification:
@@ -423,6 +463,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+received_cp:
 	switch (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0)) {
 		case CMP_PKISTATUS_grantedWithMods:
 			CMP_printf(  ctx, "WARNING: got \"grantedWithMods\"");
@@ -434,7 +475,47 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			}
 			break;
 		case CMP_PKISTATUS_rejection:
+			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_REQUEST_REJECTED_BY_CA);
+			goto err;
+			break;
 		case CMP_PKISTATUS_waiting:
+			{ 
+				int i;
+				CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
+				for (i = 0; i < ctx->maxPollCount; i++) {
+					CMP_PKIMESSAGE *preq = CMP_pollReq_new(ctx, 0);
+					CMP_PKIMESSAGE *prep = NULL;
+					CMP_POLLREP *pollRep = NULL;
+					if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+						goto err;
+					}
+					/* TODO handle multiple pollreqs */
+					if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_KUP) {
+						CMP_PKIMESSAGE_free(cp);
+						cp = prep;
+						CMP_PKIMESSAGE_free(preq);
+						goto received_cp;
+					}
+					else if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_POLLREP) {
+						int checkAfter;
+						pollRep = sk_CMP_POLLREP_value(prep->body->value.pollRep, 0);
+						checkAfter = ASN1_INTEGER_get(pollRep->checkAfter);
+						CMP_printf(ctx, "INFO: Waiting %ld seconds before sending pollReq...\n", checkAfter);
+						sleep(checkAfter);
+					}
+					else {
+						CMP_PKIMESSAGE_free(preq);
+						CMP_PKIMESSAGE_free(prep);
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ);
+						goto err;
+					}
+					CMP_PKIMESSAGE_free(preq);
+					CMP_PKIMESSAGE_free(prep);
+				}
+			}
+			goto err;
+			break;
 		case CMP_PKISTATUS_revocationWarning:
 		case CMP_PKISTATUS_revocationNotification:
 		case CMP_PKISTATUS_keyUpdateWarning:
@@ -565,6 +646,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+received_kup:
 	switch (CMP_CERTREPMESSAGE_PKIStatus_get( kup->body->value.kup, 0)) {
 		case CMP_PKISTATUS_grantedWithMods:
 			CMP_printf( ctx,  "WARNING: got \"grantedWithMods\"");
@@ -575,7 +657,47 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			}
 			break;
 		case CMP_PKISTATUS_rejection:
+			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_REQUEST_REJECTED_BY_CA);
+			goto err;
+			break;
 		case CMP_PKISTATUS_waiting:
+			{ 
+				int i;
+				CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
+				for (i = 0; i < ctx->maxPollCount; i++) {
+					CMP_PKIMESSAGE *preq = CMP_pollReq_new(ctx, 0);
+					CMP_PKIMESSAGE *prep = NULL;
+					CMP_POLLREP *pollRep = NULL;
+					if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+						goto err;
+					}
+					/* TODO handle multiple pollreqs */
+					if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_KUP) {
+						CMP_PKIMESSAGE_free(kup);
+						kup = prep;
+						CMP_PKIMESSAGE_free(preq);
+						goto received_kup;
+					}
+					else if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_POLLREP) {
+						int checkAfter;
+						pollRep = sk_CMP_POLLREP_value(prep->body->value.pollRep, 0);
+						checkAfter = ASN1_INTEGER_get(pollRep->checkAfter);
+						CMP_printf(ctx, "INFO: Waiting %ld seconds before sending pollReq...\n", checkAfter);
+						sleep(checkAfter);
+					}
+					else {
+						CMP_PKIMESSAGE_free(preq);
+						CMP_PKIMESSAGE_free(prep);
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ);
+						goto err;
+					}
+					CMP_PKIMESSAGE_free(preq);
+					CMP_PKIMESSAGE_free(prep);
+				}
+			}
+			goto err;
+			break;
 		case CMP_PKISTATUS_revocationWarning:
 		case CMP_PKISTATUS_revocationNotification:
 		case CMP_PKISTATUS_keyUpdateWarning:
