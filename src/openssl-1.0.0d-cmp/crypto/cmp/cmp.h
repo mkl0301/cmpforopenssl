@@ -1555,6 +1555,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CKUANN_NEW				 103
 #define CMP_F_CMP_CR_NEW				 104
 #define CMP_F_CMP_CTX_CA				 159
+#define CMP_F_CMP_CTX_CACACERTS_POP			 165
 #define CMP_F_CMP_CTX_CACERTSIN_GET0			 160
 #define CMP_F_CMP_CTX_CACERTSIN_GET1			 164
 #define CMP_F_CMP_CTX_CACERTSIN_NUM			 161

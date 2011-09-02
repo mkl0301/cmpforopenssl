@@ -393,7 +393,7 @@ X509 *CMP_CTX_caCertsIn_pop( CMP_CTX *ctx)
 	if (!ctx->caCertsIn) return NULL;
 	return sk_X509_pop(ctx->caCertsIn);
 err:
-	CMPerr(CMP_F_CMP_CTX_CAcaCerts_POP, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_CACACERTS_POP, CMP_R_CMPERROR);
 	return NULL;
 }
 
@@ -411,7 +411,7 @@ int CMP_CTX_caCertsIn_num( CMP_CTX *ctx)
 
 /* ################################################################ */
 /* ################################################################ */
-int CMP_CTX_caCertsIn_get1( CMP_CTX *ctx)
+STACK_OF(X509)* CMP_CTX_caCertsIn_get1( CMP_CTX *ctx)
 {
 	if (!ctx) goto err;
 	if (!ctx->caCertsIn) return 0;
