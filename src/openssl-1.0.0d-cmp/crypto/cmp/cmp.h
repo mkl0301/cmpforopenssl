@@ -1240,6 +1240,8 @@ typedef struct cmp_ctx_st
 	STACK_OF(X509)       *extraCertsOut;
 	/* stack of extraCerts received from remote */ 
 	STACK_OF(X509)       *extraCertsIn;
+	/* stack for combined caPubs+extraCerts received from remote */ 
+	STACK_OF(X509)       *caCertsIn;
 	/* EVP_PKEY holding the *current* keys */
 	/* XXX this is not an ASN.1 type */
 	EVP_PKEY             *pkey;
@@ -1281,6 +1283,9 @@ typedef struct cmp_ctx_st
 	/* if this is enabled, we will try to verify the entire CA certificate until
 	 * the trust anchor, and if this fails we reject the message */
 	int validatePath;
+	/* if enabled, we will combine any received CA certs from
+	 * caPubs and extraCerts, and return them in one list. */
+	int combineCACerts;
 
 #define CMP_POPO_NONE      0
 #define CMP_POPO_SIGNATURE 1
@@ -1321,6 +1326,7 @@ CMP_PKIMESSAGE *CMP_ckuann_new( CMP_CTX *ctx);
 #endif
 CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey);
 CMP_PKIMESSAGE *CMP_pollReq_new( CMP_CTX *ctx, int reqId);
+STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeRoot);
 
 /* cmp_lib.c */
 
@@ -1477,6 +1483,11 @@ X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
 int CMP_CTX_caPubs_num( CMP_CTX *ctx);
 int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs);
 
+int CMP_CTX_caCertsIn_set1( CMP_CTX *ctx, const STACK_OF(X509) *caPubs, const STACK_OF(X509) *extraCerts);
+STACK_OF(X509)* CMP_CTX_caCertsIn_get1( CMP_CTX *ctx);
+int CMP_CTX_caCertsIn_num( CMP_CTX *ctx);
+X509 *CMP_CTX_caCertsIn_pop( CMP_CTX *ctx);
+
 int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOut);
 int CMP_CTX_extraCertsOut_push1( CMP_CTX *ctx, const X509 *val);
 int CMP_CTX_extraCertsOut_num( CMP_CTX *ctx);
@@ -1507,6 +1518,7 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algId);
 #define CMP_CTX_OPT_IMPLICITCONFIRM 1
 #define CMP_CTX_OPT_POPMETHOD       2
 #define CMP_CTX_OPT_VALIDATEPATH    3
+#define CMP_CTX_OPT_COMBINECACERTS  4
 int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 #if 0
 int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
@@ -1542,11 +1554,18 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CERTSTATUS_SET_CERTHASH		 102
 #define CMP_F_CMP_CKUANN_NEW				 103
 #define CMP_F_CMP_CR_NEW				 104
+#define CMP_F_CMP_CTX_CA				 159
+#define CMP_F_CMP_CTX_CACERTSIN_GET0			 160
+#define CMP_F_CMP_CTX_CACERTSIN_GET1			 164
+#define CMP_F_CMP_CTX_CACERTSIN_NUM			 161
+#define CMP_F_CMP_CTX_CACERTS_ADD			 158
 #define CMP_F_CMP_CTX_CAEXTRACERTS_NUM			 105
 #define CMP_F_CMP_CTX_CAEXTRACERTS_POP			 106
 #define CMP_F_CMP_CTX_CAPUBS_NUM			 107
 #define CMP_F_CMP_CTX_CAPUBS_POP			 108
 #define CMP_F_CMP_CTX_CREATE				 109
+#define CMP_F_CMP_CTX_EXTRACERTSIN_NUM			 162
+#define CMP_F_CMP_CTX_EXTRACERTSIN_POP			 163
 #define CMP_F_CMP_CTX_EXTRACERTS_NUM			 110
 #define CMP_F_CMP_CTX_EXTRACERTS_PUSH1			 111
 #define CMP_F_CMP_CTX_INIT				 112

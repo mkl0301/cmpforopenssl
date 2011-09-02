@@ -100,6 +100,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, caPubs, X509),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, extraCertsOut, X509),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, extraCertsIn, X509),
+	ASN1_SEQUENCE_OF_OPT(CMP_CTX, caCertsIn, X509),
 	/* EVP_PKEY *pkey */
 	ASN1_OPT(CMP_CTX, newClCert, X509),
 	/* EVP_PKEY *newPkey */
@@ -360,6 +361,67 @@ err:
 	return 0;
 }
 
+int CMP_CTX_caCertsIn_set1( CMP_CTX *ctx, const STACK_OF(X509) *caPubs, const STACK_OF(X509) *extraCerts)
+{
+	int i;
+	if (!ctx) goto err;
+
+	if (ctx->caCertsIn) 
+		sk_X509_pop_free(ctx->caCertsIn, X509_free);
+
+	if (!(ctx->caCertsIn = sk_X509_new_null())) 
+		goto err;
+
+	if (caPubs)
+		for (i = 0; i > sk_X509_num(caPubs); i++)
+			sk_X509_push(ctx->caCertsIn, X509_dup( sk_X509_value(caPubs,i)));
+	if (extraCerts)
+		for (i = 0; i > sk_X509_num(extraCerts); i++)
+			sk_X509_push(ctx->caCertsIn, X509_dup( sk_X509_value(extraCerts,i)));
+
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_CACERTS_ADD, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+X509 *CMP_CTX_caCertsIn_pop( CMP_CTX *ctx)
+{
+	if (!ctx) goto err;
+	if (!ctx->caCertsIn) return NULL;
+	return sk_X509_pop(ctx->caCertsIn);
+err:
+	CMPerr(CMP_F_CMP_CTX_CAcaCerts_POP, CMP_R_CMPERROR);
+	return NULL;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_caCertsIn_num( CMP_CTX *ctx)
+{
+	if (!ctx) goto err;
+	if (!ctx->caCertsIn) return 0;
+	return sk_X509_num(ctx->caCertsIn);
+  err:
+	CMPerr(CMP_F_CMP_CTX_CACERTSIN_NUM, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_caCertsIn_get1( CMP_CTX *ctx)
+{
+	if (!ctx) goto err;
+	if (!ctx->caCertsIn) return 0;
+	return X509_stack_dup(ctx->caCertsIn);
+  err:
+	CMPerr(CMP_F_CMP_CTX_CACERTSIN_GET1, CMP_R_CMPERROR);
+	return 0;
+}
+
+
 /* ################################################################ */
 /* ################################################################ */
 X509 *CMP_CTX_extraCertsIn_pop( CMP_CTX *ctx)
@@ -368,7 +430,7 @@ X509 *CMP_CTX_extraCertsIn_pop( CMP_CTX *ctx)
 	if (!ctx->extraCertsIn) return NULL;
 	return sk_X509_pop(ctx->extraCertsIn);
 err:
-	CMPerr(CMP_F_CMP_CTX_CAEXTRACERTS_POP, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTSIN_POP, CMP_R_CMPERROR);
 	return NULL;
 }
 
@@ -380,7 +442,7 @@ int CMP_CTX_extraCertsIn_num( CMP_CTX *ctx)
 	if (!ctx->extraCertsIn) return 0;
 	return sk_X509_num(ctx->extraCertsIn);
   err:
-	CMPerr(CMP_F_CMP_CTX_CAEXTRACERTS_NUM, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTSIN_NUM, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -902,6 +964,9 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val) {
 			break;
 		case CMP_CTX_OPT_VALIDATEPATH:
 			ctx->validatePath = val;
+			break;
+		case CMP_CTX_OPT_COMBINECACERTS:
+			ctx->combineCACerts = val;
 			break;
 		default:
 			goto err;

@@ -182,7 +182,8 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	if (ctx->validatePath && ctx->caCert) {
 		CMP_printf(ctx, "INFO: validating CA certificate path");
-		if( CMP_validate_cert_path(ctx, ip->body->value.ip->caPubs, ip->extraCerts, ctx->caCert)
+		/* if( CMP_validate_cert_path(ctx, ip->body->value.ip->caPubs, ip->extraCerts, ctx->caCert) */
+		if( CMP_validate_cert_path(ctx, ip->extraCerts, 0, ctx->caCert)
 			== 0) {
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
 			goto err;
@@ -298,6 +299,10 @@ received_ip:
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (ip->extraCerts)
 		CMP_CTX_set1_extraCertsIn(ctx, ip->extraCerts);
+
+	if (ctx->combineCACerts) {
+		CMP_CTX_caCertsIn_set1( ctx, ip->body->value.ip->caPubs, ip->extraCerts);
+	}
 
 	/* check if implicit confirm is set in generalInfo */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(ip)) goto cleanup;
@@ -539,6 +544,10 @@ received_cp:
 	if (cp->extraCerts)
 		CMP_CTX_set1_extraCertsIn(ctx, cp->extraCerts);
 
+	if (ctx->combineCACerts) {
+		CMP_CTX_caCertsIn_set1( ctx, cp->body->value.cp->caPubs, cp->extraCerts);
+	}
+
 	/* check if implicit confirm is set in generalInfo */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(cp)) goto cleanup;
 
@@ -720,6 +729,10 @@ received_kup:
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (kup->extraCerts)
 		CMP_CTX_set1_extraCertsIn(ctx, kup->extraCerts);
+
+	if (ctx->combineCACerts) {
+		CMP_CTX_caCertsIn_set1( ctx, kup->body->value.kup->caPubs, kup->extraCerts);
+	}
 
 	/* check if implicit confirm is set in generalInfo */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(kup)) goto cleanup;
