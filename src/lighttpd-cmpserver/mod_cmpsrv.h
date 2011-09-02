@@ -54,7 +54,8 @@ typedef struct {
   buffer *certPath;
   buffer *caCert;
   buffer *caKey;
-  array *extraCerts;
+  buffer *extraCertPath;
+  buffer *rootCertPath;
 
   plugin_config **config_storage;
 
@@ -67,7 +68,9 @@ typedef struct {
   CMP_CTX *cmp_ctx;
   plugin_data *p_d;
   ASN1_OCTET_STRING *transactionID;
+
   STACK_OF(X509) *extraCerts;
+  STACK_OF(X509) *caPubs;
 } cmpsrv_ctx;
 
 /* cmpsrv_ctx.c */

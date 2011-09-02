@@ -32,7 +32,8 @@ INIT_FUNC(mod_cmpsrv_init) {
   p->certPath = buffer_init();
   p->caCert = buffer_init();
   p->caKey = buffer_init();
-  p->extraCerts = array_init();
+  p->extraCertPath = buffer_init();
+  p->rootCertPath = buffer_init();
 
   return p;
 }
@@ -64,7 +65,8 @@ FREE_FUNC(mod_cmpsrv_free) {
   buffer_free(p->certPath);
   buffer_free(p->caCert);
   buffer_free(p->caKey);
-  array_free(p->extraCerts);
+  array_free(p->extraCertPath);
+  array_free(p->rootCertPath);
 
   free(p);
 
@@ -78,13 +80,14 @@ SETDEFAULTS_FUNC(mod_cmpsrv_set_defaults) {
   size_t i = 0;
 
   config_values_t cv[] = {
-    { "cmpsrv.userID",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 0 */
-    { "cmpsrv.secretKey",  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 1 */
-    { "cmpsrv.certPath",   NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 2 */
-    { "cmpsrv.caCert",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 3 */
-    { "cmpsrv.caKey",      NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 4 */
-    { "cmpsrv.extraCerts", NULL, T_CONFIG_ARRAY,  T_CONFIG_SCOPE_SERVER }, /* 5 */
-    { NULL,                NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
+    { "cmpsrv.userID",       NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 0 */
+    { "cmpsrv.secretKey",    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 1 */
+    { "cmpsrv.certPath",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 2 */
+    { "cmpsrv.caCert",       NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 3 */
+    { "cmpsrv.caKey",        NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 4 */
+    { "cmpsrv.extraCertPath", NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 5 */
+    { "cmpsrv.rootCertPath",  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_SERVER }, /* 6 */
+    { NULL,                  NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
   };
 
   if (!p) return HANDLER_ERROR;
@@ -102,7 +105,8 @@ SETDEFAULTS_FUNC(mod_cmpsrv_set_defaults) {
     cv[2].destination = p->certPath;
     cv[3].destination = p->caCert;
     cv[4].destination = p->caKey;
-    cv[5].destination = p->extraCerts;
+    cv[5].destination = p->extraCertPath;
+    cv[6].destination = p->rootCertPath;
 
     p->config_storage[i] = s;
 

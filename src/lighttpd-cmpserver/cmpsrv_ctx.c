@@ -59,11 +59,42 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
   ctx->caKey = caKey;
   cmp_ctx->pkey = caKey;
 
+#if 0
   ctx->extraCerts = sk_X509_new_null();
   for (unsigned int i=0; i < p->extraCerts->used; i++) {
     data_string *ds = (data_string*) p->extraCerts->data[i];
     X509 *ec = HELP_read_der_cert(ds->value->ptr);
     if (ec) sk_X509_push(ctx->extraCerts, ec);
+  }
+#endif
+
+  if (p->extraCertPath)
+    CMP_CTX_set_untrustedPath(cmp_ctx, p->extraCertPath->ptr);
+  if (p->rootCertPath)
+    CMP_CTX_set_trustedPath(cmp_ctx, p->rootCertPath->ptr);
+
+  if (cmp_ctx->untrusted_store) {
+    int n=0;
+    ctx->extraCerts = CMP_build_cert_chain( cmp_ctx->untrusted_store, cmp_ctx->caCert, 0);
+    n = sk_X509_num(ctx->extraCerts);
+    if (n > 0 && cmp_ctx->trusted_store) {
+      X509 *last = sk_X509_value(ctx->extraCerts, n-1);
+      int i = 0;
+      ctx->caPubs = CMP_build_cert_chain( cmp_ctx->trusted_store, last, 0);
+      for (i = sk_X509_num(ctx->caPubs)-1; i >= 0; i--) {
+        X509 *cert = sk_X509_value(ctx->caPubs, i);
+        EVP_PKEY *pk = X509_get_pubkey(cert);
+        /* make sure that the cert is self-signed (XXX this is true for all root CAs right?) */
+        if (!X509_verify(cert, pk)) {
+          sk_X509_delete(ctx->caPubs, i);
+          X509_free(cert);
+        }
+        EVP_PKEY_free(pk);
+      }
+
+      sk_X509_pop(ctx->caPubs);
+      sk_X509_push( ctx->extraCerts, sk_X509_pop(ctx->caPubs));
+    }
   }
 
   CMP_CTX_set_protectionAlgor( cmp_ctx, CMP_ALG_PBMAC);

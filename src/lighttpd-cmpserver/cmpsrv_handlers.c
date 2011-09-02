@@ -87,6 +87,7 @@ CMPHANDLER_FUNC(handlemsg_ir)
   *out = CMP_ip_new(ctx, cert);
   if (!*out) return -1;
   (*out)->extraCerts = X509_stack_dup(srv_ctx->extraCerts);
+  (*out)->body->value.ip->caPubs = X509_stack_dup(srv_ctx->caPubs);
 
 #endif
 
