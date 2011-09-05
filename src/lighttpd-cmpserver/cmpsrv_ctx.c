@@ -92,8 +92,11 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
         EVP_PKEY_free(pk);
       }
 
+#if 1
+      /* put everything in extraCerts, including root certs (3GPP) */
       sk_X509_pop(ctx->caPubs);
       sk_X509_push( ctx->extraCerts, sk_X509_pop(ctx->caPubs));
+#endif
     }
   }
 

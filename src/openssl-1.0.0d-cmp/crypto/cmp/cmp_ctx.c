@@ -373,10 +373,10 @@ int CMP_CTX_caCertsIn_set1( CMP_CTX *ctx, const STACK_OF(X509) *caPubs, const ST
 		goto err;
 
 	if (caPubs)
-		for (i = 0; i > sk_X509_num(caPubs); i++)
+		for (i = 0; i < sk_X509_num(caPubs); i++)
 			sk_X509_push(ctx->caCertsIn, X509_dup( sk_X509_value(caPubs,i)));
 	if (extraCerts)
-		for (i = 0; i > sk_X509_num(extraCerts); i++)
+		for (i = 0; i < sk_X509_num(extraCerts); i++)
 			sk_X509_push(ctx->caCertsIn, X509_dup( sk_X509_value(extraCerts,i)));
 
 	return 1;
