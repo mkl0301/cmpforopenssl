@@ -421,6 +421,16 @@ STACK_OF(X509)* CMP_CTX_caCertsIn_get1( CMP_CTX *ctx)
 	return 0;
 }
 
+/* ################################################################ */
+/* ################################################################ */
+STACK_OF(X509)* CMP_CTX_extraCertsIn_get1( CMP_CTX *ctx) {
+	if (!ctx) goto err;
+	if (!ctx->extraCertsIn) return 0;
+	return X509_stack_dup(ctx->extraCertsIn);
+  err:
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTSIN_GET1, CMP_R_CMPERROR);
+	return 0;
+}
 
 /* ################################################################ */
 /* ################################################################ */
@@ -506,6 +516,17 @@ int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOu
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_EXTRACERTS, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+STACK_OF(X509)* CMP_CTX_caPubs_get1( CMP_CTX *ctx) {
+	if (!ctx) goto err;
+	if (!ctx->caPubs) return 0;
+	return X509_stack_dup(ctx->caPubs);
+  err:
+	CMPerr(CMP_F_CMP_CTX_CAPUBS_GET1, CMP_R_CMPERROR);
 	return 0;
 }
 

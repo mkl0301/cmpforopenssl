@@ -1479,6 +1479,7 @@ int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name);
 int CMP_CTX_set1_recipient( CMP_CTX *ctx, const X509_NAME *name);
 int CMP_CTX_subjectAltName_push1( CMP_CTX *ctx, const GENERAL_NAME *name);
+STACK_OF(X509)* CMP_CTX_caPubs_get1( CMP_CTX *ctx);
 X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
 int CMP_CTX_caPubs_num( CMP_CTX *ctx);
 int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs);
@@ -1491,6 +1492,7 @@ X509 *CMP_CTX_caCertsIn_pop( CMP_CTX *ctx);
 int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOut);
 int CMP_CTX_extraCertsOut_push1( CMP_CTX *ctx, const X509 *val);
 int CMP_CTX_extraCertsOut_num( CMP_CTX *ctx);
+STACK_OF(X509)* CMP_CTX_extraCertsIn_get1( CMP_CTX *ctx);
 int CMP_CTX_set1_extraCertsIn( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsIn);
 X509 *CMP_CTX_extraCertsIn_pop( CMP_CTX *ctx);
 int CMP_CTX_extraCertsIn_num( CMP_CTX *ctx);
@@ -1562,9 +1564,11 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_CACERTS_ADD			 158
 #define CMP_F_CMP_CTX_CAEXTRACERTS_NUM			 105
 #define CMP_F_CMP_CTX_CAEXTRACERTS_POP			 106
+#define CMP_F_CMP_CTX_CAPUBS_GET1			 166
 #define CMP_F_CMP_CTX_CAPUBS_NUM			 107
 #define CMP_F_CMP_CTX_CAPUBS_POP			 108
 #define CMP_F_CMP_CTX_CREATE				 109
+#define CMP_F_CMP_CTX_EXTRACERTSIN_GET1			 167
 #define CMP_F_CMP_CTX_EXTRACERTSIN_NUM			 162
 #define CMP_F_CMP_CTX_EXTRACERTSIN_POP			 163
 #define CMP_F_CMP_CTX_EXTRACERTS_NUM			 110
