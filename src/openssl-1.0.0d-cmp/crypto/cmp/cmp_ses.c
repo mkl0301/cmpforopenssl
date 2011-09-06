@@ -300,10 +300,6 @@ received_ip:
 	if (ip->extraCerts)
 		CMP_CTX_set1_extraCertsIn(ctx, ip->extraCerts);
 
-	if (ctx->combineCACerts) {
-		CMP_CTX_caCertsIn_set1( ctx, ip->body->value.ip->caPubs, ip->extraCerts);
-	}
-
 	/* check if implicit confirm is set in generalInfo */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(ip)) goto cleanup;
 
@@ -544,10 +540,6 @@ received_cp:
 	if (cp->extraCerts)
 		CMP_CTX_set1_extraCertsIn(ctx, cp->extraCerts);
 
-	if (ctx->combineCACerts) {
-		CMP_CTX_caCertsIn_set1( ctx, cp->body->value.cp->caPubs, cp->extraCerts);
-	}
-
 	/* check if implicit confirm is set in generalInfo */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(cp)) goto cleanup;
 
@@ -729,10 +721,6 @@ received_kup:
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (kup->extraCerts)
 		CMP_CTX_set1_extraCertsIn(ctx, kup->extraCerts);
-
-	if (ctx->combineCACerts) {
-		CMP_CTX_caCertsIn_set1( ctx, kup->body->value.kup->caPubs, kup->extraCerts);
-	}
 
 	/* check if implicit confirm is set in generalInfo */
 	if (CMP_PKIMESSAGE_check_implicitConfirm(kup)) goto cleanup;
