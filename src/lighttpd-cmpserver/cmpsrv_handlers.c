@@ -381,6 +381,15 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
     ASN1_OCTET_STRING_free(ctx->transactionID);
   ctx->cmp_ctx->transactionID = ASN1_STRING_dup(msg->header->transactionID);
 
+  // check username if using pbmac
+  if (OBJ_obj2nid(msg->header->protectionAlg->algorithm) == NID_id_PasswordBasedMAC &&
+      ASN1_OCTET_STRING_cmp(msg->header->senderKID, ctx->cmp_ctx->referenceValue)) {
+    dbgmsg("s", "ERROR: invalid user ID");
+    /* TODO send back error message */
+    log_cmperrors(srv);
+    return 0;
+  }
+
   if (bodyType == V_CMP_PKIBODY_KUR) {
     // CMP_CTX_set_protectionAlgor( ctx->cmp_ctx, CMP_ALG_SIG);
 
@@ -408,7 +417,7 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
     dbgmsg("s", "ERROR: protection not valid!");
     /* TODO send back error message */
     log_cmperrors(srv);
-    // return 0;
+    return 0;
   }
   else dbgmsg("s", "protection validated successfully");
 
@@ -423,6 +432,7 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
       resp->header->recipient = GENERAL_NAME_dup(msg->header->sender);
 
       resp->protection = CMP_protection_new(resp, NULL, ctx->cmp_ctx->pkey, ctx->cmp_ctx->secretValue);
+      result = 1;
     }
     else
       dbgmsg("ss", "error handling message: ", MSG_TYPE_STR(bodyType));

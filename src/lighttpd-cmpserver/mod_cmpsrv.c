@@ -221,13 +221,15 @@ URIHANDLER_FUNC(mod_cmpsrv_uri_handler) {
     return HANDLER_FINISHED;
   }
 
-  handleMessage(srv, con, ctx, pkiMsg, &resp);
-
-  if (resp != NULL) {
+  if (handleMessage(srv, con, ctx, pkiMsg, &resp) != 0 && resp != NULL) {
     dbgmsg("s", "sending response");
     sendResponse(srv, con, resp);
     CMP_PKIMESSAGE_free(resp); //XXX crashes if freeing a genp
     // result = 1;
+  }
+  else {
+    // TODO send proper response!!
+    dbgmsg("s", "ERROR handling message");
   }
 
   log_cmperrors(srv);
