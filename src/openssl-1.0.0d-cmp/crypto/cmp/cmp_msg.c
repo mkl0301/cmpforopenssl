@@ -280,8 +280,9 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 				sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
 			sk_X509_free(chain);
 		}
-
-		sk_X509_push(msg->extraCerts, ctx->clCert);
+		else if (sk_X509_num(msg->extraCerts) == 0)
+			/* Make sure that at least our own cert gets sent */
+			sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
 	}
 
 	/* add any extraCertsOut that are set in the context */
