@@ -119,8 +119,8 @@ static char* opt_user=NULL;
 static char* opt_password=NULL;
 static char* opt_engine=NULL;
 static char* opt_extCertsOutDir=NULL;
-static char* opt_trustedDir=NULL;
-static char* opt_untrustedDir=NULL;
+static char* opt_rootCerts=NULL;
+static char* opt_extraCertsIn=NULL;
 static int opt_hex=0;
 static int opt_proxy=0;
 static int opt_sequenceSet=0;
@@ -166,25 +166,27 @@ void printUsage( const char* cmdName) {
   printf("                       located in the \"extraCerts\" field will be saved\n");
   printf("                       with a [8Byte subject hash].0 filename\n");
   printf("                       NB: multiple certificates with same DN but other Serial have the same hash!\n");
-  printf(" --trusted DIR         directory of trusted certificates. the certificates should have names\n");
-  printf("                       of the form hash.0, where 'hash' is the hashed certificate subject name.\n");
+  printf(" --rootcerts DIR       directory of root certificates. the certificates should have names\n");
+  printf("                       int the form hash.0, where 'hash' is the hashed certificate subject name.\n");
   printf("                       see the -hash option of OpenSSL's x509 utility.\n");
-  printf(" --untrusted DIR       same as above, but for untrusted certificates.\n");
-  printf(" --validate_chain      enable validation of the CA certificate's trust chain.\n");
-  /* XXX TODO: add the following */
-#if 0
-  printf(" --extcertsin DIR    directory where extra certificates needed"\n); 
-  printf("                     for path validation of own and other's certificates\n");
-  printf("                     is located\n");
-#endif 
+  /* TODO: ADD this:
+     printf(" --rootcerts FILE      single PEM/DER format file with root certificates\n");
+  */
+  printf(" --extcertsin DIR      directory where extra certificates needed\n"); 
+  printf("                       for path validation of own and other's certificates\n");
+  printf("                       is located\n");
+  /* TODO: ADD this:
+     printf(" --extcertsin FILE      single PEM/DER format file with extra certificates\n");
+  */
+  printf(" --validate_path       enable validation of the CA certificate's trust path.\n");
   printf("\n");
   printf("One of the following can be used as CMD:\n");
-  printf(" --ir   do initial certificate request sequence\n");
-  printf(" --kur  do key update request sequence\n");
-  printf(" --cr   do renewal of a certificate\n");
-  printf(" --rr   do revocation request sequence\n");
-  printf(" --info do PKI Information request sequence\n");
-  printf(" --genm MSG send a General Message containing given MSG type\n");
+  printf(" --ir    do initial certificate request sequence\n");
+  printf(" --kur   do key update request sequence\n");
+  printf(" --cr    do renewal of a certificate\n");
+  printf(" --rr    do revocation request sequence\n");
+  printf(" --info  do PKI Information request sequence\n");
+  printf(" --genm  MSG send a General Message containing given MSG type\n");
   printf("            supported messages: ckuann, currentcrl\n");
   printf("\n");
   printf("The following OPTIONS have to be set when needed by CMD:\n");
@@ -759,7 +761,7 @@ void parseCLA( int argc, char **argv) {
     {"newclcert",required_argument,    0, 'l'},
     {"hex",      no_argument,          0, 'm'},
     {"info",     no_argument,          0, 'n'},
-    {"validate_chain",no_argument,     0, 'V'},
+    {"validate_path",no_argument,     0, 'V'},
     {"path",     required_argument,    0, 'o'},
     {"proxy",    no_argument,          0, 'p'},
     {"cryptlib", no_argument,          0, 'q'},
@@ -772,8 +774,8 @@ void parseCLA( int argc, char **argv) {
     {"engine",   required_argument,    0, 'u'},
     {"extracert",required_argument,    0, 'X'},
     {"extcertsout",required_argument,  0, 'O'},
-    {"trusted",required_argument,  0, 'T'},
-    {"untrusted",required_argument,  0, 'N'},
+    {"rootcerts",required_argument,  0, 'T'},
+    {"extcertsin ",required_argument,  0, 'N'},
     {0, 0, 0, 0}
   };
 
@@ -798,11 +800,11 @@ void parseCLA( int argc, char **argv) {
         break;
 
       case 'N':
-        createOptStr( &opt_untrustedDir);
+        createOptStr( &opt_extraCertsIn);
         break;
 
       case 'T':
-        createOptStr( &opt_trustedDir);
+        createOptStr( &opt_rootCerts);
         break;
 
       case 'U':
@@ -1200,11 +1202,11 @@ int main(int argc, char **argv) {
 
   /* TODO move the handling of all common options such as server ip, port etc. here */
 
-  if (opt_trustedDir)
-    CMP_CTX_set_trustedPath(cmp_ctx, opt_trustedDir);
+  if (opt_rootCerts)
+    CMP_CTX_set_trustedPath(cmp_ctx, opt_rootCerts);
 
-  if (opt_untrustedDir)
-    CMP_CTX_set_untrustedPath(cmp_ctx, opt_untrustedDir);
+  if (opt_extraCertsIn)
+    CMP_CTX_set_untrustedPath(cmp_ctx, opt_extraCertsIn);
 
   if (opt_doPathValidation)
     CMP_CTX_set_option(cmp_ctx, CMP_CTX_OPT_VALIDATEPATH, 1);
