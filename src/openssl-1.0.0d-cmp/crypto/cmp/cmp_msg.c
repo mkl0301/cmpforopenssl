@@ -172,7 +172,7 @@ CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 	preq = CMP_POLLREQ_new();
 	/* TODO support multiple cert request ids to poll */
 	ASN1_INTEGER_set(preq->certReqId, reqId);
-	if (!msg->body->value.pollReq = sk_CMP_POLLREQ_new_null())
+	if (!(msg->body->value.pollReq = sk_CMP_POLLREQ_new_null()))
 		goto err;
 
 	sk_CMP_POLLREQ_push(msg->body->value.pollReq, preq);
