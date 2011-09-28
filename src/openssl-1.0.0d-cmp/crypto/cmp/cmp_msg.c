@@ -172,10 +172,13 @@ CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 	preq = CMP_POLLREQ_new();
 	/* TODO support multiple cert request ids to poll */
 	ASN1_INTEGER_set(preq->certReqId, reqId);
-	msg->body->value.pollReq = sk_CMP_POLLREQ_new_null();
+	if (!msg->body->value.pollReq = sk_CMP_POLLREQ_new_null())
+		goto err;
+
 	sk_CMP_POLLREQ_push(msg->body->value.pollReq, preq);
 
-	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
+	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) 
+		goto err;
 
 	/* TODO: make a generic function to create msg protection and set this, do
 	 * this for all message types */
