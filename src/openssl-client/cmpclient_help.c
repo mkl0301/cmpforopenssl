@@ -222,7 +222,7 @@ X509 *HELP_read_der_cert( const char *filename) {
 
   if(!filename) return 0; /* mandatory parameter */
 
-printf("INFO: Reading Certificate from File %s\n", filename);
+printf("INFO: Reading DER Certificate from File %s\n", filename);
 	if ((bio=BIO_new(BIO_s_file())) != NULL)
 		IFSTAT(BIO_new)
 
@@ -234,6 +234,43 @@ printf("INFO: Reading Certificate from File %s\n", filename);
 	cert = d2i_X509_bio(bio,NULL);
 
 	BIO_free(bio);
+	return cert;
+}
+
+/* ############################################################################ */
+/* returns 0 on error */
+/* ############################################################################ */
+X509 *HELP_read_pem_cert( const char *filename) {
+	X509 *cert;
+	BIO  *bio;
+
+	if(!filename) return 0; /* mandatory parameter */
+
+	printf("INFO: Reading PEM Certificate from File %s\n", filename);
+	if ((bio=BIO_new(BIO_s_file())) != NULL)
+		IFSTAT(BIO_new)
+
+	if (!BIO_read_filename(bio,filename)) {
+		printf("ERROR: could not open file \"%s\" for reading.\n", filename);
+		return NULL;
+	}
+
+	cert = PEM_read_bio_X509_AUX(bio, NULL, NULL, NULL);
+
+	BIO_free(bio);
+	return cert;
+}
+
+/* ############################################################################ */
+/* First attempts to read certificate in DER format, then in PEM format. */
+/* return 0 if both fail */
+/* ############################################################################ */
+X509 *HELP_read_cert( const char *filename) {
+	X509 *cert = HELP_read_der_cert(filename);
+	if (!cert) {
+		printf("INFO: Unable to read certificate in DER format, trying PEM...\n");
+		cert = HELP_read_pem_cert(filename);
+	}
 	return cert;
 }
 

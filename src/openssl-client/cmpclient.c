@@ -251,7 +251,7 @@ char *getCertFilename(X509 *cert, char *destDir) {
    * names from hash.0 to hash.9 */
   do {
     snprintf(certFile, CERTFILEPATHLEN, "%s/%8lx.%d", destDir, hash, n++);
-    existingCert = HELP_read_der_cert(certFile);
+    existingCert = HELP_read_cert(certFile);
     if (existingCert) {
       /* check if we already have this exact same cert */
       int cmp = X509_cmp(cert, existingCert);
@@ -356,7 +356,7 @@ void doIr(CMP_CTX *cmp_ctx) {
     }
     CMP_CTX_set0_pkey( cmp_ctx, newPkey);
 
-    if (!(extIdCert = HELP_read_der_cert(opt_clCertFile))) {
+    if (!(extIdCert = HELP_read_cert(opt_clCertFile))) {
       printf("FATAL: could not read external identity certificate from %s!\n", opt_clCertFile);
       exit(1);
     }
@@ -450,7 +450,7 @@ void doRr(CMP_CTX *cmp_ctx) {
       exit(1);
     }
   }
-  if(!(initialClCert = HELP_read_der_cert(opt_clCertFile))) {
+  if(!(initialClCert = HELP_read_cert(opt_clCertFile))) {
     printf("FATAL: could not read client certificate!\n");
     exit(1);
   }
@@ -508,7 +508,7 @@ void doCr(CMP_CTX *cmp_ctx) {
       exit(1);
     }
   }
-  if(!(clCert = HELP_read_der_cert(opt_clCertFile))) {
+  if(!(clCert = HELP_read_cert(opt_clCertFile))) {
     printf("FATAL: could not read client certificate!\n");
     exit(1);
   }
@@ -564,7 +564,7 @@ void doKur(CMP_CTX *cmp_ctx) {
     printf("FATAL: could not read private client key!\n");
     exit(1);
   }
-  if(!(clCert = HELP_read_der_cert(opt_clCertFile))) {
+  if(!(clCert = HELP_read_cert(opt_clCertFile))) {
     printf("FATAL: could not read client certificate!\n");
     exit(1);
   }
@@ -1171,7 +1171,7 @@ int main(int argc, char **argv) {
   }
 
   /* read CA certificate */
-  if(opt_caCertFile && !(caCert = HELP_read_der_cert(opt_caCertFile))) {
+  if(opt_caCertFile && !(caCert = HELP_read_cert(opt_caCertFile))) {
     printf("FATAL: could not read CA certificate!\n");
     exit(1);
   }
@@ -1184,7 +1184,7 @@ int main(int argc, char **argv) {
       exit(1);
     }
     for (i = 0; i < opt_nExtraCerts; i++) {
-      X509 *cert = HELP_read_der_cert(opt_extraCerts[i]);
+      X509 *cert = HELP_read_cert(opt_extraCerts[i]);
       if (!cert) {
         printf("FATAL: could not read extraCerts\n");
         exit(1);

@@ -183,7 +183,7 @@
 		printf( "ERROR: "#xxx" in FILE: %s, Line %d\n", __FILE__, __LINE__); 
 
 size_t HELP_hex2str( char *hex, unsigned char **str);
-X509 *HELP_read_der_cert( const char *file);
+X509 *HELP_read_cert( const char *filename);
 int HELP_write_der_cert( X509 *cert, const char *file);
 EVP_PKEY *HELP_generateRSAKey();
 EVP_PKEY *HELP_generateDSAKey();
