@@ -252,7 +252,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	/* ctx->popoMethod = CMP_POPO_ENCRCERT; */
 	ctx->validatePath    = 0;
 
-	ctx->error_cb = (cmp_logfn_t) puts;
+	ctx->error_cb = NULL;
 	ctx->debug_cb = (cmp_logfn_t) puts;
 
 	ctx->trusted_store   = NULL;
