@@ -187,7 +187,6 @@ static int set_http_path(CURL *curl, const char *path) {
 int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port, const char *srcip) {
 	struct curl_slist *slist=NULL;
 	CURL *curl;
-	char *url;
 	
 	static int curl_initialized = 0;
 	if (curl_initialized == 0) {
@@ -205,11 +204,8 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 	if (srcip != NULL)
 		curl_easy_setopt(curl, CURLOPT_INTERFACE, srcip);
 
-	if( !(url = malloc(strlen(serverAddress) + 7)))
-		return 0;
-	sprintf(url, "%s:%d", serverAddress, port);
-	curl_easy_setopt(curl, CURLOPT_URL, url);
-	free(url);
+	curl_easy_setopt(curl, CURLOPT_URL, serverAddress);
+	curl_easy_setopt(curl, CURLOPT_PORT, port);
 
 	curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP);
 	curl_easy_setopt(curl, CURLOPT_PORT, port);
@@ -221,6 +217,7 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 	return 1;
 
 err:
+	CMPerr(CMP_F_CMP_NEW_HTTP_BIO_EX, CMP_R_CURL_ERROR);
 	return 0;
 }
 
@@ -238,7 +235,8 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 								CMP_PKIMESSAGE **out)
 {
 	unsigned char *derMsg = NULL, *pder = NULL;
-	char *srv = NULL, *errormsg = NULL;
+	/* char *srv = NULL; */
+	char *errormsg = NULL;
 	int derLen = 0;
 	CURLcode res;
 	rdata_t rdata = {0,0};
@@ -252,6 +250,7 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	derLen = i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, &derMsg);
 
 	/* check if we are using a proxy. */
+#if 0
 	srv = get_server_addr(curl);
 	if (srv == NULL) goto err;
 	if (strcmp(srv, ctx->serverName) != 0) {
@@ -268,10 +267,11 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 		curl_easy_setopt(curl, CURLOPT_URL, ctx->serverName);
 	}
 	free(srv);
+#endif
 
 	set_http_path(curl, ctx->serverPath);
 
-	// curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+	/* curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0); */
 
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&rdata);
 
