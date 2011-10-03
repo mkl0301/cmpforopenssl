@@ -241,6 +241,8 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->serverPath      = OPENSSL_malloc(1);
 	ctx->serverPath[0]   = 0;
 	ctx->serverPort      = 0;
+	ctx->proxyName       = NULL;
+	ctx->proxyPort       = 0;
 	ctx->transport       = CMP_TRANSPORT_HTTP;
 	ctx->implicitConfirm = 0;
 	/* XXX not setting senderNonce test for PKI INFO */
@@ -288,8 +290,9 @@ err:
 /* ################################################################ */
 void CMP_CTX_delete(CMP_CTX *ctx) {
 	if (!ctx) return;
-	OPENSSL_free(ctx->serverPath);
+	if (ctx->serverPath) OPENSSL_free(ctx->serverPath);
 	if (ctx->serverName) OPENSSL_free(ctx->serverName);
+	if (ctx->proxyName) OPENSSL_free(ctx->proxyName);
 	CMP_CTX_free(ctx);
 }
 
@@ -754,6 +757,26 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
+int CMP_CTX_set1_proxyName( CMP_CTX *ctx, const char *name) {
+	if (!ctx) goto err;
+	if (!name) goto err;
+
+	if (ctx->proxyName) {
+		OPENSSL_free( ctx->proxyName);
+		ctx->proxyName = NULL;
+	}
+
+	ctx->proxyName = OPENSSL_malloc( strlen(name)+1);
+	strcpy( ctx->proxyName, name);
+
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_PROXYNAME, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
 int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name) {
 	if (!ctx) goto err;
 	if (!name) goto err;
@@ -793,6 +816,18 @@ int CMP_CTX_set1_timeOut( CMP_CTX *ctx, int time) {
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_TIMEOUT, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ */
+/* ################################################################ */
+int CMP_CTX_set1_proxyPort( CMP_CTX *ctx, int port) {
+	if (!ctx) goto err;
+
+	ctx->proxyPort = port;
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_PROXYPORT, CMP_R_CMPERROR);
 	return 0;
 }
 

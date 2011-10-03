@@ -1266,6 +1266,8 @@ typedef struct cmp_ctx_st
 	char	  *serverName;
 	int	   serverPort;
 	char	  *serverPath;
+	char	  *proxyName;
+	int	   proxyPort;
 #define CMP_TRANSPORT_HTTP	1
 #define CMP_TRANSPORT_TCP	2
 	int	   transport;
@@ -1500,6 +1502,8 @@ int CMP_CTX_set1_protectionAlgor( CMP_CTX *ctx, const X509_ALGOR *algor);
 int CMP_CTX_set_compatibility( CMP_CTX *ctx, const int mode);
 int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
 int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
+int CMP_CTX_set1_proxyName( CMP_CTX *ctx, const char *name);
+int CMP_CTX_set1_proxyPort( CMP_CTX *ctx, int port);
 int CMP_CTX_set1_timeOut( CMP_CTX *ctx, int time);
 int CMP_CTX_set1_popoMethod( CMP_CTX *ctx, int method);
 int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path);
@@ -1568,6 +1572,8 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_PKEY				 124
 #define CMP_F_CMP_CTX_SET1_POPOMETHOD			 125
 #define CMP_F_CMP_CTX_SET1_PROTECTIONALGOR		 126
+#define CMP_F_CMP_CTX_SET1_PROXYNAME			 160
+#define CMP_F_CMP_CTX_SET1_PROXYPORT			 161
 #define CMP_F_CMP_CTX_SET1_RECIPIENT			 127
 #define CMP_F_CMP_CTX_SET1_RECIPNONCE			 128
 #define CMP_F_CMP_CTX_SET1_REFERENCEVALUE		 129

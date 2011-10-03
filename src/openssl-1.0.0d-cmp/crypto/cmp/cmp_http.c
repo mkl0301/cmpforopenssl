@@ -115,61 +115,19 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
-static int get_server_port(CURL *curl) {
-	char *addr = NULL, *p;
-	int i, ret = 0;
-	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &addr);
-
-	if( !(addr = strdup(addr)))
-		return 0;
-
-	/* find port number */
-	for (p = addr; *p != 0 && !(*p==':'&&p[1]!='/'); p++)
-		;
-	p++;
-	/* skip path if there is any */
-	for (i=0; isdigit(p[i]); i++)
-		;
-	p[i] = 0;
-
-	if (*p) ret = atoi(p);
-	free(addr);
-	return ret;
-}
-
-static char *get_server_addr(CURL *curl) {
-	char *addr = NULL, *p, tmp[8];
-	int i;
-	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &addr);
-
-	if( !(addr = strdup(addr)))
-		return NULL;
-
-	/* skip the http:// part if it's there, 
-	 * curl will put it back on its own... */
-
-	for (i = 0; i <= 7; i++)
-		tmp[i] = tolower(addr[i]);
-	tmp[7] = 0;
-	if (!strcmp(tmp, "http://"))
-		strcpy(addr, addr+7);
-
-	/* cut off the url starting from port or path,
-	 * so we only get the server name */
-	for (p = addr; *p != 0; p++)
-		if (*p == ':' || *p == '/') {
-			*p = 0;
-			break;
-		}
-
-	return addr;
-}
-
 static int set_http_path(CURL *curl, const char *path) {
 	char *current_url = NULL, *url = NULL;
+	int pathlen = strlen(path), current_len;
 
-	if( !(current_url = get_server_addr(curl)))
+	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &current_url);
+	if (!current_url)
 		return 0;
+
+	current_len = strlen(current_url);
+	if (!strcmp(&current_url[current_len - pathlen], path))
+		/* path is already set, let's not do it again... */
+		return 1;
+
 	if( !(url = malloc(strlen(current_url) + strlen(path) + 2))) {
 		free(current_url);
 		return 0;
@@ -177,8 +135,6 @@ static int set_http_path(CURL *curl, const char *path) {
 
 	sprintf(url, "%s/%s", current_url, path);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
-
-	free(current_url);
 	free(url);
 
 	return 1;
@@ -208,7 +164,6 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 	curl_easy_setopt(curl, CURLOPT_PORT, port);
 
 	curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP);
-	curl_easy_setopt(curl, CURLOPT_PORT, port);
 
 	/* if proxy is used, it will be set in CMP_PKIMESSAGE_http_perform. */
 	curl_easy_setopt(curl, CURLOPT_PROXY, "");
@@ -235,7 +190,6 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 								CMP_PKIMESSAGE **out)
 {
 	unsigned char *derMsg = NULL, *pder = NULL;
-	/* char *srv = NULL; */
 	char *errormsg = NULL;
 	int derLen = 0;
 	CURLcode res;
@@ -249,25 +203,10 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 
 	derLen = i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, &derMsg);
 
-	/* check if we are using a proxy. */
-#if 0
-	srv = get_server_addr(curl);
-	if (srv == NULL) goto err;
-	if (strcmp(srv, ctx->serverName) != 0) {
-		/* XXX: this is done in this way only because we want to remain
-		 * compatible with the old HTTP code. when that is removed, this code
-		 * should be moved to the init function*/
-
-		long proxyPort = get_server_port(curl);
-		// curl_easy_getinfo(curl, CURLINFO_PRIMARY_PORT, &proxyPort);
-		curl_easy_setopt(curl, CURLOPT_PROXY, srv);
-		curl_easy_setopt(curl, CURLOPT_PROXYPORT, proxyPort);
-
-		curl_easy_setopt(curl, CURLOPT_PORT, ctx->serverPort);
-		curl_easy_setopt(curl, CURLOPT_URL, ctx->serverName);
+	if (ctx->proxyName && ctx->proxyPort) {
+		curl_easy_setopt(curl, CURLOPT_PROXY, ctx->proxyName);
+		curl_easy_setopt(curl, CURLOPT_PROXYPORT, ctx->proxyPort);
 	}
-	free(srv);
-#endif
 
 	set_http_path(curl, ctx->serverPath);
 
@@ -286,7 +225,10 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 		free(errormsg);
 		errormsg = 0;
 	}
-	else goto err;
+	else {
+		errormsg = strdup(curl_easy_strerror(res));
+		goto err;
+	}
 
 	pder = (unsigned char*) rdata.memory;
     *out = d2i_CMP_PKIMESSAGE( NULL, (const unsigned char**) &pder, rdata.size);
