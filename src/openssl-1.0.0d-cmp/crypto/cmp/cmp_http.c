@@ -128,10 +128,8 @@ static int set_http_path(CURL *curl, const char *path) {
 		/* path is already set, let's not do it again... */
 		return 1;
 
-	if( !(url = malloc(strlen(current_url) + strlen(path) + 2))) {
-		free(current_url);
+	if( !(url = malloc(strlen(current_url) + strlen(path) + 2)))
 		return 0;
-	}
 
 	sprintf(url, "%s/%s", current_url, path);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
@@ -165,7 +163,8 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 
 	curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP);
 
-	/* if proxy is used, it will be set in CMP_PKIMESSAGE_http_perform. */
+	/* curl will automatically try to get proxy from environment if we don't set this.
+	 * if proxy use is enabled, it will be set in CMP_PKIMESSAGE_http_perform. */
 	curl_easy_setopt(curl, CURLOPT_PROXY, "");
 
 	*bio = curl;
@@ -226,14 +225,14 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 		errormsg = 0;
 	}
 	else {
-		errormsg = strdup(curl_easy_strerror(res));
+		strcpy(errormsg, curl_easy_strerror(res));
 		goto err;
 	}
 
 	pder = (unsigned char*) rdata.memory;
     *out = d2i_CMP_PKIMESSAGE( NULL, (const unsigned char**) &pder, rdata.size);
     if (*out == 0) {
-		errormsg = strdup("Failed to decode PKIMESSAGE");
+		strcpy(errormsg, "Failed to decode PKIMESSAGE");
 		goto err;
 	}
 
