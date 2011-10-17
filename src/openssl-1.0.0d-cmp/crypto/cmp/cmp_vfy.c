@@ -209,7 +209,7 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
     csc = X509_STORE_CTX_new();
     if (csc == NULL)
     {
-	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
         goto end;
     }
 
