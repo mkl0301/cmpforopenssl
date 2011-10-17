@@ -115,6 +115,13 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
+/* ################################################################ *
+ * In CMP_CTX we have separate variables for server address and path,
+ * but libcurl doesn't have a separate function for just setting the
+ * path. This function simply checks the end of the effective url to
+ * make sure that the correct path is there, and if it's not set yet
+ * it will be added.
+ * ################################################################ */
 static int set_http_path(CURL *curl, const char *path) {
 	char *current_url = NULL, *url = NULL;
 	int pathlen = strlen(path), current_len;
@@ -138,6 +145,9 @@ static int set_http_path(CURL *curl, const char *path) {
 	return 1;
 }
 
+/* ################################################################ *
+ * Create a new http connection, with a specified source ip/interface
+ * ################################################################ */
 int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port, const char *srcip) {
 	struct curl_slist *slist=NULL;
 	CURL *curl;
@@ -184,6 +194,9 @@ int CMP_delete_http_bio( CMPBIO *cbio) {
 	return 1;
 }
 
+/* ################################################################ *
+ * Send the given PKIMessage msg and place the response in *out.
+ * ################################################################ */
 int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx, 
 								const CMP_PKIMESSAGE *msg,
 								CMP_PKIMESSAGE **out)
@@ -211,6 +224,7 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 
 	/* curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0); */
 
+	/* rdata will contain the data received from the server */
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&rdata);
 
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, (void*) derMsg);

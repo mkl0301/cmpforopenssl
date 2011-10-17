@@ -85,6 +85,9 @@
 
 #include <string.h>
 
+/* ############################################################################ 
+ * Takes a stack of GENERAL_MANE, and adds them to the given extension stack.
+ * ############################################################################ */
 static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL_NAME) *altnames) {
 	X509_EXTENSION *ext = NULL;
 	unsigned char *der = NULL;
