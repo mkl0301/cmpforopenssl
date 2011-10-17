@@ -77,29 +77,31 @@
 #include <openssl/cmp.h>
 #include <openssl/err.h>
 
+int CMP_error_callback(const char *str, size_t len, void *u);
+
 /* ############################################################################ *
  * validate a protected message (sha1+RSA/DSA or any other algorithm supported by OpenSSL)
  * ############################################################################ */
 static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKEY *senderPkey) {
-	EVP_MD_CTX *ctx=NULL;
-	CMP_PROTECTEDPART protPart;
-	int ret;
+    EVP_MD_CTX *ctx=NULL;
+    CMP_PROTECTEDPART protPart;
+    int ret;
 
-	size_t protPartDerLen;
-	unsigned char *protPartDer=NULL;
+    size_t protPartDerLen;
+    unsigned char *protPartDer=NULL;
 
-	protPart.header = msg->header;
-	protPart.body   = msg->body;
-	protPartDerLen  = i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
+    protPart.header = msg->header;
+    protPart.body   = msg->body;
+    protPartDerLen  = i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
 
-	ctx=EVP_MD_CTX_create();
-	EVP_VerifyInit_ex(ctx, EVP_get_digestbynid(OBJ_obj2nid(algor->algorithm)), NULL);
-	EVP_VerifyUpdate(ctx, protPartDer, protPartDerLen);
-	ret = EVP_VerifyFinal(ctx, msg->protection->data, msg->protection->length, senderPkey);
+    ctx=EVP_MD_CTX_create();
+    EVP_VerifyInit_ex(ctx, EVP_get_digestbynid(OBJ_obj2nid(algor->algorithm)), NULL);
+    EVP_VerifyUpdate(ctx, protPartDer, protPartDerLen);
+    ret = EVP_VerifyFinal(ctx, msg->protection->data, msg->protection->length, senderPkey);
 
-	/* cleanup */
-	EVP_MD_CTX_destroy(ctx);
-	return ret;
+    /* cleanup */
+    EVP_MD_CTX_destroy(ctx);
+    return ret;
 }
 
 /* ############################################################################ */
@@ -207,7 +209,7 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
     csc = X509_STORE_CTX_new();
     if (csc == NULL)
     {
-        ERR_print_errors_fp(stderr);
+	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
         goto end;
     }
 
@@ -217,7 +219,7 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
     X509_STORE_set_flags(ctx, 0);
     if(!X509_STORE_CTX_init(csc, ctx, cert, uchain))
     {
-        ERR_print_errors_fp(stderr);
+	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
         goto end;
     }
 
@@ -233,10 +235,10 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
         }
     }
 
-    // if(tchain) X509_STORE_CTX_trusted_stack(csc, tchain);
+    /* if(tchain) X509_STORE_CTX_trusted_stack(csc, tchain); */
 
     /* TODO handle CRLs? */
-    // if (crls) X509_STORE_CTX_set0_crls(csc, crls);
+    /* if (crls) X509_STORE_CTX_set0_crls(csc, crls); */
 
     cscex.cert_ctx = *csc;
     cscex.cmp_ctx = cmp_ctx;
@@ -252,7 +254,7 @@ end:
         ret=1;
     }
     else
-        ERR_print_errors_fp(stderr);
+	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
 
     return(ret);
 }
@@ -301,8 +303,8 @@ static void policies_print(BIO *out, X509_STORE_CTX *ctx)
 #endif
 
 /* ############################################################################ *
- * This is called for every valid certificate (?). Also used to build the
- * certificate chain that is returned by CMP_validate_cert_path()
+ * This is called for every valid certificate. Here we could add additional checks,
+ * for policies for example.
  * ############################################################################ */
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 {

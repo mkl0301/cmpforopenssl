@@ -83,9 +83,10 @@
 
 #include <unistd.h>
 
-static int ossl_error_cb(const char *str, size_t len, void *u) {
+int CMP_error_callback(const char *str, size_t len, void *u) {
 	CMP_CTX *ctx = (CMP_CTX*) u;
-	ctx->error_cb(str);
+	if (ctx && ctx->error_cb) 
+		ctx->error_cb(str);
 	return 0;
 }
 
@@ -149,8 +150,8 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
 }
 
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * ############################################################################ */
 X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *ir=NULL;
 	CMP_PKIMESSAGE *ip=NULL;
@@ -215,6 +216,8 @@ received_ip:
 		case CMP_PKISTATUS_grantedWithMods:
 			CMP_printf( ctx, "WARNING: got \"grantedWithMods\"");
 		case CMP_PKISTATUS_accepted:
+			/* if we received a certificate then place it to ctx->newClCert and return,
+			 * if the cert is encrypted then we first decrypt it. */
 			switch (CMP_CERTREPMESSAGE_certType_get(ip->body->value.ip, 0)) {
 				case CMP_CERTORENCCERT_CERTIFICATE:
 					if( !(ctx->newClCert = CMP_CERTREPMESSAGE_cert_get1(ip->body->value.ip,0))) {
@@ -346,7 +349,7 @@ err:
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
 
 	return NULL;
 }
@@ -416,7 +419,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 err:
 	CMPerr( CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_CMPERROR);
 
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
 	return 0;
 }
 
@@ -586,7 +589,7 @@ err:
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
 
 	return NULL;
 }
@@ -766,7 +769,7 @@ err:
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
 
 	return NULL;
 }
@@ -860,7 +863,7 @@ err:
 	if (genp) CMP_PKIMESSAGE_free(genp);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
 
 	return NULL;
 }
@@ -922,7 +925,7 @@ err:
 	if (genp) CMP_PKIMESSAGE_free(genp);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(ossl_error_cb, (void*) ctx);
+	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
 
 	return 0;
 }
