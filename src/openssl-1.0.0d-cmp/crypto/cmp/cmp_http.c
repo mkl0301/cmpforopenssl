@@ -220,11 +220,7 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 
 	errormsg = calloc(1, CURL_ERROR_SIZE);
 	res = curl_easy_perform(curl);
-	if (res == 0) {
-		free(errormsg);
-		errormsg = 0;
-	}
-	else {
+	if (res != 0) {
 		strcpy(errormsg, curl_easy_strerror(res));
 		goto err;
 	}
@@ -236,6 +232,7 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 		goto err;
 	}
 
+	free(errormsg);
 	free(rdata.memory);
     free(derMsg);
 	return 1;
