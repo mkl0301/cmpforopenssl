@@ -4,6 +4,8 @@
 /* ====================================================================
  * Originally written by Martin Peylo for the OpenSSL project.
  * <martin dot peylo at nsn dot com>
+ * Developed 2010-2011 also by Miikka Viljanen
+ * <mviljane@users.sourcefoge.net>
  */
 /* ====================================================================
  * Copyright (c) 2007-2010 The OpenSSL Project.  All rights reserved.
@@ -66,8 +68,6 @@
 
 /* =========================== CHANGE LOG =============================
  * 2007 - Martin Peylo - Initial Creation
- * 06/2010 - Miikka Viljanen - Report errors with OpenSSL error codes instead
- *                             of printf statements.
  */
 
 #include <openssl/asn1.h>
@@ -126,6 +126,9 @@ ASN1_SEQUENCE(CMP_CTX) = {
 } ASN1_SEQUENCE_END(CMP_CTX)
 IMPLEMENT_ASN1_FUNCTIONS(CMP_CTX)
 
+/* ############################################################################ *
+ * Returns a duplicate of the given stack of X509 certificates.
+ * ############################################################################ */
 static STACK_OF(X509)* X509_stack_dup(const STACK_OF(X509)* stack)
 {
 	STACK_OF(X509) *newsk = NULL;
@@ -142,6 +145,9 @@ err:
 	return 0;
 }
 
+/* ############################################################################ *
+ * Creates a copy of the given EVP_PKEY.
+ * ############################################################################ */
 static EVP_PKEY *pkey_dup(const EVP_PKEY *pkey)
 {
 	EVP_PKEY *pkeyDup = EVP_PKEY_new();
@@ -207,6 +213,10 @@ err:
     return NULL;
 }
 
+/* ############################################################################ *
+ * Set directory where intermediate CA certs are stored. This is used, for example,
+ * for creating our own certificate chain to send in the extraCerts field.
+ * ############################################################################ */
 int CMP_CTX_set_untrustedPath( CMP_CTX *ctx, char *dir) 
 {
 	ctx->untrusted_store = create_cert_store(dir);
@@ -215,7 +225,9 @@ int CMP_CTX_set_untrustedPath( CMP_CTX *ctx, char *dir)
 	return 0;
 }
 
-
+/* ############################################################################ *
+ * Set hashdir where root CA certs are stored. Used for validating the CA path.
+ * ############################################################################ */
 int CMP_CTX_set_trustedPath( CMP_CTX *ctx, char *dir) {
 	ctx->trusted_store = create_cert_store(dir);
 	if (ctx->trusted_store)
@@ -223,8 +235,10 @@ int CMP_CTX_set_trustedPath( CMP_CTX *ctx, char *dir) {
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Allocates and initializes a CMP_CTX context structure with some 
+ * default values.
+ * ################################################################ */
 int CMP_CTX_init( CMP_CTX *ctx) {
 	if (!ctx) {
 		CMPerr(CMP_F_CMP_CTX_INIT, CMP_R_INVALID_CONTEXT);
@@ -263,6 +277,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->maxPollCount = 3;
 
 #if 0
+	/* These are initialized already by the call to CMP_CTX_new() */
 	ctx->referenceValue = NULL;
 	ctx->secretValue = NULL;
 	ctx->caCert = NULL;
@@ -271,6 +286,13 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->transactionID = NULL;
 	ctx->recipNonce = NULL;
 	ctx->protectionAlgor = NULL;
+
+	ctx->subjectName = NULL;
+	ctx->recipient = NULL;
+	ctx->subjectAltNames = NULL;
+	ctx->caPubs = NULL;
+	ctx->extraCertsOut = NULL;
+	ctx->extraCertsIn = NULL;
 #endif
 
 	/* initialize OpenSSL */
@@ -313,8 +335,9 @@ err:
 	return NULL;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set a callback function which will receive debug messages.
+ * ################################################################ */
 int CMP_CTX_set_error_callback( CMP_CTX *ctx, cmp_logfn_t cb)
 {
 	if (!ctx || !cb) goto err;
@@ -323,8 +346,9 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set a callback function which will receive error messages.
+ * ################################################################ */
 int CMP_CTX_set_debug_callback( CMP_CTX *ctx, cmp_logfn_t cb)
 {
 	if (!ctx || !cb) goto err;
@@ -333,8 +357,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set the reference value to be used for identification (i.e. the 
+ * username) when using PBMAC.
+ * ################################################################ */
 int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t len) {
 	if (!ctx) goto err;
 	if (!ref) goto err;
@@ -348,8 +374,9 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set the password to be used for protecting messages with PBMAC
+ * ################################################################ */
 int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len) {
 	if (!ctx) goto err;
 	if (!sec) goto err;
@@ -363,8 +390,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Returns the stack of certificates received in a response message.
+ * The stack is duplicated so the caller must handle freeing it!
+ * ################################################################ */
 STACK_OF(X509)* CMP_CTX_extraCertsIn_get1( CMP_CTX *ctx) {
 	if (!ctx) goto err;
 	if (!ctx->extraCertsIn) return 0;
@@ -374,8 +403,9 @@ STACK_OF(X509)* CMP_CTX_extraCertsIn_get1( CMP_CTX *ctx) {
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Pops and returns one certificate from the received extraCerts field
+ * ################################################################ */
 X509 *CMP_CTX_extraCertsIn_pop( CMP_CTX *ctx)
 {
 	if (!ctx) goto err;
@@ -386,8 +416,9 @@ err:
 	return NULL;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Returns the number of extraCerts received in a response.
+ * ################################################################ */
 int CMP_CTX_extraCertsIn_num( CMP_CTX *ctx)
 {
 	if (!ctx) goto err;
@@ -398,8 +429,10 @@ int CMP_CTX_extraCertsIn_num( CMP_CTX *ctx)
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Copies the given stack of inbound X509 certificates to the 
+ * CMP_CTX structure so that they may be retrieved later.
+ * ################################################################ */
 int CMP_CTX_set1_extraCertsIn( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsIn) {
 	if (!ctx) goto err;
 	if (!extraCertsIn) goto err;
@@ -418,8 +451,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Duplicate and push the given X509 certificate to the stack of 
+ * outbound certificates to send in the extraCerts field.
+ * ################################################################ */
 int CMP_CTX_extraCertsOut_push1( CMP_CTX *ctx, const X509 *val)
 {
 	if (!ctx) goto err;
@@ -430,8 +465,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Return the number of certificates we have in the outbound 
+ * extraCerts stack.
+ * ################################################################ */
 int CMP_CTX_extraCertsOut_num( CMP_CTX *ctx)
 {
 	if (!ctx) goto err;
@@ -442,8 +479,10 @@ int CMP_CTX_extraCertsOut_num( CMP_CTX *ctx)
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Duplicate and set the given stack as the new stack of X509 
+ * certificates to send out in the extraCerts field.
+ * ################################################################ */
 int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOut) {
 	if (!ctx) goto err;
 	if (!extraCertsOut) goto err;
@@ -461,8 +500,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Returns a duplicate of the stack received X509 certificates that
+ * were received in the caPubs field of the last response message.
+ * ################################################################ */
 STACK_OF(X509)* CMP_CTX_caPubs_get1( CMP_CTX *ctx) {
 	if (!ctx) goto err;
 	if (!ctx->caPubs) return 0;
@@ -472,8 +513,10 @@ STACK_OF(X509)* CMP_CTX_caPubs_get1( CMP_CTX *ctx) {
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Pop one certificate out of the list of certificates received in
+ * the caPubs field.
+ * ################################################################ */
 X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx) {
 	if (!ctx) goto err;
 	if (!ctx->caPubs) return NULL;
@@ -483,8 +526,10 @@ err:
 	return NULL;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Return the number of certificates received in the caPubs field
+ * of the last response message.
+ * ################################################################ */
 int CMP_CTX_caPubs_num( CMP_CTX *ctx) {
 	if (!ctx) goto err;
 	if (!ctx->caPubs) return 0;
@@ -494,8 +539,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Duplciate and copy the given stack of certificates to the given 
+ * CMP_CTX structure so that they may be retrieved later.
+ * ################################################################ */
 int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs) {
 	if (!ctx) goto err;
 	if (!caPubs) goto err;
@@ -513,8 +560,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Sets the CA certificate that is to be used for verifying response
+ * messages. Pointer is not consumed.
+ * ################################################################ */
 int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert) {
 	if (!ctx) goto err;
 	if (!cert) goto err;
@@ -531,8 +580,9 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set the X509 name of the recipient. Set in the PKIHeader.
+ * ################################################################ */
 int CMP_CTX_set1_recipient( CMP_CTX *ctx, const X509_NAME *name) {
 	if (!ctx) goto err;
 	if (!name) goto err;
@@ -549,8 +599,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set the subject name that will be placed in the certificate 
+ * request. This will be the subject name on the received certificate.
+ * ################################################################ */
 int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name) {
 	if (!ctx) goto err;
 	if (!name) goto err;
@@ -567,8 +619,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Push a GENERAL_NAME structure that will be added to the CRMF
+ * request's extensions field to request subject alternative names.
+ * ################################################################ */
 int CMP_CTX_subjectAltName_push1( CMP_CTX *ctx, const GENERAL_NAME *name) {
 	if (!ctx) goto err;
 	if (!name) goto err;
@@ -583,8 +637,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set our own client certificate, used for example in KUR and when
+ * doing the IR with existing certificate.
+ * ################################################################ */
 int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert) {
 	if (!ctx) goto err;
 	if (!cert) goto err;
@@ -602,8 +658,8 @@ err:
 }
 
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * ################################################################ */
 int CMP_CTX_set1_newClCert( CMP_CTX *ctx, const X509 *cert) {
 	if (!ctx) goto err;
 	if (!cert) goto err;
@@ -620,8 +676,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set the client's private key. This creates a duplicate of the key
+ * so the given pointer is not used directly.
+ * ################################################################ */
 int CMP_CTX_set1_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 	EVP_PKEY *pkeyDup = NULL;
 	if (!ctx) goto err;
@@ -636,8 +694,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set the client's current private key. NOTE: this version uses
+ * the given pointer directly!
+ * ################################################################ */
 int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 	if (!ctx) goto err;
 	if (!pkey) goto err;
@@ -654,8 +714,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set new private key. Used for example when doing Key Update.
+ * The key is duplicated so the original pointer is not directly used.
+ * ################################################################ */
 int CMP_CTX_set1_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 	EVP_PKEY *pkeyDup = NULL;
 	if (!ctx) goto err;
@@ -670,8 +732,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set new private key. Used for example when doing Key Update.
+ * NOTE: uses the pointer directly!
+ * ################################################################ */
 int CMP_CTX_set0_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 	if (!ctx) goto err;
 	if (!pkey) goto err;
@@ -688,8 +752,9 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * 
+ * ################################################################ */
 int CMP_CTX_set1_transactionID( CMP_CTX *ctx, const ASN1_OCTET_STRING *id) {
 	if (!ctx) goto err;
 	if (!id) goto err;
@@ -870,8 +935,10 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Sets the protection algorithm to be used for protecting messages.
+ * Possible choices are password based MAC and signature.
+ * ################################################################ */
 int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algID) {
 	int nid;
 
@@ -945,7 +1012,7 @@ CMP_printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
 #endif
 
 /* ################################################################ */
-/* sets a BOOLEAN option to of the context to the "val" arg */
+/* sets a BOOLEAN option of the context to the "val" arg */
 /* ################################################################ */
 int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val) {
 	if (!ctx) goto err;
