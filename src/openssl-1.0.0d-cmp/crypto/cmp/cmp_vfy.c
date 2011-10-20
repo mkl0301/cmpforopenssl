@@ -209,7 +209,7 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
     csc = X509_STORE_CTX_new();
     if (csc == NULL)
     {
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
+	if (cmp_ctx&&cmp_ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
         goto end;
     }
 
@@ -219,7 +219,7 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
     X509_STORE_set_flags(ctx, 0);
     if(!X509_STORE_CTX_init(csc, ctx, cert, uchain))
     {
-	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
+	if (cmp_ctx&&cmp_ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
         goto end;
     }
 
@@ -254,7 +254,7 @@ end:
         ret=1;
     }
     else
-	ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
+	if (cmp_ctx&&cmp_ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
 
     return(ret);
 }
