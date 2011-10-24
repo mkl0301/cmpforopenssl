@@ -104,8 +104,9 @@
 #include <time.h>
 
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Sets the protocol version number in PKIHeader.
+ * ############################################################################ */
 int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version) {
 	if( !hdr) return 0;
 
@@ -114,8 +115,9 @@ int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version) {
 	return 1;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Set the recipient name of PKIHeader. The pointer nm is used directly!
+ * ############################################################################ */
 int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 {
 	GENERAL_NAME *gen=NULL;
@@ -142,7 +144,9 @@ int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 	return 1;
 }
 
-/* ############################################################################ */
+/* ############################################################################ *
+ * Set the recipient name of PKIHeader. The contents of nm is copied.
+ * ############################################################################ */
 int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 {
 	X509_NAME *nmDup=NULL;
@@ -155,7 +159,9 @@ int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 	return CMP_PKIHEADER_set0_recipient( hdr, nmDup);
 }
 
-/* ############################################################################ */
+/* ############################################################################ *
+ * Set the sender name in PKIHeader.
+ * ############################################################################ */
 int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 {
 	GENERAL_NAME *gen=NULL;
@@ -182,7 +188,9 @@ int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 	return 1;
 }
 
-/* ############################################################################ */
+/* ############################################################################ *
+ * Set the sender name in PKIHeader. The contents of nm is duplicated.
+ * ############################################################################ */
 int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 {
 	X509_NAME *nmDup=NULL;
@@ -195,7 +203,9 @@ int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 	return CMP_PKIHEADER_set0_sender( hdr, nmDup);
 }
 
-/* ############################################################################ */
+/* ############################################################################ *
+ * Creates an X509_ALGOR structure based on the given algorithm id.
+ * ############################################################################ */
 X509_ALGOR *CMP_get_protectionAlgor_by_nid(int nid) {
 	X509_ALGOR *alg=NULL;
 
@@ -216,7 +226,8 @@ err:
 	return NULL;
 }
 
-/* ############################################################################ */
+/* ############################################################################ *
+ * ############################################################################ */
 X509_ALGOR *CMP_get_protectionAlgor_pbmac() {
 	X509_ALGOR *alg=NULL;
 	CRMF_PBMPARAMETER *pbm=NULL;

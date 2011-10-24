@@ -92,7 +92,7 @@ int CMP_error_callback(const char *str, size_t len, void *u) {
 
 // {{{ char V_CMP_TABLE[] 
 
-char *V_CMP_TABLE[] = {
+static char *V_CMP_TABLE[] = {
   "IR",
   "IP",
   "CR",

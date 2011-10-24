@@ -86,7 +86,7 @@
 #include <string.h>
 
 /* ############################################################################ 
- * Takes a stack of GENERAL_MANE, and adds them to the given extension stack.
+ * Takes a stack of GENERAL_NAMEs and adds them to the given extension stack.
  * ############################################################################ */
 static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL_NAME) *altnames) {
 	X509_EXTENSION *ext = NULL;
@@ -108,7 +108,8 @@ static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL
 }
 
 /* ############################################################################ 
- * Returns the trust chain for a given certificate up to and including the trust anchor
+ * Returns the trust chain for a given certificate up to and including
+ * the trust anchor
  * ############################################################################ */
 STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeRoot) {
 	X509_STORE_CTX *csc;
@@ -159,8 +160,9 @@ err:
 	return NULL;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Creates a new polling request PKIMessage for the given request ID
+ * ############################################################################ */
 CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 	CMP_PKIMESSAGE *msg = NULL;
 	CMP_POLLREQ    *preq = NULL;
@@ -192,8 +194,9 @@ err:
 	return NULL;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Create a new Initial Request PKIMessage
+ * ############################################################################ */
 CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE  *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
@@ -214,8 +217,8 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	/* E.7: get the subject_key_id from the external identity certificate to set it later as senderKID */
 	/* this actually seems to be explicity required not to be done by RFC 4210 (E.7, end of page 81)
 	 * HOWEVER, it seems as if the RFC is wrong here and it confuses the different
-   * use cases of the senderKID field (referenceNUM vs. Key Identifier) */
-  /* TODO: make this generic and bring it close together with CMP_protection_new() */
+	 * use cases of the senderKID field (referenceNUM vs. Key Identifier) */
+	/* TODO: make this generic and bring it close together with CMP_protection_new() */
 	if(ctx->clCert)
 	{
 		int subjKeyIDLoc;
@@ -273,7 +276,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	if( !(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.ir, certReq0);
 
-  /* TODO: combine the following two blocks for adding extraCerts */
+	/* TODO: combine the following two blocks for adding extraCerts */
 	/* E.7: if we have external identity cert add to extraCerts */
 	if (ctx->clCert) {
 		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
@@ -304,7 +307,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
 
 	/* TODO: make a generic function to create msg protection and set this, do
-   * this for all message types */
+	 * this for all message types */
 	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
 
 	return msg;
@@ -316,8 +319,9 @@ err:
 	return NULL;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Creates a new Revocation Request PKIMessage
+ * ############################################################################ */
 CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE  *msg=NULL;
 	CRMF_CERTTEMPLATE *certTpl=NULL;
@@ -390,8 +394,9 @@ err:
 }
 
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Creates a new Certificate Request PKIMessage
+ * ############################################################################ */
 CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE  *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
@@ -450,9 +455,10 @@ err:
 }
 
 
-/* ############################################################################ */
-/* TODO: KUR can actually also be done with MSG_MAC_ALG, check D.6, 2 */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Creates a new Key Update Request PKIMessage
+ * TODO: KUR can actually also be done with MSG_MAC_ALG, check D.6, 2 *
+ * ############################################################################ */
 CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
@@ -467,8 +473,8 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
 	/* get the subject_key_id from the certificate to set it later as senderKID */
-  /* this is not needed in case protection is done with MSG_MAC_ALG (what is not
-   * implemented so far) */
+	/* this is not needed in case protection is done with MSG_MAC_ALG (what is not
+	 * implemented so far) */
 	if( ctx->clCert ) {
 		int subjKeyIDLoc;
 		if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->clCert, NID_subject_key_identifier, -1)) != -1) {
@@ -618,8 +624,9 @@ err:
 }
 
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Creates a new Certificate Confirmation PKIMessage
+ * ############################################################################ */
 CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 	CMP_PKIMESSAGE *msg=NULL;
@@ -669,8 +676,9 @@ err:
 }
 
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Creates a new General Message with the given nid as type and the given value
+ * ############################################################################ */
 CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value) {
 	CMP_PKIMESSAGE *msg=NULL;
 	CMP_INFOTYPEANDVALUE *itav=NULL;
