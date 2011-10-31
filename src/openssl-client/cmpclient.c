@@ -984,10 +984,11 @@ void parseCLA( int argc, char **argv) {
     printf("ERROR: setting server and port is mandatory for all sequences\n\n");
     printUsage( argv[0]);
   }
-  if (!opt_caCertFile && !opt_doIr) {
+
+  if (!(opt_caCertFile || opt_rootCerts) && !opt_doIr) {
     /* TODO: actually that could be done with --recipient when protection is
      * done with preshared keys for all (?) messages */
-    printf("ERROR: setting cacert is necessary for all sequences except IR\n\n");
+    printf("ERROR: setting cacert or rootCerts is necessary for all sequences except IR\n\n");
     printUsage( argv[0]);
   }
 
