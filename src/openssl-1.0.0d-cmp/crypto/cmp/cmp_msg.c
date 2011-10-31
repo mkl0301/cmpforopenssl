@@ -607,6 +607,10 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		sk_X509_free(chain);
 	}
 
+	if (sk_X509_num(msg->extraCerts) == 0)
+		/* Make sure that at least our own cert gets sent */
+		sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
+
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
 	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
