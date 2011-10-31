@@ -90,6 +90,8 @@ static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKE
     size_t protPartDerLen;
     unsigned char *protPartDer=NULL;
 
+    if (!msg || !algor || !senderPkey) return 0;
+
     protPart.header = msg->header;
     protPart.body   = msg->body;
     protPartDerLen  = i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
@@ -160,8 +162,9 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
             /* strings are not equal */
             valid = 0;
     }
-    else
+    else {
         valid = CMP_verify_signature(msg, algor, senderPkey);
+    }
 
     X509_ALGOR_free(algor);
 
