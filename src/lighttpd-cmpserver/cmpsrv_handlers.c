@@ -401,9 +401,13 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
     for (int i = 0; i < ncerts; i++) {
       X509 *c = sk_X509_value(msg->extraCerts, i);
       if (!X509_NAME_cmp(c->cert_info->subject, msg->header->sender->d.directoryName)) {
-        clkey = c->cert_info->key->pkey;
+        // clkey = c->cert_info->key->pkey;
+        clkey = X509_get_pubkey(c);
         break;
       }
+    }
+    if (clkey == NULL) {
+      dbgmsg("s", "ERROR: could not find client public key in database");
     }
   }
 
@@ -425,8 +429,12 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
     }
 
     X509 *c = cert_find_by_serial(ctx, oldserial);
-    if (c != NULL)
-      clkey = c->cert_info->key->pkey;
+    if (c != NULL) {
+      // clkey = c->cert_info->key->pkey;
+      clkey = X509_get_pubkey(c);
+    }
+    else
+      dbgmsg("s", "ERROR: could not find client public key in database");
   }
 
   if (!CMP_protection_verify(msg, msg->header->protectionAlg, clkey,
@@ -448,7 +456,7 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
 
       resp->header->recipient = GENERAL_NAME_dup(msg->header->sender);
 
-      resp->protection = CMP_protection_new(resp, NULL, ctx->cmp_ctx->pkey, ctx->cmp_ctx->secretValue);
+      resp->protection = CMP_protection_new(resp, NULL, ctx->caKey, ctx->cmp_ctx->secretValue);
       result = 1;
     }
     else

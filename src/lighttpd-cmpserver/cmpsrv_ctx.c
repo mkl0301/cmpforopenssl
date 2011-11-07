@@ -68,10 +68,14 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
   }
 #endif
 
-  if (p->extraCertPath)
-    CMP_CTX_set_untrustedPath(cmp_ctx, p->extraCertPath->ptr);
-  if (p->rootCertPath)
-    CMP_CTX_set_trustedPath(cmp_ctx, p->rootCertPath->ptr);
+  if (p->extraCertPath) {
+    X509_STORE *untrusted_store = HELP_create_cert_store(p->extraCertPath->ptr);
+    CMP_CTX_set0_untrustedStore(cmp_ctx, untrusted_store);
+  }
+  if (p->rootCertPath) {
+    X509_STORE *trusted_store = HELP_create_cert_store(p->rootCertPath->ptr);
+    CMP_CTX_set0_trustedStore(cmp_ctx, trusted_store);
+  }
 
   if (cmp_ctx->untrusted_store) {
     int n=0;
