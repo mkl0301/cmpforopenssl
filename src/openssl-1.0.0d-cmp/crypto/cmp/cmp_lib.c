@@ -153,8 +153,8 @@ int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 
 	if( !hdr) return 0;
 
-	if(nm)
-		if(!(nmDup = X509_NAME_dup( (X509_NAME*) nm))) return 0;
+	if(nm || !(nmDup = X509_NAME_dup( (X509_NAME*) nm)))
+		return 0;
 
 	return CMP_PKIHEADER_set0_recipient( hdr, nmDup);
 }
@@ -227,6 +227,7 @@ err:
 }
 
 /* ############################################################################ *
+ * Create an X509_ALGOR structure for PasswordBasedMAC protection
  * ############################################################################ */
 X509_ALGOR *CMP_get_protectionAlgor_pbmac() {
 	X509_ALGOR *alg=NULL;
@@ -253,9 +254,6 @@ X509_ALGOR *CMP_get_protectionAlgor_pbmac() {
 err:
 	if (alg) X509_ALGOR_free(alg);
 	if (pbm) CRMF_PBMPARAMETER_free( pbm);
-#if 0
-	if (pbmStr) ASN1_STRING_free( pbmStr); /* that can never happen */
-#endif 
 	if (pbmDer) OPENSSL_free( pbmDer);
 	return NULL;
 }
@@ -388,6 +386,7 @@ err:
 }
 
 /* ############################################################################ *
+ * Set the algorithm to use for message protection.
  * ############################################################################ */
 int CMP_PKIHEADER_set1_protectionAlgor(CMP_PKIHEADER *hdr, const X509_ALGOR *alg) {
 	if (!hdr) goto err;
@@ -404,7 +403,7 @@ err:
 }
 
 /* ############################################################################ */
-/* push an ASN1_UTF8STRING to hdr->freeText and consume the given pointer */
+/* push an ASN1_UTF8STRING to hdr->freeText and consume the given pointer       */
 /* ############################################################################ */
 int CMP_PKIHEADER_push0_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text) {
 	if (!hdr) goto err;
@@ -475,9 +474,10 @@ err:
 #endif
 
 
-/* ############################################################################ */
-/* if referenceValue is given, it will be set as senderKID
- */
+/* ############################################################################ *
+ * Initialize the given PkiHeader structure with values set in the CMP_CTX structure.
+ * if referenceValue is given in ctx, it will be set as senderKID
+ * ############################################################################ */
 int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 	/* check existence of mandatory arguments */
 	if( !hdr) goto err;
@@ -644,7 +644,6 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC);
 			goto err;
 		}
-		// printf("INFO: protecting with PBMAC\n");
 
 		pbmStr = (ASN1_STRING *)ppval;
 		pbmStrUchar = (unsigned char *)pbmStr->data;
@@ -993,7 +992,6 @@ char *CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string( CMP_ERRORMSGCONTENT *error)
 /* returns the PKIStatus of the given certReqId inside a Rev */
 /* returns -1 on error */
 /* ############################################################################ */
-#if 1
 long CMP_REVREP_PKIStatus_get( CMP_REVREP *revRep, long reqId) {
 	CMP_PKISTATUSINFO *status=NULL;
 	if (!revRep) return -1;
@@ -1005,8 +1003,6 @@ long CMP_REVREP_PKIStatus_get( CMP_REVREP *revRep, long reqId) {
 	/* did not find a CertResponse with the right certRep */
 	return -1;
 }
-#endif
-
 
 /* ############################################################################ */
 /* returns the PKIStatus of the given certReqId inside a CertRepMessage */

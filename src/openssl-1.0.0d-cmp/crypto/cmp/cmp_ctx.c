@@ -262,8 +262,8 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	/* XXX not setting senderNonce test for PKI INFO */
 	ctx->setSenderNonce  = 1;
 	/* XXX not setting transactionID test for PKI INFO */
-	ctx->setTransactionID  = 1;
-	ctx->popoMethod = CMP_POPO_SIGNATURE;
+	ctx->setTransactionID= 1;
+	ctx->popoMethod      = CMP_POPO_SIGNATURE;
 	ctx->timeOut         = 2*60;
 	/* ctx->popoMethod = CMP_POPO_ENCRCERT; */
 	ctx->validatePath    = 0;
@@ -278,21 +278,21 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 
 #if 0
 	/* These are initialized already by the call to CMP_CTX_new() */
-	ctx->referenceValue = NULL;
-	ctx->secretValue = NULL;
-	ctx->caCert = NULL;
-	ctx->clCert = NULL;
-	ctx->newClCert = NULL;
-	ctx->transactionID = NULL;
-	ctx->recipNonce = NULL;
+	ctx->referenceValue  = NULL;
+	ctx->secretValue     = NULL;
+	ctx->caCert          = NULL;
+	ctx->clCert          = NULL;
+	ctx->newClCert       = NULL;
+	ctx->transactionID   = NULL;
+	ctx->recipNonce      = NULL;
 	ctx->protectionAlgor = NULL;
 
-	ctx->subjectName = NULL;
-	ctx->recipient = NULL;
+	ctx->subjectName     = NULL;
+	ctx->recipient       = NULL;
 	ctx->subjectAltNames = NULL;
-	ctx->caPubs = NULL;
-	ctx->extraCertsOut = NULL;
-	ctx->extraCertsIn = NULL;
+	ctx->caPubs          = NULL;
+	ctx->extraCertsOut   = NULL;
+	ctx->extraCertsIn    = NULL;
 #endif
 
 	/* initialize OpenSSL */
@@ -1003,9 +1003,9 @@ int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text) {
 	if( !(utf8string = ASN1_UTF8STRING_new())) goto err;
 	ASN1_UTF8STRING_set(utf8string, text, strlen(text));
 	if( !(sk_ASN1_UTF8STRING_push(ctx->freeText, utf8string) goto err;
-	return 1;
+    return 1;
 err:
-CMP_printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+    CMP_printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
 	if (utf8string) ASN1_UTF8STRING_free(utf8string);
 	return 0;
 }

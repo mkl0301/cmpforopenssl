@@ -93,7 +93,9 @@ int CMP_INFOTYPEANDVALUE_set0(CMP_INFOTYPEANDVALUE *itav, ASN1_OBJECT *aobj, int
 	return 1;
 }
 
-
+/* ################################################################ *
+ * 
+ * ################################################################ */
 void CMP_INFOTYPEANDVALUE_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval, CMP_INFOTYPEANDVALUE *itav) {
 	if (paobj)
 		*paobj = itav->infoType;
