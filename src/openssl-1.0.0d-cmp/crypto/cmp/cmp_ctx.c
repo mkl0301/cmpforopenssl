@@ -185,55 +185,48 @@ err:
 }
 
 ;
-
 /* ############################################################################ *
- * Creates an X509_STORE structure for looking up certs within a directory,
- * using the 'hash'.0 naming format.
+ * Set certificate store containing root CA certs.
  * ############################################################################ */
-static X509_STORE *create_cert_store(char *dir) {
-    X509_STORE *cert_ctx=NULL;
-    X509_LOOKUP *lookup=NULL;
-
-    cert_ctx=X509_STORE_new();
-    if (cert_ctx == NULL) goto err;
-
-    X509_STORE_set_verify_cb(cert_ctx, CMP_cert_callback);
-
-	/* TODO what happens if we have two certificates with the same subject name? (i.e. same hash) */
-    lookup = X509_STORE_add_lookup(cert_ctx, X509_LOOKUP_hash_dir());
-    if (lookup == NULL) goto err;
-
-    // XXX PEM or DER format?
-    // X509_LOOKUP_add_dir(lookup, ctx.trusted_dir, X509_FILETYPE_PEM);
-    X509_LOOKUP_add_dir(lookup, dir, X509_FILETYPE_ASN1);
-
-    return cert_ctx;
-
-err:
-    return NULL;
+int CMP_CTX_set0_trustedStore( CMP_CTX *ctx, X509_STORE *store) {
+	if (!store) return 0;
+    X509_STORE_set_verify_cb(store, CMP_cert_callback);
+    if (ctx->trusted_store)
+    	X509_STORE_free(ctx->trusted_store);
+	ctx->trusted_store = store;
+	return 1;
 }
 
-/* ############################################################################ *
- * Set directory where intermediate CA certs are stored. This is used, for example,
- * for creating our own certificate chain to send in the extraCerts field.
- * ############################################################################ */
-int CMP_CTX_set_untrustedPath( CMP_CTX *ctx, char *dir) 
-{
-	ctx->untrusted_store = create_cert_store(dir);
-	if (ctx->untrusted_store)
-		return 1;
-	return 0;
+#if 0
+int CMP_CTX_set1_trustedStore( CMP_CTX *ctx, X509_STORE *store) {
+	X509_STORE *dup = NULL;
+	if (!store) return 0;
+	if (!(dup = X509_STORE_dup(store))) return 0;
+	return CMP_CTX_trustedStore_set0(ctx, dup);
 }
+#endif
 
 /* ############################################################################ *
- * Set hashdir where root CA certs are stored. Used for validating the CA path.
+ * Set certificate store containing intermediate certificates (for building
+ * our own cert chain to send in extraCerts).
  * ############################################################################ */
-int CMP_CTX_set_trustedPath( CMP_CTX *ctx, char *dir) {
-	ctx->trusted_store = create_cert_store(dir);
-	if (ctx->trusted_store)
-		return 1;
-	return 0;
+int CMP_CTX_set0_untrustedStore( CMP_CTX *ctx, X509_STORE *store) {
+	if (!store) return 0;
+    X509_STORE_set_verify_cb(store, CMP_cert_callback);
+    if (ctx->untrusted_store)
+    	X509_STORE_free(ctx->untrusted_store);
+	ctx->untrusted_store = store;
+	return 1;
 }
+
+#if 0
+int CMP_CTX_set1_untrustedStore( CMP_CTX *ctx, X509_STORE *store) {
+	X509_STORE *dup = NULL;
+	if (!store) return 0;
+	if (!(dup = X509_STORE_dup(store))) return 0;
+	return CMP_CTX_untrustedStore_set0(ctx, dup);
+}
+#endif
 
 /* ################################################################ *
  * Allocates and initializes a CMP_CTX context structure with some 

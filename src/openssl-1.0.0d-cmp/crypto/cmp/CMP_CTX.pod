@@ -31,7 +31,9 @@
  CMP_CTX_extraCertsOut_num,
  CMP_CTX_set1_extraCertsIn,
  CMP_CTX_extraCertsIn_pop,
- CMP_CTX_extraCertsIn_num
+ CMP_CTX_extraCertsIn_num,
+ CMP_CTX_set0_trustedStore
+ CMP_CTX_set0_untrustedStore
 
 =head1 SYNOPSIS
 
@@ -67,6 +69,9 @@
  int CMP_CTX_set1_extraCertsIn( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsIn);
  X509 *CMP_CTX_extraCertsIn_pop( CMP_CTX *ctx);
  int CMP_CTX_extraCertsIn_num( CMP_CTX *ctx);
+
+ int CMP_CTX_set0_trustedStore( CMP_CTX *ctx, X509_STORE *store);
+ int CMP_CTX_set0_untrustedStore( CMP_CTX *ctx, X509_STORE *store);
 
  #define CMP_ALG_PBMAC 1
  #define CMP_ALG_SIG   2
@@ -149,6 +154,9 @@ CMP_CTX_extraCertsIn_pop() pops and returns one certificate off the stack of ext
 
 CMP_CTX_extraCertsIn_num() returns the number of certificates that were received from remote.
 
+CMP_CTX_set0_trustedStore() sets the X509_STORE type certifice store containing root CA certificates. This is used for example when attempting to validate CA certificate path.
+
+CMP_CTX_set0_untrustedStore() sets the X509_STORE type certifice store containing intermediate certificates needed for building our own certificate chain and including it in extraCerts.
 
 =head1 NOTES
 

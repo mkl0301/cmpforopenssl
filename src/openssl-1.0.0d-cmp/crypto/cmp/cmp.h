@@ -1463,8 +1463,8 @@ X509_CRL *CMP_doCurrentCRLReq( CMPBIO *cbio, CMP_CTX *ctx);
 
 /* from cmp_ctx.c */
 int CMP_CTX_init( CMP_CTX *ctx);
-int CMP_CTX_set_trustedPath( CMP_CTX *ctx, char *dir);
-int CMP_CTX_set_untrustedPath( CMP_CTX *ctx, char *dir);
+int CMP_CTX_set0_trustedStore( CMP_CTX *ctx, X509_STORE *store);
+int CMP_CTX_set0_untrustedStore( CMP_CTX *ctx, X509_STORE *store);
 void CMP_CTX_delete(CMP_CTX *ctx);
 CMP_CTX *CMP_CTX_create(void);
 int CMP_CTX_set_error_callback( CMP_CTX *ctx, cmp_logfn_t cb);

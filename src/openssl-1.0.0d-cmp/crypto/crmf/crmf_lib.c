@@ -90,8 +90,9 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Pushes the given control attribute into the controls stack of a CertRequest
+ * ############################################################################ */
 int CRMF_CERTREQMSG_push0_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *control) {
 	int newControls = 0;
 
@@ -116,8 +117,31 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Same as above, except here the given control is duplicated so the pointer is
+ * not directly used here.
+ * ############################################################################ */
+int CRMF_CERTREQMSG_push1_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *control) {
+	CRMF_ATTRIBUTETYPEANDVALUE * controlDup=NULL;
+
+	if( !certReqMsg) return 0;
+	if( !control) return 0;
+
+	controlDup = CRMF_ATTRIBUTETYPEANDVALUE_dup( control);
+
+	if( !CRMF_CERTREQMSG_push0_control( certReqMsg, controlDup)) goto err;
+	controlDup = NULL;
+
+	return 1;
+err:
+	if( controlDup) CRMF_ATTRIBUTETYPEANDVALUE_free( controlDup);
+	return 0;
+}
+
+
+/* ############################################################################ *
+ * Pushes the attribute given in regInfo in to the CertReqMsg->regInfo stack.
+ * ############################################################################ */
 int CRMF_CERTREQMSG_push0_regInfo( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *regInfo) {
 	int newRegInfo = 0;
 
@@ -142,27 +166,10 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
-int CRMF_CERTREQMSG_push1_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *control) {
-	CRMF_ATTRIBUTETYPEANDVALUE * controlDup=NULL;
-
-	if( !certReqMsg) return 0;
-	if( !control) return 0;
-
-	controlDup = CRMF_ATTRIBUTETYPEANDVALUE_dup( control);
-
-	if( !CRMF_CERTREQMSG_push0_control( certReqMsg, controlDup)) goto err;
-	controlDup = NULL;
-
-	return 1;
-err:
-	if( controlDup) CRMF_ATTRIBUTETYPEANDVALUE_free( controlDup);
-	return 0;
-}
-
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Creates a new control attribute of type NID_id_regCtrl_oldCertID and adds
+ * it to the control stack of the given certReqMesg.
+ * ############################################################################ */
 int CRMF_CERTREQMSG_set1_control_oldCertId( CRMF_CERTREQMSG *certReqMsg, X509 *oldCert) { 
 	CRMF_ATTRIBUTETYPEANDVALUE *atav   = NULL;
 	CRMF_CERTID                *certId = NULL;
@@ -196,8 +203,10 @@ err:
 }
 
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Creates a new regToken attribute and adds it to the controls stack of the
+ * given CertReqMsg.
+ * ############################################################################ */
 int CRMF_CERTREQMSG_set1_control_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *tok) {
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
 	ASN1_UTF8STRING *tokDup=NULL;
@@ -223,8 +232,8 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * ############################################################################ */
 int CRMF_CERTREQMSG_set1_control_authenticator( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *auth) {
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
 	ASN1_UTF8STRING *authDup=NULL;
@@ -249,8 +258,8 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * ############################################################################ */
 int CRMF_CERTREQMSG_set1_control_pkiPublicationInfo( CRMF_CERTREQMSG *msg, CRMF_PKIPUBLICATIONINFO *pubinfo) {
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
 	CRMF_PKIPUBLICATIONINFO *pubinfoDup=NULL;
@@ -301,9 +310,15 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* For some reason X509_PUBKEY_dup() does not appear to be implemented by 
+ * OpenSSL's X509 code, so we implement it here. It's only needed in the following
+ * function so it can be declared static. */
 static IMPLEMENT_ASN1_DUP_FUNCTION(X509_PUBKEY);
+
+/* ############################################################################ *
+ * Makes a copy of the given public key and adds it to the controls stack as
+ * the protocolEncrKey type.
+ * ############################################################################ */
 int CRMF_CERTREQMSG_set1_control_protocolEncrKey( CRMF_CERTREQMSG *msg, X509_PUBKEY *pubkey) {	
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
 	X509_PUBKEY *pubkeyDup=NULL;
@@ -331,8 +346,8 @@ err:
 /* ############################################################################ */
 
 /* REGINFO */
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * ############################################################################ */
 int CRMF_CERTREQMSG_set1_regInfo_utf8Pairs( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *utf8pairs) {
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
 	ASN1_UTF8STRING *utf8pairsDup=NULL;
@@ -358,8 +373,8 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * ############################################################################ */
 int CRMF_CERTREQMSG_set1_regInfo_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *tok) {
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
 	ASN1_UTF8STRING *tokDup=NULL;
@@ -385,8 +400,8 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * ############################################################################ */
 int CRMF_CERTREQMSG_set1_regInfo_certReq( CRMF_CERTREQMSG *msg, CRMF_CERTREQUEST *certReq) {
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
 	CRMF_CERTREQUEST *certReqDup=NULL;
@@ -416,10 +431,10 @@ err:
 /* ############################################################################ */
 
 /* CERTTEMPLATE */
-/* ############################################################################ */
-/* CertRequest syntax:
- * version MUST be 2 if supplied.  It SHOULD be omitted. */
-/* ############################################################################ */
+/* ############################################################################ *
+ * CertRequest syntax:
+ * version MUST be 2 if supplied.  It SHOULD be omitted.
+ * ############################################################################ */
 int CRMF_CERTREQMSG_set_version2( CRMF_CERTREQMSG *certReqMsg) {
 	if (! certReqMsg) return 0;
 
@@ -493,9 +508,9 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* set the subject in the cert Template */
-/* ############################################################################ */
+/* ############################################################################ *
+ * Set the subject name in the given certificate template 
+ * ############################################################################ */
 int CRMF_CERTREQMSG_set1_subject( CRMF_CERTREQMSG *certReqMsg, const X509_NAME *subject) {
 	if (! certReqMsg) return 0;
 	if (! subject) return 0;
@@ -504,10 +519,10 @@ int CRMF_CERTREQMSG_set1_subject( CRMF_CERTREQMSG *certReqMsg, const X509_NAME *
 	return X509_NAME_set(&(certReqMsg->certReq->certTemplate->subject), (X509_NAME*) subject);
 }
 
-/* ############################################################################ */
-/* returns 1 on success, 0 on error */
-/* push an extension to the extension stack */
-/* ############################################################################ */
+/* ############################################################################ *
+ * returns 1 on success, 0 on error
+ * push an extension to the extension stack
+ * ############################################################################ */
 int CRMF_CERTREQMSG_push0_extension( CRMF_CERTREQMSG *certReqMsg, X509_EXTENSION *ext) {
 	int createdStack = 0;
 
@@ -558,16 +573,17 @@ err:
       poposkInput.  If poposkInput is absent, the signature is computed
       over the DER-encoded value of certReq.
       */
-/* ############################################################################ */
-/* XXX There should be identified what algorithm SHOULD be used.
- * going with sha1withRSA for now
- */
+/* ############################################################################ *
+ * Create proof-of-posession information by signing the certrequest with our 
+ * private key. Algorithm is chosen based on key type.
+ * ############################################################################ */
 CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const EVP_PKEY *pkey) {
 	CRMF_POPOSIGNINGKEY *poposig=NULL;
 	size_t certReqSize, maxSignatureSize;
 	unsigned int sigLen;
 	unsigned char *certReqDer=NULL;
 	unsigned char *signature=NULL;
+	EVP_MD *alg=NULL;
 
 	EVP_MD_CTX *ctx=NULL;
 
@@ -579,8 +595,19 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 	maxSignatureSize = EVP_PKEY_size( (EVP_PKEY*) pkey);
 	signature = OPENSSL_malloc(maxSignatureSize);
 
+	/* set the type of the algorithm */
+	if (EVP_PKEY_type(pkey->type) == EVP_PKEY_DSA) {
+		X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_dsaWithSHA1), V_ASN1_NULL, NULL);
+		alg = EVP_dss1();
+	}
+	/* XXX can it be some other type of key? */
+	else { /* assume RSA */
+		X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
+		alg = EVP_sha1();
+	}
+
 	ctx=EVP_MD_CTX_create();
-	if (!(EVP_SignInit_ex(ctx, EVP_sha1(),NULL))) goto err;
+	if (!(EVP_SignInit_ex(ctx, alg, NULL))) goto err;
 	if (!(EVP_SignUpdate(ctx, certReqDer, certReqSize))) goto err;
 	if (!(EVP_SignFinal(ctx, signature, &sigLen, (EVP_PKEY*) pkey))) goto err;
 
@@ -590,12 +617,6 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 	/* Actually this should not be needed but OpenSSL defaults all bitstrings to be a NamedBitList */
 	poposig->signature->flags &= ~0x07;
 	poposig->signature->flags |= ASN1_STRING_FLAG_BITS_LEFT;
-
-	/* set the type of the algorithm */
-	if (EVP_PKEY_type(pkey->type) == EVP_PKEY_DSA)
-		X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_dsaWithSHA1), V_ASN1_NULL, NULL);
-	else /* assume RSA */
-		X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
 
 	/* cleanup */
 	OPENSSL_free(certReqDer);
@@ -610,9 +631,9 @@ err:
 	return NULL;
 }
 
-/* ############################################################################ */
-/* calculate and set the proof of possession */
-/* ############################################################################ */
+/* ############################################################################ *
+ * calculate and set the proof of possession
+ * ############################################################################ */
 int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PKEY *pkey, int popoMethod) {
 	CRMF_PROOFOFPOSSESION *newPopo=NULL;
 
@@ -646,7 +667,7 @@ int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PK
 		CRMF_PROOFOFPOSSESION_free(certReqMsg->popo);
 	certReqMsg->popo = newPopo;
 
-	CMP_printf("INFO: popo set\n");
+	CMP_printf("INFO: proof-of-posession set\n");
 
 	return 1;
 err:

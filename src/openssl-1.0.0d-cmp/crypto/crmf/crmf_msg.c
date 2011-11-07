@@ -157,6 +157,7 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 	/* this could be done here */
 	int CRMF_CERTREQMSG_push0_extension( CRMF_CERTREQMSG *certReqMsg, X509_EXTENSION *ext);
 #endif
+
 	/* sk_X509_EXTENSION_num will return -1 if extensions is NULL so this is ok */
 	for (i = 0; i < sk_X509_EXTENSION_num(extensions); i++)
 		/* X509v3_add_ext will allocate new stack if there isn't one already */

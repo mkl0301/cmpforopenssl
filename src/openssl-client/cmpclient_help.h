@@ -190,5 +190,6 @@ EVP_PKEY *HELP_generateDSAKey();
 int HELP_savePrivKey(EVP_PKEY *pkey, const char *filename, const char *password);
 EVP_PKEY *HELP_readPrivKey(const char *filename, const char *password);
 X509_NAME* HELP_create_X509_NAME(char *string);
+X509_STORE *HELP_create_cert_store(char *dir);
 
 #endif /* CMPCLIENT_HELP_H */

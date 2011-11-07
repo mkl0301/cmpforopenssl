@@ -153,7 +153,7 @@ int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 
 	if( !hdr) return 0;
 
-	if(nm || !(nmDup = X509_NAME_dup( (X509_NAME*) nm)))
+	if(nm && !(nmDup = X509_NAME_dup( (X509_NAME*) nm)))
 		return 0;
 
 	return CMP_PKIHEADER_set0_recipient( hdr, nmDup);

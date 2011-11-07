@@ -1202,11 +1202,15 @@ int main(int argc, char **argv) {
 
   /* TODO move the handling of all common options such as server ip, port etc. here */
 
-  if (opt_rootCerts)
-    CMP_CTX_set_trustedPath(cmp_ctx, opt_rootCerts);
+  if (opt_rootCerts) {
+    X509_STORE *trusted_store = HELP_create_cert_store(opt_rootCerts);
+    CMP_CTX_set0_trustedStore(cmp_ctx, trusted_store);
+  }
 
-  if (opt_extraCertsIn)
-    CMP_CTX_set_untrustedPath(cmp_ctx, opt_extraCertsIn);
+  if (opt_extraCertsIn) {
+    X509_STORE *untrusted_store = HELP_create_cert_store(opt_extraCertsIn);
+    CMP_CTX_set0_untrustedStore(cmp_ctx, untrusted_store);
+  }
 
   if (opt_doPathValidation)
     CMP_CTX_set_option(cmp_ctx, CMP_CTX_OPT_VALIDATEPATH, 1);

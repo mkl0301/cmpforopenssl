@@ -171,6 +171,36 @@
 #include <openssl/x509v3.h>
 #include <openssl/err.h>
 
+
+/* ############################################################################ *
+ * Creates an X509_STORE structure for looking up certs within a directory,
+ * using the 'hash'.0 naming format.
+ * ############################################################################ */
+X509_STORE *HELP_create_cert_store(char *dir) {
+    X509_STORE *cert_ctx=NULL;
+    X509_LOOKUP *lookup=NULL;
+
+    cert_ctx=X509_STORE_new();
+    if (cert_ctx == NULL) goto err;
+
+    // X509_STORE_set_verify_cb(cert_ctx, CMP_cert_callback);
+
+	/* TODO what happens if we have two certificates with the same subject name? (i.e. same hash) */
+    lookup = X509_STORE_add_lookup(cert_ctx, X509_LOOKUP_hash_dir());
+    if (lookup == NULL) goto err;
+
+    // XXX PEM or DER format?
+    // X509_LOOKUP_add_dir(lookup, ctx.trusted_dir, X509_FILETYPE_PEM);
+    X509_LOOKUP_add_dir(lookup, dir, X509_FILETYPE_ASN1);
+
+    return cert_ctx;
+
+err:
+    return NULL;
+}
+
+
+
 /* ############################################################################ */
 /* convert hex string to string, return length */
 /* str has to be freed afterwards

@@ -90,10 +90,10 @@ CRMF_PBMPARAMETER * CRMF_pbm_new() {
 	/* salt contains a randomly generated value used in computing the key
 	 * of the MAC process.  The salt SHOULD be at least 8 octets (64
 	 * bits) long.
-         */
-	 /* XXX XXX XXX */
+	 */
+	/* XXX XXX XXX */
 	RAND_pseudo_bytes(salt, SALT_LEN);
-        if (!(ASN1_OCTET_STRING_set(pbm->salt, salt, SALT_LEN))) goto err;
+	if (!(ASN1_OCTET_STRING_set(pbm->salt, salt, SALT_LEN))) goto err;
 
 	/* owf identifies the algorithm and associated parameters used to
 	 * compute the key used in the MAC process.  All implementations MUST
@@ -102,24 +102,24 @@ CRMF_PBMPARAMETER * CRMF_pbm_new() {
 	/* TODO right now SHA-1 is hardcoded */
 	X509_ALGOR_set0(pbm->owf, OBJ_nid2obj(NID_sha1), V_ASN1_UNDEF, NULL);
 
-	 /*
-      iterationCount identifies the number of times the hash is applied
-      during the key computation process.  The iterationCount MUST be a
-      minimum of 100.  Many people suggest using values as high as 1000
-      iterations as the minimum value.  The trade off here is between
-      protection of the password from attacks and the time spent by the
-      server processing all of the different iterations in deriving
-      passwords.  Hashing is generally considered a cheap operation but
-      this may not be true with all hash functions in the future.
-      */
+	/*
+	   iterationCount identifies the number of times the hash is applied
+	   during the key computation process.  The iterationCount MUST be a
+	   minimum of 100.  Many people suggest using values as high as 1000
+	   iterations as the minimum value.  The trade off here is between
+	   protection of the password from attacks and the time spent by the
+	   server processing all of the different iterations in deriving
+	   passwords.  Hashing is generally considered a cheap operation but
+	   this may not be true with all hash functions in the future.
+	   */
 	ASN1_INTEGER_set(pbm->iterationCount, ITERATION_COUNT);
 
-      /*
-      mac identifies the algorithm and associated parameters of the MAC
-      function to be used.  All implementations MUST support HMAC-SHA1
-      [HMAC].  All implementations SHOULD support DES-MAC and Triple-
-      DES-MAC [PKCS11].
-      */
+	/*
+	   mac identifies the algorithm and associated parameters of the MAC
+	   function to be used.  All implementations MUST support HMAC-SHA1
+	   [HMAC].  All implementations SHOULD support DES-MAC and Triple-
+	   DES-MAC [PKCS11].
+	   */
 	/* TODO right now HMAC-SHA1 is hardcoded */
 	/* X509_ALGOR_set0(mac, OBJ_nid2obj(NID_id_alg_dh_sig_hmac_sha1), V_ASN1_UNDEF, NULL); */
 	X509_ALGOR_set0(pbm->mac, OBJ_nid2obj(NID_hmac_sha1), V_ASN1_UNDEF, NULL);
@@ -149,13 +149,13 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 			   const unsigned char* msg, size_t msgLen, 
 			   const unsigned char* secret, size_t secretLen,
 			   unsigned char** mac, unsigned int* macLen
-			) {
+			   ) {
 
-        const EVP_MD *m=NULL;
-        EVP_MD_CTX *ctx=NULL;
-        unsigned char basekey[EVP_MAX_MD_SIZE];
-        unsigned int basekeyLen;
-        long iterations;
+	const EVP_MD *m=NULL;
+	EVP_MD_CTX *ctx=NULL;
+	unsigned char basekey[EVP_MAX_MD_SIZE];
+	unsigned int basekeyLen;
+	long iterations;
 
 	if (!mac) goto err;
 	if( *mac) OPENSSL_free(*mac);
@@ -166,32 +166,32 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 
 	*mac = OPENSSL_malloc(EVP_MAX_MD_SIZE);
 
-        OpenSSL_add_all_digests();
+	OpenSSL_add_all_digests();
 
 	/*
 	 * owf identifies the algorithm and associated parameters used to
 	 * compute the key used in the MAC process.  All implementations MUST
 	 * support SHA-1.
 	 */
-        if (!(m = EVP_get_digestbyobj(pbm->owf->algorithm))) goto err;
+	if (!(m = EVP_get_digestbyobj(pbm->owf->algorithm))) goto err;
 
-        ctx=EVP_MD_CTX_create();
+	ctx=EVP_MD_CTX_create();
 
-        /* compute the basekey of the salted secret */
-        if (!(EVP_DigestInit_ex(ctx, m, NULL))) goto err;
-        /* first the secret */
-        EVP_DigestUpdate(ctx, secret, secretLen);
-        /* then the salt */
-        EVP_DigestUpdate(ctx, pbm->salt->data, pbm->salt->length);
-        if (!(EVP_DigestFinal_ex(ctx, basekey, &basekeyLen))) goto err;
+	/* compute the basekey of the salted secret */
+	if (!(EVP_DigestInit_ex(ctx, m, NULL))) goto err;
+	/* first the secret */
+	EVP_DigestUpdate(ctx, secret, secretLen);
+	/* then the salt */
+	EVP_DigestUpdate(ctx, pbm->salt->data, pbm->salt->length);
+	if (!(EVP_DigestFinal_ex(ctx, basekey, &basekeyLen))) goto err;
 
-        /* the first iteration is already done above -> -1 */
-        iterations = ASN1_INTEGER_get(pbm->iterationCount)-1;
-        while( iterations--) {
-                if (!(EVP_DigestInit_ex(ctx, m, NULL))) goto err;
-                EVP_DigestUpdate(ctx, basekey, basekeyLen);
-                if (!(EVP_DigestFinal_ex(ctx, basekey, &basekeyLen))) goto err;
-        }
+	/* the first iteration is already done above -> -1 */
+	iterations = ASN1_INTEGER_get(pbm->iterationCount)-1;
+	while( iterations--) {
+		if (!(EVP_DigestInit_ex(ctx, m, NULL))) goto err;
+		EVP_DigestUpdate(ctx, basekey, basekeyLen);
+		if (!(EVP_DigestFinal_ex(ctx, basekey, &basekeyLen))) goto err;
+	}
 
 	/*
 	 * mac identifies the algorithm and associated parameters of the MAC
@@ -203,14 +203,15 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 		case NID_hmac_sha1:
 			HMAC(EVP_sha1(), basekey, basekeyLen, msg, msgLen, *mac, macLen);
 			break;
-		/* optional TODO: DES-MAC, Triple DES-MAC */
+			/* optional TODO: DES-MAC, Triple DES-MAC */
+			/* XXX which NIDs to use for these algorithms??? */
 		default:
 			CRMFerr(CRMF_F_CRMF_PASSWORDBASEDMAC_NEW, CRMF_R_UNSUPPORTED_ALGORITHM);
 			exit(1);
 	}
 
-        /* cleanup */
-        EVP_MD_CTX_destroy(ctx);
+	/* cleanup */
+	EVP_MD_CTX_destroy(ctx);
 
 	return 1;
 err:
