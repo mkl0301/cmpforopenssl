@@ -155,7 +155,7 @@ static X509 *find_cert_by_name(STACK_OF(X509) *certs, X509_NAME *name) {
 	while (n --> 0) {
 		X509 *cert = sk_X509_value(certs, n);
 		X509_NAME *cert_name = X509_get_subject_name(cert);
-		if (X509_NAME_cmp(cert_name, name))
+		if (!X509_NAME_cmp(cert_name, name))
 			return cert;
 	}
 	return NULL;
@@ -197,7 +197,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	 * can be found and validated using our root CA certificates */
 	if (ctx->clCert && ctx->trusted_store) {
 		caCert = find_cert_by_name(ip->extraCerts, ip->header->sender->d.directoryName);
-		if (CMP_validate_cert_path(ctx, 0, ip->extraCerts, caCert) == 0) {
+		if (caCert && CMP_validate_cert_path(ctx, 0, ip->extraCerts, caCert) == 0) {
 			/* if there is a caCert provided, try to use that for verifying 
 			 * the message signature. otherwise fail here. */
 			if (!ctx->caCert) {
@@ -656,7 +656,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	 * can be found and validated using our root CA certificates */
 	if (ctx->trusted_store) {
 		caCert = find_cert_by_name(kup->extraCerts, kup->header->sender->d.directoryName);
-		if (CMP_validate_cert_path(ctx, 0, kup->extraCerts, caCert) == 0) {
+		if (caCert && CMP_validate_cert_path(ctx, 0, kup->extraCerts, caCert) == 0) {
 			/* if there is a caCert provided, try to use that for verifying 
 			 * the message signature. otherwise fail here. */
 			if (!ctx->caCert) {
