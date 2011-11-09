@@ -1230,7 +1230,7 @@ typedef struct cmp_ctx_st
 	 * subject name is read from there and this is ignored */
 	X509_NAME            *subjectName;
 	/* X509_NAME to set in PKIHEADER->recipient */ 
-  /* TODO check: this should only be used if the caCert is not present */
+    /* TODO check: this should only be used if the caCert is not present */
 	X509_NAME            *recipient;
 	/* names to be added to the cert template as the subjectAltName extension */
 	STACK_OF(GENERAL_NAME) *subjectAltNames;
