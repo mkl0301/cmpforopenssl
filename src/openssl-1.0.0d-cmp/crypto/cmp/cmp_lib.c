@@ -620,8 +620,21 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 	X509_ALGOR_get0( &algorOID, &pptype, &ppval, algor);
 	usedAlgorNid = OBJ_obj2nid(algorOID);
 
+	if (usedAlgorNid == NID_id_PasswordBasedMAC) {
+		/* there is no pmb set in this message */
+		if (!ppval) return NULL; /* TODO return meaningful error message */
+		if (!secret) {
+			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC);
+			goto err;
+		}
 
-	if ((md = EVP_get_digestbynid(usedAlgorNid)) != NULL) {
+		pbmStr = (ASN1_STRING *)ppval;
+		pbmStrUchar = (unsigned char *)pbmStr->data;
+		pbm = d2i_CRMF_PBMPARAMETER( NULL, &pbmStrUchar, pbmStr->length);
+
+		if(!(CRMF_passwordBasedMac_new(pbm, protPartDer, protPartDerLen, secret->data, secret->length, &mac, &macLen))) goto err;
+	}
+	else if ((md = EVP_get_digestbynid(usedAlgorNid)) != NULL) {
 		// printf("INFO: protecting with pkey, algorithm %s\n", OBJ_nid2sn(usedAlgorNid));
 		if (!pkey) { /* EVP_SignFinal() will check that pkey type is correct for the algorithm */
 			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_INVALID_KEY);
@@ -636,20 +649,6 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 		if (!(EVP_SignInit_ex(ctx, md, NULL))) goto err;
 		if (!(EVP_SignUpdate(ctx, protPartDer, protPartDerLen))) goto err;
 		if (!(EVP_SignFinal(ctx, mac, &macLen, (EVP_PKEY*) pkey))) goto err;
-	}
-	else if (usedAlgorNid == NID_id_PasswordBasedMAC) {
-		/* there is no pmb set in this message */
-		if (!ppval) return NULL; /* TODO return meaningful error message */
-		if (!secret) {
-			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC);
-			goto err;
-		}
-
-		pbmStr = (ASN1_STRING *)ppval;
-		pbmStrUchar = (unsigned char *)pbmStr->data;
-		pbm = d2i_CRMF_PBMPARAMETER( NULL, &pbmStrUchar, pbmStr->length);
-
-		if(!(CRMF_passwordBasedMac_new(pbm, protPartDer, protPartDerLen, secret->data, secret->length, &mac, &macLen))) goto err;
 	}
 	else {
 		CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_UNKNOWN_ALGORITHM_ID);

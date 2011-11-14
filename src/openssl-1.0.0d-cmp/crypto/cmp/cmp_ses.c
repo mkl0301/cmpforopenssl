@@ -458,6 +458,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *cp=NULL;
 	CMP_PKIMESSAGE *certConf=NULL;
 	CMP_PKIMESSAGE *PKIconf=NULL;
+	X509 *caCert=NULL;
 
 	/* check if all necessary options are set */
 	if (!cbio) goto err;
@@ -475,7 +476,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending Certificate Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, cr, &cp))) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
 
@@ -486,8 +487,31 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	/* if  initializing with existing cert, first we'll see if the CA (sender) cert
+	 * can be found and validated using our root CA certificates */
+	if (ctx->trusted_store) {
+		caCert = find_cert_by_name(cp->extraCerts, cp->header->sender->d.directoryName);
+		if (caCert && CMP_validate_cert_path(ctx, 0, cp->extraCerts, caCert) == 0) {
+			/* if there is a caCert provided, try to use that for verifying 
+			 * the message signature. otherwise fail here. */
+			if (!ctx->caCert) {
+				CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
+				goto err;
+			}
+		}
+	}
+	/* either not using existing cert or couldn't find the CA cert in extracerts. */
+	if (!caCert) caCert = ctx->caCert;
 
-	if (CMP_protection_verify( cp, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
+	if (ctx->validatePath && caCert) {
+		CMP_printf(ctx, "INFO: validating CA certificate path");
+		if( CMP_validate_cert_path(ctx, 0, cp->extraCerts, caCert) == 0) {
+			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
+			goto err;
+		}
+	}
+
+	if (CMP_protection_verify( cp, ctx->protectionAlgor, X509_get_pubkey( (X509*) caCert), NULL)) {
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -522,7 +546,7 @@ received_cp:
 						goto err;
 					}
 					/* TODO handle multiple pollreqs */
-					if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_KUP) {
+					if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_CP) {
 						CMP_PKIMESSAGE_free(cp);
 						cp = prep;
 						CMP_PKIMESSAGE_free(preq);
@@ -582,7 +606,7 @@ received_cp:
 		goto err;
 	}
 
-	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), NULL)) {
+	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) caCert), NULL)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		/* old: "ERROR: validating protection of incoming message" */

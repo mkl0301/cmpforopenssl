@@ -402,16 +402,34 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	CRMF_CERTREQMSG *certReq0=NULL;
 
 	X509_NAME *subject=NULL; /* needed for COMPAT_INSTA */
+	int subjKeyIDLoc;
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
-#if 0
 	if (!ctx->caCert) goto err;
-#endif
 	if (!ctx->clCert) goto err;
 	if (!ctx->pkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
+
+	/* TODO this is pasted around at least 3 times, refactor it... */
+	if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->clCert, 
+											 NID_subject_key_identifier, -1)) != -1) {
+		/* found a subject key ID */
+		ASN1_OCTET_STRING *subjKeyIDStr = NULL;
+		X509_EXTENSION *ex = NULL;
+		const unsigned char *subjKeyIDStrDer = NULL;
+
+		ex=sk_X509_EXTENSION_value( ctx->clCert->cert_info->extensions, subjKeyIDLoc);
+
+		subjKeyIDStrDer = (const unsigned char *) ex->value->data;
+		subjKeyIDStr = d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
+
+		CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
+
+		/* clean up */
+		ASN1_OCTET_STRING_free(subjKeyIDStr);
+	}
 
 	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
 
@@ -436,6 +454,20 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 		for (i = 0; i < sk_X509_num(ctx->extraCertsOut); i++)
 			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCertsOut, i)));
 	}
+
+	if (ctx->untrusted_store) {
+		/* attempt to get the trust chain for our certificate and send it along */
+		STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert, 0);
+		int i;
+		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+		for(i = 0; i < sk_X509_num(chain); i++)
+			sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
+		sk_X509_free(chain);
+	}
+
+	if (sk_X509_num(msg->extraCerts) == 0)
+		/* Make sure that at least our own cert gets sent */
+		sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
