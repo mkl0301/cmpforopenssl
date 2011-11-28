@@ -33,7 +33,7 @@ clean:
 	$(RM) -f $(OBJ) $(BIN)
 
 install:
-	mkdir -p $(BIN)
+	mkdir -p $(BINDIR)
 	cp $(BIN) $(BINDIR)
 
 distclean: clean
