@@ -247,10 +247,12 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);
 
-	if (ctx->clCert) /* E.7 */
+	if (ctx->subjectName)
+		subject = ctx->subjectName;
+	else if (ctx->clCert) /* E.7 */
 		subject = X509_get_subject_name(ctx->clCert);
 	else
-		subject = ctx->subjectName;
+		subject = NULL;
 
 	/* subject name is required for insta compatibility! */
 	if (ctx->compatibility == CMP_COMPAT_INSTA_3_3 && subject == NULL) {
