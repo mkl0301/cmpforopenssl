@@ -330,6 +330,37 @@ printf("INFO: Saving Certificate to File %s\n", filename);
 	return 1;
 }
 
+int HELP_write_cert( X509 *cert, const char *filename) {
+	extern int opt_pem;
+	BIO  *bio;
+
+	if(!cert) return 0;     /* mandatory parameter */
+	if(!filename) return 0; /* mandatory parameter */
+
+	printf("INFO: Saving %s format Certificate to File %s\n", 
+		   opt_pem ? "PEM" : "DER", filename);
+
+	if ((bio=BIO_new(BIO_s_file())) != NULL)
+		IFSTAT(BIO_new)
+
+	if (!BIO_write_filename(bio,(char *)filename)) {
+		printf("ERROR: could not open file \"%s\" for writing.\n", filename);
+		return 0;
+	}
+
+	if (opt_pem) {
+		if (PEM_write_bio_X509(bio, cert))
+			IFSTAT(write X509)
+	}
+	else {
+		if (i2d_X509_bio(bio, cert))
+			IFSTAT(write X509)
+	}
+
+	BIO_free(bio);
+	return 1;
+}
+
 static int dsa_cb(int p, int n, BN_GENCB *arg) {
 	return 1;
 }

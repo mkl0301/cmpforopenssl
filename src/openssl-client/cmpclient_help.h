@@ -185,6 +185,7 @@
 size_t HELP_hex2str( char *hex, unsigned char **str);
 X509 *HELP_read_cert( const char *filename);
 int HELP_write_der_cert( X509 *cert, const char *file);
+int HELP_write_cert( X509 *cert, const char *filename);
 EVP_PKEY *HELP_generateRSAKey();
 EVP_PKEY *HELP_generateDSAKey();
 int HELP_savePrivKey(EVP_PKEY *pkey, const char *filename, const char *password);

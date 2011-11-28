@@ -130,6 +130,7 @@ static int opt_doInfo=0;
 static int opt_doGenM=0;
 static int opt_doPathValidation=0;
 static int opt_compatibility=CMP_COMPAT_RFC;
+int opt_pem=0;
 
 static char** opt_extraCerts=NULL;
 static int opt_nExtraCerts=0;
@@ -157,6 +158,7 @@ void printUsage( const char* cmdName) {
   printf(" --path PATH        the path location inside the HTTP CMP server\n");
   printf("                    as in e.g. SERVER:PORT/PATH\n");
   printf(" --cacert           location of the CA's certificate\n");
+  printf(" --pem              Use PEM format when saving certificates (default is DER).\n");
   printf("\n");
   printf("The OPTIONAL COMMON OPTIONS may to be set:\n");
   printf(" --engine ENGINE       the OpenSSL engine\n");
@@ -280,7 +282,7 @@ int writeCaPubsCertificates( char *destDir, CMP_CTX *cmp_ctx) {
     char *certFile = getCertFilename(cert, destDir);
     if (!certFile) continue;
 
-    if(!HELP_write_der_cert(cert, certFile)) {
+    if(!HELP_write_cert(cert, certFile)) {
       printf("ERROR: could not write CA certificate number %d to %s!\n", n, certFile);
     }
     free(certFile);
@@ -305,7 +307,7 @@ int writeExtraCerts( char *destDir, CMP_CTX *cmp_ctx) {
     char *certFile = getCertFilename(cert, destDir);
     if (!certFile) continue;
 
-    if(!HELP_write_der_cert(cert, certFile)) {
+    if(!HELP_write_cert(cert, certFile)) {
       printf("ERROR: could not write CA certificate number %d to %s!\n", n, certFile);
     }
     free(certFile);
@@ -408,7 +410,7 @@ void doIr(CMP_CTX *cmp_ctx) {
     ERR_print_errors_fp(stderr);
     exit(1);
   }
-  if(!HELP_write_der_cert(newClCert, opt_newClCertFile)) {
+  if(!HELP_write_cert(newClCert, opt_newClCertFile)) {
     printf("FATAL: could not write new client certificate to %s!\n", opt_newClCertFile);
     exit(1);
   }
@@ -540,7 +542,7 @@ void doCr(CMP_CTX *cmp_ctx) {
     printf( "ERROR: received no renewed Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
     exit(1);
   }
-  if(!HELP_write_der_cert( newClCert, opt_newClCertFile)) {
+  if(!HELP_write_cert( newClCert, opt_newClCertFile)) {
     printf("FATAL: could not write new client certificate!\n");
     exit(1);
   }
@@ -604,7 +606,7 @@ void doKur(CMP_CTX *cmp_ctx) {
     ERR_print_errors_fp(stderr);
     exit(1);
   }
-  if(!HELP_write_der_cert( updatedClCert, opt_newClCertFile)) {
+  if(!HELP_write_cert( updatedClCert, opt_newClCertFile)) {
     printf("FATAL: could not write new client certificate!\n");
     exit(1);
   }
@@ -746,6 +748,7 @@ void parseCLA( int argc, char **argv) {
     {"genm",     required_argument,    0, 'G'},
     {"user",     required_argument,    0, 'e'},
     {"password", required_argument,    0, 'f'},
+    {"pem",      no_argument,          0, 'E'},
     {"cacert",   required_argument,    0, 'g'},
     {"clcert",   required_argument,    0, 'h'},
     {"subject",  required_argument,    0, 'S'},
@@ -900,6 +903,9 @@ void parseCLA( int argc, char **argv) {
         break;
       case 'f':
         createOptStr( &opt_password);
+        break;
+      case 'E':
+        opt_pem= 1;
         break;
       case 'g':
         createOptStr( &opt_caCertFile);
