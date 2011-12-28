@@ -96,6 +96,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, clCert, X509),
 	ASN1_OPT(CMP_CTX, subjectName, X509_NAME),
 	ASN1_OPT(CMP_CTX, recipient, X509_NAME),
+	ASN1_OPT(CMP_CTX, sender, X509_NAME),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, subjectAltNames, GENERAL_NAME),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, caPubs, X509),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, extraCertsOut, X509),
@@ -631,6 +632,34 @@ err:
 }
 
 /* ################################################################ *
+ * Returns the name from the sender field of the last received 
+ * PKIMessage.
+ * ################################################################ */
+X509_NAME* CMP_CTX_sender_get( CMP_CTX *ctx) {
+	if (!ctx || !ctx->sender) return NULL;
+	return X509_NAME_dup(ctx->sender);
+}
+
+/* ################################################################ *
+ * Set the X509 name of the sender.
+ * ################################################################ */
+int CMP_CTX_set1_sender( CMP_CTX *ctx, const X509_NAME *name) {
+	if (!ctx) goto err;
+	if (!name) goto err;
+
+	if (ctx->sender) {
+		X509_NAME_free(ctx->sender);
+		ctx->sender = NULL;
+	}
+
+	if (!(ctx->sender = X509_NAME_dup( (X509_NAME*)name))) goto err;
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_SENDER, CMP_R_CMPERROR);
+	return 0;
+}
+
+/* ################################################################ *
  * Set our own client certificate, used for example in KUR and when
  * doing the IR with existing certificate.
  * ################################################################ */
@@ -1019,6 +1048,9 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val) {
 			break;
 		case CMP_CTX_OPT_VALIDATEPATH:
 			ctx->validatePath = val;
+			break;
+		case CMP_CTX_OPT_MAXPOLLCOUNT:
+			ctx->maxPollCount = val;
 			break;
 		default:
 			goto err;

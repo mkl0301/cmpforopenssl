@@ -193,6 +193,8 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	CMP_CTX_set1_sender(ctx, ip->header->sender->d.directoryName);
+
 	/* if initializing with existing cert, first we'll see if the CA (sender) cert
 	 * can be found and validated using our root CA certificates */
 	if (ctx->clCert && ctx->trusted_store) {
@@ -237,6 +239,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* make sure the PKIStatus for the *first* CERTrepmessage indicates a certificate was granted */
 	/* TODO - there could be two CERTrepmessages */
+	/* XXX this switch statement is duplicated in IP/CR/KUR functions and should be refactored */
 received_ip:
 	switch (CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0)) {
 		case CMP_PKISTATUS_grantedWithMods:
@@ -403,6 +406,8 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	CMP_CTX_set1_sender(ctx, rp->header->sender->d.directoryName);
+
 	if (CMP_PKIMESSAGE_get_bodytype( rp) != V_CMP_PKIBODY_RP) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_PKIBODY_ERROR);
@@ -479,6 +484,8 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
+
+	CMP_CTX_set1_sender(ctx, cp->header->sender->d.directoryName);
 
 	if (CMP_PKIMESSAGE_get_bodytype( cp) != V_CMP_PKIBODY_CP) {
 		char errmsg[256];
@@ -675,6 +682,8 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
+
+	CMP_CTX_set1_sender(ctx, kup->header->sender->d.directoryName);
 
 	/* if  initializing with existing cert, first we'll see if the CA (sender) cert
 	 * can be found and validated using our root CA certificates */
@@ -895,6 +904,8 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
 		goto err;
 	}
+
+	CMP_CTX_set1_sender(ctx, genp->header->sender->d.directoryName);
 
 	if (CMP_protection_verify( genp, ctx->protectionAlgor, NULL, ctx->secretValue))
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");

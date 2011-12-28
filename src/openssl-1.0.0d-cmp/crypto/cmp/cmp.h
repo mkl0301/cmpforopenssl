@@ -1232,6 +1232,8 @@ typedef struct cmp_ctx_st
 	/* X509_NAME to set in PKIHEADER->recipient */ 
     /* TODO check: this should only be used if the caCert is not present */
 	X509_NAME            *recipient;
+	/* This will contain the sender name copied from the last received PKIMessage */
+	X509_NAME            *sender;
 	/* names to be added to the cert template as the subjectAltName extension */
 	STACK_OF(GENERAL_NAME) *subjectAltNames;
 	/* Stack of CA certificates sent by the CA in a IP message */ 
@@ -1476,6 +1478,8 @@ int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name);
 int CMP_CTX_set1_recipient( CMP_CTX *ctx, const X509_NAME *name);
 int CMP_CTX_subjectAltName_push1( CMP_CTX *ctx, const GENERAL_NAME *name);
+int CMP_CTX_set1_sender( CMP_CTX *ctx, const X509_NAME *name);
+X509_NAME* CMP_CTX_sender_get( CMP_CTX *ctx);
 STACK_OF(X509)* CMP_CTX_caPubs_get1( CMP_CTX *ctx);
 X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
 int CMP_CTX_caPubs_num( CMP_CTX *ctx);
@@ -1515,6 +1519,7 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algId);
 #define CMP_CTX_OPT_IMPLICITCONFIRM 1
 #define CMP_CTX_OPT_POPMETHOD       2
 #define CMP_CTX_OPT_VALIDATEPATH    3
+#define CMP_CTX_OPT_MAXPOLLCOUNT    4
 int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 #if 0
 int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
@@ -1578,6 +1583,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_RECIPNONCE			 130
 #define CMP_F_CMP_CTX_SET1_REFERENCEVALUE		 131
 #define CMP_F_CMP_CTX_SET1_SECRETVALUE			 132
+#define CMP_F_CMP_CTX_SET1_SENDER			 162
 #define CMP_F_CMP_CTX_SET1_SERVERNAME			 133
 #define CMP_F_CMP_CTX_SET1_SERVERPATH			 134
 #define CMP_F_CMP_CTX_SET1_SERVERPORT			 135
