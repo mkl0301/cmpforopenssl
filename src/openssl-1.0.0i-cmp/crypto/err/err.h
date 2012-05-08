@@ -198,6 +198,8 @@ typedef struct err_state_st
 #define ERR_LIB_TS		47
 #define ERR_LIB_HMAC		48
 #define ERR_LIB_JPAKE		49
+#define ERR_LIB_CMP		50
+#define ERR_LIB_CRMF		51
 
 #define ERR_LIB_USER		128
 
@@ -234,6 +236,8 @@ typedef struct err_state_st
 #define TSerr(f,r) ERR_PUT_error(ERR_LIB_TS,(f),(r),__FILE__,__LINE__)
 #define HMACerr(f,r) ERR_PUT_error(ERR_LIB_HMAC,(f),(r),__FILE__,__LINE__)
 #define JPAKEerr(f,r) ERR_PUT_error(ERR_LIB_JPAKE,(f),(r),__FILE__,__LINE__)
+#define CMPerr(f,r) ERR_PUT_error(ERR_LIB_CMP,(f),(r),__FILE__,__LINE__)
+#define CRMFerr(f,r) ERR_PUT_error(ERR_LIB_CRMF,(f),(r),__FILE__,__LINE__)
 
 /* Borland C seems too stupid to be able to shift and do longs in
  * the pre-processor :-( */
@@ -290,6 +294,8 @@ typedef struct err_state_st
 #define ERR_R_ECDH_LIB  ERR_LIB_ECDH	 /* 43 */
 #define ERR_R_STORE_LIB ERR_LIB_STORE    /* 44 */
 #define ERR_R_TS_LIB	ERR_LIB_TS       /* 45 */
+#define ERR_R_CMP_LIB	ERR_LIB_CMP      /* 50 */
+#define ERR_R_CRMF_LIB	ERR_LIB_CRMF     /* 51 */
 
 #define ERR_R_NESTED_ASN1_ERROR			58
 #define ERR_R_BAD_ASN1_OBJECT_HEADER		59

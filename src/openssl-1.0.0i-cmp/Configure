@@ -56,6 +56,7 @@ my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [experimenta
 # [no-]zlib     [don't] compile support for zlib compression.
 # zlib-dynamic	Like "zlib", but the zlib library is expected to be a shared
 #		library and will be loaded in run-time by the OpenSSL library.
+# [no-]curl     [don't] use libcurl for HTTP transport in CMP module
 # 386           generate 80386 code
 # no-sse2	disables IA-32 SSE2 code, above option implies no-sse2
 # no-<cipher>   build without specified algorithm (rsa, idea, rc5, ...)
@@ -634,6 +635,7 @@ my $no_shared=0; # but "no-shared" is default
 my $zlib=1;      # but "no-zlib" is default
 my $no_krb5=0;   # but "no-krb5" is implied unless "--with-krb5-..." is used
 my $no_rfc3779=1; # but "no-rfc3779" is default
+my $curl=1;      # but no-curl is default
 my $no_asm=0;
 my $no_dso=0;
 my $no_gmp=0;
@@ -675,7 +677,8 @@ my %disabled = ( # "what"         => "comment" [or special keyword "experimental
                  "shared"         => "default",
 		 "store"	  => "experimental",
                  "zlib"           => "default",
-                 "zlib-dynamic"   => "default"
+                 "zlib-dynamic"   => "default",
+                 "curl"   => "default"
                );
 my @experimental = ();
 
@@ -742,6 +745,7 @@ PROCESS_ARGS:
 		s /^threads$/enable-threads/;
 		s /^zlib$/enable-zlib/;
 		s /^zlib-dynamic$/enable-zlib-dynamic/;
+		s /^curl$/enable-curl/;
 
 		if (/^no-(.+)$/ || /^disable-(.+)$/)
 			{
@@ -851,6 +855,14 @@ PROCESS_ARGS:
 			elsif (/^--with-zlib-include=(.*)$/)
 				{
 				$withargs{"zlib-include"}="-I$1";
+				}
+			elsif (/^--with-curl-lib=(.*)$/)
+				{
+				$withargs{"curl-lib"}=$1;
+				}
+			elsif (/^--with-curl-include=(.*)$/)
+				{
+				$withargs{"curl-include"}="-I$1";
 				}
 			elsif (/^--cross-compile-prefix=(.*)$/)
 				{
@@ -984,6 +996,8 @@ foreach (sort (keys %disabled))
 		{ $no_shared = 1; }
 	elsif (/^zlib$/)
 		{ $zlib = 0; }
+	elsif (/^curl$/)
+		{ $curl = 0; }
 	elsif (/^static-engine$/)
 		{ }
 	elsif (/^zlib-dynamic$/)
@@ -1281,6 +1295,23 @@ if ($zlib)
 		}
 	}
 
+if ($curl)
+	{
+    $cflags = "-DHAVE_CURL $cflags";
+	if (defined($withargs{"curl-lib"}))
+		{
+		$lflags  = "$lflags -L" . $withargs{"curl-lib"} . " -lcurl";
+		}
+	else
+		{
+		$lflags = "$lflags -lcurl";
+		}
+  if (defined($withargs{"curl-include"}))
+		{
+		$cflags=$withargs{"curl-include"}." $cflags";
+		}
+	}
+
 # You will find shlib_mark1 and shlib_mark2 explained in Makefile.org
 my $shared_mark = "";
 if ($shared_target eq "")
@@ -1547,6 +1578,8 @@ while (<IN>)
 	s/^LIBKRB5=.*/LIBKRB5=$withargs{"krb5-lib"}/;
 	s/^LIBZLIB=.*/LIBZLIB=$withargs{"zlib-lib"}/;
 	s/^ZLIB_INCLUDE=.*/ZLIB_INCLUDE=$withargs{"zlib-include"}/;
+	s/^LIBCURL=.*/LIBCURL=$withargs{"curl-lib"}/;
+	s/^CURL_INCLUDE=.*/CURL_INCLUDE=$withargs{"curl-include"}/;
 	s/^SHLIB_TARGET=.*/SHLIB_TARGET=$shared_target/;
 	s/^SHLIB_MARK=.*/SHLIB_MARK=$shared_mark/;
 	s/^SHARED_LIBS=.*/SHARED_LIBS=\$(SHARED_CRYPTO) \$(SHARED_SSL)/ if (!$no_shared);
