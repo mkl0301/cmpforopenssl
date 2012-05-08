@@ -15,7 +15,7 @@ LIGHTTPDSRC    = $(SRCDIR)/lighttpd
 LIGHTTPDMODSRC = $(SRCDIR)/lighttpd-cmpserver
 LIGHTTPDPATCH  = $(LIGHTTPDMODSRC)/lighttpd-build.patch
 
-OPENSSL_VERSION = 1.0.0d
+OPENSSL_VERSION = 1.0.0i
 CRYPTLIB_VERSION = 340
 CURL_VERSION = 7.23.1
 LIGHTTPD_VERSION = 1.4.29
@@ -149,6 +149,12 @@ openssl_patch_1.0.0d:
 	svn diff -r 178:BASE openssl-1.0.0d-cmp > patches/openssl-1.0.0d_cmp.diff
 
 .PHONY: openssl_patch_1.0.0d
+
+openssl_patch_1.0.0i:
+	cd $(SRCDIR) && \
+	svn diff -r 377:BASE openssl-1.0.0i-cmp > patches/openssl-1.0.0i_cmp.diff
+
+.PHONY: openssl_patch_1.0.0i
 
 ################################################################################
 # CURL
