@@ -130,8 +130,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 
     X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
     usedAlgorNid = OBJ_obj2nid(algorOID);
-    if (usedAlgorNid == NID_id_PasswordBasedMAC) {
-        /* need to have params for PBMAC, so check that we have them */
+    if (usedAlgorNid == NID_id_PasswordBasedMAC) { /* need to have params for PBMAC, so check that we have them */
         /* TODO: simplify this logic / check if it's even necessary*/
         if (!algor->parameter || 
             ASN1_TYPE_get(algor->parameter) == V_ASN1_UNDEF ||

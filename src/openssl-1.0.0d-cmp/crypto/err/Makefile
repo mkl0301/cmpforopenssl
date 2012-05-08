@@ -83,8 +83,9 @@ err.o: ../../include/openssl/stack.h ../../include/openssl/symhacks.h
 err.o: ../cryptlib.h err.c
 err_all.o: ../../include/openssl/asn1.h ../../include/openssl/bio.h
 err_all.o: ../../include/openssl/bn.h ../../include/openssl/buffer.h
-err_all.o: ../../include/openssl/cms.h ../../include/openssl/comp.h
-err_all.o: ../../include/openssl/conf.h ../../include/openssl/crypto.h
+err_all.o: ../../include/openssl/cmp.h ../../include/openssl/cms.h
+err_all.o: ../../include/openssl/comp.h ../../include/openssl/conf.h
+err_all.o: ../../include/openssl/crmf.h ../../include/openssl/crypto.h
 err_all.o: ../../include/openssl/dh.h ../../include/openssl/dsa.h
 err_all.o: ../../include/openssl/dso.h ../../include/openssl/e_os2.h
 err_all.o: ../../include/openssl/ec.h ../../include/openssl/ecdh.h
