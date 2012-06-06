@@ -389,7 +389,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *rp=NULL;
 	// X509 *caCert=NULL;
 
-	if (!cbio || !ctx || !ctx->serverName || !ctx->pkey ||
+	if (!cbio || !ctx || !ctx->serverName || !ctx->pkey ||
 		!ctx->clCert || !ctx->caCert) {
 		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_INVALID_ARGS);
 		goto err;
