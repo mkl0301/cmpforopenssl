@@ -162,6 +162,7 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM),"failed to determine protection algorithm"},
 {ERR_REASON(CMP_R_GENP_NOT_RECEIVED)     ,"genp not received"},
 {ERR_REASON(CMP_R_INVALID_ARGS)          ,"invalid args"},
+{ERR_REASON(CMP_R_INVALID_CONTENT_TYPE)  ,"invalid content type"},
 {ERR_REASON(CMP_R_INVALID_CONTEXT)       ,"invalid context"},
 {ERR_REASON(CMP_R_INVALID_KEY)           ,"invalid key"},
 {ERR_REASON(CMP_R_INVALID_PARAMETERS)    ,"invalid parameters"},
