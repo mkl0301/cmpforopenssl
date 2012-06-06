@@ -671,7 +671,7 @@ err:
 	if (ctx) EVP_MD_CTX_destroy(ctx);
 	if (mac) OPENSSL_free(mac);
 
-	CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_ERROR_CALCULATING_PROTECTION);
 	if(prot) ASN1_BIT_STRING_free(prot);
 	return NULL;
 }
@@ -712,7 +712,7 @@ int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CERTSTATUS_SET_CERTHASH, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CERTSTATUS_SET_CERTHASH, CMP_R_ERROR_SETTING_CERTHASH);
 	if( certHash) ASN1_OCTET_STRING_free(certHash);
 	return 0;
 }
@@ -1201,7 +1201,7 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	return cert;
 
 err:
-	CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_ENCCERT);
 	if (outbuf) OPENSSL_free(outbuf);
 	if (ctx) EVP_CIPHER_CTX_free(ctx);
 	if (ek) OPENSSL_free(ek);

@@ -181,7 +181,6 @@ static EVP_PKEY *pkey_dup(const EVP_PKEY *pkey)
 
 err:
 	EVP_PKEY_free(pkeyDup);
-	CMPerr(CMP_F_PKEY_DUP, CMP_R_CMPERROR);
 	return NULL;
 }
 
@@ -297,7 +296,6 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	return 1;
 
 err:
-	CMPerr(CMP_F_CMP_CTX_INIT, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -324,7 +322,7 @@ CMP_CTX *CMP_CTX_create(void) {
 
 	return ctx;
 err:
-	CMPerr(CMP_F_CMP_CTX_CREATE, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_CREATE, CMP_R_UNABLE_TO_CREATE_CONTEXT);
 	if (ctx) CMP_CTX_free(ctx);
 	return NULL;
 }
@@ -356,15 +354,16 @@ err:
  * username) when using PBMAC.
  * ################################################################ */
 int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t len) {
-	if (!ctx) goto err;
-	if (!ref) goto err;
+	if (!ctx || !ref) {
+		CMPerr(CMP_F_CMP_CTX_SET1_REFERENCEVALUE, CMP_R_INVALID_PARAMETERS);
+		goto err;
+	}
 
 	if (!ctx->referenceValue)
 		ctx->referenceValue = ASN1_OCTET_STRING_new();
 
 	return (ASN1_OCTET_STRING_set(ctx->referenceValue, ref, len));
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_REFERENCEVALUE, CMP_R_CMPERROR);
 	return 0;
 }
 
@@ -380,7 +379,7 @@ int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size
 
 	return (ASN1_OCTET_STRING_set(ctx->secretValue, sec, len));
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_SECRETVALUE, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_SECRETVALUE, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -393,7 +392,7 @@ STACK_OF(X509)* CMP_CTX_extraCertsIn_get1( CMP_CTX *ctx) {
 	if (!ctx->extraCertsIn) return 0;
 	return X509_stack_dup(ctx->extraCertsIn);
   err:
-	CMPerr(CMP_F_CMP_CTX_EXTRACERTSIN_GET1, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTSIN_GET1, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -406,7 +405,7 @@ X509 *CMP_CTX_extraCertsIn_pop( CMP_CTX *ctx)
 	if (!ctx->extraCertsIn) return NULL;
 	return sk_X509_pop(ctx->extraCertsIn);
 err:
-	CMPerr(CMP_F_CMP_CTX_EXTRACERTSIN_POP, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTSIN_POP, CMP_R_NULL_ARGUMENT);
 	return NULL;
 }
 
@@ -419,7 +418,7 @@ int CMP_CTX_extraCertsIn_num( CMP_CTX *ctx)
 	if (!ctx->extraCertsIn) return 0;
 	return sk_X509_num(ctx->extraCertsIn);
   err:
-	CMPerr(CMP_F_CMP_CTX_EXTRACERTSIN_NUM, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTSIN_NUM, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -441,7 +440,7 @@ int CMP_CTX_set1_extraCertsIn( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsIn)
 
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_CAEXTRACERTS, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_CAEXTRACERTS, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -455,7 +454,7 @@ int CMP_CTX_extraCertsOut_push1( CMP_CTX *ctx, const X509 *val)
 	if (!ctx->extraCertsOut && !(ctx->extraCertsOut = sk_X509_new_null())) return 0;
 	return sk_X509_push(ctx->extraCertsOut, X509_dup((X509*)val));
 err:
-	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_PUSH1, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_PUSH1, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -469,7 +468,7 @@ int CMP_CTX_extraCertsOut_num( CMP_CTX *ctx)
 	if (!ctx->extraCertsOut) return 0;
 	return sk_X509_num(ctx->extraCertsOut);
   err:
-	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_NUM, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_NUM, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -490,7 +489,7 @@ int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOu
 
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_EXTRACERTS, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_EXTRACERTS, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -503,7 +502,7 @@ STACK_OF(X509)* CMP_CTX_caPubs_get1( CMP_CTX *ctx) {
 	if (!ctx->caPubs) return 0;
 	return X509_stack_dup(ctx->caPubs);
   err:
-	CMPerr(CMP_F_CMP_CTX_CAPUBS_GET1, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_CAPUBS_GET1, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -516,7 +515,7 @@ X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx) {
 	if (!ctx->caPubs) return NULL;
 	return sk_X509_pop(ctx->caPubs);
 err:
-	CMPerr(CMP_F_CMP_CTX_CAPUBS_POP, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_CAPUBS_POP, CMP_R_NULL_ARGUMENT);
 	return NULL;
 }
 
@@ -529,7 +528,7 @@ int CMP_CTX_caPubs_num( CMP_CTX *ctx) {
 	if (!ctx->caPubs) return 0;
 	return sk_X509_num(ctx->caPubs);
 err:
-	CMPerr(CMP_F_CMP_CTX_CAPUBS_NUM, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_CAPUBS_NUM, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -550,7 +549,7 @@ int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs) {
 
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_CAPUBS, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_CAPUBS, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -570,7 +569,7 @@ int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert) {
 	if (!(ctx->caCert = X509_dup( (X509*)cert))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_CACERT, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_CACERT, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -589,7 +588,7 @@ int CMP_CTX_set1_recipient( CMP_CTX *ctx, const X509_NAME *name) {
 	if (!(ctx->recipient = X509_NAME_dup( (X509_NAME*)name))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_RECIPIENT, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_RECIPIENT, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -609,7 +608,7 @@ int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name) {
 	if (!(ctx->subjectName = X509_NAME_dup( (X509_NAME*)name))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_SUBJECTNAME, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_SUBJECTNAME, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -627,7 +626,7 @@ int CMP_CTX_subjectAltName_push1( CMP_CTX *ctx, const GENERAL_NAME *name) {
 	if (!sk_GENERAL_NAME_push(ctx->subjectAltNames, GENERAL_NAME_dup( (GENERAL_NAME*)name))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH1, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH1, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -655,7 +654,7 @@ int CMP_CTX_set1_sender( CMP_CTX *ctx, const X509_NAME *name) {
 	if (!(ctx->sender = X509_NAME_dup( (X509_NAME*)name))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_SENDER, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_SENDER, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -675,7 +674,7 @@ int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert) {
 	if (!(ctx->clCert = X509_dup( (X509*)cert))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_CLCERT, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_CLCERT, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -694,7 +693,7 @@ int CMP_CTX_set1_newClCert( CMP_CTX *ctx, const X509 *cert) {
 	if (!(ctx->newClCert = X509_dup( (X509*)cert))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_NEWCLCERT, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_NEWCLCERT, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -712,7 +711,7 @@ int CMP_CTX_set1_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 
 err:
 	if (pkeyDup) EVP_PKEY_free(pkeyDup);
-	CMPerr(CMP_F_CMP_CTX_SET1_PKEY, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_PKEY, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -732,7 +731,7 @@ int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 	ctx->pkey = (EVP_PKEY*) pkey;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET0_PKEY, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET0_PKEY, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -750,7 +749,7 @@ int CMP_CTX_set1_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 
 err:
 	if (pkeyDup) EVP_PKEY_free(pkeyDup);
-	CMPerr(CMP_F_CMP_CTX_SET1_NEWPKEY, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_NEWPKEY, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -770,7 +769,7 @@ int CMP_CTX_set0_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey) {
 	ctx->newPkey = (EVP_PKEY*) pkey;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET0_NEWPKEY, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET0_NEWPKEY, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -786,10 +785,11 @@ int CMP_CTX_set1_transactionID( CMP_CTX *ctx, const ASN1_OCTET_STRING *id) {
 		ctx->transactionID = NULL;
 	}
 
-	if (!(ctx->transactionID = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)id))) goto err;
+	if (!(ctx->transactionID = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)id)))
+	    return 0;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_TRANSACTIONID, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_TRANSACTIONID, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -805,10 +805,11 @@ int CMP_CTX_set1_recipNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce) {
 		ctx->recipNonce = NULL;
 	}
 
-	if (!(ctx->recipNonce = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)nonce))) goto err;
+	if (!(ctx->recipNonce = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)nonce))) 
+	    return 0;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_RECIPNONCE, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_RECIPNONCE, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -823,10 +824,11 @@ int CMP_CTX_set1_protectionAlgor( CMP_CTX *ctx, const X509_ALGOR *algor) {
 		ctx->protectionAlgor = NULL;
 	}
 
-	if (!(ctx->protectionAlgor = X509_ALGOR_dup( (X509_ALGOR*)algor))) goto err;
+	if (!(ctx->protectionAlgor = X509_ALGOR_dup( (X509_ALGOR*)algor)))
+	    return 0;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_PROTECTIONALGOR, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_PROTECTIONALGOR, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -838,7 +840,7 @@ int CMP_CTX_set_compatibility( CMP_CTX *ctx, const int mode) {
 	ctx->compatibility = mode;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET_COMPATIBILITY, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET_COMPATIBILITY, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -858,7 +860,7 @@ int CMP_CTX_set1_proxyName( CMP_CTX *ctx, const char *name) {
 
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_PROXYNAME, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_PROXYNAME, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -878,7 +880,7 @@ int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name) {
 
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_SERVERNAME, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_SERVERNAME, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -890,7 +892,7 @@ int CMP_CTX_set1_popoMethod( CMP_CTX *ctx, int method) {
 	ctx->popoMethod = method;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_POPOMETHOD, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_POPOMETHOD, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -902,7 +904,7 @@ int CMP_CTX_set1_timeOut( CMP_CTX *ctx, int time) {
 	ctx->timeOut = time;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_TIMEOUT, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_TIMEOUT, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -914,7 +916,7 @@ int CMP_CTX_set1_proxyPort( CMP_CTX *ctx, int port) {
 	ctx->proxyPort = port;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_PROXYPORT, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_PROXYPORT, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -926,7 +928,7 @@ int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port) {
 	ctx->serverPort = port;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_SERVERPORT, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_SERVERPORT, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -953,7 +955,7 @@ int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path) {
 
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_SERVERPATH, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET1_SERVERPATH, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -1004,7 +1006,7 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algID) {
 	if (!(ctx->protectionAlgor = CMP_get_protectionAlgor_by_nid(nid))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET_PROTECTIONALGOR, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CTX_SET_PROTECTIONALGOR, CMP_R_ERROR_SETTING_PROTECTION_ALGORITHM);
 	return 0;
 }
 

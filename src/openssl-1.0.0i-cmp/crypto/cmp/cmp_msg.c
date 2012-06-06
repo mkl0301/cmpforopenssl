@@ -315,7 +315,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	return msg;
 
 err:
-	CMPerr(CMP_F_CMP_IR_NEW, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_IR_NEW, CMP_R_ERROR_CREATING_IR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	if (certReq0) CRMF_CERTREQMSG_free(certReq0);
 	return NULL;
@@ -389,7 +389,7 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	return msg;
 
 err:
-	CMPerr(CMP_F_CMP_RR_NEW, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_RR_NEW, CMP_R_ERROR_CREATING_RR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	if (certTpl) CRMF_CERTTEMPLATE_free(certTpl);
 	return NULL;
@@ -482,7 +482,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	return msg;
 
 err:
-	CMPerr(CMP_F_CMP_CR_NEW, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CR_NEW, CMP_R_ERROR_CREATING_CR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	if (certReq0) CRMF_CERTREQMSG_free(certReq0);
 	return NULL;
@@ -656,7 +656,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	return msg;
 
 err:
-	CMPerr(CMP_F_CMP_KUR_NEW, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_KUR_NEW, CMP_R_ERROR_CREATING_KUR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;
 }
@@ -708,7 +708,7 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 	return msg;
 
 err:
-	CMPerr(CMP_F_CMP_CERTCONF_NEW, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CERTCONF_NEW, CMP_R_ERROR_CREATING_CERTCONF);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;
 }
@@ -789,7 +789,7 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value) {
 	return msg;
 
 err:
-	CMPerr(CMP_F_CMP_GENM_NEW, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_GENM_NEW, CMP_R_ERROR_CREATING_GENM);
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;
 }
@@ -856,7 +856,7 @@ CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, 
 
 	return msg;
 err:
-	CMPerr(CMP_F_CMP_CKUANN_NEW, CMP_R_CMPERROR);
+	CMPerr(CMP_F_CMP_CKUANN_NEW, CMP_R_ERROR_CREATING_CKUANN);
 
 	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;

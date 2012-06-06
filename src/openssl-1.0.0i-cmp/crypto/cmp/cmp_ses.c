@@ -171,11 +171,14 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	X509 *caCert = NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio) goto err;
-	if (!ctx) goto err;
-	/* for authentication we need either reference/secret or external identity certificate and private key */
-	if (!(ctx->referenceValue && ctx->secretValue) && !(ctx->pkey && ctx->clCert)) goto err;
-	if (!ctx->newPkey) goto err;
+	if (!cbio || !ctx || !ctx->newPkey ||
+		 /* for authentication we need either reference/secret or external 
+		  * identity certificate and private key */
+		 (!(ctx->referenceValue && ctx->secretValue) && !(ctx->pkey && ctx->clCert)) ) {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_INVALID_ARGS);
+		goto err;
+	}
+
 
 	/* set the protection Algor which will be used during the whole session */
 	/* E.7: if clCert is set, use that for signing instead of PBMAC */
@@ -370,8 +373,6 @@ cleanup:
 	return ctx->newClCert;
 
 err:
-	CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CMPERROR);
-
 	if (ir) CMP_PKIMESSAGE_free(ir);
 	if (ip) CMP_PKIMESSAGE_free(ip);
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
@@ -388,12 +389,11 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *rp=NULL;
 	// X509 *caCert=NULL;
 
-	if (!cbio) goto err;
-	if (!ctx) goto err;
-	if (!ctx->serverName) goto err;
-	if (!ctx->pkey) goto err;
-	if (!ctx->clCert) goto err;
-	if (!ctx->caCert) goto err;
+	if (!cbio || !ctx || !ctx->serverName || !ctx->pkey ||
+		!ctx->clCert || !ctx->caCert) {
+		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_INVALID_ARGS);
+		goto err;
+	}
 
 	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG);
 	// CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
@@ -449,8 +449,6 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	return 1;
 
 err:
-	CMPerr( CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_CMPERROR);
-
 	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
 	return 0;
 }
@@ -466,12 +464,12 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	X509 *caCert=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio) goto err;
-	if (!ctx) goto err;
-	if (!ctx->serverName) goto err;
-	if (!ctx->pkey) goto err;
-	if (!ctx->clCert) goto err;
-	if (!ctx->caCert && !ctx->trusted_store) goto err;
+	if (!cbio || !ctx || !ctx->serverName
+		|| !ctx->pkey || !ctx->clCert ||
+		(!ctx->caCert && !ctx->trusted_store)) {
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_INVALID_ARGS);
+		goto err;
+	}
 
 	/* set the protection Algor which will be used during the whole session */
 	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG);
@@ -481,7 +479,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending Certificate Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, cr, &cp))) {
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CR_NOT_RECEIVED);
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
 		goto err;
 	}
 
@@ -549,7 +547,7 @@ received_cp:
 					CMP_PKIMESSAGE *prep = NULL;
 					CMP_POLLREP *pollRep = NULL;
 					if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
-						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CR_NOT_RECEIVED);
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
 						goto err;
 					}
 					/* TODO handle multiple pollreqs */
@@ -639,8 +637,6 @@ cleanup:
 	return ctx->newClCert;
 
 err:
-	CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CMPERROR);
-
 	if (cr) CMP_PKIMESSAGE_free(cr);
 	if (cp) CMP_PKIMESSAGE_free(cp);
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
@@ -663,13 +659,12 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	X509 *caCert = NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio) goto err;
-	if (!ctx) goto err;
-	if (!ctx->serverName) goto err;
-	if (!ctx->pkey) goto err;
-	if (!ctx->newPkey) goto err;
-	if (!ctx->clCert) goto err;
-	if (!ctx->caCert && !ctx->trusted_store) goto err;
+	if (!cbio || !ctx || !ctx->serverName
+		|| !ctx->pkey || !ctx->newPkey || !ctx->clCert
+		|| (!ctx->caCert && !ctx->trusted_store)) {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_INVALID_ARGS);
+		goto err;
+	}
 
 	/* set the protection Algor which will be used during the whole session */
 	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG);
@@ -836,9 +831,8 @@ cleanup:
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 	return ctx->newClCert;
-err:
-	CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_CMPERROR);
 
+err:
 	if (kur) CMP_PKIMESSAGE_free(kur);
 	if (kup) CMP_PKIMESSAGE_free(kup);
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
@@ -886,11 +880,10 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 	CMP_INFOTYPEANDVALUE *itav=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio) goto err;
-	if (!ctx) goto err;
-	if (!ctx->caCert) goto err;
-	if (!ctx->referenceValue) goto err;
-	if (!ctx->secretValue) goto err;
+	if (!cbio || !ctx || !ctx->caCert || !ctx->referenceValue || !ctx->secretValue) {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_INVALID_ARGS);
+	 	goto err;
+	}
 
 	/* set the protection Algor which will be used during the whole session */
 	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
@@ -935,7 +928,6 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 
 	return itav->infoValue.ptr;
 err:
-	CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_CMPERROR);
 
 	if (genm) CMP_PKIMESSAGE_free(genm);
 	if (genp) CMP_PKIMESSAGE_free(genp);
@@ -954,11 +946,10 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *genp=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio) goto err;
-	if (!ctx) goto err;
-	if (!ctx->caCert) goto err;
-	if (!ctx->referenceValue) goto err;
-	if (!ctx->secretValue) goto err;
+	if (!cbio || !ctx || !ctx->caCert || !ctx->referenceValue || !ctx->secretValue) {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_INVALID_ARGS);
+		goto err;
+	}
 
 	/* set the protection Algor which will be used during the whole session */
 	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
@@ -996,9 +987,8 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	return 1;
-err:
-	CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_CMPERROR);
 
+err:
 	if (genm) CMP_PKIMESSAGE_free(genm);
 	if (genp) CMP_PKIMESSAGE_free(genp);
 

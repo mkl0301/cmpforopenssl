@@ -189,7 +189,6 @@ CMP_INFOTYPEANDVALUE *CMP_INFOTYPEANDVALUE_new_by_def_noVal(int def) {
 	if (!CMP_INFOTYPEANDVALUE_set0( itav, obj, V_ASN1_UNDEF, NULL)) goto err;
 	return itav;
 err:
-	CMPerr(CMP_F_CMP_INFOTYPEANDVALUE_NEW_BY_DEF_NOVAL, CMP_R_CMPERROR);
 
 	if (itav) CMP_INFOTYPEANDVALUE_free(itav);
 	return NULL;

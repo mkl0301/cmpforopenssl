@@ -172,7 +172,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 
 err:
     if (algor) X509_ALGOR_free(algor);
-    CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_CMPERROR);
+    CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_ERROR_VERIFYING_PROTECTION);
     return 0;
 }
 
