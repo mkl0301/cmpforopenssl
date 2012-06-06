@@ -189,7 +189,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf(ctx, "INFO: Sending Initialization Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, ir, &ip))) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
 		goto err;
 	}
 
@@ -275,7 +275,7 @@ received_ip:
 					CMP_PKIMESSAGE *prep = NULL;
 					CMP_POLLREP *pollRep = NULL;
 					if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
-						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
 						goto err;
 					}
 					/* TODO handle multiple pollreqs */
@@ -340,7 +340,7 @@ received_ip:
 
 	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
 		goto err;
 	}
 
@@ -402,7 +402,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending Revocation Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, rr, &rp))) {
-		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_RP_NOT_RECEIVED);
 		goto err;
 	}
 
@@ -481,7 +481,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending Certificate Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, cr, &cp))) {
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CR_NOT_RECEIVED);
 		goto err;
 	}
 
@@ -549,7 +549,7 @@ received_cp:
 					CMP_PKIMESSAGE *prep = NULL;
 					CMP_POLLREP *pollRep = NULL;
 					if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
-						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CR_NOT_RECEIVED);
 						goto err;
 					}
 					/* TODO handle multiple pollreqs */
@@ -609,7 +609,7 @@ received_cp:
 
 	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
 		goto err;
 	}
 
@@ -679,7 +679,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending Key Update Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, kur, &kup))) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
 		goto err;
 	}
 
@@ -749,7 +749,7 @@ received_kup:
 					CMP_PKIMESSAGE *prep = NULL;
 					CMP_POLLREP *pollRep = NULL;
 					if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
-						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
 						goto err;
 					}
 					/* TODO handle multiple pollreqs */
@@ -809,7 +809,7 @@ received_kup:
 
 	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
 		goto err;
 	}
 
@@ -901,7 +901,7 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 
 	CMP_printf( ctx, "INFO: Sending General Message");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_GENP_NOT_RECEIVED);
 		goto err;
 	}
 
@@ -968,7 +968,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending General Message");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_SENDING_REQUEST);
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_GENP_NOT_RECEIVED);
 		goto err;
 	}
 
