@@ -254,6 +254,8 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
     *out = d2i_CMP_PKIMESSAGE( NULL, (const unsigned char**) &pder, rdata.size);
     if (*out == 0) {
 		strcpy(errormsg, "Failed to decode PKIMESSAGE");
+		free(rdata.memory);
+		free(derMsg);
 		goto err;
 	}
 
@@ -265,7 +267,8 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 err:
 	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_CURL_ERROR);
 	if (errormsg) {
-		ERR_add_error_data(3, "Error: \"", errormsg, "\"");
+		if (errormsg[0] != 0)
+			ERR_add_error_data(3, "Error: \"", errormsg, "\"");
 		free(errormsg);
 	}
 	return 0;
