@@ -87,7 +87,7 @@ int CMP_error_callback(const char *str, size_t len, void *u) {
 	CMP_CTX *ctx = (CMP_CTX*) u;
 	if (ctx && ctx->error_cb) 
 		ctx->error_cb(str);
-	return 0;
+	return 1;
 }
 
 // {{{ char V_CMP_TABLE[] 
