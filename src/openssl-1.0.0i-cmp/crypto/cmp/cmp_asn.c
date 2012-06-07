@@ -72,7 +72,7 @@
 #include <openssl/asn1t.h>
 #include <openssl/crmf.h>
 #include <openssl/cmp.h>
-#if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L 
 #include <openssl/ts.h>
 #else
 ASN1_SEQUENCE(ESS_ISSUERSERIAL) = {

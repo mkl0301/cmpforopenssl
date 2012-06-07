@@ -559,7 +559,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		CMP_INFOTYPEANDVALUE *itav = NULL;
 		STACK_OF(ESS_SIGNING_CERT) *set = NULL;
 
-#if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L 
 		if (!X509_digest(ctx->clCert, EVP_sha1(), hash, &hashLen)) goto err;
 		essCertId = ESS_CERT_ID_new();
 		if (!ASN1_OCTET_STRING_set(essCertId->hash, hash, hashLen)) goto err;

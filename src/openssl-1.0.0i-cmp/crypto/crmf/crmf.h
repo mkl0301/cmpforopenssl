@@ -82,7 +82,7 @@ extern "C" {
 
 // make sure this is defined only once if both cmp.h and crmf.h are included
 #ifndef HEADER_CMP_H
-#if OPENSSL_VERSION_NUMBER < 0x1000000fL 
+#if OPENSSL_VERSION_NUMBER < 0x10000000L 
 typedef STACK_OF(X509_EXTENSION) X509_EXTENSIONS;
 #endif
 #endif

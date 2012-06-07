@@ -1123,7 +1123,7 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	const unsigned char *p         = NULL; /* needed for decoding ASN1                */
 	int                  symmAlg;  /* NIDs for key and symmetric algorithm    */
 	int                  n, outlen = 0;
-#if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L 
 	EVP_PKEY_CTX        *pkctx     = NULL;   /* private key context */
 #endif
 
@@ -1140,7 +1140,7 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 
 	/* first the symmetric key needs to be decrypted */
 
-#if OPENSSL_VERSION_NUMBER >= 0x1000000fL 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L 
 	if ((pkctx = EVP_PKEY_CTX_new(pkey, NULL)) && EVP_PKEY_decrypt_init(pkctx)) {
 		ASN1_BIT_STRING *encKey = encCert->encSymmKey;
 
