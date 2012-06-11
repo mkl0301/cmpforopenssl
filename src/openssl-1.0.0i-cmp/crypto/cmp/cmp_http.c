@@ -175,6 +175,7 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 
 	/* curl will automatically try to get proxy from environment if we don't set this.
 	 * if proxy use is enabled, it will be set in CMP_PKIMESSAGE_http_perform. */
+	/* XXX what's the correct thing to do, should we take proxy from env or not? */
 	curl_easy_setopt(curl, CURLOPT_PROXY, "");
 
 	*bio = curl;
@@ -208,11 +209,15 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	CURLcode res;
 	rdata_t rdata = {0,0};
 
-	if (!curl || !ctx || !msg || !out)
-		goto err;
+	if (!curl || !ctx || !msg || !out) {
+		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_NULL_ARGUMENT);
+		return 0;
+	}
 
-	if (!ctx->serverName || !ctx->serverPath || ctx->serverPort == 0)
-		goto err;
+	if (!ctx->serverName || !ctx->serverPath || ctx->serverPort == 0) {
+		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_NULL_ARGUMENT);
+		return 0;
+	}
 
 	derLen = i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, &derMsg);
 
@@ -233,11 +238,32 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	if (ctx->timeOut != 0)
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, ctx->timeOut);
 
-	errormsg = calloc(1, CURL_ERROR_SIZE);
 	res = curl_easy_perform(curl);
-	if (res != 0) {
-		strcpy(errormsg, curl_easy_strerror(res));
-		goto err;
+
+	/* free up sent DER message from memory */
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, (void*) 0);
+	free(derMsg);
+
+	if (   res == CURLE_COULDNT_CONNECT
+		|| res == CURLE_COULDNT_RESOLVE_PROXY
+		|| res == CURLE_COULDNT_RESOLVE_HOST
+		|| res == CURLE_SEND_ERROR
+		|| res == CURLE_RECV_ERROR
+		|| res == CURLE_OPERATION_TIMEDOUT
+		|| res == CURLE_INTERFACE_FAILED)
+    {
+        CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_SERVER_NOT_REACHABLE);
+        char num[64];
+        snprintf(num, sizeof(num)-1, "%d:", res);
+        ERR_add_error_data(2, num, curl_easy_strerror(res));
+        return 0;
+    }
+	else if (res != CURLE_OK) {
+		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_CURL_ERROR);
+        char num[64];
+        snprintf(num, sizeof(num)-1, "%d:", res);
+        ERR_add_error_data(2, num, curl_easy_strerror(res));
+		return 0;
 	}
 
 	/* verify that Content-type is application/pkixcmp */
@@ -246,32 +272,19 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_INVALID_CONTENT_TYPE);
 		free(errormsg);
 		free(rdata.memory);
-		free(derMsg);
 		return 0;
 	}
 
 	pder = (unsigned char*) rdata.memory;
     *out = d2i_CMP_PKIMESSAGE( NULL, (const unsigned char**) &pder, rdata.size);
     if (*out == 0) {
-		strcpy(errormsg, "Failed to decode PKIMESSAGE");
+		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_FAILED_TO_DECODE_PKIMESSAGE);
 		free(rdata.memory);
-		free(derMsg);
-		goto err;
+		return 0;
 	}
 
-	free(errormsg);
 	free(rdata.memory);
-    free(derMsg);
 	return 1;
-
-err:
-	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_CURL_ERROR);
-	if (errormsg) {
-		if (errormsg[0] != 0)
-			ERR_add_error_data(3, "Error: \"", errormsg, "\"");
-		free(errormsg);
-	}
-	return 0;
 }
 
 int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio, CMP_CTX *ctx,
