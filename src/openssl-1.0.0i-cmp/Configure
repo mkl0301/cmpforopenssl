@@ -678,7 +678,7 @@ my %disabled = ( # "what"         => "comment" [or special keyword "experimental
 		 "store"	  => "experimental",
                  "zlib"           => "default",
                  "zlib-dynamic"   => "default",
-                 "curl"   => "default"
+                 #"curl"   => "default"
                );
 my @experimental = ();
 
