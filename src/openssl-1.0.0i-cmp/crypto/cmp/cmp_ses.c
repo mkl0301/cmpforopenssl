@@ -161,6 +161,37 @@ static X509 *find_cert_by_name(STACK_OF(X509) *certs, X509_NAME *name) {
 	return NULL;
 }
 
+static void add_error_data(const char *txt) {
+    ERR_STATE *es;
+	int i, len, newlen;
+    char *err;
+    
+    es=ERR_get_state();
+
+	i=es->top;
+	if (i == 0)
+		i=ERR_NUM_ERRORS-1;
+    err=es->err_data[i];
+
+    if (err == NULL) {
+        ERR_add_error_data(1, txt);
+        return;
+    }
+
+    len = strlen(es->err_data[i]);
+    newlen = len + 1 + strlen(txt);
+
+    if (newlen > 80) {
+        err=OPENSSL_realloc(err, newlen+1);
+        if (err == NULL)
+            return;
+    }
+
+    BUF_strlcat(err, ":", (size_t)newlen+1);        
+    BUF_strlcat(err, txt, (size_t)newlen+1);        
+}
+
+
 /* ############################################################################ *
  * ############################################################################ */
 X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
@@ -195,6 +226,8 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
+        else
+            add_error_data("unable to send ir");
 		goto err;
 	}
 
@@ -283,6 +316,8 @@ received_ip:
                         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
                             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
                             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
+                        else
+                            add_error_data("unable to send ir");
 						goto err;
 					}
 					/* TODO handle multiple pollreqs */
@@ -350,6 +385,8 @@ received_ip:
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
+        else
+            add_error_data("unable to send certConf");
 		goto err;
 	}
 
@@ -411,6 +448,8 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_RP_NOT_RECEIVED);
+        else
+            add_error_data("unable to send rr");
 		goto err;
 	}
 
@@ -490,6 +529,8 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
+        else
+            add_error_data("unable to send cr");
 		goto err;
 	}
 
@@ -559,7 +600,9 @@ received_cp:
 					if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
                         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
                             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
+                            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
+                        else
+                            add_error_data("unable to send cr");
 						goto err;
 					}
 					/* TODO handle multiple pollreqs */
@@ -622,6 +665,8 @@ received_cp:
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
+        else
+            add_error_data("unable to send certConf");
 		goto err;
 	}
 
@@ -691,6 +736,8 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
+        else
+            add_error_data("unable to send kur");
 		goto err;
 	}
 
@@ -763,6 +810,8 @@ received_kup:
                         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
                             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
                             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
+                        else
+                            add_error_data("unable to send kur");
 						goto err;
 					}
 					/* TODO handle multiple pollreqs */
@@ -825,6 +874,8 @@ received_kup:
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
+        else
+            add_error_data("unable to send certConf");
 		goto err;
 	}
 
@@ -917,6 +968,8 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_GENP_NOT_RECEIVED);
+        else
+            add_error_data("unable to send genm");
 		goto err;
 	}
 
@@ -984,6 +1037,8 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_GENP_NOT_RECEIVED);
+        else
+            add_error_data("unable to send genm");
 		goto err;
 	}
 
