@@ -300,7 +300,7 @@ static X509_STORE *create_cert_store(char *file) {
     if (lookup == NULL) goto err;
 
     X509_LOOKUP_load_file(lookup, file,
-        opt_certfmt==FORMAT_PEM ? X509_FILETYPE_PEM : X509_FILETYPE_ASN1);
+        opt_certfmt==FORMAT_ASN1 ? X509_FILETYPE_ASN1 : X509_FILETYPE_PEM);
 
     return cert_ctx;
 
@@ -407,12 +407,6 @@ static int setup_ctx(CMP_CTX *ctx)
 static CONF *conf=NULL;
 /* static CONF *extconf=NULL; */
 static BIO *bio_c_out=NULL;
-
-
-static int do_ir(CMP_CTX *ctx, CMPBIO *cbio)
-    {
-    return 0;
-    }
 
 
 int MAIN(int argc, char **argv)
@@ -547,22 +541,48 @@ bad_ops:
         goto err;
         }
 
-    /* curl_easy_setopt(cmp_bio, CURLOPT_PROXY, 0); */
+    curl_easy_setopt(cmp_bio, CURLOPT_PROXY, 0);
 
-    newcert = CMP_doInitialRequestSeq(cmp_bio, cmp_ctx);
-    if (!newcert)
-        ERR_print_errors_fp(stderr);
-    
-#if 0
     switch (opt_cmd)
         {
-        case CMP_IR: ret=do_ir(cmp_ctx, cmp_bio); break;
-        /* case CMP_KUR: ret=do_kur(); break; */
-        /* case CMP_CR: ret=do_cr(); break; */
-        /* case CMP_RR: ret=do_rr(); break; */
+        case CMP_IR:
+            newcert = CMP_doInitialRequestSeq(cmp_bio, cmp_ctx);
+            if (!newcert)
+                goto err;
+            break;
+        case CMP_KUR:
+            newcert = CMP_doKeyUpdateRequestSeq(cmp_bio, cmp_ctx);
+            if (!newcert)
+                goto err;
+            break;
+        case CMP_CR:
+            newcert = CMP_doCertificateRequestSeq(cmp_bio, cmp_ctx);
+            if (!newcert)
+                goto err;
+            break;
+        case CMP_RR:
+            CMP_doRevocationRequestSeq(cmp_bio, cmp_ctx);
+            break;
         default: break;
         }
-#endif
+
+    if (newcert && opt_certout)
+        {
+        BIO *b = NULL;
+        BIO_printf(bio_c_out, "saving certificate to '%s'...\n", opt_certout);
+        b=BIO_new(BIO_s_file());
+        if (b == NULL || !BIO_write_filename(b, opt_certout))
+            {
+            BIO_printf(bio_err, "error: unable to open file '%s' for writing\n", opt_certout);
+            goto err;
+            }
+        if (opt_certfmt == FORMAT_ASN1)
+            ret = i2d_X509_bio(b, newcert) == 0;
+        else
+            ret = PEM_write_bio_X509(b, newcert)==0;
+
+        if (ret) goto err;
+        }
     
     ret=0;
 err:
