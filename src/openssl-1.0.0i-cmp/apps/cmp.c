@@ -75,6 +75,13 @@
 #undef PROG
 #define PROG	cmp_main
 
+typedef enum { CMP_IR,
+               CMP_KUR,
+               CMP_CR,
+               CMP_RR,
+               CMP_CKUANN,
+    } cmp_cmd_t;
+
 typedef enum { OPT_BOOL, OPT_NUM, OPT_TXT } opttype_t;
 typedef struct 
     {
@@ -88,50 +95,128 @@ typedef struct
     } opt_t;
 
 static char *opt_server=NULL;
+static char *server_address=NULL;
+static int   server_port=0;
+static char *opt_path="/";
+
 static char *opt_cmd=NULL;
+static int cmp_cmd=-1;
 static char *opt_user=NULL;
 static char *opt_pass=NULL;
 
+static char *opt_cert=NULL;
+static char *opt_key=NULL;
+static char *opt_keypass=NULL;
+
+static char *opt_certout=NULL;
+static char *opt_newkey=NULL;
+static char *opt_newkeypass=NULL;
+
+static char *opt_svcert=NULL;
+static char *opt_trusted=NULL;
+static char *opt_untrusted=NULL;
+static char *opt_engine=NULL;
+static int   opt_validate_path=0;
+
+static char *opt_extcerts=NULL;
+static char *opt_subject=NULL;
+static char *opt_recipient=NULL;
+
+static char *opt_save_capubs=NULL;
+static char *opt_save_extracerts=NULL;
+
 static opt_t cmp_opts[]={
-    { "server", "The 'ADDRESS:PORT/PATH' for the CMP server.", OPT_TXT, {&opt_server} },
+    { "server", "The 'ADDRESS:PORT' for the CMP server", OPT_TXT, {&opt_server} },
+    { "path", "Path location inside the server", OPT_TXT, {&opt_path} },
     { "cmd", "CMP command to execute: ir/kur/cr/rr/ckuann/...", OPT_TXT, {&opt_cmd} },
-    { "user", "Username for doing the IR with a pre-shared key.", OPT_TXT, {&opt_user} },
-    { "pass", "Password for doing the IR with a pre-shared key.", OPT_TXT, {&opt_pass} },
+    { "user", "Username for doing the IR with a pre-shared key", OPT_TXT, {&opt_user} },
+    { "pass", "Password for doing the IR with a pre-shared key", OPT_TXT, {&opt_pass} },
 
-#if 0
-    { "cert", "Client's current certificate.", OPT_TXT, {&} },
-    { "key", "Key for the client's current certificate.", OPT_TXT, {&} },
-    { "keypass", "Password for the key.", OPT_TXT, {&} },
+    { "cert", "Client's current certificate", OPT_TXT, {&opt_cert} },
+    { "key", "Key for the client's current certificate", OPT_TXT, {&opt_key} },
+    { "keypass", "Password for the key", OPT_TXT, {&opt_keypass} },
 
-    { "cert", "Client's current certificate.", OPT_TXT, {&} },
-    { "newkey", "", OPT_TXT, {&} },
-    { "newkeypass", "", OPT_TXT, {&} },
+    { "certout", "Where to save the new certificate", OPT_TXT, {&opt_certout} },
+    { "newkey", "Key file to use for the new certificate", OPT_TXT, {&opt_newkey} },
+    { "newkeypass", "Password for the new keyfile", OPT_TXT, {&opt_newkeypass} },
 
-    { "certout", "Where to save the new certificate", OPT_TXT, {&} },
+    { "svcert", "Certificate of the CMP server", OPT_TXT, {&opt_svcert} },
+    /* { "CApath", "A directory of trusted certificates", OPT_TXT, {&} }, */
+    { "trusted", "A file of trusted certificates", OPT_TXT, {&opt_trusted} },
+    { "untrusted", "A file of untrusted certificates", OPT_TXT, {&opt_untrusted} },
+
+    /* { "format", "Use PEM or DER format", OPT_TXT, {&} }, */
+    { "engine", "OpenSSL engine to use", OPT_TXT, {&opt_engine} },
+
+    /* XXX should this be on by default? */
+    { "validate_path", "Validate the trust path of the CA certificate", OPT_TXT, {.num=&opt_validate_path} },
+    { "extcerts", "List of certificate files to include in outgoing messages", OPT_TXT, {&opt_extcerts} },
+    { "subject", "X509 subject name to be used in the requested certificate template", OPT_TXT, {&opt_subject} },
+    { "recipient", "X509 name of the recipient", OPT_TXT, {&opt_recipient} },
     
-
-    { "CApath", "A directory of trusted certificates.", OPT_TXT, {&} },
-    { "CAfile", "A file of trusted certificates.", OPT_TXT, {&} },
-
-    { "validate_chain", ".", OPT_TXT, {&} },
-#endif
+    { "save_extracerts", "Directory where to save extra certificates received", OPT_TXT, {&opt_save_extracerts} },
+    { "save_capubs", "Directory where to save received CA certificates (from IR)", OPT_TXT, {&opt_save_capubs} },
 };
 
 void show_help(void)
     {
-    const int ALIGN_COL=8;
+    const int ALIGN_COL=15;
     opt_t *o=cmp_opts;
     int i=0,j=0;
     
     BIO_puts(bio_err, "\nusage: cmp args\n");
     for (i=0; i < sizeof(cmp_opts)/sizeof(cmp_opts[0]); i++,o++) {
-        BIO_printf(bio_err, "  -%s", o->name);
+        
+        BIO_printf(bio_err, " -%s", o->name);
         for (j=ALIGN_COL-strlen(o->name); j > 0; j--)
             BIO_puts(bio_err, " ");
-        BIO_printf(bio_err, "- %s\n", o->help);
+        BIO_printf(bio_err, " -%s\n", o->help);
         }
+    BIO_puts(bio_err, "\n");
     }
 
+int check_options(void)
+    {
+    if (opt_server) {
+        char *p = strchr(opt_server, ':');
+        size_t addrlen=0;
+        if (p == NULL) {
+            BIO_puts(bio_err, "error: missing server port\n");
+            goto err;
+            }
+        addrlen = (size_t)p - (size_t)opt_server;
+        server_address = OPENSSL_malloc(addrlen+1);
+        strncpy(server_address, opt_server, addrlen);
+        server_address[addrlen]=0;
+        server_port = atoi(++p);
+    }
+    else {
+        BIO_puts(bio_err, "error: missing server address\n");
+        goto err;
+        }
+
+    if (opt_cmd) {
+        if (!strcmp(opt_cmd, "ir")) cmp_cmd = CMP_IR;
+        else if (!strcmp(opt_cmd, "kur")) cmp_cmd = CMP_KUR;
+        else if (!strcmp(opt_cmd, "cr")) cmp_cmd = CMP_CR;
+        else if (!strcmp(opt_cmd, "rr")) cmp_cmd = CMP_RR;
+        else if (!strcmp(opt_cmd, "rr")) cmp_cmd = CMP_CKUANN;
+        else {
+            BIO_printf(bio_err, "error: unknown cmp command '%s'\n", opt_cmd);
+            goto err;
+            }
+    }
+    else {
+        BIO_puts(bio_err, "error: no cmp command to execute\n");
+        goto err;
+    }
+
+    
+    
+    return 1;
+    err:
+    return 0;
+    }
 
 static CONF *conf=NULL;
 /* static CONF *extconf=NULL; */
@@ -144,6 +229,11 @@ int MAIN(int argc, char **argv)
     char *tofree=NULL;
     int badops=0;
     int ret=1;
+
+    if (argc <= 1) {
+        badops=1;
+        goto bad_ops;
+    }
     
     apps_startup();
     ERR_load_crypto_strings();
@@ -185,15 +275,16 @@ int MAIN(int argc, char **argv)
         {
         opt_t *opt=cmp_opts;
         char *arg=*argv;
-        int found=0,i;
+        int found,i;
 
         if (*arg++ != '-' || *arg == 0) {
             badops=1;
             break;
         }
-        
+
+        found=0;
         for (i=0; i < sizeof(cmp_opts)/sizeof(cmp_opts[0]); i++,opt++) {
-            if (!strcmp(arg, opt->name))
+            if (opt->name && !strcmp(arg, opt->name))
                 {
                 if (argc <= 1 && opt->type != OPT_BOOL) {
                     BIO_printf(bio_err, "missing argument for '-%s'\n", opt->name);
@@ -219,13 +310,17 @@ int MAIN(int argc, char **argv)
                     }
                 found=1;
                 }
-            if (!found) {
-                BIO_printf(bio_err, "unknown argument: '%s'\n", *argv);
-                badops=1;
-                goto bad_ops;
-                }
+            }
+        
+        if (!found) {
+            BIO_printf(bio_err, "unknown argument: '%s'\n", *argv);
+            badops=1;
+            goto bad_ops;
             }
         }
+
+    if (!badops)
+        badops = check_options();
 
 bad_ops:
     if (badops)
