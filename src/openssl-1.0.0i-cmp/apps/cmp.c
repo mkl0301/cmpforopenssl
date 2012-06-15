@@ -99,8 +99,8 @@ static char *server_address=NULL;
 static int   server_port=0;
 static char *opt_path="/";
 
-static char *opt_cmd=NULL;
-static int cmp_cmd=-1;
+static char *opt_cmd_s=NULL;
+static int   opt_cmd=-1;
 static char *opt_user=NULL;
 static char *opt_pass=NULL;
 
@@ -112,9 +112,13 @@ static char *opt_certout=NULL;
 static char *opt_newkey=NULL;
 static char *opt_newkeypass=NULL;
 
-static char *opt_svcert=NULL;
+static char *opt_cacert=NULL;
 static char *opt_trusted=NULL;
 static char *opt_untrusted=NULL;
+static char *opt_keyfmt_s=NULL;
+static char *opt_certfmt_s=NULL;
+static int   opt_keyfmt=FORMAT_PEM;
+static int   opt_certfmt=FORMAT_PEM;
 static char *opt_engine=NULL;
 static int   opt_validate_path=0;
 
@@ -122,13 +126,13 @@ static char *opt_extcerts=NULL;
 static char *opt_subject=NULL;
 static char *opt_recipient=NULL;
 
-static char *opt_save_capubs=NULL;
-static char *opt_save_extracerts=NULL;
+static char *opt_cacertsout=NULL;
+static char *opt_extracertsout=NULL;
 
 static opt_t cmp_opts[]={
     { "server", "The 'ADDRESS:PORT' for the CMP server", OPT_TXT, {&opt_server} },
     { "path", "Path location inside the server", OPT_TXT, {&opt_path} },
-    { "cmd", "CMP command to execute: ir/kur/cr/rr/ckuann/...", OPT_TXT, {&opt_cmd} },
+    { "cmd", "CMP command to execute: ir/kur/cr/rr/ckuann/...", OPT_TXT, {&opt_cmd_s} },
     { "user", "Username for doing the IR with a pre-shared key", OPT_TXT, {&opt_user} },
     { "pass", "Password for doing the IR with a pre-shared key", OPT_TXT, {&opt_pass} },
 
@@ -140,12 +144,13 @@ static opt_t cmp_opts[]={
     { "newkey", "Key file to use for the new certificate", OPT_TXT, {&opt_newkey} },
     { "newkeypass", "Password for the new keyfile", OPT_TXT, {&opt_newkeypass} },
 
-    { "svcert", "Certificate of the CMP server", OPT_TXT, {&opt_svcert} },
+    { "cacert", "Certificate of the CMP server", OPT_TXT, {&opt_cacert} },
     /* { "CApath", "A directory of trusted certificates", OPT_TXT, {&} }, */
     { "trusted", "A file of trusted certificates", OPT_TXT, {&opt_trusted} },
     { "untrusted", "A file of untrusted certificates", OPT_TXT, {&opt_untrusted} },
 
-    /* { "format", "Use PEM or DER format", OPT_TXT, {&} }, */
+    { "keyfmt", "Format to use for key files. Default PEM.", OPT_TXT, {&opt_keyfmt_s} },
+    { "certfmt", "Format to use for certificate files. Default PEM.", OPT_TXT, {&opt_certfmt_s} },
     { "engine", "OpenSSL engine to use", OPT_TXT, {&opt_engine} },
 
     /* XXX should this be on by default? */
@@ -154,19 +159,19 @@ static opt_t cmp_opts[]={
     { "subject", "X509 subject name to be used in the requested certificate template", OPT_TXT, {&opt_subject} },
     { "recipient", "X509 name of the recipient", OPT_TXT, {&opt_recipient} },
     
-    { "save_extracerts", "Directory where to save extra certificates received", OPT_TXT, {&opt_save_extracerts} },
-    { "save_capubs", "Directory where to save received CA certificates (from IR)", OPT_TXT, {&opt_save_capubs} },
+    { "extracertsout", "Directory where to save extra certificates received", OPT_TXT, {&opt_extracertsout} },
+    { "cacertsout", "Directory where to save received CA certificates (from IR)", OPT_TXT, {&opt_cacertsout} },
 };
 
-void show_help(void)
+static void show_help(void)
     {
     const int ALIGN_COL=15;
     opt_t *o=cmp_opts;
     int i=0,j=0;
     
     BIO_puts(bio_err, "\nusage: cmp args\n");
-    for (i=0; i < sizeof(cmp_opts)/sizeof(cmp_opts[0]); i++,o++) {
-        
+    for (i=0; i < sizeof(cmp_opts)/sizeof(cmp_opts[0]); i++,o++)
+        {
         BIO_printf(bio_err, " -%s", o->name);
         for (j=ALIGN_COL-strlen(o->name); j > 0; j--)
             BIO_puts(bio_err, " ");
@@ -175,45 +180,226 @@ void show_help(void)
     BIO_puts(bio_err, "\n");
     }
 
-int check_options(void)
+static int check_options(void)
     {
-    if (opt_server) {
-        char *p = strchr(opt_server, ':');
+    if (opt_server)
+        {
+        char *p=strchr(opt_server, ':');
         size_t addrlen=0;
-        if (p == NULL) {
+        if (p == NULL)
+            {
             BIO_puts(bio_err, "error: missing server port\n");
             goto err;
             }
-        addrlen = (size_t)p - (size_t)opt_server;
-        server_address = OPENSSL_malloc(addrlen+1);
+        addrlen=(size_t)p - (size_t)opt_server;
+        server_address=OPENSSL_malloc(addrlen+1);
         strncpy(server_address, opt_server, addrlen);
         server_address[addrlen]=0;
-        server_port = atoi(++p);
+        server_port=atoi(++p);
     }
-    else {
+    else
+        {
         BIO_puts(bio_err, "error: missing server address\n");
         goto err;
         }
 
-    if (opt_cmd) {
-        if (!strcmp(opt_cmd, "ir")) cmp_cmd = CMP_IR;
-        else if (!strcmp(opt_cmd, "kur")) cmp_cmd = CMP_KUR;
-        else if (!strcmp(opt_cmd, "cr")) cmp_cmd = CMP_CR;
-        else if (!strcmp(opt_cmd, "rr")) cmp_cmd = CMP_RR;
-        else if (!strcmp(opt_cmd, "rr")) cmp_cmd = CMP_CKUANN;
-        else {
-            BIO_printf(bio_err, "error: unknown cmp command '%s'\n", opt_cmd);
+    if (opt_cmd_s)
+        {
+        if (!strcmp(opt_cmd_s, "ir")) opt_cmd = CMP_IR;
+        else if (!strcmp(opt_cmd_s, "kur")) opt_cmd = CMP_KUR;
+        else if (!strcmp(opt_cmd_s, "cr")) opt_cmd = CMP_CR;
+        else if (!strcmp(opt_cmd_s, "rr")) opt_cmd = CMP_RR;
+        else if (!strcmp(opt_cmd_s, "rr")) opt_cmd = CMP_CKUANN;
+        else
+            {
+            BIO_printf(bio_err, "error: unknown cmp command '%s'\n", opt_cmd_s);
             goto err;
             }
     }
-    else {
+    else
+        {
         BIO_puts(bio_err, "error: no cmp command to execute\n");
         goto err;
+        }
+
+    switch (opt_cmd)
+        {
+        case CMP_IR:
+            if (!(opt_user && opt_pass) && !(opt_cert && opt_key))
+                {
+                BIO_puts(bio_err, "error: missing user/pass or existing certificate and key for ir\n");
+                goto err;
+                }
+
+            if (opt_cert && !(opt_cacert || opt_trusted))
+                {
+                BIO_puts(bio_err, "error: using client certificate but no server certificate or trusted store set\n");
+                goto err;
+                }
+            break;
+        case CMP_KUR:
+        case CMP_CR:
+        case CMP_RR:
+            if (!(opt_cert && opt_key))
+                {
+                BIO_puts(bio_err, "error: missing certificate and key\n");
+                goto err;
+                }
+
+            if (!opt_cacert && !opt_trusted)
+                {
+                BIO_puts(bio_err, "error: no server certificate or trusted store set\n");
+                goto err;
+                }
+            break;
+        case CMP_CKUANN:
+            /* TODO */
+            break;
+        }
+
+    if (opt_cmd == CMP_IR || opt_cmd == CMP_KUR)
+        {
+        if (!opt_newkey)
+            {
+            BIO_puts(bio_err, "error: missing new key file\n");
+            goto err;
+            }
+        if (!opt_certout)
+            {
+            BIO_puts(bio_err, "error: certout not given, nowhere save certificate\n");
+            goto err;
+            }
+        }
+
+    if (opt_validate_path && !opt_trusted)
+        {
+        BIO_puts(bio_err, "error: trust path validation enabled but no trust store is set\n");
+        goto err;
+        }
+
+    if (opt_keyfmt_s)
+        opt_keyfmt=str2fmt(opt_keyfmt_s);
+
+    if (opt_certfmt_s)
+        opt_certfmt=str2fmt(opt_certfmt_s);
+
+    return 1;
+
+    err:
+    return 0;
     }
 
+static X509_STORE *create_cert_store(char *file) {
+    X509_STORE *cert_ctx=NULL;
+    X509_LOOKUP *lookup=NULL;
+
+    cert_ctx=X509_STORE_new();
+    if (cert_ctx == NULL) goto err;
+
+    lookup = X509_STORE_add_lookup(cert_ctx, X509_LOOKUP_hash_dir());
+    if (lookup == NULL) goto err;
+
+    X509_LOOKUP_load_file(lookup, file,
+        opt_certfmt==FORMAT_PEM ? X509_FILETYPE_PEM : X509_FILETYPE_ASN1);
+
+    return cert_ctx;
+
+err:
+    return NULL;
+    }
+
+static int setup_ctx(CMP_CTX *ctx)
+    {
+    EVP_PKEY *pkey=NULL;
+    EVP_PKEY *newPkey=NULL;
+    X509 *clcert=NULL;
+    X509 *cacert=NULL;
+
+    CMP_CTX_set1_serverName(ctx, server_address);
+    CMP_CTX_set1_serverPath(ctx, opt_path);
+    CMP_CTX_set1_serverPort(ctx, server_port);
     
+    if (opt_user && opt_pass)
+        {
+        CMP_CTX_set1_referenceValue(ctx, (unsigned char*)opt_user, strlen(opt_user));
+        CMP_CTX_set1_secretValue(ctx, (unsigned char*)opt_pass, strlen(opt_pass));
+        }
     
+    if (opt_key &&
+        !(pkey=load_key(bio_err, opt_key, opt_keyfmt, 0, opt_keypass, NULL, "key")))
+        {
+        BIO_printf(bio_err, "error: unable to load private key '%s'\n", opt_key);
+        goto err;
+        }
+    CMP_CTX_set0_pkey(ctx, pkey);
+
+    if (opt_newkey &&
+        !(newPkey=load_key(bio_err, opt_newkey, opt_keyfmt, 0, opt_newkeypass, NULL, "newkey")))
+        {
+        BIO_printf(bio_err, "error: unable to load private key '%s'\n", opt_key);
+        goto err;
+        }
+    CMP_CTX_set0_newPkey(ctx, newPkey);
+
+    if (opt_cert &&
+        !(clcert=load_cert(bio_err, opt_cert, opt_certfmt, NULL, NULL, "clcert")))
+        {
+        BIO_printf(bio_err, "error: unable to load client certificate '%s'\n", opt_key);
+        goto err;
+        }
+    CMP_CTX_set1_clCert(ctx, clcert);
+
+    if (opt_cacert &&
+        !(cacert=load_cert(bio_err, opt_cacert, opt_certfmt, NULL, NULL, "cacert")))
+        {
+        BIO_printf(bio_err, "error: unable to load server certificate '%s'\n", opt_key);
+        goto err;
+        }
+    CMP_CTX_set1_caCert(ctx, cacert);
+
+    if (opt_trusted && !CMP_CTX_set0_trustedStore(ctx, create_cert_store(opt_trusted)))
+        {
+        BIO_printf(bio_err, "error: unable to load trusted store '%s'\n", opt_key);
+        goto err;
+        }
+
+    if (opt_untrusted && !CMP_CTX_set0_untrustedStore(ctx, create_cert_store(opt_untrusted)))
+        {
+        BIO_printf(bio_err, "error: unable to load untrusted store '%s'\n", opt_key);
+        goto err;
+        }
+
+    if (opt_subject)
+        {
+        X509_NAME *n=parse_name(opt_subject, MBSTRING_ASC, 0);
+        if (n == NULL)
+            {
+            BIO_printf(bio_err, "error: unable to parse subject name '%s'\n", opt_subject);
+            goto err;
+            }
+        CMP_CTX_set1_subjectName(ctx, n);
+        }
+
+    if (opt_recipient)
+        {
+        X509_NAME *n=parse_name(opt_recipient, MBSTRING_ASC, 0);
+        if (n == NULL)
+            {
+            BIO_printf(bio_err, "error: unable to parse recipient name '%s'\n", opt_recipient);
+            goto err;
+            }
+        CMP_CTX_set1_recipient(ctx, n);
+        }
+
+    /* TODO add extcerts !! */
+    
+    if (opt_validate_path)
+        CMP_CTX_set_option(ctx, CMP_CTX_OPT_VALIDATEPATH, 1);
+
+    CMP_CTX_set1_timeOut(ctx, 5*60);
+
     return 1;
+
     err:
     return 0;
     }
@@ -222,23 +408,38 @@ static CONF *conf=NULL;
 /* static CONF *extconf=NULL; */
 static BIO *bio_c_out=NULL;
 
+
+static int do_ir(CMP_CTX *ctx, CMPBIO *cbio)
+    {
+    return 0;
+    }
+
+
 int MAIN(int argc, char **argv)
     {
+    /*
     char *configfile=NULL;
     long errorline=-1;
     char *tofree=NULL;
+    */
     int badops=0;
     int ret=1;
+    CMP_CTX *cmp_ctx;
+    CMPBIO *cmp_bio;
+    X509 *newcert=NULL;
 
-    if (argc <= 1) {
+    if (argc <= 1)
+        {
         badops=1;
         goto bad_ops;
-    }
+        }
     
     apps_startup();
     ERR_load_crypto_strings();
     bio_c_out=BIO_new_fp(stdout,BIO_NOCLOSE);
 
+    /* TODO load up default values from config for trusted store location etc */
+    /*
     if (configfile == NULL) configfile = getenv("OPENSSL_CONF");
 	if (configfile == NULL) configfile = getenv("SSLEAY_CONF");
 	if (configfile == NULL)
@@ -270,6 +471,7 @@ int MAIN(int argc, char **argv)
 		OPENSSL_free(tofree);
 		tofree = NULL;
 		}
+    */
 
     while (--argc > 0 && ++argv)
         {
@@ -277,16 +479,19 @@ int MAIN(int argc, char **argv)
         char *arg=*argv;
         int found,i;
 
-        if (*arg++ != '-' || *arg == 0) {
+        if (*arg++ != '-' || *arg == 0)
+            {
             badops=1;
             break;
-        }
+            }
 
         found=0;
-        for (i=0; i < sizeof(cmp_opts)/sizeof(cmp_opts[0]); i++,opt++) {
+        for (i=0; i < sizeof(cmp_opts)/sizeof(cmp_opts[0]); i++,opt++)
+            {
             if (opt->name && !strcmp(arg, opt->name))
                 {
-                if (argc <= 1 && opt->type != OPT_BOOL) {
+                if (argc <= 1 && opt->type != OPT_BOOL)
+                    {
                     BIO_printf(bio_err, "missing argument for '-%s'\n", opt->name);
                     badops=1;
                     goto bad_ops;
@@ -312,7 +517,8 @@ int MAIN(int argc, char **argv)
                 }
             }
         
-        if (!found) {
+        if (!found)
+            {
             BIO_printf(bio_err, "unknown argument: '%s'\n", *argv);
             badops=1;
             goto bad_ops;
@@ -320,18 +526,50 @@ int MAIN(int argc, char **argv)
         }
 
     if (!badops)
-        badops = check_options();
+        badops = check_options() == 0;
 
 bad_ops:
     if (badops)
+        {
         show_help();
+        goto err;
+        }
 
+    if (!(cmp_ctx = CMP_CTX_create()) || !setup_ctx(cmp_ctx))
+        {
+        BIO_puts(bio_err, "error creating new cmp context\n");
+        goto err;
+        }
 
-    ret=0;
+    if (!CMP_new_http_bio(&cmp_bio, server_address, server_port))
+        {
+        BIO_puts(bio_err, "error: setting up connection context\n");
+        goto err;
+        }
+
+    /* curl_easy_setopt(cmp_bio, CURLOPT_PROXY, 0); */
+
+    newcert = CMP_doInitialRequestSeq(cmp_bio, cmp_ctx);
+    if (!newcert)
+        ERR_print_errors_fp(stderr);
     
+#if 0
+    switch (opt_cmd)
+        {
+        case CMP_IR: ret=do_ir(cmp_ctx, cmp_bio); break;
+        /* case CMP_KUR: ret=do_kur(); break; */
+        /* case CMP_CR: ret=do_cr(); break; */
+        /* case CMP_RR: ret=do_rr(); break; */
+        default: break;
+        }
+#endif
+    
+    ret=0;
 err:
+    /*
     if(tofree)
         OPENSSL_free(tofree);
+    */
 
     OPENSSL_EXIT(ret);
     }
