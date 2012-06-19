@@ -289,7 +289,8 @@ static int check_options(void)
     return 0;
     }
 
-static X509_STORE *create_cert_store(char *file) {
+static X509_STORE *create_cert_store(char *file)
+    {
     X509_STORE *cert_ctx=NULL;
     X509_LOOKUP *lookup=NULL;
 

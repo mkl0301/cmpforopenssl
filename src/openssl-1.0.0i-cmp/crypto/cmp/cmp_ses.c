@@ -191,6 +191,120 @@ static void add_error_data(const char *txt) {
     BUF_strlcat(err, txt, (size_t)newlen+1);        
 }
 
+/* ############################################################################ *
+ * ############################################################################ */
+
+static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey)
+{
+	X509 *newClCert = NULL;
+	switch (CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0)) {
+
+		case CMP_PKISTATUS_waiting:
+			goto err;
+			break;
+
+		case CMP_PKISTATUS_grantedWithMods:
+			// CMP_printf( ctx, "WARNING: got \"grantedWithMods\"");
+
+		case CMP_PKISTATUS_accepted:
+			/* if we received a certificate then place it to ctx->newClCert and return,
+			 * if the cert is encrypted then we first decrypt it. */
+			switch (CMP_CERTREPMESSAGE_certType_get(certrep, 0)) {
+				case CMP_CERTORENCCERT_CERTIFICATE:
+					if( !(newClCert = CMP_CERTREPMESSAGE_cert_get1(certrep,0))) {
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
+						goto err;
+					}					
+					break;
+				case CMP_CERTORENCCERT_ENCRYPTEDCERT:
+					if( !(newClCert = CMP_CERTREPMESSAGE_encCert_get1(certrep,0,pkey))) {
+						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
+						goto err;
+					}					
+					break;
+			}
+			break;
+
+		case CMP_PKISTATUS_rejection:
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_REQUEST_REJECTED_BY_CA);
+			goto err;
+			break;
+
+		case CMP_PKISTATUS_revocationWarning:
+		case CMP_PKISTATUS_revocationNotification:
+		case CMP_PKISTATUS_keyUpdateWarning:
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_NO_CERTIFICATE_RECEIVED);
+			goto err;
+			break;
+
+		default: {
+			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(certrep, 0);
+			ASN1_UTF8STRING *status = NULL;
+
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
+				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
+
+			// CMP_printf( ctx, "ERROR: unknown pkistatus %ld", CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0));
+			goto err;
+			break;
+		}
+	}
+
+
+	return newClCert;
+err:
+	return NULL;
+}
+
+
+static int try_polling(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTSTATUS *certrep, CMP_PKIMESSAGE **msg)
+{
+	int i;
+	CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
+	for (i = 0; i < ctx->maxPollCount; i++) {
+		CMP_PKIMESSAGE *preq = CMP_pollReq_new(ctx, 0);
+		CMP_PKIMESSAGE *prep = NULL;
+		CMP_POLLREP *pollRep = NULL;
+
+		if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
+			if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
+				&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
+				CMPerr(CMP_F_TRY_POLLING, CMP_R_IP_NOT_RECEIVED);
+			else
+				add_error_data("unable to send ir");
+			goto err;
+		}
+
+		/* TODO handle multiple pollreqs */
+		if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_IP) {
+			CMP_PKIMESSAGE_free(preq);
+			if (CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0) != CMP_PKISTATUS_waiting) {
+				*msg = prep;
+				return 1;
+			}
+		} else if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_POLLREP) {
+			int checkAfter;
+			pollRep = sk_CMP_POLLREP_value(prep->body->value.pollRep, 0);
+			checkAfter = ASN1_INTEGER_get(pollRep->checkAfter);
+			CMP_printf(ctx, "INFO: Waiting %ld seconds before sending pollReq...\n", checkAfter);
+			sleep(checkAfter);
+		} else {
+			CMP_PKIMESSAGE_free(preq);
+			CMP_PKIMESSAGE_free(prep);
+			CMPerr(CMP_F_TRY_POLLING, CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ);
+			goto err;
+		}
+
+		CMP_PKIMESSAGE_free(preq);
+		CMP_PKIMESSAGE_free(prep);
+	}
+
+err:
+	return 0;
+}
+
+
 
 /* ############################################################################ *
  * ############################################################################ */
@@ -278,92 +392,16 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* make sure the PKIStatus for the *first* CERTrepmessage indicates a certificate was granted */
 	/* TODO - there could be two CERTrepmessages */
 	/* XXX this switch statement is duplicated in IP/CR/KUR functions and should be refactored */
-received_ip:
-	switch (CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0)) {
-		case CMP_PKISTATUS_grantedWithMods:
-			CMP_printf( ctx, "WARNING: got \"grantedWithMods\"");
-		case CMP_PKISTATUS_accepted:
-			/* if we received a certificate then place it to ctx->newClCert and return,
-			 * if the cert is encrypted then we first decrypt it. */
-			switch (CMP_CERTREPMESSAGE_certType_get(ip->body->value.ip, 0)) {
-				case CMP_CERTORENCCERT_CERTIFICATE:
-					if( !(ctx->newClCert = CMP_CERTREPMESSAGE_cert_get1(ip->body->value.ip,0))) {
-						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
-						goto err;
-					}					
-					break;
-				case CMP_CERTORENCCERT_ENCRYPTEDCERT:
-					if( !(ctx->newClCert = CMP_CERTREPMESSAGE_encCert_get1(ip->body->value.ip,0,ctx->pkey))) {
-						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
-						goto err;
-					}					
-					break;
-			}
-			break;
-		case CMP_PKISTATUS_rejection:
-			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_REQUEST_REJECTED_BY_CA);
-			goto err;
-			break;
-		case CMP_PKISTATUS_waiting:
-			{ 
-				int i;
-				CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
-				for (i = 0; i < ctx->maxPollCount; i++) {
-					CMP_PKIMESSAGE *preq = CMP_pollReq_new(ctx, 0);
-					CMP_PKIMESSAGE *prep = NULL;
-					CMP_POLLREP *pollRep = NULL;
-					if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
-                        if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
-                            && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-                            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
-                        else
-                            add_error_data("unable to send ir");
-						goto err;
-					}
-					/* TODO handle multiple pollreqs */
-					if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_IP) {
-						ip = prep;
-						CMP_PKIMESSAGE_free(preq);
-						goto received_ip;
-					}
-					else if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_POLLREP) {
-						int checkAfter;
-						pollRep = sk_CMP_POLLREP_value(prep->body->value.pollRep, 0);
-						checkAfter = ASN1_INTEGER_get(pollRep->checkAfter);
-						CMP_printf(ctx, "INFO: Waiting %ld seconds before sending pollReq...\n", checkAfter);
-						sleep(checkAfter);
-					}
-					else {
-						CMP_PKIMESSAGE_free(preq);
-						CMP_PKIMESSAGE_free(prep);
-						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ);
-						goto err;
-					}
-					CMP_PKIMESSAGE_free(preq);
-					CMP_PKIMESSAGE_free(prep);
-				}
-			}
-			goto err;
-			break;
-		case CMP_PKISTATUS_revocationWarning:
-		case CMP_PKISTATUS_revocationNotification:
-		case CMP_PKISTATUS_keyUpdateWarning:
-			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_NO_CERTIFICATE_RECEIVED);
-			goto err;
-			break;
-		default: {
-			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(ip->body->value.ip, 0);
-			ASN1_UTF8STRING *status = NULL;
 
-			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
-			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
-				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
-
-			CMP_printf( ctx, "ERROR: unknown pkistatus %ld", CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0));
+	if (CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0) == CMP_PKISTATUS_waiting)
+		if (!try_polling(ctx, cbio, ip->body->value.ip, &ip)) {
+            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
+			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
 			goto err;
-			break;
 		}
-	}
+
+	ctx->newClCert = certrep_get_certificate(ip->body->value.ip, ctx->pkey);
+	if (ctx->newClCert == NULL) goto err;
 
 	/* if the CA returned certificates in the caPubs field, copy them
 	 * to the context so that they can be retrieved if necessary */
