@@ -193,6 +193,11 @@ static int check_options(void)
             }
         addrlen=(size_t)p - (size_t)opt_server;
         server_address=OPENSSL_malloc(addrlen+1);
+        if (server_address == NULL)
+            {
+            BIO_puts(bio_err, "error: out of memory\n");
+            goto err;
+            }
         strncpy(server_address, opt_server, addrlen);
         server_address[addrlen]=0;
         server_port=atoi(++p);
