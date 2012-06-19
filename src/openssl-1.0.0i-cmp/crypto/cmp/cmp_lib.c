@@ -1019,6 +1019,20 @@ long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReq
 	return -1;
 }
 
+char *CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(CMP_CERTREPMESSAGE *certRep, long certReqId) {
+	CMP_CERTRESPONSE *certResponse=NULL;
+	if (!certRep) return NULL;
+
+	if ( (certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) ) {
+
+		if (certResponse->status)
+			return CMP_PKISTATUSINFO_PKIFailureInfo_get_string(certResponse->status);
+	}
+
+	/* did not find a CertResponse with the right certRep */
+	return NULL;
+}
+
 /* ############################################################################ */
 /* returns the status string of the given certReqId inside a CertRepMessage */
 /* returns NULL on error */

@@ -226,12 +226,30 @@ static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey
 			break;
 
 		case CMP_PKISTATUS_rejection: {
-			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(certrep, 0);
+			char *statusString = NULL;
+			int statusLen = 0;
 			ASN1_UTF8STRING *status = NULL;
+			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(certrep, 0);
 
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_REQUEST_REJECTED_BY_CA);
-			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
-				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
+
+			statusString = OPENSSL_strdup(CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(certrep, 0));
+			statusLen = strlen(statusString);
+
+			statusString = OPENSSL_realloc(statusString, statusLen+20);
+			strcat(statusString, ", statusString=\"");
+			statusLen = strlen(statusString);
+
+			while ((status = sk_ASN1_UTF8STRING_pop(strstack))) {
+				statusLen += strlen(status->data)+2;
+				statusString = OPENSSL_realloc(statusString, statusLen);
+				if (!statusString) goto err;
+				strcat(statusString, status->data);
+			}
+
+			strcat(statusString, "\"");
+			add_error_data(statusString);
+
 			goto err;
 			break;
 		}
@@ -248,6 +266,7 @@ static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey
 			ASN1_UTF8STRING *status = NULL;
 
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+			/* XXX ERR_add_error_data overwrites the previous error data, fix this! */
 			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 
@@ -264,7 +283,7 @@ err:
 }
 
 
-static int try_polling(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTSTATUS *certrep, CMP_PKIMESSAGE **msg)
+static int try_polling(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg)
 {
 	int i;
 	CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
