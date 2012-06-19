@@ -237,7 +237,7 @@ static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey
 			statusLen = strlen(statusString);
 
 			statusString = OPENSSL_realloc(statusString, statusLen+20);
-			strcat(statusString, ", statusString=\"");
+			strcat(statusString, ", statusString: \"");
 			statusLen = strlen(statusString);
 
 			while ((status = sk_ASN1_UTF8STRING_pop(strstack))) {
