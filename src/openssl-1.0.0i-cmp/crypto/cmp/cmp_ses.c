@@ -233,6 +233,7 @@ static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey
 			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_REQUEST_REJECTED_BY_CA);
 
 			statusString = OPENSSL_strdup(CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(certrep, 0));
+			if (!statusString) goto err;
 			statusLen = strlen(statusString);
 
 			statusString = OPENSSL_realloc(statusString, statusLen+20);
