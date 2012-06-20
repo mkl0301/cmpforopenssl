@@ -384,6 +384,34 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKIFREETEXT)
      /* XXX this should be done right */
 typedef ASN1_BIT_STRING CMP_PKIFAILUREINFO;
 
+#define CMP_FAILINFO_badAlg              (1 << 0)
+#define CMP_FAILINFO_badMessageCheck     (1 << 1)
+#define CMP_FAILINFO_badRequest          (1 << 2)
+#define CMP_FAILINFO_badTime             (1 << 3)
+#define CMP_FAILINFO_badCertId           (1 << 4)
+#define CMP_FAILINFO_badDataFormat       (1 << 5)
+#define CMP_FAILINFO_wrongAuthority      (1 << 6)
+#define CMP_FAILINFO_incorrectData       (1 << 7)
+#define CMP_FAILINFO_missingTimeStamp    (1 << 8)
+#define CMP_FAILINFO_badPOP              (1 << 9)
+#define CMP_FAILINFO_certRevoked         (1 << 10)
+#define CMP_FAILINFO_certConfirmed       (1 << 11)
+#define CMP_FAILINFO_wrongIntegrity      (1 << 12)
+#define CMP_FAILINFO_badRecipientNonce   (1 << 13)
+#define CMP_FAILINFO_timeNotAvailable    (1 << 14)
+#define CMP_FAILINFO_unacceptedPolicy    (1 << 15)
+#define CMP_FAILINFO_unacceptedExtension (1 << 16)
+#define CMP_FAILINFO_addInfoNotAvailable (1 << 17)
+#define CMP_FAILINFO_badSenderNonce      (1 << 18)
+#define CMP_FAILINFO_badCertTemplate     (1 << 19)
+#define CMP_FAILINFO_signerNotTrusted    (1 << 20)
+#define CMP_FAILINFO_transactionIdInUse  (1 << 21)
+#define CMP_FAILINFO_unsupportedVersion  (1 << 22)
+#define CMP_FAILINFO_notAuthorized       (1 << 23)
+#define CMP_FAILINFO_systemUnavail       (1 << 24)
+#define CMP_FAILINFO_systemFailure       (1 << 25)
+#define CMP_FAILINFO_duplicateCertReq    (1 << 26)
+
 /*
      PKIStatus ::= INTEGER {
          accepted                (0),
@@ -1298,6 +1326,8 @@ typedef struct cmp_ctx_st
 	/* maximum number of times we attempt to poll the server for a response 
 	 * if a 'waiting' PKIStatus is received*/
 	int maxPollCount;
+
+	unsigned long failInfoCode;
 
 	/* log callback functions for error and debug messages */
 	cmp_logfn_t error_cb, debug_cb;

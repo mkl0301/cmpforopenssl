@@ -496,6 +496,7 @@ err:
 CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
+	X509_NAME *subject=NULL;
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
@@ -534,8 +535,13 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm( msg)) goto err;
 
+	if (ctx->subjectName)
+		subject = ctx->subjectName;
+	else
+		subject = X509_get_subject_name( (X509*) ctx->clCert);
+
 	/* XXX certReq 0 is not freed on error, but that's because it will become part of kur and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, X509_get_subject_name( (X509*) ctx->clCert), ctx->compatibility, ctx->popoMethod, NULL))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->compatibility, ctx->popoMethod, NULL))) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);
 	if( !(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;

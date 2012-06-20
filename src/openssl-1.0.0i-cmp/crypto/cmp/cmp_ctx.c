@@ -269,6 +269,8 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 
 	ctx->maxPollCount = 3;
 
+	ctx->failInfoCode = 0;
+
 #if 0
 	/* These are initialized already by the call to CMP_CTX_new() */
 	ctx->referenceValue  = NULL;
@@ -325,6 +327,14 @@ err:
 	CMPerr(CMP_F_CMP_CTX_CREATE, CMP_R_UNABLE_TO_CREATE_CONTEXT);
 	if (ctx) CMP_CTX_free(ctx);
 	return NULL;
+}
+
+unsigned long CMP_CTX_get_failInfoCode( CMP_CTX *ctx)
+{
+	if (!ctx) goto err;
+	return ctx->failInfoCode;
+err:
+	return 0;
 }
 
 /* ################################################################ *
