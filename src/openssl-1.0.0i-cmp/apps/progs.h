@@ -46,7 +46,6 @@ extern int engine_main(int argc,char *argv[]);
 extern int ocsp_main(int argc,char *argv[]);
 extern int prime_main(int argc,char *argv[]);
 extern int ts_main(int argc,char *argv[]);
-extern int cmp_main(int argc,char *argv[]);
 
 #define FUNC_TYPE_GENERAL	1
 #define FUNC_TYPE_MD		2
@@ -358,9 +357,6 @@ FUNCTION functions[] = {
 #endif
 #ifndef OPENSSL_NO_RC5
 	{FUNC_TYPE_CIPHER,"rc5-ofb",enc_main},
-#endif
-#ifndef OPENSSL_NO_CMP
-	{FUNC_TYPE_GENERAL,"cmp",cmp_main},
 #endif
 	{0,NULL,NULL}
 	};
