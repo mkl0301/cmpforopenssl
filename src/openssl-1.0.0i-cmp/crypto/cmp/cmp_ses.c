@@ -194,8 +194,7 @@ static void add_error_data(const char *txt) {
 /* ############################################################################ *
  * ############################################################################ */
 
-static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey)
-{
+static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey) {
 	X509 *newClCert = NULL;
 	switch (CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0)) {
 
@@ -212,13 +211,13 @@ static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey
 			switch (CMP_CERTREPMESSAGE_certType_get(certrep, 0)) {
 				case CMP_CERTORENCCERT_CERTIFICATE:
 					if( !(newClCert = CMP_CERTREPMESSAGE_cert_get1(certrep,0))) {
-						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
+						CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
 						goto err;
 					}					
 					break;
 				case CMP_CERTORENCCERT_ENCRYPTEDCERT:
 					if( !(newClCert = CMP_CERTREPMESSAGE_encCert_get1(certrep,0,pkey))) {
-						CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CERTIFICATE_NOT_FOUND);
+						CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
 						goto err;
 					}					
 					break;
@@ -231,7 +230,7 @@ static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey
 			ASN1_UTF8STRING *status = NULL;
 			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(certrep, 0);
 
-			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_REQUEST_REJECTED_BY_CA);
+			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_REQUEST_REJECTED_BY_CA);
 
 			statusString = OPENSSL_strdup(CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(certrep, 0));
 			statusLen = strlen(statusString);
@@ -257,7 +256,7 @@ static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey
 		case CMP_PKISTATUS_revocationWarning:
 		case CMP_PKISTATUS_revocationNotification:
 		case CMP_PKISTATUS_keyUpdateWarning:
-			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_NO_CERTIFICATE_RECEIVED);
+			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_NO_CERTIFICATE_RECEIVED);
 			goto err;
 			break;
 
@@ -283,8 +282,7 @@ err:
 }
 
 
-static int try_polling(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg)
-{
+static int try_polling(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg) {
 	int i;
 	CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
 	for (i = 0; i < ctx->maxPollCount; i++) {

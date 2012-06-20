@@ -1551,6 +1551,7 @@ void ERR_load_CMP_strings(void);
 /* Error codes for the CMP functions. */
 
 /* Function codes. */
+#define CMP_F_CERTREP_GET_CERTIFICATE			 162
 #define CMP_F_CMP_CERTCONF_NEW				 100
 #define CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1		 101
 #define CMP_F_CMP_CERTSTATUS_SET_CERTHASH		 102
