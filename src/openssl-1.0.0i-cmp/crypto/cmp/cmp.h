@@ -384,33 +384,33 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKIFREETEXT)
      /* XXX this should be done right */
 typedef ASN1_BIT_STRING CMP_PKIFAILUREINFO;
 
-#define CMP_FAILINFO_badAlg              (1 << 0)
-#define CMP_FAILINFO_badMessageCheck     (1 << 1)
-#define CMP_FAILINFO_badRequest          (1 << 2)
-#define CMP_FAILINFO_badTime             (1 << 3)
-#define CMP_FAILINFO_badCertId           (1 << 4)
-#define CMP_FAILINFO_badDataFormat       (1 << 5)
-#define CMP_FAILINFO_wrongAuthority      (1 << 6)
-#define CMP_FAILINFO_incorrectData       (1 << 7)
-#define CMP_FAILINFO_missingTimeStamp    (1 << 8)
-#define CMP_FAILINFO_badPOP              (1 << 9)
-#define CMP_FAILINFO_certRevoked         (1 << 10)
-#define CMP_FAILINFO_certConfirmed       (1 << 11)
-#define CMP_FAILINFO_wrongIntegrity      (1 << 12)
-#define CMP_FAILINFO_badRecipientNonce   (1 << 13)
-#define CMP_FAILINFO_timeNotAvailable    (1 << 14)
-#define CMP_FAILINFO_unacceptedPolicy    (1 << 15)
-#define CMP_FAILINFO_unacceptedExtension (1 << 16)
-#define CMP_FAILINFO_addInfoNotAvailable (1 << 17)
-#define CMP_FAILINFO_badSenderNonce      (1 << 18)
-#define CMP_FAILINFO_badCertTemplate     (1 << 19)
-#define CMP_FAILINFO_signerNotTrusted    (1 << 20)
-#define CMP_FAILINFO_transactionIdInUse  (1 << 21)
-#define CMP_FAILINFO_unsupportedVersion  (1 << 22)
-#define CMP_FAILINFO_notAuthorized       (1 << 23)
-#define CMP_FAILINFO_systemUnavail       (1 << 24)
-#define CMP_FAILINFO_systemFailure       (1 << 25)
-#define CMP_FAILINFO_duplicateCertReq    (1 << 26)
+#define CMP_CTX_FAILINFO_badAlg              (1 << 0)
+#define CMP_CTX_FAILINFO_badMessageCheck     (1 << 1)
+#define CMP_CTX_FAILINFO_badRequest          (1 << 2)
+#define CMP_CTX_FAILINFO_badTime             (1 << 3)
+#define CMP_CTX_FAILINFO_badCertId           (1 << 4)
+#define CMP_CTX_FAILINFO_badDataFormat       (1 << 5)
+#define CMP_CTX_FAILINFO_wrongAuthority      (1 << 6)
+#define CMP_CTX_FAILINFO_incorrectData       (1 << 7)
+#define CMP_CTX_FAILINFO_missingTimeStamp    (1 << 8)
+#define CMP_CTX_FAILINFO_badPOP              (1 << 9)
+#define CMP_CTX_FAILINFO_certRevoked         (1 << 10)
+#define CMP_CTX_FAILINFO_certConfirmed       (1 << 11)
+#define CMP_CTX_FAILINFO_wrongIntegrity      (1 << 12)
+#define CMP_CTX_FAILINFO_badRecipientNonce   (1 << 13)
+#define CMP_CTX_FAILINFO_timeNotAvailable    (1 << 14)
+#define CMP_CTX_FAILINFO_unacceptedPolicy    (1 << 15)
+#define CMP_CTX_FAILINFO_unacceptedExtension (1 << 16)
+#define CMP_CTX_FAILINFO_addInfoNotAvailable (1 << 17)
+#define CMP_CTX_FAILINFO_badSenderNonce      (1 << 18)
+#define CMP_CTX_FAILINFO_badCertTemplate     (1 << 19)
+#define CMP_CTX_FAILINFO_signerNotTrusted    (1 << 20)
+#define CMP_CTX_FAILINFO_transactionIdInUse  (1 << 21)
+#define CMP_CTX_FAILINFO_unsupportedVersion  (1 << 22)
+#define CMP_CTX_FAILINFO_notAuthorized       (1 << 23)
+#define CMP_CTX_FAILINFO_systemUnavail       (1 << 24)
+#define CMP_CTX_FAILINFO_systemFailure       (1 << 25)
+#define CMP_CTX_FAILINFO_duplicateCertReq    (1 << 26)
 
 /*
      PKIStatus ::= INTEGER {
@@ -1407,6 +1407,7 @@ long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReq
 char *CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(CMP_CERTREPMESSAGE *certRep, long certReqId);
 STACK_OF(ASN1_UTF8STRING)* CMP_CERTRESPONSE_PKIStatusString_get0( CMP_CERTRESPONSE *resp);
 STACK_OF(ASN1_UTF8STRING)* CMP_CERTREPMESSAGE_PKIStatusString_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
+CMP_PKIFAILUREINFO *CMP_CERTREPMESSAGE_PKIFailureInfo_get0(CMP_CERTREPMESSAGE *certRep, long certReqId);
 
 int CMP_PKIFAILUREINFO_check( ASN1_BIT_STRING *failInfo, int codeBit);
 
@@ -1516,7 +1517,6 @@ X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
 int CMP_CTX_caPubs_num( CMP_CTX *ctx);
 int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs);
 
-
 int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOut);
 int CMP_CTX_extraCertsOut_push1( CMP_CTX *ctx, const X509 *val);
 int CMP_CTX_extraCertsOut_num( CMP_CTX *ctx);
@@ -1545,6 +1545,8 @@ int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path);
 #define CMP_ALG_PBMAC 1
 #define CMP_ALG_SIG   2
 int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algId);
+int CMP_CTX_set_failInfoCode(CMP_CTX *ctx, CMP_PKIFAILUREINFO *failInfo);
+unsigned long CMP_CTX_failInfoCode_get(CMP_CTX *ctx);
 #define CMP_CTX_OPT_UNSET           0
 #define CMP_CTX_OPT_SET             1
 #define CMP_CTX_OPT_IMPLICITCONFIRM 1

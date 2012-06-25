@@ -194,8 +194,12 @@ static void add_error_data(const char *txt) {
 /* ############################################################################ *
  * ############################################################################ */
 
-static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey) {
+static X509 *certrep_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey) {
 	X509 *newClCert = NULL;
+	
+
+	CMP_CTX_set_failInfoCode(ctx, CMP_CERTREPMESSAGE_PKIFailureInfo_get0(certrep, 0));
+
 	switch (CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0)) {
 
 		case CMP_PKISTATUS_waiting:
@@ -203,7 +207,7 @@ static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey
 			break;
 
 		case CMP_PKISTATUS_grantedWithMods:
-			// CMP_printf( ctx, "WARNING: got \"grantedWithMods\"");
+			CMP_printf( ctx, "WARNING: got \"grantedWithMods\"");
 
 		case CMP_PKISTATUS_accepted:
 			/* if we received a certificate then place it to ctx->newClCert and return,
@@ -270,7 +274,7 @@ static X509 *certrep_get_certificate(CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey
 			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 
-			// CMP_printf( ctx, "ERROR: unknown pkistatus %ld", CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0));
+			CMP_printf( ctx, "ERROR: unknown pkistatus %ld", CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0));
 			goto err;
 			break;
 		}
@@ -423,7 +427,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			goto err;
 		}
 
-	ctx->newClCert = certrep_get_certificate(ip->body->value.ip, ctx->pkey);
+	ctx->newClCert = certrep_get_certificate(ctx, ip->body->value.ip, ctx->pkey);
 	if (ctx->newClCert == NULL) goto err;
 
 	/* if the CA returned certificates in the caPubs field, copy them
@@ -642,7 +646,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			goto err;
 		}
 
-	ctx->newClCert = certrep_get_certificate(cp->body->value.cp, ctx->pkey);
+	ctx->newClCert = certrep_get_certificate(ctx, cp->body->value.cp, ctx->pkey);
 	if (ctx->newClCert == NULL) goto err;
 
 
@@ -794,7 +798,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			goto err;
 		}
 
-	ctx->newClCert = certrep_get_certificate(kup->body->value.kup, ctx->pkey);
+	ctx->newClCert = certrep_get_certificate(ctx, kup->body->value.kup, ctx->pkey);
 	if (ctx->newClCert == NULL) goto err;
 
 

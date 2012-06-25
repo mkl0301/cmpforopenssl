@@ -1020,6 +1020,24 @@ err:
 	return 0;
 }
 
+int CMP_CTX_set_failInfoCode(CMP_CTX *ctx, CMP_PKIFAILUREINFO *failInfo) {
+	int i;
+
+	if (!ctx || !failInfo) return 0;
+
+	ctx->failInfoCode = 0;
+	for ( i=0; i <= CMP_PKIFAILUREINFO_MAX; i++)
+		if( ASN1_BIT_STRING_get_bit(failInfo, i))
+			ctx->failInfoCode |= 1 << i;
+
+	return 1;
+}
+
+unsigned long CMP_CTX_failInfoCode_get(CMP_CTX *ctx) {
+	if (!ctx) return 0;
+	return ctx->failInfoCode;
+}
+
 #if 0
 /* ################################################################ */
 /* pushes a given 0-terminated character string to ctx->freeText */
