@@ -200,7 +200,8 @@ static X509 *certrep_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep, 
 
 	CMP_CTX_set_failInfoCode(ctx, CMP_CERTREPMESSAGE_PKIFailureInfo_get0(certrep, 0));
 
-	switch (CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0)) {
+	ctx->lastStatus = CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0);
+	switch (ctx->lastStatus) {
 
 		case CMP_PKISTATUS_waiting:
 			goto err;
@@ -229,6 +230,7 @@ static X509 *certrep_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep, 
 			break;
 
 		case CMP_PKISTATUS_rejection: {
+			/* XXX Should a certconf message be sent even in case of rejection? */
 			char *statusString = NULL;
 			int statusLen = 0;
 			ASN1_UTF8STRING *status = NULL;

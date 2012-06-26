@@ -1236,6 +1236,7 @@ RFC 4210                          CMP                     September 2005
 */
 
 typedef void (*cmp_logfn_t)(const char *msg);
+typedef int (*cmp_certConfFn_t)(int status, const X509 *cert);
 
 
 /* CMP_CTX definitions */
@@ -1327,10 +1328,16 @@ typedef struct cmp_ctx_st
 	 * if a 'waiting' PKIStatus is received*/
 	int maxPollCount;
 
+	int lastStatus;
+
 	unsigned long failInfoCode;
 
 	/* log callback functions for error and debug messages */
 	cmp_logfn_t error_cb, debug_cb;
+
+	/* callback for letting the user check the received certificate and 
+	 * reject if necessary */
+	cmp_certConfFn_t certConf_cb;
 
 	/* */
 	X509_STORE *trusted_store;
@@ -1503,6 +1510,7 @@ void CMP_CTX_delete(CMP_CTX *ctx);
 CMP_CTX *CMP_CTX_create(void);
 int CMP_CTX_set_error_callback( CMP_CTX *ctx, cmp_logfn_t cb);
 int CMP_CTX_set_debug_callback( CMP_CTX *ctx, cmp_logfn_t cb);
+int CMP_CTX_set_certConf_callback( CMP_CTX *ctx, cmp_certConfFn_t cb);
 int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t len);
 int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len);
 int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert);

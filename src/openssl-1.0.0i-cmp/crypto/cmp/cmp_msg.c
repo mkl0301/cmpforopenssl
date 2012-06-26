@@ -706,6 +706,13 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 	/* TODO: set optional PKIStatusInfo */
 
+	if (ctx->certConf_cb && ctx->newClCert && ctx->certConf_cb(ctx->lastStatus, ctx->newClCert) == 0) {
+		certStatus->statusInfo = CMP_PKISTATUSINFO_new();
+		ASN1_INTEGER_set(certStatus->statusInfo->status, CMP_PKISTATUS_rejection);
+		CMP_printf(ctx, "INFO: rejecting certificate.");
+	}
+
+
 	if( !(msg->body->value.certConf = sk_CMP_CERTSTATUS_new_null())) goto err;
 	if( !sk_CMP_CERTSTATUS_push( msg->body->value.certConf, certStatus)) goto err;
 

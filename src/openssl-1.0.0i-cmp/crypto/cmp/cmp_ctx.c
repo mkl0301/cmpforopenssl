@@ -263,12 +263,14 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 
 	ctx->error_cb = NULL;
 	ctx->debug_cb = (cmp_logfn_t) puts;
+	ctx->certConf_cb = NULL;
 
 	ctx->trusted_store   = NULL;
 	ctx->untrusted_store = NULL;
 
 	ctx->maxPollCount = 3;
 
+	ctx->lastStatus = -1;
 	ctx->failInfoCode = 0;
 
 #if 0
@@ -333,6 +335,18 @@ unsigned long CMP_CTX_get_failInfoCode( CMP_CTX *ctx)
 {
 	if (!ctx) goto err;
 	return ctx->failInfoCode;
+err:
+	return 0;
+}
+
+/* ################################################################ *
+ * Set callback function for checking if the cert is ok or should
+ * it be rejected.
+ * ################################################################ */
+int CMP_CTX_set_certConf_callback( CMP_CTX *ctx, cmp_certConfFn_t cb)
+{
+	if (!ctx || !cb) goto err;
+	ctx->certConf_cb = cb;
 err:
 	return 0;
 }
