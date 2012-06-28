@@ -868,8 +868,9 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set the hostname of the proxy server to use for all connections
+ * ################################################################ */
 int CMP_CTX_set1_proxyName( CMP_CTX *ctx, const char *name) {
 	if (!ctx) goto err;
 	if (!name) goto err;
@@ -888,8 +889,9 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Set the hostname of the CA server
+ * ################################################################ */
 int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name) {
 	if (!ctx) goto err;
 	if (!name) goto err;
@@ -956,8 +958,9 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
+/* ################################################################ *
+ * Sets the HTTP path to be used on the server (normally "pkix/")
+ * ################################################################ */
 int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path) {
 	if (!ctx) goto err;
 
@@ -1034,6 +1037,10 @@ err:
 	return 0;
 }
 
+/* ################################################################ *
+ * Set the failinfo error code bits in CMP_CTX based on the given
+ * CMP_PKIFAILUREINFO structure
+ * ################################################################ */
 int CMP_CTX_set_failInfoCode(CMP_CTX *ctx, CMP_PKIFAILUREINFO *failInfo) {
 	int i;
 

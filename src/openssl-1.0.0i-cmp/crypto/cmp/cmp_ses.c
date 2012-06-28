@@ -197,7 +197,6 @@ static void add_error_data(const char *txt) {
 static X509 *certrep_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep, EVP_PKEY *pkey) {
 	X509 *newClCert = NULL;
 	
-
 	CMP_CTX_set_failInfoCode(ctx, CMP_CERTREPMESSAGE_PKIFailureInfo_get0(certrep, 0));
 
 	ctx->lastStatus = CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0);
