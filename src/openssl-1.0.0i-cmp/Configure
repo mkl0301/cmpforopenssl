@@ -635,7 +635,7 @@ my $no_shared=0; # but "no-shared" is default
 my $zlib=1;      # but "no-zlib" is default
 my $no_krb5=0;   # but "no-krb5" is implied unless "--with-krb5-..." is used
 my $no_rfc3779=1; # but "no-rfc3779" is default
-my $curl=1;      # but no-curl is default
+my $curl=1;
 my $no_asm=0;
 my $no_dso=0;
 my $no_gmp=0;
@@ -677,8 +677,7 @@ my %disabled = ( # "what"         => "comment" [or special keyword "experimental
                  "shared"         => "default",
 		 "store"	  => "experimental",
                  "zlib"           => "default",
-                 "zlib-dynamic"   => "default",
-                 #"curl"   => "default"
+                 "zlib-dynamic"   => "default"
                );
 my @experimental = ();
 
@@ -1297,18 +1296,24 @@ if ($zlib)
 
 if ($curl)
 	{
-    $cflags = "-DHAVE_CURL $cflags";
+	$cflags = "-DHAVE_CURL $cflags";
+	
 	if (defined($withargs{"curl-lib"}))
 		{
-		$lflags  = "$lflags -L" . $withargs{"curl-lib"} . " -lcurl -lidn -lrt";
+		$lflags  = "$lflags -L" . $withargs{"curl-lib"} . " -lcurl -lrt";
 		}
 	else
 		{
-		$lflags = "$lflags -lcurl";
+		$lflags = "$lflags " . `pkg-config --libs libcurl`;
 		}
-  if (defined($withargs{"curl-include"}))
+
+	if (defined($withargs{"curl-include"}))
 		{
 		$cflags=$withargs{"curl-include"}." $cflags";
+		}
+	else
+		{
+		$cflags = "$cflags " . `pkg-config --cflags libcurl`;
 		}
 	}
 
