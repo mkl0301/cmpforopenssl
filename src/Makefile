@@ -38,7 +38,7 @@ CURLCFGOPT = --prefix=$(ROOT) \
 						 --disable-shared --disable-manual --without-ca-bundle --without-ca-path \
 						 --disable-threaded-resover --disable-sspi --disable-crypto-auth --disable-cookies \
 						 --disable-soname-bump --without-ssl --without-zlib --without-gnutls --without-polarssl \
-						 --without-nss --without-libssh2 --without-librtmp
+						 --without-nss --without-libssh2 --without-librtmp --without-libidn
 
 LIGHTTPDCFGOPT = --prefix=$(ROOT) \
 				 --without-mysql --without-ldap --without-attr --without-valgrind \
