@@ -70,6 +70,7 @@
 
 #include <openssl/cmp.h>
 #include <openssl/crmf.h>
+#include <openssl/pem.h>
 
 #define CONFIG_FILE "openssl.cnf"
 #undef PROG
@@ -159,8 +160,8 @@ static opt_t cmp_opts[]={
     { "subject", "X509 subject name to be used in the requested certificate template", OPT_TXT, {&opt_subject} },
     { "recipient", "X509 name of the recipient", OPT_TXT, {&opt_recipient} },
     
-    { "extracertsout", "Directory where to save extra certificates received", OPT_TXT, {&opt_extracertsout} },
-    { "cacertsout", "Directory where to save received CA certificates (from IR)", OPT_TXT, {&opt_cacertsout} },
+    { "extracertsout", "File where to save extra certificates received", OPT_TXT, {&opt_extracertsout} },
+    { "cacertsout", "File where to save received CA certificates (from IR)", OPT_TXT, {&opt_cacertsout} },
 };
 
 static void show_help(void)
@@ -214,7 +215,7 @@ static int check_options(void)
         else if (!strcmp(opt_cmd_s, "kur")) opt_cmd = CMP_KUR;
         else if (!strcmp(opt_cmd_s, "cr")) opt_cmd = CMP_CR;
         else if (!strcmp(opt_cmd_s, "rr")) opt_cmd = CMP_RR;
-        else if (!strcmp(opt_cmd_s, "rr")) opt_cmd = CMP_CKUANN;
+        else if (!strcmp(opt_cmd_s, "ckuann")) opt_cmd = CMP_CKUANN;
         else
             {
             BIO_printf(bio_err, "error: unknown cmp command '%s'\n", opt_cmd_s);
@@ -337,41 +338,41 @@ static int setup_ctx(CMP_CTX *ctx)
         BIO_printf(bio_err, "error: unable to load private key '%s'\n", opt_key);
         goto err;
         }
-    CMP_CTX_set0_pkey(ctx, pkey);
+    if (pkey) CMP_CTX_set0_pkey(ctx, pkey);
 
     if (opt_newkey &&
         !(newPkey=load_key(bio_err, opt_newkey, opt_keyfmt, 0, opt_newkeypass, NULL, "newkey")))
         {
-        BIO_printf(bio_err, "error: unable to load private key '%s'\n", opt_key);
+        BIO_printf(bio_err, "error: unable to load private key '%s'\n", opt_newkey);
         goto err;
         }
-    CMP_CTX_set0_newPkey(ctx, newPkey);
+    if (newPkey) CMP_CTX_set0_newPkey(ctx, newPkey);
 
     if (opt_cert &&
         !(clcert=load_cert(bio_err, opt_cert, opt_certfmt, NULL, NULL, "clcert")))
         {
-        BIO_printf(bio_err, "error: unable to load client certificate '%s'\n", opt_key);
+        BIO_printf(bio_err, "error: unable to load client certificate '%s'\n", opt_cert);
         goto err;
         }
-    CMP_CTX_set1_clCert(ctx, clcert);
+    if (clcert) CMP_CTX_set1_clCert(ctx, clcert);
 
     if (opt_cacert &&
         !(cacert=load_cert(bio_err, opt_cacert, opt_certfmt, NULL, NULL, "cacert")))
         {
-        BIO_printf(bio_err, "error: unable to load server certificate '%s'\n", opt_key);
+        BIO_printf(bio_err, "error: unable to load server certificate '%s'\n", opt_cacert);
         goto err;
         }
-    CMP_CTX_set1_caCert(ctx, cacert);
+    if (cacert) CMP_CTX_set1_caCert(ctx, cacert);
 
     if (opt_trusted && !CMP_CTX_set0_trustedStore(ctx, create_cert_store(opt_trusted)))
         {
-        BIO_printf(bio_err, "error: unable to load trusted store '%s'\n", opt_key);
+        BIO_printf(bio_err, "error: unable to load trusted store '%s'\n", opt_trusted);
         goto err;
         }
 
     if (opt_untrusted && !CMP_CTX_set0_untrustedStore(ctx, create_cert_store(opt_untrusted)))
         {
-        BIO_printf(bio_err, "error: unable to load untrusted store '%s'\n", opt_key);
+        BIO_printf(bio_err, "error: unable to load untrusted store '%s'\n", opt_untrusted);
         goto err;
         }
 
@@ -413,6 +414,52 @@ static int setup_ctx(CMP_CTX *ctx)
 static CONF *conf=NULL;
 /* static CONF *extconf=NULL; */
 static BIO *bio_c_out=NULL;
+
+static int save_capubs(CMP_CTX *cmp_ctx,  char *destFile)
+    {
+    X509 *cert = NULL;
+    BIO *bio=NULL;
+    int n = 0;
+
+    if (!destFile || (bio=BIO_new(BIO_s_file())) == NULL ||
+            !BIO_write_filename(bio,(char *)destFile))
+        goto err;
+
+    BIO_printf(bio_c_out, "Received %d CA certificates, saving to %s\n", CMP_CTX_caPubs_num(cmp_ctx), destFile);
+    while ( (cert=CMP_CTX_caPubs_pop(cmp_ctx)) != NULL)
+        {
+        if (!PEM_write_bio_X509(bio, cert))
+            BIO_printf(bio_err,"ERROR writing to %s!\n", destFile);
+        }
+    return n;
+
+err:
+    BIO_printf(bio_err, "ERROR: could not open '%s' for writing\n", destFile);
+    return 0;
+    }
+
+static int save_extracerts(CMP_CTX *cmp_ctx,  char *destFile)
+    {
+    X509 *cert = NULL;
+    BIO *bio=NULL;
+    int n = 0;
+
+    if (!destFile || (bio=BIO_new(BIO_s_file())) == NULL ||
+            !BIO_write_filename(bio,(char *)destFile))
+        goto err;
+
+    BIO_printf(bio_c_out, "Received %d extra certificates, saving to %s\n", CMP_CTX_extraCertsIn_num(cmp_ctx), destFile);
+    while ( (cert=CMP_CTX_extraCertsIn_pop(cmp_ctx)) != NULL)
+        {
+        if (!PEM_write_bio_X509(bio, cert))
+            BIO_printf(bio_err,"ERROR writing to %s!\n", destFile);
+        }
+    return n;
+
+err:
+    BIO_printf(bio_err, "ERROR: could not open '%s' for writing\n", destFile);
+    return 0;
+    }
 
 
 int MAIN(int argc, char **argv)
@@ -555,6 +602,8 @@ bad_ops:
             newcert = CMP_doInitialRequestSeq(cmp_bio, cmp_ctx);
             if (!newcert)
                 goto err;
+            if (opt_cacertsout && CMP_CTX_caPubs_num(cmp_ctx) > 0)
+                save_capubs(cmp_ctx, opt_cacertsout);
             break;
         case CMP_KUR:
             newcert = CMP_doKeyUpdateRequestSeq(cmp_bio, cmp_ctx);
@@ -571,6 +620,9 @@ bad_ops:
             break;
         default: break;
         }
+
+    if (opt_extracertsout && CMP_CTX_extraCertsOut_num(cmp_ctx) > 0)
+        save_extracerts(cmp_ctx, opt_extracertsout);
 
     if (newcert && opt_certout)
         {
