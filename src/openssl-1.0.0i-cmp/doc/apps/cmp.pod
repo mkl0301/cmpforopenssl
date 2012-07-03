@@ -1,0 +1,187 @@
+
+=pod
+
+=head1 NAME
+
+cmp - client for the Certificate Management Protocol (RFC4210)
+
+=head1 SYNOPSIS
+
+B<openssl> B<cmp>
+[B<-server ADDRESS:PORT>]
+[B<-path remote_path>]
+[B<-cmd ir|kur|cr|rr|ckuann>]
+[B<-user username>]
+[B<-pass password>]
+[B<-cert filename>]
+[B<-key filename>]
+[B<-keypass password>]
+[B<-certout filename>]
+[B<-newkey filename>]
+[B<-newkeypass password>]
+[B<-cacert filename>]
+[B<-trusted filename>]
+[B<-untrusted filename>]
+[B<-keyfmt DER|PEM>]
+[B<-certfmt DER|PEM>]
+[B<-engine id>]
+[B<-validate_path>]
+[B<-extcerts filenames>]
+[B<-subject name>]
+[B<-recipient name>]
+[B<-extracertsoutn directory>]
+[B<-cacertsout directory>]
+
+=head1 DESCRIPTION
+
+The B<cmp> command is a client implementation for the Certificate
+Management Protocol as defined in RFC4210. It can be used to request
+certificates from a CA server, update their keys and request the
+certificates to be revoked and perform other CMP requests.
+
+=back
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-server ADDRESS:PORT>
+
+The IP address or hostname and port of the CMP server to connect to.
+
+=item B<-path remote_path>
+
+HTTP path location to use for the CMP server.
+
+=item B<-cmd ir|kur|cr|rr|ckuann>
+
+CMP command to execute. Currently implemented commands are:
+    ir  - Initial Request
+    kur - Key Update Request
+    cr  - Certificate Request
+    rr  - Revocation Request
+
+=item B<-user username>
+
+Username (reference value) to be used when messages are authenticated
+with pre-shared keys.
+
+=item B<-pass password>
+
+Password (secret value) to be used when messages are authenticated with
+pre-shared keys.
+
+=item B<-cert filename>
+
+The client's currently existing certificate. This will be used for
+signing messages for example in the Key Update Request, or when
+authenticating the IR using an existing certificate (as defined in
+appendix E.7 of the RFC).
+
+=item B<-key filename>
+
+The corresponding private key file for the client's current certificate.
+
+=item B<-keypass password>
+
+Password for the private key.
+
+=item B<-certout filename>
+
+The file where the newly received certificate should be saved.
+
+=item B<-newkey filename>
+
+The private key that we will be requesting the new certificate to be
+issued for, for example in IR or KUR.
+
+=item B<-newkeypass password>
+
+Password of the new key file.
+
+=item B<-cacert filename>
+
+Certificate of the CA server.
+
+=item B<-trusted filename>
+
+A file of trusted certificates. The file should contain multiple
+certificates concatenated together.
+
+=item B<-untrusted filename>
+
+A file of untrusted certificates. The file should contain multiple
+certificates.
+
+=item B<-keyfmt DER|PEM>
+
+Format the key files are stored in. Default value is PEM.
+
+=item B<-certfmt DER|PEM>
+
+Format the certificate files are stored in. Default value is PEM.
+
+=item B<-engine id>
+
+currently unused
+
+=item B<-validate_path>
+
+Enables validation of the CA certificates trust chain.
+
+=item B<-extcerts filenames>
+
+List of certificate files to include in the extraCerts field of outgoing
+requests.
+
+=item B<-subject name>
+
+X509 subject name to be used in the requested certificate template.
+
+=item B<-recipient name>
+
+X509 name of the recipient, i.e. the name of the CA we are sending the
+request to. If no CA certificate is provided, then at least the
+recipient name must be specified in order for the IR to work.
+
+=item B<-extracertsoutn directory>
+
+Directory where to save any extra certificates received in a response
+message.
+
+=item B<-cacertsout directory>
+
+Directory where to save received CA certificates (from an Initial
+Response message).
+
+=back
+
+=head1 EXAMPLES
+
+=over 4
+
+Note: in these examples the '\' means the example should be all on one
+line.
+
+Sending an initial request message to a CMP server running on the local
+host, using a pre-shared secret key for authentication. In this example
+the client does not have the CA certificate yet, so we specify the CA's
+name with -recipient and save any CA certificates that we may receive
+under the ./cacerts directory.
+
+  openssl genrsa -out cl_key.pem
+  openssl cmp -cmd ir -server 127.0.0.1:8080 -path pkix/ -user 1234 -pass password -recipient "/CN=CMPserver" -newkey cl_key.pem -subject "/CN=MyName" -cacertsout capubs.pem -certout cl_cert.pem
+
+Then, when the keys for this certificate need to be updated, the client
+can send a key update request. 
+
+  openssl genrsa -out cl_key_new.pem
+  openssl cmp -cmd kur -server 127.0.0.1:8080 -path pkix/ -cert cl_cert.pem -key cl_key.pem -cacert capubs.peml -newkey cl_key_new.pem -certout cl_cert_new.pem
+
+=back
+
+=head1 SEE ALSO
+
+L<genrsa(1)|genrsa(1)>, L<gendsa(1)|gendsa(1)>, L<x509v3_config(5)|x509(1)> 
+
+=cut
