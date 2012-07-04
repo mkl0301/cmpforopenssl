@@ -14,19 +14,24 @@
 
 =head1 DESCRIPTION
 
-This is the API for creating a BIO for CMP (Certificate Management Protocol) over HTTP with OpenSSL.
+This is the API for creating a BIO for CMP (Certificate Management
+Protocol) over HTTP with OpenSSL.
 
 CMP_new_http_bio() opens a OpenSSL BIO to communicate with the server.
 
-CMP_new_http_bio_ex() opens a OpenSSL BIO to communicate with the server, with one additional argument to specify the source interface address.
+CMP_new_http_bio_ex() opens a OpenSSL BIO to communicate with the
+server, with one additional argument to specify the source interface
+address.
 
-CMP_PKIMESSAGE_http_perform() sends the given pkimessage msg through given connection, and returns the servers response in out.
+CMP_PKIMESSAGE_http_perform() sends the given pkimessage msg through
+given connection, and returns the servers response in out.
 
 =head1 NOTES
 
 CMP is defined in RFC 4210 (and CRMF in RFC 4211).
 
-The implementation of CMP for OpenSSL is still work in progress. The API might change every release!
+The implementation of CMP for OpenSSL is still work in progress. The API
+might change every release!
 
 =head1 RETURN VALUES
 

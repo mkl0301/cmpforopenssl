@@ -22,7 +22,9 @@
 
 =head1 DESCRIPTION
 
-This is the API for creating different CMP related PKIMESSAGES. The functions allocate a new message and fill it with the relevant data from the given CMP_CTX.
+This is the API for creating different CMP related PKIMESSAGES. The
+functions allocate a new message and fill it with the relevant data from
+the given CMP_CTX.
 
 CMP_ir_new() creates an Initial Request message.
 
@@ -40,11 +42,13 @@ CMP_ckuann_new() creates a new CA Key Update Announcement message.
 
 CMP is defined in RFC 4210 (and CRMF in RFC 4211).
 
-The implementation of CMP for OpenSSL is still work in progress. The API might change every release!
+The implementation of CMP for OpenSSL is still work in progress. The API
+might change every release!
 
 =head1 RETURN VALUES
 
-All of the functions return a new CMP_PKIMESSAGE structure containing the generated message.
+All of the functions return a new CMP_PKIMESSAGE structure containing
+the generated message.
 
 =head1 EXAMPLE
 
