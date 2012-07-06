@@ -1304,7 +1304,7 @@ if ($curl)
 		}
 	else
 		{
-		$lcurl = `pkg-config --libs libcurl`;
+		my $lcurl = `pkg-config --libs libcurl`;
 		if ($? != 0) { $lcurl = "-lcurl"; }
 		$lflags = "$lflags $lcurl";
 		}
@@ -1315,7 +1315,7 @@ if ($curl)
 		}
 	else
 		{
-		$curlflags = `pkg-config --cflags libcurl`;
+		my $curlflags = `pkg-config --cflags libcurl`;
 		if ($? != 0) { $curlflags = ""; }
 		$cflags = "$cflags $curlflags";
 		}
