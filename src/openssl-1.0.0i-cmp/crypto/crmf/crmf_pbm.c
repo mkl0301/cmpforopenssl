@@ -4,6 +4,7 @@
 /* ====================================================================
  * Originally written by Martin Peylo for the OpenSSL project.
  * <martin dot peylo at nsn dot com>
+ * 2010-2012 Miikka Viljanen <mviljane@users.sourceforge.net>
  */
 /* ====================================================================
  * Copyright (c) 2007-2010 The OpenSSL Project.  All rights reserved.

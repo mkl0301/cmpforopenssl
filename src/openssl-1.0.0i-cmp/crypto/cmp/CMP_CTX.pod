@@ -157,7 +157,8 @@ CMP_CTX_set0_pkey() sets the given EVP_PKEY structure, holding the
 private and public keys, belonging to the Client Certificate, in the
 given CMP_CTX structure.
 
-CMP_CTX_set1_pkey() is the same as above, except that it does not consume the pointer.
+CMP_CTX_set1_pkey() is the same as above, except that it does not
+consume the pointer.
 
 CMP_CTX_set0_newPkey() sets the given EVP_PKEY structure, holding the
 private and public keys, which shall be certified, in the given CMP_CTX
