@@ -49,7 +49,6 @@ The following code does an Initial Request:
 	CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
 	CMP_CTX_set0_newPkey( cmp_ctx, initialPkey);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
-	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
 
 	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
 
@@ -65,7 +64,6 @@ The following code does an Key Update Request:
 	CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
 	CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
-	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_CRYPTLIB);
 
 	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
 
