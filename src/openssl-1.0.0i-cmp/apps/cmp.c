@@ -62,19 +62,30 @@
  * Nokia Siemens Networks for contribution to the OpenSSL project.
  */
 
+#include <openssl/opensslconf.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "apps.h"
 
+#define CONFIG_FILE "openssl.cnf"
+#undef PROG
+#define PROG	cmp_main
+
+#if !defined(HAVE_CURL) || defined(OPENSSL_NO_CMP)
+
+int MAIN(int argc, char **argv)
+    {
+    BIO_puts(bio_err, "error: openssl was compiled without libcurl or with cmp support disabled\n");
+    OPENSSL_EXIT(0);
+    }
+
+#else
 
 #include <openssl/cmp.h>
 #include <openssl/crmf.h>
 #include <openssl/pem.h>
-
-#define CONFIG_FILE "openssl.cnf"
-#undef PROG
-#define PROG	cmp_main
 
 typedef enum { CMP_IR,
                CMP_KUR,
@@ -651,3 +662,6 @@ err:
 
     OPENSSL_EXIT(ret);
     }
+
+#endif
+
