@@ -95,7 +95,6 @@
 
  #define CMP_COMPAT_RFC		1
  #define CMP_COMPAT_CRYPTLIB	2
- #define CMP_COMPAT_INSTA	3 - only supported when built with -DSUPPORT_OLD_INSTA
  #define CMP_COMPAT_INSTA_3_3	4
  int CMP_CTX_set_compatibility( CMP_CTX *ctx, const int mode);
 
@@ -189,8 +188,7 @@ CMP_CTX structure. This is needed since the CMP RFC can be interpreted
 in different ways so certain implementations may react different than
 others. Available Options are CMP_COMPAT_RFC for strict RFC conformace,
 CMP_COMPAT_CRYPTLIB for Cryptlib adaption, CMP_COMPAT_INSTA for Insta
-Certifier version < 3.3 adaption (only supported when built with
--DSUPPORT_OLD_INSTA) and CMP_COMPAT_INSTA_3_3 for Insta Certifier
+Certifier version < 3.3 adaption and CMP_COMPAT_INSTA_3_3 for Insta Certifier
 version => 3.3 adaption.
 
 CMP_CTX_set_option() sets the given values to the options
@@ -362,7 +360,6 @@ CA:
 	CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
 	CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
-	CMP_CTX_set_compatibility( cmp_ctx, CMP_COMPAT_INSTA);
 
 	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
 
