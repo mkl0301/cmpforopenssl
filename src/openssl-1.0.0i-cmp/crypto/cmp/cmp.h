@@ -97,7 +97,7 @@ DECLARE_ASN1_FUNCTIONS(ESS_ISSUERSERIAL)
 
 typedef struct ess_cert_id_st
 {
-	ASN1_OCTET_STRING *certHash;
+	ASN1_OCTET_STRING *hash;
 	ESS_ISSUERSERIAL  *issuerSerial;
 } ESS_CERT_ID;
 DECLARE_ASN1_FUNCTIONS(ESS_CERT_ID)
@@ -106,7 +106,7 @@ DECLARE_ASN1_SET_OF(ESS_CERT_ID)
 
 typedef struct ess_signing_cert_st
 {
-	STACK_OF(ESS_CERTID) *certs;
+	STACK_OF(ESS_CERTID) *cert_ids;
 	STACK_OF(POLICYINFO)    *policies;
 } ESS_SIGNING_CERT;
 DECLARE_ASN1_FUNCTIONS(ESS_SIGNING_CERT)
@@ -225,7 +225,6 @@ DECLARE_ASN1_FUNCTIONS(CMP_CAKEYUPDANNCONTENT)
 DECLARE_ASN1_ITEM(ESS_SIGNING_CERT)
 DECLARE_STACK_OF(ESS_SIGNING_CERT)
 
-
 typedef struct cmp_infotypeandvalue_st
 {
 	ASN1_OBJECT *infoType;
@@ -264,6 +263,7 @@ typedef struct cmp_infotypeandvalue_st
 
 		/* NID_id_smime_aa_signingCertificate */
 		STACK_OF(ESS_SIGNING_CERT) *signingCertificate; 
+		// ESS_SIGNING_CERT *signingCertificate; 
 
 		ASN1_TYPE *other;
 	} infoValue;
@@ -1290,9 +1290,6 @@ typedef struct cmp_ctx_st
 	/* compatibility mode */
 #define CMP_COMPAT_RFC		1
 #define CMP_COMPAT_CRYPTLIB	2
-#ifdef SUPPORT_OLD_INSTA /* TODO remove completely one day */
-#define CMP_COMPAT_INSTA	3
-#endif /* SUPPORT_OLD_INSTA */
 #define CMP_COMPAT_INSTA_3_3	4
 	int	   compatibility;
 	char	  *serverName;
