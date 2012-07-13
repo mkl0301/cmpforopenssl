@@ -84,6 +84,13 @@
 
 #include <unistd.h>
 
+
+#ifndef HAVE_CURL
+
+/* show some warning here? */
+
+#else
+
 int CMP_error_callback(const char *str, size_t len, void *u) {
 	CMP_CTX *ctx = (CMP_CTX*) u;
 	if (ctx && ctx->error_cb) 
@@ -1030,4 +1037,6 @@ err:
 
 	return 0;
 }
+
+#endif
 
