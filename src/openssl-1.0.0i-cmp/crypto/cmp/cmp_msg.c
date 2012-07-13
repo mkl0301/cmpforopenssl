@@ -255,19 +255,6 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	else
 		subject = NULL;
 
-	/* subject name is required for insta compatibility! */
-	if (ctx->compatibility == CMP_COMPAT_INSTA_3_3 && subject == NULL) {
-		/* XXX should this raise an error, or should we just use a default? */
-		subject = X509_NAME_new();
-		if (!X509_NAME_add_entry_by_txt(subject, "CN", MBSTRING_ASC, (unsigned char*) "My Common Name", -1, -1, 0))
-			goto err;
-#if 0
-		CMPerr(CMP_F_CMP_IR_NEW, CMP_R_SUBJECT_NAME_NOT_SET);
-		ERR_add_error_data(1, "subject name is required in insta compatibility mode");
-		goto err;
-#endif
-	}
-
 	if (sk_GENERAL_NAME_num(ctx->subjectAltNames) > 0)
 		add_altname_extensions(&extensions, ctx->subjectAltNames);
 
@@ -548,7 +535,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	if( !(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;
 
 	/* identify our cert */
-
 	/* this is like it is described in the RFC:
 	 * set oldCertId in "controls" of the CRMF cr message
 	 * CL does not like this to be set */
@@ -566,7 +552,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		CMP_INFOTYPEANDVALUE *itav = NULL;
 		STACK_OF(ESS_SIGNING_CERT) *set = NULL;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L 
 		if (!X509_digest(ctx->clCert, EVP_sha1(), hash, &hashLen)) goto err;
 		essCertId = ESS_CERT_ID_new();
 		if (!ASN1_OCTET_STRING_set(essCertId->hash, hash, hashLen)) goto err;
@@ -584,47 +569,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		itav->infoType = OBJ_nid2obj( NID_id_smime_aa_signingCertificate);
 		itav->infoValue.signingCertificate = set;
 		CMP_PKIHEADER_generalInfo_item_push0( msg->header, itav);
-#else
-		unsigned char *itavValueDer=NULL;
-		size_t itavValueDerLen;
-		ASN1_STRING * itavValueStr=NULL;
-		unsigned char *itavValueDerSet=NULL;
-
-        if (!X509_digest(ctx->clCert, EVP_sha1(), hash, &hashLen)) goto err;
-		essCertId = ESS_CERT_ID_new();
-		if (!ASN1_OCTET_STRING_set(essCertId->certHash, hash, hashLen)) goto err;
-
-		signingCert = ESS_SIGNING_CERT_new();
-		if( !signingCert->certs) {
-			/* XXX free... */
-			if( !(signingCert->certs = sk_ESS_CERT_ID_new_null())) goto err;
-		}
-		if(!sk_ESS_CERT_ID_push(signingCert->certs, essCertId)) goto err;
-		itavValueDerLen = i2d_ESS_SIGNING_CERT( signingCert, &itavValueDer);
-
-		/* this is just wrong but CL does it:
-		 * prepend an ASN.1 set to the id-aa-signingCertificate sequence */
-		if( !(itavValueDerSet = OPENSSL_malloc( itavValueDerLen+2))) goto err;
-		itavValueDerSet[0] = 0x31;
-		itavValueDerSet[1] = itavValueDer[1]+2;
-		memcpy( itavValueDerSet+2, itavValueDer, itavValueDerLen);
-
-		itavValueStr = ASN1_STRING_new();
-#if 0
-		ASN1_STRING_set( itavValueStr, itavValueDer, itavValueDerLen);
-#endif
-		ASN1_STRING_set( itavValueStr, itavValueDerSet, itavValueDerLen+2);
-
-		itav = CMP_INFOTYPEANDVALUE_new();
-#if 0
-		CMP_INFOTYPEANDVALUE_set0(itav, OBJ_nid2obj(NID_id_smime_aa_signingCertificate), V_ASN1_SEQUENCE, itavValueStr);
-#endif
-		/* CMP_INFOTYPEANDVALUE_set0(itav, OBJ_nid2obj( NID_id_smime_aa_signingCertificate), V_ASN1_SET, itavValueStr); */
-		itav->infoType = OBJ_nid2obj( NID_id_smime_aa_signingCertificate);
-		itav->infoValue.signingCertificate = set;
-		CMP_PKIHEADER_generalInfo_item_push0( msg->header, itav);
-#endif
-
 	}
 
 	sk_CRMF_CERTREQMSG_push( msg->body->value.kur, certReq0);
@@ -638,11 +582,12 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCertsOut, i)));
 	}
 
+	if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+
 	if (ctx->untrusted_store) {
 		/* attempt to get the trust chain for our certificate and send it along */
 		STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert, 0);
 		int i;
-		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
 		for(i = 0; i < sk_X509_num(chain); i++)
 			sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
 		sk_X509_free(chain);
