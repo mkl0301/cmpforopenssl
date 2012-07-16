@@ -215,6 +215,7 @@ X509_ALGOR *CMP_get_protectionAlgor_by_nid(int nid) {
 			return CMP_get_protectionAlgor_pbmac();
 			break;
 		case NID_sha1WithRSAEncryption:
+		case NID_sha256WithRSAEncryption:
 		case NID_dsaWithSHA1:
 		default:
 			if( !(alg = X509_ALGOR_new())) goto err;
@@ -591,8 +592,8 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 	unsigned char *mac=NULL;
 	const unsigned char *pbmStrUchar=NULL;
 
-	int pptype;
-	void *ppval;
+	int pptype=0;
+	void *ppval=NULL;
 
 	int usedAlgorNid;
 
@@ -616,7 +617,7 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 
 	if (usedAlgorNid == NID_id_PasswordBasedMAC) {
 		/* there is no pmb set in this message */
-		if (!ppval) return NULL; /* TODO return meaningful error message */
+		if (!ppval) goto err;
 		if (!secret) {
 			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC);
 			goto err;
