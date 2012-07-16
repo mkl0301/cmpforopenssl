@@ -332,7 +332,8 @@ void doIr(CMP_CTX *cmp_ctx) {
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
-  CMP_CTX_set1_caCert( cmp_ctx, caCert);
+  if (caCert)
+    CMP_CTX_set1_caCert( cmp_ctx, caCert);
   CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
   CMP_CTX_set1_timeOut( cmp_ctx, 60);
   if (opt_subjectName) {
