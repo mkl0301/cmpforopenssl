@@ -1564,6 +1564,10 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
 #endif
 
+#ifdef HAVE_CURL
+long CMP_get_http_code(const CMPBIO *bio);
+#endif
+
 /* BIO definitions */
 #define d2i_CMP_PKIMESSAGE_bio(bp,p) ASN1_d2i_bio_of(CMP_PKIMESSAGE,CMP_PKIMESSAGE_new,d2i_CMP_PKIMESSAGE,bp,p)
 #define i2d_CMP_PKIMESSAGE_bio(bp,o) ASN1_i2d_bio_of(CMP_PKIMESSAGE,i2d_CMP_PKIMESSAGE,bp,o)

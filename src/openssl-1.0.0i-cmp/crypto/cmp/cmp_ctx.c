@@ -1129,4 +1129,11 @@ void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...)
 	va_end(arg_ptr);
 }
 
+#ifdef HAVE_CURL
+long CMP_get_http_code(const CMPBIO *bio) {
+	long code = 0;
+	curl_easy_getinfo(bio, CURLINFO_RESPONSE_CODE, &code);
+	return code;
+}
+#endif
 
