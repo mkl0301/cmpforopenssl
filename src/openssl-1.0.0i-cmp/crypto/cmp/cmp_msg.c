@@ -391,7 +391,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE  *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
 
-	X509_NAME *subject=NULL;
+	X509_NAME *subject=NULL; /* needed for COMPAT_INSTA */
 	int subjKeyIDLoc;
 
 	/* check if all necessary options are set */
@@ -552,8 +552,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		CMP_INFOTYPEANDVALUE *itav = NULL;
 		STACK_OF(ESS_SIGNING_CERT) *set = NULL;
 
-		// if (!X509_digest(ctx->clCert, EVP_sha1(), hash, &hashLen)) goto err;
-		if (!X509_digest(ctx->clCert, EVP_sha256(), hash, &hashLen)) goto err;
+		if (!X509_digest(ctx->clCert, EVP_sha1(), hash, &hashLen)) goto err;
 		essCertId = ESS_CERT_ID_new();
 		if (!ASN1_OCTET_STRING_set(essCertId->hash, hash, hashLen)) goto err;
 
@@ -806,14 +805,12 @@ CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, 
 	/* create the newWithOld and oldWithNew certificates */
 	newWithOld = X509_dup( (X509*) newCaCert);
 	/* XXX Do I have to check what digest to use? */
-	// X509_sign( newWithOld, (EVP_PKEY*) oldPkey, EVP_sha1());
-	X509_sign( newWithOld, (EVP_PKEY*) oldPkey, EVP_sha256());
+	X509_sign( newWithOld, (EVP_PKEY*) oldPkey, EVP_sha1());
 	msg->body->value.ckuann->newWithOld = newWithOld;
 
 	oldWithNew = X509_dup( (X509*) oldCaCert);
 	/* XXX Do I have to check what digest to use? */
-	// X509_sign( oldWithNew, (EVP_PKEY*) newPkey, EVP_sha1());
-	X509_sign( oldWithNew, (EVP_PKEY*) newPkey, EVP_sha256());
+	X509_sign( oldWithNew, (EVP_PKEY*) newPkey, EVP_sha1());
 	msg->body->value.ckuann->oldWithNew = oldWithNew;
 
 	return msg;

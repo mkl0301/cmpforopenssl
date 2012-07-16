@@ -215,7 +215,6 @@ X509_ALGOR *CMP_get_protectionAlgor_by_nid(int nid) {
 			return CMP_get_protectionAlgor_pbmac();
 			break;
 		case NID_sha1WithRSAEncryption:
-		case NID_sha256WithRSAEncryption:
 		case NID_dsaWithSHA1:
 		default:
 			if( !(alg = X509_ALGOR_new())) goto err;

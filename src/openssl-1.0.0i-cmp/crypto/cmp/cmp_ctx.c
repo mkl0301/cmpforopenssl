@@ -1013,8 +1013,7 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algID) {
 #endif
 #ifndef OPENSSL_NO_RSA
 			if (EVP_PKEY_type(ctx->pkey->type) == EVP_PKEY_RSA) {
-				// nid = NID_sha1WithRSAEncryption;
-				nid = NID_sha256WithRSAEncryption;
+				nid = NID_sha1WithRSAEncryption;
 				break;
 			}
 #endif
