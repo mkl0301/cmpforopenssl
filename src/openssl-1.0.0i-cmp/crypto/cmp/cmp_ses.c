@@ -389,7 +389,12 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* if initializing with existing cert, first we'll see if the CA (sender) cert
 	 * can be found and validated using our root CA certificates */
 	if (ctx->clCert && ctx->trusted_store) {
-		caCert = find_cert_by_name(ip->extraCerts, ip->header->sender->d.directoryName);
+		if (CMP_PKIMESSAGE_get_bodytype(ip) == V_CMP_PKIBODY_IP)
+			caCert = find_cert_by_name(ip->body->value.ip->caPubs, ip->header->sender->d.directoryName);
+
+		if (!caCert)
+			caCert = find_cert_by_name(ip->extraCerts, ip->header->sender->d.directoryName);
+
 		if (caCert && CMP_validate_cert_path(ctx, 0, ip->extraCerts, caCert) == 0) {
 			/* if there is a caCert provided, try to use that for verifying 
 			 * the message signature. otherwise fail here. */
