@@ -172,7 +172,7 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 	curl_easy_setopt(curl, CURLOPT_URL, serverAddress);
 	curl_easy_setopt(curl, CURLOPT_PORT, port);
 
-	curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP);
+	curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
 
 	/* curl will automatically try to get proxy from environment if we don't set this.
 	 * if proxy use is enabled, it will be set in CMP_PKIMESSAGE_http_perform. */
