@@ -205,7 +205,7 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 			HMAC(EVP_sha1(), basekey, basekeyLen, msg, msgLen, *mac, macLen);
 			break;
 			/* optional TODO: DES-MAC, Triple DES-MAC */
-			/* XXX which NIDs to use for these algorithms??? */
+			/* which NIDs to use for these algorithms??? */
 		default:
 			CRMFerr(CRMF_F_CRMF_PASSWORDBASEDMAC_NEW, CRMF_R_UNSUPPORTED_ALGORITHM);
 			exit(1);

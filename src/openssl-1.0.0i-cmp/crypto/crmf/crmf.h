@@ -131,8 +131,6 @@ DECLARE_ASN1_FUNCTIONS(CRMF_ENCKEYWITHID_IDENTIFIER)
 typedef struct crmf_enckeywithid_st
 {
 	CRMF_PRIVATEKEYINFO          *privateKey;
-	/* TODO is this really done right? */
-	/* look at asn1/x_attrib.c */
 	CRMF_ENCKEYWITHID_IDENTIFIER *identifier; /* [0] */
 
 } CRMF_ENCKEYWITHID;
@@ -215,7 +213,6 @@ typedef struct crmf_encryptedkey_st
 	int type;
 	union   {
 		CRMF_ENCRYPTEDVALUE *encryptedValue; /* Deprecated */
-		/* TODO - why is this 0? */
 		CMS_ENVELOPEDDATA *envelopedData; /* XXX this is not really implemented so far */ /* 0 */
 	} value;
 } CRMF_ENCRYPTEDKEY;
@@ -256,7 +253,7 @@ SinglePubInfo ::= SEQUENCE {
 
 typedef struct crmf_singlepubinfo_st
 {
-	ASN1_INTEGER *pubMethod; /* XXX what to do with the defined values? */
+	ASN1_INTEGER *pubMethod;
 	GENERAL_NAME *pubLocation;
 } CRMF_SINGLEPUBINFO;
 DECLARE_ASN1_FUNCTIONS(CRMF_SINGLEPUBINFO)
@@ -275,7 +272,7 @@ pubInfos  SEQUENCE SIZE (1..MAX) OF SinglePubInfo OPTIONAL }
 
 typedef struct crmf_pkipublicationinfo_st
 {
-	ASN1_INTEGER *action; /* XXX what to do with the defined values? */
+	ASN1_INTEGER *action;
 	CRMF_SINGLEPUBINFO *pubinfos; /* XXX what to do with the SEQUENCE SIZE... ? */
 } CRMF_PKIPUBLICATIONINFO;
 DECLARE_ASN1_FUNCTIONS(CRMF_PKIPUBLICATIONINFO)
@@ -429,7 +426,6 @@ typedef struct crmf_proofofpossesion_st
 } CRMF_PROOFOFPOSSESION;
 DECLARE_ASN1_FUNCTIONS(CRMF_PROOFOFPOSSESION)
 
-/* XXX looks like x509.h also just uses ASN1_TIME */
 /*
 OptionalValidity ::= SEQUENCE {
  notBefore  [0] Time OPTIONAL,
@@ -492,7 +488,6 @@ typedef struct crmf_certrequest_st
 {
 	ASN1_INTEGER      *certReqId;
 	CRMF_CERTTEMPLATE *certTemplate;
-	/* XXX is this done right? */
 	STACK_OF(CRMF_ATTRIBUTETYPEANDVALUE) *controls;
 } CRMF_CERTREQUEST;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTREQUEST)

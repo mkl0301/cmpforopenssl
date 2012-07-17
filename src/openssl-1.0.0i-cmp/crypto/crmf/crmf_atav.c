@@ -114,7 +114,6 @@ void CRMF_ATTRIBUTETYPEANDVALUE_get0(ASN1_OBJECT **paobj, int *pptype, void **pp
 }
 
 /* ############################################################################ */
-/* TODO: check */
 /* ############################################################################ */
 int CRMF_ATTRIBUTETYPEANDVALUE_set0_nid_utf8string( CRMF_ATTRIBUTETYPEANDVALUE *atav, int nid, ASN1_UTF8STRING *utf8str) {
 	unsigned char *utf8strDer=NULL;
