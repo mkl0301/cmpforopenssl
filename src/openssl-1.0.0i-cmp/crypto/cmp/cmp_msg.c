@@ -108,6 +108,54 @@ static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL
 	return 1;
 }
 
+static ASN1_OCTET_STRING *get_subject_key_id(const X509 *cert) {
+	const unsigned char *subjKeyIDStrDer = NULL;
+	ASN1_OCTET_STRING *subjKeyIDStr = NULL;
+	X509_EXTENSION *ex = NULL;
+	int subjKeyIDLoc = -1;
+
+	subjKeyIDLoc = X509_get_ext_by_NID( (X509*) cert, NID_subject_key_identifier, -1);
+	if (subjKeyIDLoc == -1) return NULL;
+
+	/* found a subject key ID */
+	ex = sk_X509_EXTENSION_value( cert->cert_info->extensions, subjKeyIDLoc);
+
+	subjKeyIDStrDer = (const unsigned char *) ex->value->data;
+	subjKeyIDStr = d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
+
+	return subjKeyIDStr;
+}
+
+static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
+	if (ctx->clCert) {
+		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+
+		/* if we have untrusted store, try to add all the intermediate certs and our own */
+		if (ctx->untrusted_store) {
+			STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert, 0);
+			int i;
+			for(i = 0; i < sk_X509_num(chain); i++)
+				sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
+			sk_X509_free(chain);
+		}
+		if (sk_X509_num(msg->extraCerts) == 0)
+			/* Make sure that at least our own cert gets sent */
+			sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
+	}
+
+	/* add any extraCertsOut that are set in the context */
+	if (sk_X509_num(ctx->extraCertsOut) > 0) {
+		int i;
+		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+		for (i = 0; i < sk_X509_num(ctx->extraCertsOut); i++)
+			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCertsOut, i)));
+	}
+
+	return 1;
+err:
+	return 0;
+}
+
 /* ############################################################################ 
  * Returns the trust chain for a given certificate up to and including
  * the trust anchor
@@ -186,9 +234,6 @@ CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) 
 		goto err;
 
-	/* TODO: make a generic function to create msg protection and set this, do
-	 * this for all message types */
-	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
 	return msg;
 
 err:
@@ -222,21 +267,9 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	/* TODO: make this generic and bring it close together with CMP_protection_new() */
 	if(ctx->clCert)
 	{
-		int subjKeyIDLoc;
-		if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->clCert, NID_subject_key_identifier, -1)) != -1) {
-			/* found a subject key ID */
-			ASN1_OCTET_STRING *subjKeyIDStr = NULL;
-			X509_EXTENSION *ex = NULL;
-			const unsigned char *subjKeyIDStrDer = NULL;
-
-			ex=sk_X509_EXTENSION_value( ctx->clCert->cert_info->extensions, subjKeyIDLoc);
-
-			subjKeyIDStrDer = (const unsigned char *) ex->value->data;
-			subjKeyIDStr = d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
-
+		ASN1_OCTET_STRING *subjKeyIDStr = get_subject_key_id(ctx->clCert);
+		if (subjKeyIDStr) {
 			CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
-
-			/* clean up */
 			ASN1_OCTET_STRING_free(subjKeyIDStr);
 		}
 	}
@@ -258,7 +291,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	if (sk_GENERAL_NAME_num(ctx->subjectAltNames) > 0)
 		add_altname_extensions(&extensions, ctx->subjectAltNames);
 
-	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
+	/* certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->compatibility, ctx->popoMethod, extensions))) goto err;
 
 	if (extensions) sk_X509_EXTENSION_pop_free(extensions, X509_EXTENSION_free);
@@ -266,39 +299,11 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	if( !(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.ir, certReq0);
 
-	/* TODO: combine the following two blocks for adding extraCerts */
-	/* E.7: if we have external identity cert add to extraCerts */
-	if (ctx->clCert) {
-		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
-
-		/* if we have untrusted store, try to add all the intermediate certs and our own */
-		if (ctx->untrusted_store) {
-			STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert, 0);
-			int i;
-			for(i = 0; i < sk_X509_num(chain); i++)
-				sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
-			sk_X509_free(chain);
-		}
-		else if (sk_X509_num(msg->extraCerts) == 0)
-			/* Make sure that at least our own cert gets sent */
-			sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
-	}
-
-	/* add any extraCertsOut that are set in the context */
-	if (sk_X509_num(ctx->extraCertsOut) > 0) {
-		int i;
-		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
-		for (i = 0; i < sk_X509_num(ctx->extraCertsOut); i++)
-			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCertsOut, i)));
-	}
+	add_extraCerts(ctx, msg);
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
 	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
-
-	/* TODO: make a generic function to create msg protection and set this, do
-	 * this for all message types */
-	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
 
 	return msg;
 
@@ -317,6 +322,7 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	CRMF_CERTTEMPLATE *certTpl=NULL;
 	X509_NAME *subject=NULL;
 	CMP_REVDETAILS *rd=NULL;
+	ASN1_OCTET_STRING *subjKeyIDStr=NULL;
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
@@ -329,27 +335,11 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_RR);
 
-	{
-		int subjKeyIDLoc;
-		if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->clCert, 
-												 NID_subject_key_identifier, -1)) != -1) {
-			/* found a subject key ID */
-			ASN1_OCTET_STRING *subjKeyIDStr = NULL;
-			X509_EXTENSION *ex = NULL;
-			const unsigned char *subjKeyIDStrDer = NULL;
-
-			ex=sk_X509_EXTENSION_value( ctx->clCert->cert_info->extensions, subjKeyIDLoc);
-
-			subjKeyIDStrDer = (const unsigned char *) ex->value->data;
-			subjKeyIDStr = d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
-
-			CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
-
-			/* clean up */
-			ASN1_OCTET_STRING_free(subjKeyIDStr);
-		}
+	if ((subjKeyIDStr = get_subject_key_id(ctx->clCert)) != NULL) {
+		CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
+		ASN1_OCTET_STRING_free(subjKeyIDStr);
 	}
-
+		
 	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
 
 	if (ctx->implicitConfirm)
@@ -372,8 +362,6 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, ctx->secretValue);
 	if (!msg->protection) goto err;
 
-	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
-
 	return msg;
 
 err:
@@ -391,8 +379,8 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE  *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
 
-	X509_NAME *subject=NULL; /* needed for COMPAT_INSTA */
-	int subjKeyIDLoc;
+	X509_NAME *subject=NULL;
+	ASN1_OCTET_STRING *subjKeyIDStr=NULL;
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
@@ -402,22 +390,9 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	/* TODO this is pasted around at least 3 times, refactor it... */
-	if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->clCert, 
-											 NID_subject_key_identifier, -1)) != -1) {
-		/* found a subject key ID */
-		ASN1_OCTET_STRING *subjKeyIDStr = NULL;
-		X509_EXTENSION *ex = NULL;
-		const unsigned char *subjKeyIDStrDer = NULL;
-
-		ex=sk_X509_EXTENSION_value( ctx->clCert->cert_info->extensions, subjKeyIDLoc);
-
-		subjKeyIDStrDer = (const unsigned char *) ex->value->data;
-		subjKeyIDStr = d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
-
+	subjKeyIDStr = get_subject_key_id(ctx->clCert);
+	if (subjKeyIDStr) {
 		CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
-
-		/* clean up */
 		ASN1_OCTET_STRING_free(subjKeyIDStr);
 	}
 
@@ -437,35 +412,12 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	if( !(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
 
-  /* TODO XXX: we should make sure to add an extra certs if we sign with a * certifcate */
-	if (sk_X509_num(ctx->extraCertsOut) > 0) {
-		int i;
-		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
-		for (i = 0; i < sk_X509_num(ctx->extraCertsOut); i++)
-			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCertsOut, i)));
-	}
-
-	if (ctx->untrusted_store) {
-		/* attempt to get the trust chain for our certificate and send it along */
-		STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert, 0);
-		int i;
-		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
-		for(i = 0; i < sk_X509_num(chain); i++)
-			sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
-		sk_X509_free(chain);
-	}
-
-	if (sk_X509_num(msg->extraCerts) == 0)
-		/* Make sure that at least our own cert gets sent */
-		sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
+	add_extraCerts(ctx, msg);
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
 	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
 	if (!msg->protection) goto err;
-
-	/* XXX - should this be done somewhere else? */
-	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
 
 	return msg;
 
@@ -499,21 +451,9 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	/* this is not needed in case protection is done with MSG_MAC_ALG (what is not
 	 * implemented so far) */
 	if( ctx->clCert ) {
-		int subjKeyIDLoc;
-		if( (subjKeyIDLoc = X509_get_ext_by_NID( (X509*) ctx->clCert, NID_subject_key_identifier, -1)) != -1) {
-			/* found a subject key ID */
-			ASN1_OCTET_STRING *subjKeyIDStr = NULL;
-			X509_EXTENSION *ex = NULL;
-			const unsigned char *subjKeyIDStrDer = NULL;
-
-			ex=sk_X509_EXTENSION_value( ctx->clCert->cert_info->extensions, subjKeyIDLoc);
-
-			subjKeyIDStrDer = (const unsigned char *) ex->value->data;
-			subjKeyIDStr = d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
-
+		ASN1_OCTET_STRING *subjKeyIDStr = get_subject_key_id(ctx->clCert);
+		if (subjKeyIDStr) {
 			CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
-
-			/* clean up */
 			ASN1_OCTET_STRING_free(subjKeyIDStr);
 		}
 	}
@@ -528,7 +468,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	else
 		subject = X509_get_subject_name( (X509*) ctx->clCert);
 
-	/* XXX certReq 0 is not freed on error, but that's because it will become part of kur and is freed there */
+	/* certReq 0 is not freed on error, but that's because it will become part of kur and is freed there */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->compatibility, ctx->popoMethod, NULL))) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);
@@ -573,37 +513,12 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 	sk_CRMF_CERTREQMSG_push( msg->body->value.kur, certReq0);
 
-	
-  /* TODO XXX: we should make sure to add an extra certs if we sign with a * certifcate */
-	if (sk_X509_num(ctx->extraCertsOut) > 0) {
-		int i;
-		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
-		for (i = 0; i < sk_X509_num(ctx->extraCertsOut); i++)
-			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCertsOut, i)));
-	}
-
-	if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
-
-	if (ctx->untrusted_store) {
-		/* attempt to get the trust chain for our certificate and send it along */
-		STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert, 0);
-		int i;
-		for(i = 0; i < sk_X509_num(chain); i++)
-			sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
-		sk_X509_free(chain);
-	}
-
-	if (sk_X509_num(msg->extraCerts) == 0)
-		/* Make sure that at least our own cert gets sent */
-		sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
+	add_extraCerts(ctx, msg);
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
 	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
 	if (!msg->protection) goto err;
-
-	/* XXX - should this be done somewhere else? */
-	CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
 
 	return msg;
 
