@@ -256,10 +256,10 @@ static X509 *certrep_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep, 
 			statusLen = strlen(statusString);
 
 			while ((status = sk_ASN1_UTF8STRING_pop(strstack))) {
-				statusLen += strlen(status->data)+2;
+				statusLen += strlen((char*)status->data)+2;
 				statusString = OPENSSL_realloc(statusString, statusLen);
 				if (!statusString) goto err;
-				strcat(statusString, status->data);
+				strcat(statusString, (char*)status->data);
 			}
 
 			strcat(statusString, "\"");

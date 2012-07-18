@@ -116,9 +116,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	 * int serverPort
 	 * int transport
 	 * int implicitConfirm
-	* XXX not setting senderNonce test for PKI INFO
 	 * int setSenderNonce
-	* XXX not setting transactionID test for PKI INFO
 	 * int setTransactionID
 	 * int popoMethod
 	 * int timeOut
@@ -251,9 +249,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->proxyPort       = 0;
 	ctx->transport       = CMP_TRANSPORT_HTTP;
 	ctx->implicitConfirm = 0;
-	/* XXX not setting senderNonce test for PKI INFO */
 	ctx->setSenderNonce  = 1;
-	/* XXX not setting transactionID test for PKI INFO */
 	ctx->setTransactionID= 1;
 	ctx->popoMethod      = CMP_POPO_SIGNATURE;
 	ctx->timeOut         = 2*60;
@@ -1132,7 +1128,7 @@ void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...)
 #ifdef HAVE_CURL
 long CMP_get_http_code(const CMPBIO *bio) {
 	long code = 0;
-	curl_easy_getinfo(bio, CURLINFO_RESPONSE_CODE, &code);
+	curl_easy_getinfo((CMPBIO*)bio, CURLINFO_RESPONSE_CODE, &code);
 	return code;
 }
 #endif

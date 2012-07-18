@@ -82,7 +82,7 @@
 
 /* ############################################################################ */
 /* id-PasswordBasedMAC OBJECT IDENTIFIER ::= { 1 2 840 113533 7 66 13} */
-CRMF_PBMPARAMETER * CRMF_pbm_new() {
+CRMF_PBMPARAMETER * CRMF_pbm_new(void) {
 	CRMF_PBMPARAMETER *pbm=NULL;
 	unsigned char salt[SALT_LEN];
 

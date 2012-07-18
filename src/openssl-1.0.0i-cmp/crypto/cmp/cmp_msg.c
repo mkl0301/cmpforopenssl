@@ -406,7 +406,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	/* Set the subject from the previous certificate */
 	subject = X509_get_subject_name(ctx->clCert);
 
-	/* XXX certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
+	/* certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility, ctx->popoMethod, NULL))) goto err;
 
 	if( !(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
@@ -498,7 +498,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 		signingCert = ESS_SIGNING_CERT_new();
 		if( !signingCert->cert_ids) {
-			/* XXX free... */
 			if( !(signingCert->cert_ids = sk_ESS_CERT_ID_new_null())) goto err;
 		}
 		if(!sk_ESS_CERT_ID_push(signingCert->cert_ids, essCertId)) goto err;
@@ -549,7 +548,6 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CERTCONF);
 
-	/* TODO - there could be more than one certconf */
 	/* TODO - do I have to free this in error case? */
 	if( !(certStatus = CMP_CERTSTATUS_new())) goto err;
 
@@ -560,7 +558,7 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
         -- the hash of the certificate, using the same hash algorithm
         -- as is used to create and verify the certificate signature
 	*/
-	/* TODO: iterate through all the certificates in order to handle all */
+	/* TODO: iterate through all the certificates in order to confirm them all */
 
 /* XXX the former value should be freed */
 	CMP_CERTSTATUS_set_certHash( certStatus, ctx->newClCert);
@@ -584,6 +582,7 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 err:
 	CMPerr(CMP_F_CMP_CERTCONF_NEW, CMP_R_ERROR_CREATING_CERTCONF);
 	if (msg) CMP_PKIMESSAGE_free(msg);
+	if (certStatus) CMP_CERTSTATUS_free(certStatus);
 	return NULL;
 }
 

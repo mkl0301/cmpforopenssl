@@ -584,7 +584,7 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 	unsigned int sigLen;
 	unsigned char *certReqDer=NULL;
 	unsigned char *signature=NULL;
-	EVP_MD *alg=NULL;
+	const EVP_MD *alg=NULL;
 
 	EVP_MD_CTX *ctx=NULL;
 

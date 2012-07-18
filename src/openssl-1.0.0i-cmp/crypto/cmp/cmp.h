@@ -279,7 +279,6 @@ DECLARE_STACK_OF(CMP_INFOTYPEANDVALUE)
          -- see [RFC2482] for details)
 	 */
 
-	 /* XXX is this right? */
 #if 0
 DECLARE_STACK_OF(ASN1_UTF8STRING)
 typedef STACK_OF(ASN1_UTF8STRING) CMP_PKIFREETEXT;
@@ -382,7 +381,6 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKIFREETEXT)
 #define CMP_PKIFAILUREINFO_systemFailure	25
 #define CMP_PKIFAILUREINFO_duplicateCertReq	26
 #define CMP_PKIFAILUREINFO_MAX                  26
-     /* XXX this should be done right */
 typedef ASN1_BIT_STRING CMP_PKIFAILUREINFO;
 
 #define CMP_CTX_FAILINFO_badAlg              (1 << 0)
@@ -509,7 +507,7 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKISTATUSINFO)
 DECLARE_STACK_OF(CMP_PKISTATUSINFO)
 
 /*
-     XXX RevReqContent ::= SEQUENCE OF RevDetails
+     RevReqContent ::= SEQUENCE OF RevDetails
 
      RevDetails ::= SEQUENCE {
          certDetails         CertTemplate,
@@ -616,7 +614,7 @@ DECLARE_STACK_OF(CMP_CERTSTATUS)
 DECLARE_ASN1_SET_OF(CMP_CERTSTATUS)
 DECLARE_ASN1_FUNCTIONS(CMP_CERTSTATUS)
 
-/* XXX this is not used */
+/* this is not used */
 /* typedef STACK_OF(CMP_CERTSTATUS) CMP_CERTCONFIRMCONTENT; */
 /* DECLARE_ASN1_FUNCTIONS(CMP_CERTCONFIRMCONTENT) */
 
@@ -737,12 +735,6 @@ TODO: A LOT
          pollRep  [26] PollRepContent          --Polling response
 */
 
-#if 0
-XXX this does not work
-typedef ASN1_OCTET_STRING XXX_KEYIDENTIFIER;
-DECLARE_ASN1_FUNCTIONS(XXX_KEYIDENTIFIER)
-#endif
-
 /*
 
      PKIProtection ::= BIT STRING
@@ -758,12 +750,6 @@ DECLARE_ASN1_FUNCTIONS(XXX_KEYIDENTIFIER)
      }
 
 */
-
-#if 0
-XXX this does not work
-typedef ASN1_BIT_STRING CMP_PKIPROTECTION;
-DECLARE_ASN1_FUNCTIONS(CMP_PKIPROTECTION)
-#endif
 
 /*
      PKIHeader ::= SEQUENCE {
@@ -827,11 +813,7 @@ typedef struct cmp_pkiheader_st
 	ASN1_OCTET_STRING             *transactionID;  /* 4 */
 	ASN1_OCTET_STRING             *senderNonce;    /* 5 */
 	ASN1_OCTET_STRING             *recipNonce;     /* 6 */
-	/* XXX is this right? */
-#if 0
-	CMP_PKIFREETEXT               *freeText;       /* 7 */
-#endif
-	STACK_OF(ASN1_UTF8STRING)               *freeText;       /* 7 */
+	STACK_OF(ASN1_UTF8STRING)     *freeText;       /* 7 */
 	STACK_OF(CMP_INFOTYPEANDVALUE) *generalInfo;    /* 8 */
 } CMP_PKIHEADER;
 DECLARE_ASN1_FUNCTIONS(CMP_PKIHEADER)
@@ -904,7 +886,6 @@ typedef struct cmp_pkibody_st
         /* ckuann   [15] CAKeyUpdAnnContent,     --CA Key Update Ann. */
 		CMP_CAKEYUPDANNCONTENT   *ckuann; /* 15 */
 	/* cann     [16] CertAnnContent,         --Certificate Ann. */
-	/* TODO: CertAnnContent ::= CMPCertificate */
 	/* XXX CMPcertificate ::= Certificate */
 		X509                       *cann; /* 16 */
         /* rann     [17] RevAnnContent,          --Revocation Ann. */
@@ -915,10 +896,7 @@ typedef struct cmp_pkibody_st
         /* pkiconf  [19] PKIConfirmContent,      --Confirmation */
 	/* CMP_PKICONFIRMCONTENT would be only a typedfef of ASN1_NULL */
 	/* CMP_CONFIRMCONTENT *pkiconf; */
-	/* XXX it should be the following according to the RFC but there might be a struct in it */
-#if 0
-	ASN1_NULL *pkiconf; /* 19 */
-#endif
+		/* this should ASN1_NULL according to the RFC but there might be a struct in it */
 		ASN1_TYPE                       *pkiconf; /* 19 */
         /* nested   [20] NestedMessageContent,   --Nested Message */
         /* NestedMessageContent ::= PKIMessages */
@@ -1241,7 +1219,6 @@ typedef int (*cmp_certConfFn_t)(int status, const X509 *cert);
 
 
 /* CMP_CTX definitions */
-/* XXX TODO work in progress */
 /* this structure is used to store the context for CMP sessions */
 /* partly in ASN.1 syntax in order to ease storing it in the future */
 typedef struct cmp_ctx_st
@@ -1260,7 +1237,6 @@ typedef struct cmp_ctx_st
 	 * subject name is read from there and this is ignored */
 	X509_NAME            *subjectName;
 	/* X509_NAME to set in PKIHEADER->recipient */ 
-    /* TODO check: this should only be used if the caCert is not present */
 	X509_NAME            *recipient;
 	/* This will contain the sender name copied from the last received PKIMessage */
 	X509_NAME            *sender;

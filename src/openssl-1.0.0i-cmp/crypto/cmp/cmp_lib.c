@@ -230,7 +230,7 @@ err:
 /* ############################################################################ *
  * Create an X509_ALGOR structure for PasswordBasedMAC protection
  * ############################################################################ */
-X509_ALGOR *CMP_get_protectionAlgor_pbmac() {
+X509_ALGOR *CMP_get_protectionAlgor_pbmac(void) {
 	X509_ALGOR *alg=NULL;
 	CRMF_PBMPARAMETER *pbm=NULL;
 	unsigned char *pbmDer=NULL;

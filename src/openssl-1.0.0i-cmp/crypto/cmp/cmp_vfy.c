@@ -316,7 +316,7 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
     int cert_error = X509_STORE_CTX_get_error(ctx);
     X509 *current_cert = X509_STORE_CTX_get_current_cert(ctx);
 
-    /* XXX should we check policies here? */
+    /* TODO: we could check policies here too */
 
     if (!ok)
     {
