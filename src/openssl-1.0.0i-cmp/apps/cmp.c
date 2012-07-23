@@ -1,3 +1,4 @@
+/* vim: set cinoptions={1s: */
 /* apps/cmp.c
  */
 /* ====================================================================
@@ -70,6 +71,7 @@
 #include "apps.h"
 
 #define CONFIG_FILE "openssl.cnf"
+#define CMP_SECTION "cmp"
 #undef PROG
 #define PROG	cmp_main
 
@@ -108,7 +110,7 @@ typedef struct
 
 static char *opt_server=NULL;
 static char *server_address=NULL;
-static int   server_port=0;
+static long  server_port=0;
 static char *opt_path="/";
 
 static char *opt_cmd_s=NULL;
@@ -190,6 +192,39 @@ static void show_help(void)
         BIO_printf(bio_err, " -%s\n", o->help);
         }
     BIO_puts(bio_err, "\n");
+    }
+
+static int read_config(CONF *conf)
+    {
+    opt_server = NCONF_get_string(conf, CMP_SECTION, "server");
+    opt_path = NCONF_get_string(conf, CMP_SECTION, "path");
+
+    opt_cert = NCONF_get_string(conf, CMP_SECTION, "cert");
+    opt_key = NCONF_get_string(conf, CMP_SECTION, "key");
+    opt_keypass = NCONF_get_string(conf, CMP_SECTION,"keypass");
+
+    opt_user = NCONF_get_string(conf, CMP_SECTION, "user");
+    opt_pass = NCONF_get_string(conf, CMP_SECTION, "pass");
+
+    opt_certout = NCONF_get_string(conf, CMP_SECTION, "certout");
+    opt_newkey = NCONF_get_string(conf, CMP_SECTION, "newkey");
+    opt_newkeypass = NCONF_get_string(conf, CMP_SECTION, "newkeypass");
+
+    opt_cacert = NCONF_get_string(conf, CMP_SECTION, "cacert");
+    opt_trusted = NCONF_get_string(conf, CMP_SECTION, "trusted");
+    opt_untrusted = NCONF_get_string(conf, CMP_SECTION, "untrusted");
+    opt_keyfmt_s = NCONF_get_string(conf, CMP_SECTION, "keyfmt");
+    opt_certfmt_s = NCONF_get_string(conf, CMP_SECTION, "certfmt");
+    opt_engine = NCONF_get_string(conf, CMP_SECTION, "engine");
+
+    NCONF_get_number_e(conf, CMP_SECTION, "validate_path", &opt_validate_path);
+
+    opt_extcerts = NCONF_get_string(conf, CMP_SECTION, "extcerts");
+    opt_subject = NCONF_get_string(conf, CMP_SECTION, "subject");
+    opt_recipient = NCONF_get_string(conf, CMP_SECTION, "recipient");
+
+    opt_cacertsout = NCONF_get_string(conf, CMP_SECTION, "cacertsout");
+    opt_extracertsout = NCONF_get_string(conf, CMP_SECTION, "extracertsout");
     }
 
 static int check_options(void)
@@ -475,11 +510,9 @@ err:
 
 int MAIN(int argc, char **argv)
     {
-    /*
     char *configfile=NULL;
     long errorline=-1;
     char *tofree=NULL;
-    */
     int badops=0;
     int ret=1;
     CMP_CTX *cmp_ctx;
@@ -496,40 +529,43 @@ int MAIN(int argc, char **argv)
     ERR_load_crypto_strings();
     bio_c_out=BIO_new_fp(stdout,BIO_NOCLOSE);
 
-    /* TODO load up default values from config for trusted store location etc */
-    /*
     if (configfile == NULL) configfile = getenv("OPENSSL_CONF");
-	if (configfile == NULL) configfile = getenv("SSLEAY_CONF");
-	if (configfile == NULL)
-		{
-		const char *s=X509_get_default_cert_area();
-		size_t len;
+    if (configfile == NULL) configfile = getenv("SSLEAY_CONF");
+    if (configfile == NULL)
+        {
+        const char *s=X509_get_default_cert_area();
+        size_t len;
 
-		len = strlen(s)+sizeof(CONFIG_FILE)+1;
-		tofree=OPENSSL_malloc(len);
-		BUF_strlcpy(tofree,s,len);
-		BUF_strlcat(tofree,"/"CONFIG_FILE,len);
-		configfile=tofree;
-		}
+        len = strlen(s)+sizeof(CONFIG_FILE)+1;
+        tofree=OPENSSL_malloc(len);
+        BUF_strlcpy(tofree,s,len);
+        BUF_strlcat(tofree,"/"CONFIG_FILE,len);
+        configfile=tofree;
+        }
 
-	BIO_printf(bio_err,"Using configuration from %s\n",configfile);
-	conf = NCONF_new(NULL);
-	if (NCONF_load(conf,configfile,&errorline) <= 0)
-		{
-		if (errorline <= 0)
-			BIO_printf(bio_err,"error loading the config file '%s'\n",
-				configfile);
-		else
-			BIO_printf(bio_err,"error on line %ld of config file '%s'\n"
-				,errorline,configfile);
-		goto err;
-		}
-	if(tofree)
-		{
-		OPENSSL_free(tofree);
-		tofree = NULL;
-		}
-    */
+    if (configfile)
+        {
+        BIO_printf(bio_err,"Using configuration from %s\n",configfile);
+        conf = NCONF_new(NULL);
+        if (NCONF_load(conf,configfile,&errorline) <= 0)
+            {
+            if (errorline <= 0)
+                BIO_printf(bio_err,"error loading the config file '%s'\n",
+                        configfile);
+            else
+                BIO_printf(bio_err,"error on line %ld of config file '%s'\n",
+                        errorline,configfile);
+            goto err;
+            }
+
+        read_config(conf); /*XXX check result*/
+        }
+
+    if(tofree)
+        {
+        OPENSSL_free(tofree);
+        tofree = NULL;
+        }
 
     while (--argc > 0 && ++argv)
         {
