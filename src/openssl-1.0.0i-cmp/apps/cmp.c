@@ -208,7 +208,6 @@ static int read_config(CONF *conf)
                 break;
             case OPT_TXT:
                 *opt->v.txt = NCONF_get_string(conf, CMP_SECTION, opt->name);
-                printf("%s = %s\n", opt->name, *opt->v.txt);
                 break;
             default:
                 break;
