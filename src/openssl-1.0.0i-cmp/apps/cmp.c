@@ -104,7 +104,7 @@ typedef struct
     opttype_t type;
     union {
         char **txt;
-        int *num;
+        long *num;
         } v;
     } opt_t;
 
@@ -129,12 +129,12 @@ static char *opt_newkeypass=NULL;
 static char *opt_cacert=NULL;
 static char *opt_trusted=NULL;
 static char *opt_untrusted=NULL;
-static char *opt_keyfmt_s=NULL;
-static char *opt_certfmt_s=NULL;
+static char *opt_keyfmt_s="PEM";
+static char *opt_certfmt_s="PEM";
 static int   opt_keyfmt=FORMAT_PEM;
 static int   opt_certfmt=FORMAT_PEM;
 static char *opt_engine=NULL;
-static int   opt_validate_path=0;
+static long  opt_validate_path=0;
 
 static char *opt_extcerts=NULL;
 static char *opt_subject=NULL;
@@ -168,7 +168,7 @@ static opt_t cmp_opts[]={
     { "engine", "OpenSSL engine to use", OPT_TXT, {&opt_engine} },
 
     /* XXX should this be on by default? */
-    { "validate_path", "Validate the trust path of the CA certificate", OPT_TXT, {.num=&opt_validate_path} },
+    { "validate_path", "Validate the trust path of the CA certificate", OPT_NUM, {.num=&opt_validate_path} },
     { "extcerts", "List of certificate files to include in outgoing messages", OPT_TXT, {&opt_extcerts} },
     { "subject", "X509 subject name to be used in the requested certificate template", OPT_TXT, {&opt_subject} },
     { "recipient", "X509 name of the recipient", OPT_TXT, {&opt_recipient} },
@@ -196,35 +196,26 @@ static void show_help(void)
 
 static int read_config(CONF *conf)
     {
-    opt_server = NCONF_get_string(conf, CMP_SECTION, "server");
-    opt_path = NCONF_get_string(conf, CMP_SECTION, "path");
+    opt_t *opt=cmp_opts;
+    int i=0;
+    for (i=0; i < sizeof(cmp_opts)/sizeof(cmp_opts[0]); i++,opt++)
+        {
+        switch(opt->type)
+            {
+            case OPT_BOOL:
+            case OPT_NUM:
+                NCONF_get_number_e(conf, CMP_SECTION, opt->name, opt->v.num);
+                break;
+            case OPT_TXT:
+                *opt->v.txt = NCONF_get_string(conf, CMP_SECTION, opt->name);
+                printf("%s = %s\n", opt->name, *opt->v.txt);
+                break;
+            default:
+                break;
+            }
+        }
 
-    opt_cert = NCONF_get_string(conf, CMP_SECTION, "cert");
-    opt_key = NCONF_get_string(conf, CMP_SECTION, "key");
-    opt_keypass = NCONF_get_string(conf, CMP_SECTION,"keypass");
-
-    opt_user = NCONF_get_string(conf, CMP_SECTION, "user");
-    opt_pass = NCONF_get_string(conf, CMP_SECTION, "pass");
-
-    opt_certout = NCONF_get_string(conf, CMP_SECTION, "certout");
-    opt_newkey = NCONF_get_string(conf, CMP_SECTION, "newkey");
-    opt_newkeypass = NCONF_get_string(conf, CMP_SECTION, "newkeypass");
-
-    opt_cacert = NCONF_get_string(conf, CMP_SECTION, "cacert");
-    opt_trusted = NCONF_get_string(conf, CMP_SECTION, "trusted");
-    opt_untrusted = NCONF_get_string(conf, CMP_SECTION, "untrusted");
-    opt_keyfmt_s = NCONF_get_string(conf, CMP_SECTION, "keyfmt");
-    opt_certfmt_s = NCONF_get_string(conf, CMP_SECTION, "certfmt");
-    opt_engine = NCONF_get_string(conf, CMP_SECTION, "engine");
-
-    NCONF_get_number_e(conf, CMP_SECTION, "validate_path", &opt_validate_path);
-
-    opt_extcerts = NCONF_get_string(conf, CMP_SECTION, "extcerts");
-    opt_subject = NCONF_get_string(conf, CMP_SECTION, "subject");
-    opt_recipient = NCONF_get_string(conf, CMP_SECTION, "recipient");
-
-    opt_cacertsout = NCONF_get_string(conf, CMP_SECTION, "cacertsout");
-    opt_extracertsout = NCONF_get_string(conf, CMP_SECTION, "extracertsout");
+    ERR_clear_error();
     }
 
 static int check_options(void)
