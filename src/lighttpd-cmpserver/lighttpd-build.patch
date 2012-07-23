@@ -31,7 +31,7 @@ diff -crB a/src/Makefile.am b/src/Makefile.am
 + lib_LTLIBRARIES += mod_cmpsrv.la
 + mod_cmpsrv_la_SOURCES = mod_cmpsrv.c cmpsrv_handlers.c cmpsrv_ctx.c cmpsrv_misc.c cmpsrv_msg.c cmpsrv_certstore.c 
 + mod_cmpsrv_la_CFLAGS = $(AM_CFLAGS) -I$(OPENSSLDIR)/include -g 
-+ mod_cmpsrv_la_LDFLAGS = -module -export-dynamic -avoid-version -no-undefined -L$(OPENSSLDIR) -lssl -lcrypto -ldl -g -s -lsqlite3
++ mod_cmpsrv_la_LDFLAGS = -module -export-dynamic -avoid-version -no-undefined -L$(OPENSSLDIR) -lssl -lcrypto -ldl -g -s -lsqlite3 -lcurl
 + mod_cmpsrv_la_LIBADD = $(common_libadd)
 + 
   
