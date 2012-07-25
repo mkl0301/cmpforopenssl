@@ -413,7 +413,7 @@ int CMP_CTX_set1_regToken( CMP_CTX *ctx, const char *regtoken, const size_t len)
 	if (!ctx->regToken)
 		ctx->regToken = ASN1_UTF8STRING_new();
 
-	return (ASN1_STRING_set(pwdstr, ctx->regToken, len));
+	return (ASN1_STRING_set(regtoken, ctx->regToken, len));
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_REGTOKEN, CMP_R_NULL_ARGUMENT);
 	return 0;
