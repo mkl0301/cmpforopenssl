@@ -254,7 +254,7 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
 end:
     if (i > 0)
     {
-        fprintf(stdout,"OK\n");
+        CMP_printf(cmp_ctx, "Validation OK\n");
         ret=1;
     }
     else

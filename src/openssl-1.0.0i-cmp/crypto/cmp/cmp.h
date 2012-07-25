@@ -1229,6 +1229,7 @@ typedef struct cmp_ctx_st
 	 */
 	ASN1_OCTET_STRING    *referenceValue;
 	ASN1_OCTET_STRING    *secretValue;
+	ASN1_UTF8STRING      *regToken;
 	/* CA certificate used to identify the CA */
 	X509                 *caCert;
 	/* current client certificate used to identify and sign */
@@ -1487,6 +1488,7 @@ int CMP_CTX_set_debug_callback( CMP_CTX *ctx, cmp_logfn_t cb);
 int CMP_CTX_set_certConf_callback( CMP_CTX *ctx, cmp_certConfFn_t cb);
 int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t len);
 int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len);
+int CMP_CTX_set1_regToken( CMP_CTX *ctx, const char *regtoken, const size_t len);
 int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name);
@@ -1602,6 +1604,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_RECIPIENT			 129
 #define CMP_F_CMP_CTX_SET1_RECIPNONCE			 130
 #define CMP_F_CMP_CTX_SET1_REFERENCEVALUE		 131
+#define CMP_F_CMP_CTX_SET1_REGTOKEN			 163
 #define CMP_F_CMP_CTX_SET1_SECRETVALUE			 132
 #define CMP_F_CMP_CTX_SET1_SENDER			 133
 #define CMP_F_CMP_CTX_SET1_SERVERNAME			 134

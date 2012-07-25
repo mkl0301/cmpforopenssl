@@ -294,6 +294,8 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	/* certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->compatibility, ctx->popoMethod, extensions))) goto err;
 
+	if (ctx->regToken && !CRMF_CERTREQMSG_set1_regInfo_regToken(certReq0, ctx->regToken)) goto err;
+
 	if (extensions) sk_X509_EXTENSION_pop_free(extensions, X509_EXTENSION_free);
 
 	if( !(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
@@ -310,7 +312,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 err:
 	CMPerr(CMP_F_CMP_IR_NEW, CMP_R_ERROR_CREATING_IR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
-	if (certReq0) CRMF_CERTREQMSG_free(certReq0);
+	/* if (certReq0) CRMF_CERTREQMSG_free(certReq0); */
 	return NULL;
 }
 

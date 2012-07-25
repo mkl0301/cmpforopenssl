@@ -280,7 +280,7 @@ static X509 *certrep_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep, 
 			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(certrep, 0);
 			ASN1_UTF8STRING *status = NULL;
 
-			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_UNKNOWN_PKISTATUS);
 			/* XXX ERR_add_error_data overwrites the previous error data, fix this! */
 			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
@@ -388,7 +388,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* if initializing with existing cert, first we'll see if the CA (sender) cert
 	 * can be found and validated using our root CA certificates */
-	if (ctx->clCert && ctx->trusted_store) {
+	if (ctx->trusted_store) {
 		STACK_OF(X509) *ca_stack=NULL;
 
 		if (CMP_PKIMESSAGE_get_bodytype(ip) == V_CMP_PKIBODY_IP) {
