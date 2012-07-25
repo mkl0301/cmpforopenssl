@@ -451,6 +451,14 @@ static CONF *conf=NULL;
 /* static CONF *extconf=NULL; */
 static BIO *bio_c_out=NULL;
 
+static int write_cert(BIO *bio, X509 *cert)
+    {
+        if (   (opt_certfmt == FORMAT_PEM && PEM_write_bio_X509(bio, cert))
+        || (opt_certfmt == FORMAT_ASN1 && i2d_X509_bio(bio, cert)) )
+            return 1;           /* success */
+        return 0;               /* failed */
+    }
+
 static int save_capubs(CMP_CTX *cmp_ctx,  char *destFile)
     {
     X509 *cert = NULL;
@@ -464,7 +472,7 @@ static int save_capubs(CMP_CTX *cmp_ctx,  char *destFile)
     BIO_printf(bio_c_out, "Received %d CA certificates, saving to %s\n", CMP_CTX_caPubs_num(cmp_ctx), destFile);
     while ( (cert=CMP_CTX_caPubs_pop(cmp_ctx)) != NULL)
         {
-        if (!PEM_write_bio_X509(bio, cert))
+        if (!write_cert(bio, cert))
             BIO_printf(bio_err,"ERROR writing to %s!\n", destFile);
         }
     return n;
@@ -487,7 +495,7 @@ static int save_extracerts(CMP_CTX *cmp_ctx,  char *destFile)
     BIO_printf(bio_c_out, "Received %d extra certificates, saving to %s\n", CMP_CTX_extraCertsIn_num(cmp_ctx), destFile);
     while ( (cert=CMP_CTX_extraCertsIn_pop(cmp_ctx)) != NULL)
         {
-        if (!PEM_write_bio_X509(bio, cert))
+        if (!write_cert(bio, cert))
             BIO_printf(bio_err,"ERROR writing to %s!\n", destFile);
         }
     return n;
@@ -681,6 +689,7 @@ bad_ops:
     
     ret=0;
 err:
+    ERR_print_errors_fp(stderr);
     /*
     if(tofree)
         OPENSSL_free(tofree);
