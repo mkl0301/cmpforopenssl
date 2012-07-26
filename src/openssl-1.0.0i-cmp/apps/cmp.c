@@ -221,7 +221,7 @@ static int check_options(void)
     {
     if (opt_server)
         {
-        char *p=strchr(opt_server, ':');
+        char *p=strrchr(opt_server, ':');
         size_t addrlen=0;
         if (p == NULL)
             {
@@ -453,8 +453,8 @@ static BIO *bio_c_out=NULL;
 
 static int write_cert(BIO *bio, X509 *cert)
     {
-        if (   (opt_certfmt == FORMAT_PEM && PEM_write_bio_X509(bio, cert))
-        || (opt_certfmt == FORMAT_ASN1 && i2d_X509_bio(bio, cert)) )
+        if ( (opt_certfmt == FORMAT_PEM && PEM_write_bio_X509(bio, cert))
+             || (opt_certfmt == FORMAT_ASN1 && i2d_X509_bio(bio, cert)) )
             return 1;           /* success */
         return 0;               /* failed */
     }
