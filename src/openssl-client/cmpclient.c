@@ -772,10 +772,6 @@ void parseCLA( int argc, char **argv) {
     {"path",     required_argument,    0, 'o'},
     {"proxy",    optional_argument,    0, 'p'},
     {"cryptlib", no_argument,          0, 'q'},
-#ifdef SUPPORT_OLD_INSTA
-    {"insta",    no_argument,          0, 'I'},
-#endif /* SUPPORT_OLD_INSTA */
-    {"insta3.3", no_argument,          0, 's'},
     {"cr",	     no_argument,          0, 't'},
     {"rr",	     no_argument,          0, 'r'},
     {"engine",   required_argument,    0, 'u'},
@@ -958,14 +954,6 @@ void parseCLA( int argc, char **argv) {
         break;
       case 'q':
         opt_compatibility = CMP_COMPAT_CRYPTLIB;
-        break;
-#ifdef SUPPORT_OLD_INSTA
-      case 'I':
-        opt_compatibility = CMP_COMPAT_INSTA;
-        break;
-#endif /* SUPPORT_OLD_INSTA */
-      case 's':
-        opt_compatibility = CMP_COMPAT_INSTA_3_3;
         break;
       case 'u':
         createOptStr( &opt_engine);
