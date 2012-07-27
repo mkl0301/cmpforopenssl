@@ -1267,7 +1267,6 @@ typedef struct cmp_ctx_st
 	/* compatibility mode */
 #define CMP_COMPAT_RFC		1
 #define CMP_COMPAT_CRYPTLIB	2
-#define CMP_COMPAT_INSTA_3_3	4
 	int	   compatibility;
 	char	  *serverName;
 	int	   serverPort;
