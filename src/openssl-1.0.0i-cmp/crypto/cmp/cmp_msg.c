@@ -312,7 +312,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 err:
 	CMPerr(CMP_F_CMP_IR_NEW, CMP_R_ERROR_CREATING_IR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
-	/* if (certReq0) CRMF_CERTREQMSG_free(certReq0); */
+
 	return NULL;
 }
 
@@ -369,7 +369,7 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 err:
 	CMPerr(CMP_F_CMP_RR_NEW, CMP_R_ERROR_CREATING_RR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
-	if (certTpl) CRMF_CERTTEMPLATE_free(certTpl);
+
 	return NULL;
 }
 
@@ -426,7 +426,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 err:
 	CMPerr(CMP_F_CMP_CR_NEW, CMP_R_ERROR_CREATING_CR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
-	if (certReq0) CRMF_CERTREQMSG_free(certReq0);
+
 	return NULL;
 }
 
@@ -550,7 +550,6 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CERTCONF);
 
-	/* TODO - do I have to free this in error case? */
 	if( !(certStatus = CMP_CERTSTATUS_new())) goto err;
 
 	/* set the # of the certReq */
@@ -564,8 +563,6 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 /* XXX the former value should be freed */
 	CMP_CERTSTATUS_set_certHash( certStatus, ctx->newClCert);
-
-	/* TODO: set optional PKIStatusInfo */
 
 	if (ctx->certConf_cb && ctx->newClCert && ctx->certConf_cb(ctx->lastStatus, ctx->newClCert) == 0) {
 		certStatus->statusInfo = CMP_PKISTATUSINFO_new();
@@ -584,7 +581,7 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 err:
 	CMPerr(CMP_F_CMP_CERTCONF_NEW, CMP_R_ERROR_CREATING_CERTCONF);
 	if (msg) CMP_PKIMESSAGE_free(msg);
-	if (certStatus) CMP_CERTSTATUS_free(certStatus);
+    
 	return NULL;
 }
 
