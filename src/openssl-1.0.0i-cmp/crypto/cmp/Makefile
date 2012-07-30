@@ -17,8 +17,8 @@ TEST=
 APPS=
 
 LIB=$(TOP)/libcrypto.a
-LIBSRC= cmp_asn.c cmp_lib.c cmp_msg.c cmp_vfy.c cmp_itav.c cmp_http.c cmp_ses.c cmp_ctx.c cmp_err.c
-LIBOBJ= cmp_asn.o cmp_lib.o cmp_msg.o cmp_vfy.o cmp_itav.o cmp_http.o cmp_ses.o cmp_ctx.o cmp_err.o
+LIBSRC= cmp_asn.c cmp_lib.c cmp_msg.c cmp_vfy.c cmp_http.c cmp_ses.c cmp_ctx.c cmp_err.c
+LIBOBJ= cmp_asn.o cmp_lib.o cmp_msg.o cmp_vfy.o cmp_http.o cmp_ses.o cmp_ctx.o cmp_err.o
 
 SRC= $(LIBSRC)
 
@@ -132,21 +132,6 @@ cmp_http.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
 cmp_http.o: ../../include/openssl/symhacks.h ../../include/openssl/x509.h
 cmp_http.o: ../../include/openssl/x509_vfy.h ../../include/openssl/x509v3.h
 cmp_http.o: cmp_http.c
-cmp_itav.o: ../../include/openssl/asn1.h ../../include/openssl/asn1t.h
-cmp_itav.o: ../../include/openssl/bio.h ../../include/openssl/buffer.h
-cmp_itav.o: ../../include/openssl/cmp.h ../../include/openssl/conf.h
-cmp_itav.o: ../../include/openssl/crmf.h ../../include/openssl/crypto.h
-cmp_itav.o: ../../include/openssl/e_os2.h ../../include/openssl/ec.h
-cmp_itav.o: ../../include/openssl/ecdh.h ../../include/openssl/ecdsa.h
-cmp_itav.o: ../../include/openssl/err.h ../../include/openssl/evp.h
-cmp_itav.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
-cmp_itav.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
-cmp_itav.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
-cmp_itav.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
-cmp_itav.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
-cmp_itav.o: ../../include/openssl/symhacks.h ../../include/openssl/x509.h
-cmp_itav.o: ../../include/openssl/x509_vfy.h ../../include/openssl/x509v3.h
-cmp_itav.o: cmp_itav.c
 cmp_lib.o: ../../include/openssl/asn1.h ../../include/openssl/asn1t.h
 cmp_lib.o: ../../include/openssl/bio.h ../../include/openssl/buffer.h
 cmp_lib.o: ../../include/openssl/cmp.h ../../include/openssl/conf.h
