@@ -914,7 +914,6 @@ X509_CRL *CMP_doCurrentCRLReq( CMPBIO *cbio, CMP_CTX *ctx)
 }
 
 /* ############################################################################ */
-/* TODO: make me more general --> sending of General Message */
 /* ############################################################################ */
 char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 {

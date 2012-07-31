@@ -133,7 +133,6 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
     usedAlgorNid = OBJ_obj2nid(algorOID);
     if (usedAlgorNid == NID_id_PasswordBasedMAC) {
         /* need to have params for PBMAC, so check that we have them */
-        /* TODO: simplify this logic / check if it's even necessary*/
         if (!algor->parameter || 
             ASN1_TYPE_get(algor->parameter) == V_ASN1_UNDEF ||
             ASN1_TYPE_get(algor->parameter) == V_ASN1_NULL) {
@@ -192,10 +191,11 @@ typedef struct {
  * ############################################################################ */
 int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X509) *uchain, X509 *cert)
 {
-    int i=0,ret=0;
-    X509_STORE *ctx;
-    X509_STORE_CTX *csc;
+    int i=0,ret=0,valid=0;
+    X509_STORE *ctx=NULL;
+    X509_STORE_CTX *csc=NULL;
     X509_STORE_CTX_ext cscex;
+    STACK_OF(X509) *untrusted_chain=NULL;
 
     if (cmp_ctx == NULL || cert == NULL) goto end;
 
@@ -211,33 +211,37 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
     if (!ctx) goto end;
 
     csc = X509_STORE_CTX_new();
-    if (csc == NULL)
-    {
-	if (cmp_ctx&&cmp_ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
-        goto end;
+    if (csc == NULL) {
+		if (cmp_ctx&&cmp_ctx->error_cb) 
+			ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
+		goto end;
     }
 
-    /* TODO include the certs in ctx->untrusted_store in the validation process.
-     * right now we only use the certs provided in uchain (which come from the extracerts field) */
+    /* include the certs in ctx->untrusted_store in the validation process.
+     * first attempt to find the relevant intermediate certs in the untrusted store */
+    if (cmp_ctx->untrusted_store)
+        untrusted_chain = CMP_build_cert_chain(cmp_ctx->untrusted_store, cert, 0);
 
-    X509_STORE_set_flags(ctx, 0);
-    if(!X509_STORE_CTX_init(csc, ctx, cert, uchain))
-    {
-	if (cmp_ctx&&cmp_ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
-        goto end;
-    }
+    /* failed to get any cert chain, so create an empty one */
+	if (!untrusted_chain) untrusted_chain = sk_X509_new_null();
+
+    /* add the untrusted certs give in arguments (i.e. caPubs/extraCerts) */
+    for (i = 0; i < sk_X509_num(uchain); i++)
+        sk_X509_push(untrusted_chain, X509_dup(sk_X509_value(uchain, i)));
+    
+	X509_STORE_set_flags(ctx, 0);
+	if(!X509_STORE_CTX_init(csc, ctx, cert, untrusted_chain)) {
+		if (cmp_ctx&&cmp_ctx->error_cb) 
+			ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
+		goto end;
+	}
 
     /* add whatever stuff we have in tcain to the trusted store.
      * it we set tchain using X509_STORE_CTX_trusted_stack the
      * trusted_store will be ignored, so we do it this way... */
-    for (i=0; i < sk_X509_num(tchain); i++) {
-        X509_OBJECT *o = (X509_OBJECT*) malloc(sizeof(X509_OBJECT));
-        if (o) {
-            o->type = 1;
-            o->data.x509 = X509_dup(sk_X509_value(tchain, i));
-            sk_X509_OBJECT_push(cmp_ctx->trusted_store->objs, o);
-        }
-    }
+	for (i=0; i < sk_X509_num(tchain); i++)
+		X509_STORE_add_cert(cmp_ctx->trusted_store, X509_dup(sk_X509_value(tchain, i)));
+
 
     /* if(tchain) X509_STORE_CTX_trusted_stack(csc, tchain); */
 
@@ -246,19 +250,21 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
 
     cscex.cert_ctx = *csc;
     cscex.cmp_ctx = cmp_ctx;
-    i=X509_verify_cert((X509_STORE_CTX*) &cscex);
+    valid=X509_verify_cert((X509_STORE_CTX*) &cscex);
 
     X509_STORE_CTX_free(csc);
 
     ret=0;
 end:
-    if (i > 0)
-    {
+	if (untrusted_chain)
+		sk_X509_pop_free(untrusted_chain, X509_free);
+    
+    if (valid > 0) {
         CMP_printf(cmp_ctx, "Validation OK\n");
         ret=1;
     }
-    else
-	if (cmp_ctx&&cmp_ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
+    else if (cmp_ctx&&cmp_ctx->error_cb) 
+    	ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
 
     return(ret);
 }
