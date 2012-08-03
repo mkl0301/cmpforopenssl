@@ -352,6 +352,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *ip=NULL;
 	CMP_PKIMESSAGE *certConf=NULL;
 	CMP_PKIMESSAGE *PKIconf=NULL;
+	STACK_OF(X509) *ca_stack=NULL;
 	X509 *caCert = NULL;
 
 	/* check if all necessary options are set */
@@ -389,7 +390,6 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* if initializing with existing cert, first we'll see if the CA (sender) cert
 	 * can be found and validated using our root CA certificates */
 	if (ctx->trusted_store) {
-		STACK_OF(X509) *ca_stack=NULL;
 
 		if (CMP_PKIMESSAGE_get_bodytype(ip) == V_CMP_PKIBODY_IP) {
 			ca_stack = ip->body->value.ip->caPubs;
@@ -415,7 +415,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	if (ctx->validatePath && caCert) {
 		CMP_printf(ctx, "INFO: validating CA certificate path");
-		if( CMP_validate_cert_path(ctx, 0, ip->extraCerts, ctx->caCert) == 0) {
+		if( CMP_validate_cert_path(ctx, 0, ca_stack, caCert) == 0) {
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
 			goto err;
 		}
