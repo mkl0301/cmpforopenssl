@@ -549,7 +549,6 @@ err:
 }
 
 /* ############################################################################ */
-/* TODO check */
 /*
    1.  The certificate subject has not yet established an authenticated
        identity with a CA/RA, but has a password and identity string
