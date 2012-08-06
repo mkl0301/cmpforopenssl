@@ -449,7 +449,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			goto err;
 		}
 
-	ctx->newClCert = certrep_get_certificate(ctx, ip->body->value.ip, ctx->pkey);
+	ctx->newClCert = certrep_get_certificate(ctx, ip->body->value.ip, ctx->newPkey);
 	if (ctx->newClCert == NULL) goto err;
 
 	/* if the CA returned certificates in the caPubs field, copy them
@@ -668,7 +668,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			goto err;
 		}
 
-	ctx->newClCert = certrep_get_certificate(ctx, cp->body->value.cp, ctx->pkey);
+	ctx->newClCert = certrep_get_certificate(ctx, cp->body->value.cp, ctx->newPkey);
 	if (ctx->newClCert == NULL) goto err;
 
 
@@ -772,8 +772,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_CTX_set1_sender(ctx, kup->header->sender->d.directoryName);
 
-	/* if  initializing with existing cert, first we'll see if the CA (sender) cert
-	 * can be found and validated using our root CA certificates */
+	/* see if the CA (sender) cert can be found and validated using our root CA certificates */
 	if (ctx->trusted_store) {
 		caCert = find_cert_by_name(kup->extraCerts, kup->header->sender->d.directoryName);
 		if (caCert && CMP_validate_cert_path(ctx, 0, kup->extraCerts, caCert) == 0) {
@@ -820,7 +819,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			goto err;
 		}
 
-	ctx->newClCert = certrep_get_certificate(ctx, kup->body->value.kup, ctx->pkey);
+	ctx->newClCert = certrep_get_certificate(ctx, kup->body->value.kup, ctx->newPkey);
 	if (ctx->newClCert == NULL) goto err;
 
 
