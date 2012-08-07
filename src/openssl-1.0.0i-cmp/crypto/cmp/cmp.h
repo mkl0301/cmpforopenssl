@@ -655,7 +655,8 @@ typedef struct cmp_certrepmessage_st
 } CMP_CERTREPMESSAGE;
 DECLARE_ASN1_FUNCTIONS(CMP_CERTREPMESSAGE)
 
-/*
+/* the following is from RFC 2986 - PKCS #10
+
 Attribute { ATTRIBUTE:IOSet } ::= SEQUENCE {
     type   	ATTRIBUTE.&id({IOSet}),
     values 	SET SIZE(1..MAX) OF ATTRIBUTE.&Type({IOSet}{@type})
@@ -675,7 +676,6 @@ CertificationRequest ::= SEQUENCE {
 }
 */
 
-/* TODO the PKCS10 structures need to be tested */
 typedef struct pkcs10_attribute_st
 {
 	ASN1_OBJECT         *id;
@@ -702,7 +702,6 @@ typedef struct pkcs10_certificationrequest_st
 DECLARE_ASN1_FUNCTIONS(PKCS10_CERTIFICATIONREQUEST)
 
 /*
-TODO: A LOT
      PKIBody ::= CHOICE {       -- message-specific body elements
          ir       [0]  CertReqMessages,        --Initialization Request
          ip       [1]  CertRepMessage,         --Initialization Response
