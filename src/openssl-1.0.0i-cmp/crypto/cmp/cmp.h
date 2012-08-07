@@ -925,7 +925,7 @@ typedef struct cmp_pkimessage_st
 	CMP_PKIHEADER                *header;
 	CMP_PKIBODY                  *body;
 	ASN1_BIT_STRING              *protection; /* 0 */
-	//STACK_OF(CMP_CMPCERTIFICATE) *extraCerts; /* 1 */
+	/* CMP_CMPCERTIFICATE is effectively X509 so it is used directly */
 	STACK_OF(X509) *extraCerts; /* 1 */
 } CMP_PKIMESSAGE;
 DECLARE_ASN1_FUNCTIONS(CMP_PKIMESSAGE)
