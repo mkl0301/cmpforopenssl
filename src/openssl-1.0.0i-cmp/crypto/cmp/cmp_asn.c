@@ -165,16 +165,18 @@ ASN1_ADB(CMP_INFOTYPEANDVALUE) = {
 	/* ADB_ENTRY(NID_id_it_caKeyUpdateInfo,  ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.caKeyUpdateInfo,  CMP_CAKEYUPDANNCONTENT)), */
 	/* this is made opt in order to make it possible to request a CKUANN from the server
 	 * with an empty caKeyUpdateInfo value */
-	ADB_ENTRY(NID_id_it_caKeyUpdateInfo, ASN1_OPT(CMP_INFOTYPEANDVALUE,         infoValue.caKeyUpdateInfo, CMP_CAKEYUPDANNCONTENT)),
-	ADB_ENTRY(NID_id_it_currentCRL,      ASN1_OPT(CMP_INFOTYPEANDVALUE,         infoValue.currentCRL,      X509_CRL)),
-	ADB_ENTRY(NID_id_it_unsupportedOIDs, ASN1_SEQUENCE_OF(CMP_INFOTYPEANDVALUE, infoValue.unsupportedOIDs, ASN1_OBJECT)),
-	ADB_ENTRY(NID_id_it_keyPairParamReq, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.keyPairParamReq, ASN1_OBJECT)),
-	ADB_ENTRY(NID_id_it_keyPairParamRep, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.keyPairParamRep, X509_ALGOR)),
-	ADB_ENTRY(NID_id_it_revPassphrase,   ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.revPassphrase,   CRMF_ENCRYPTEDVALUE)),
-	ADB_ENTRY(NID_id_it_implicitConfirm, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.implicitConfirm, ASN1_NULL)),
-	ADB_ENTRY(NID_id_it_confirmWaitTime, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.confirmWaitTime, ASN1_GENERALIZEDTIME)),
-	ADB_ENTRY(NID_id_it_origPKIMessage,  ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.origPKIMessage,  CMP_PKIMESSAGE)),
+	ADB_ENTRY(NID_id_it_caKeyUpdateInfo, ASN1_OPT(CMP_INFOTYPEANDVALUE,         infoValue.caKeyUpdateInfo,   CMP_CAKEYUPDANNCONTENT)),
+	ADB_ENTRY(NID_id_it_currentCRL,      ASN1_OPT(CMP_INFOTYPEANDVALUE,         infoValue.currentCRL,        X509_CRL)),
+	ADB_ENTRY(NID_id_it_unsupportedOIDs, ASN1_SEQUENCE_OF(CMP_INFOTYPEANDVALUE, infoValue.unsupportedOIDs,   ASN1_OBJECT)),
+	ADB_ENTRY(NID_id_it_keyPairParamReq, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.keyPairParamReq,   ASN1_OBJECT)),
+	ADB_ENTRY(NID_id_it_keyPairParamRep, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.keyPairParamRep,   X509_ALGOR)),
+	ADB_ENTRY(NID_id_it_revPassphrase,   ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.revPassphrase,     CRMF_ENCRYPTEDVALUE)),
+	ADB_ENTRY(NID_id_it_implicitConfirm, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.implicitConfirm,   ASN1_NULL)),
+	ADB_ENTRY(NID_id_it_confirmWaitTime, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.confirmWaitTime,   ASN1_GENERALIZEDTIME)),
+	ADB_ENTRY(NID_id_it_origPKIMessage,  ASN1_SIMPLE(CMP_INFOTYPEANDVALUE,      infoValue.origPKIMessage,    CMP_PKIMESSAGES)),
+	ADB_ENTRY(NID_id_it_suppLangTags,    ASN1_SEQUENCE_OF(CMP_INFOTYPEANDVALUE, infoValue.suppLangTagsValue, ASN1_UTF8STRING)),
 
+  /* TODO: this needs to be checked */
 	ADB_ENTRY(NID_id_smime_aa_signingCertificate, ASN1_SET_OF(CMP_INFOTYPEANDVALUE, infoValue.signingCertificate, ESS_SIGNING_CERT))
 	// ADB_ENTRY(NID_id_smime_aa_signingCertificate, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE, infoValue.signingCertificate, ESS_SIGNING_CERT))
 } ASN1_ADB_END(CMP_INFOTYPEANDVALUE, 0, infoType, 0, &infotypeandvalue_default_tt, NULL);
@@ -188,9 +190,7 @@ IMPLEMENT_ASN1_FUNCTIONS(CMP_INFOTYPEANDVALUE)
 
 
 ASN1_CHOICE(CMP_CERTORENCCERT) = {
-#if 0
-	ASN1_EXP(CMP_CERTORENCCERT, value.certificate, CMP_CMPCERTIFICATE, 0),
-#endif
+	/* CMP_CMPCERTIFICATE is effectively X509 so it is used directly */
 	ASN1_EXP(CMP_CERTORENCCERT, value.certificate, X509, 0),
 	ASN1_EXP(CMP_CERTORENCCERT, value.encryptedCert, CRMF_ENCRYPTEDVALUE, 1),
 } ASN1_CHOICE_END(CMP_CERTORENCCERT)

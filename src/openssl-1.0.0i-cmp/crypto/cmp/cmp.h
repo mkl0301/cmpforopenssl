@@ -220,6 +220,10 @@ typedef struct cmp_cakeyupdanncontent_st
 } CMP_CAKEYUPDANNCONTENT;
 DECLARE_ASN1_FUNCTIONS(CMP_CAKEYUPDANNCONTENT)
 
+/* declared here as it will be used in CMP_PKIMESSAGE (nested) and infotype and
+ * value*/
+typedef STACK_OF(CMP_PKIMESSAGE) CMP_PKIMESSAGES;
+DECLARE_ASN1_FUNCTIONS(CMP_PKIMESSAGES)
 
 /* ESS_SIGNING_CERT comes from ts.h, but for some reason ESS_SIGNING_CERT_it isn't declared there */
 DECLARE_ASN1_ITEM(ESS_SIGNING_CERT)
@@ -256,10 +260,11 @@ typedef struct cmp_infotypeandvalue_st
 		ASN1_NULL *implicitConfirm;
 		/* NID_id_it_confirmWaitTime - ConfirmWaitTime  */
 		ASN1_GENERALIZEDTIME *confirmWaitTime;
-		/* NID_id_it_origPKIMessage - origPKIMessage  */
 
-		// CMP_PKIMESSAGE *origPKIMessage;
-		struct cmp_pkiheader_st *origPKIMessage;
+		/* NID_id_it_origPKIMessage - origPKIMessage  */
+		CMP_PKIMESSAGES *origPKIMessage;
+
+    STACK_OF(ASN1_UTF8STRING) *suppLangTagsValue;
 
 		/* NID_id_smime_aa_signingCertificate */
 		STACK_OF(ESS_SIGNING_CERT) *signingCertificate; 
@@ -822,9 +827,6 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKIHEADER)
      }
      */
 
-/* declared here as it will be used in CMP_PKIMESSAGE (nested) */
-typedef STACK_OF(CMP_PKIMESSAGE) CMP_PKIMESSAGES;
-DECLARE_ASN1_FUNCTIONS(CMP_PKIMESSAGES)
 
 #define V_CMP_PKIBODY_IR	0
 #define V_CMP_PKIBODY_IP	1
