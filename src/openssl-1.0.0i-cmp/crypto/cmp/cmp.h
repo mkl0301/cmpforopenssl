@@ -825,6 +825,9 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKIHEADER)
      }
      */
 
+/* declared here as it will be used in CMP_PKIMESSAGE (nested) */
+typedef STACK_OF(CMP_PKIMESSAGE) CMP_PKIMESSAGES;
+
 #define V_CMP_PKIBODY_IR	0
 #define V_CMP_PKIBODY_IP	1
 #define V_CMP_PKIBODY_CR	2
@@ -900,7 +903,7 @@ typedef struct cmp_pkibody_st
 		ASN1_TYPE                       *pkiconf; /* 19 */
         /* nested   [20] NestedMessageContent,   --Nested Message */
         /* NestedMessageContent ::= PKIMessages */
-		STACK_OF(CMP_PKIMESSAGE)        *nested; /* 20 */
+		CMP_PKIMESSAGES                *nested; /* 20 */
         /* genm     [21] GenMsgContent,          --General Message */
         /* GenMsgContent ::= SEQUENCE OF InfoTypeAndValue */
 		STACK_OF(CMP_INFOTYPEANDVALUE) *genm; /* 21 */
@@ -930,8 +933,6 @@ typedef struct cmp_pkimessage_st
 } CMP_PKIMESSAGE;
 DECLARE_ASN1_FUNCTIONS(CMP_PKIMESSAGE)
 DECLARE_STACK_OF(CMP_PKIMESSAGE) /* PKIMessages */
-
-typedef STACK_OF(CMP_PKIMESSAGE) CMP_PKIMESSAGES;
 
 
 /*
