@@ -985,7 +985,7 @@ char *CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string( CMP_ERRORMSGCONTENT *error)
 /* returns the PKIStatus of the given certReqId inside a Rev */
 /* returns -1 on error */
 /* ############################################################################ */
-long CMP_REVREP_PKIStatus_get( CMP_REVREP *revRep, long reqId) {
+long CMP_REVREPCONTENT_PKIStatus_get( CMP_REVREPCONTENT *revRep, long reqId) {
 	CMP_PKISTATUSINFO *status=NULL;
 	if (!revRep) return -1;
 

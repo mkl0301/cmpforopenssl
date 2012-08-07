@@ -557,7 +557,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	switch (CMP_REVREP_PKIStatus_get( rp->body->value.rp, 0)) 
+	switch (CMP_REVREPCONTENT_PKIStatus_get( rp->body->value.rp, 0)) 
 	{
 		case CMP_PKISTATUS_grantedWithMods:
 			CMP_printf(  ctx, "WARNING: got \"grantedWithMods\"");

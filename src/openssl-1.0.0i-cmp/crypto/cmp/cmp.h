@@ -547,8 +547,8 @@ typedef struct cmp_revrep_st
 	STACK_OF(CMP_PKISTATUSINFO) *status;
 	STACK_OF(CRMF_CERTID)       *certId;
 	STACK_OF(X509)              *crls;
-} CMP_REVREP;
-DECLARE_ASN1_FUNCTIONS(CMP_REVREP)
+} CMP_REVREPCONTENT;
+DECLARE_ASN1_FUNCTIONS(CMP_REVREPCONTENT)
 
 
 /*
@@ -879,7 +879,7 @@ typedef struct cmp_pkibody_st
         /* rr       [11] RevReqContent,          --Revocation Request */
 		STACK_OF(CMP_REVDETAILS)    *rr; /* 11 */
         /* rp       [12] RevRepContent,          --Revocation Response */
-		CMP_REVREP   *rp; /* 12 */
+		CMP_REVREPCONTENT   *rp; /* 12 */
         /* ccr      [13] CertReqMessages,        --Cross-Cert. Request */
 		STACK_OF(CRMF_CERTREQMSG)   *crr; /* 13 */
         /* ccp      [14] CertRepMessage,         --Cross-Cert. Response */
@@ -1336,7 +1336,7 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeR
 
 /* cmp_lib.c */
 
-long CMP_REVREP_PKIStatus_get( CMP_REVREP *revRep, long reqId);
+long CMP_REVREPCONTENT_PKIStatus_get(CMP_REVREPCONTENT *revRep, long reqId);
 int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version);
 int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
