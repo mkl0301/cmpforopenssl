@@ -614,10 +614,8 @@ DECLARE_STACK_OF(CMP_CERTSTATUS)
 DECLARE_ASN1_SET_OF(CMP_CERTSTATUS)
 DECLARE_ASN1_FUNCTIONS(CMP_CERTSTATUS)
 
-/* this is not used */
-/* typedef STACK_OF(CMP_CERTSTATUS) CMP_CERTCONFIRMCONTENT; */
-/* DECLARE_ASN1_FUNCTIONS(CMP_CERTCONFIRMCONTENT) */
-
+typedef STACK_OF(CMP_CERTSTATUS) CMP_CERTCONFIRMCONTENT;
+DECLARE_ASN1_FUNCTIONS(CMP_CERTCONFIRMCONTENT)
 
 /*
      CertResponse ::= SEQUENCE {
@@ -914,8 +912,7 @@ typedef struct cmp_pkibody_st
         /* error    [23] ErrorMsgContent,        --Error Message */
 		CMP_ERRORMSGCONTENT            *error;    /* 23 */
         /* certConf [24] CertConfirmContent,     --Certificate confirm */
-	 	/* CMP_CERTCONFIRMCONTENT      *certConf; / * 24 */
-	 	STACK_OF(CMP_CERTSTATUS)       *certConf; /* 24 */
+	 	CMP_CERTCONFIRMCONTENT         *certConf; /* 24 */
 		/* pollReq  [25] PollReqContent,         --Polling request */
 	 	STACK_OF(CMP_POLLREQ)          *pollReq;
         /* pollRep  [26] PollRepContent          --Polling response */
