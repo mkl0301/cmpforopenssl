@@ -931,7 +931,6 @@ typedef struct cmp_pkimessage_st
 DECLARE_ASN1_FUNCTIONS(CMP_PKIMESSAGE)
 DECLARE_STACK_OF(CMP_PKIMESSAGE) /* PKIMessages */
 
-/* XXX is there more to do for that? */
 typedef STACK_OF(CMP_PKIMESSAGE) CMP_PKIMESSAGES;
 
 
