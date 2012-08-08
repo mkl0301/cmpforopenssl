@@ -595,7 +595,8 @@ err:
 	return NULL;
 }
 
-
+/* TODO: generalize this, make it possible to have an empty genm and then add
+ * itavs */
 /* ############################################################################ *
  * Creates a new General Message with the given nid as type and the given value
  * ############################################################################ */
