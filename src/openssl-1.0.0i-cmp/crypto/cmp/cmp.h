@@ -537,9 +537,9 @@ DECLARE_ASN1_FUNCTIONS(CMP_REVREPCONTENT)
 typedef struct cmp_keyrecrepcontent_st
 {
 	CMP_PKISTATUSINFO       *status;
-	/* XXX CMPcertificate ::= Certificate */
+	/* CMP_CMPCERTIFICATE is effectively X509 so it is used directly */
 	X509                    *newSigCert;
-	/* XXX CMPcertificate ::= Certificate */
+	/* CMP_CMPCERTIFICATE is effectively X509 so it is used directly */
 	STACK_OF(X509)          *caCerts;
 	STACK_OF(CMP_CERTIFIEDKEYPAIR) *keyPairHist;
 } CMP_KEYRECREPCONTENT;
@@ -838,9 +838,11 @@ typedef struct cmp_pkibody_st
 		PKCS10_CERTIFICATIONREQUEST *p10cr;   /* 4 */
         /* popdecc  [5]  POPODecKeyChallContent, --pop Challenge */
 	/* POPODecKeyChallContent ::= SEQUENCE OF Challenge */
+    /* XXX this should probably be done as a native POPODecKeyChallContent */
 		STACK_OF(CMP_CHALLENGE) *popdecc; /* 5 */
 	/* popdecr  [6]  POPODecKeyRespContent,  --pop Response */
 	/* POPODecKeyRespContent ::= SEQUENCE OF INTEGER */
+    /* XXX this should probably be done as a native POPODecKeyRespContent */
 		STACK_OF(ASN1_INTEGER)    *popdecr; /* 6 */
 		CRMF_CERTREQMESSAGES   *kur;   /* 7 */
 		CMP_CERTREPMESSAGE          *kup;   /* 8 */
@@ -849,6 +851,7 @@ typedef struct cmp_pkibody_st
 	/* krp      [10] KeyRecRepContent,       --Key Recovery Response */
 		CMP_KEYRECREPCONTENT        *krp;   /* 10 */
         /* rr       [11] RevReqContent,          --Revocation Request */
+    /* XXX this should probably be done as a native RevReqContent */
 		STACK_OF(CMP_REVDETAILS)    *rr; /* 11 */
         /* rp       [12] RevRepContent,          --Revocation Response */
 		CMP_REVREPCONTENT   *rp; /* 12 */
@@ -859,12 +862,13 @@ typedef struct cmp_pkibody_st
         /* ckuann   [15] CAKeyUpdAnnContent,     --CA Key Update Ann. */
 		CMP_CAKEYUPDANNCONTENT   *ckuann; /* 15 */
 	/* cann     [16] CertAnnContent,         --Certificate Ann. */
-	/* XXX CMPcertificate ::= Certificate */
+	/* CMP_CMPCERTIFICATE is effectively X509 so it is used directly */
 		X509                       *cann; /* 16 */
         /* rann     [17] RevAnnContent,          --Revocation Ann. */
 		CMP_REVANNCONTENT          *rann; /* 17 */
         /* crlann   [18] CRLAnnContent,          --CRL Announcement */
         /* CRLAnnContent ::= SEQUENCE OF CertificateList */
+    /* XXX this should probably be done as a native CRLAnnContent */
         STACK_OF(X509_CRL)         *crlann;
         /* pkiconf  [19] PKIConfirmContent,      --Confirmation */
 	/* CMP_PKICONFIRMCONTENT would be only a typedfef of ASN1_NULL */
@@ -876,17 +880,21 @@ typedef struct cmp_pkibody_st
 		CMP_PKIMESSAGES                *nested; /* 20 */
         /* genm     [21] GenMsgContent,          --General Message */
         /* GenMsgContent ::= SEQUENCE OF InfoTypeAndValue */
+    /* XXX this should probably be done as a native GenMsgContent */
 		STACK_OF(CMP_INFOTYPEANDVALUE) *genm; /* 21 */
         /* genp     [22] GenRepContent,          --General Response */
 	/* GenRepContent ::= SEQUENCE OF InfoTypeAndValue */
+    /* XXX this should probably be done as a native GenRepContent */
 		STACK_OF(CMP_INFOTYPEANDVALUE) *genp; /* 22 */
         /* error    [23] ErrorMsgContent,        --Error Message */
 		CMP_ERRORMSGCONTENT            *error;    /* 23 */
         /* certConf [24] CertConfirmContent,     --Certificate confirm */
 	 	CMP_CERTCONFIRMCONTENT         *certConf; /* 24 */
 		/* pollReq  [25] PollReqContent,         --Polling request */
+    /* XXX this should probably be done as a native PollReqContent */
 	 	STACK_OF(CMP_POLLREQ)          *pollReq;
         /* pollRep  [26] PollRepContent          --Polling response */
+    /* XXX this should probably be done as a native PollRepContent */
 	 	STACK_OF(CMP_POLLREP)          *pollRep;
 	} value;
 } CMP_PKIBODY;
@@ -1218,13 +1226,13 @@ typedef struct cmp_ctx_st
 	/* stack of extraCerts received from remote */ 
 	STACK_OF(X509)       *extraCertsIn;
 	/* EVP_PKEY holding the *current* keys */
-	/* XXX this is not an ASN.1 type */
+	/* Note: this is not an ASN.1 type */
 	EVP_PKEY             *pkey;
 	/* *new* CLIENT certificate received from the CA */
 	/* XXX this should be a stack since there could be more than one */
 	X509                 *newClCert;
 	/* EVP_PKEY holding the *new* keys */
-	/* XXX this is not an ASN.1 type */
+	/* Note: this is not an ASN.1 type */
 	EVP_PKEY             *newPkey;
 	/* the current transaction ID */
 	ASN1_OCTET_STRING    *transactionID;
