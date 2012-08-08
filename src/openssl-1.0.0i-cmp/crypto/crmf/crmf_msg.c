@@ -77,16 +77,15 @@
 #include <openssl/asn1t.h>
 #include <openssl/crmf.h>
 #include <openssl/evp.h>
-#include <openssl/cmp.h> /* for the CMP_COMPAT_* flags */
+#include <openssl/cmp.h> /* for the CMP_POPO */
 #include <openssl/err.h>
 #include <openssl/x509.h>
 #include <string.h>
 
 
 /* ############################################################################ */
-/* XXX is the naming of this function sane? Is it too connected to CMP? */
-/* TODO there are some optional settings which are not cared for right now */
-CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, const int compatibility, int popoMethod, X509_EXTENSIONS *extensions) {
+/* TODO there are some optional settings which are not cared for yet */
+CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, int popoMethod, X509_EXTENSIONS *extensions) {
 	CRMF_CERTREQMSG *certReqMsg;
 	int i;
 
@@ -94,24 +93,6 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 
 	/* version MUST be 2 if supplied.  It SHOULD be omitted. */
 	/* CRMF_CERTREQMSG_set_version2( certReqMsg); */
-
-#if 0
-	/* serialNumber MUST be ommited - INSTA does it but it does *NOT require* it */
-	if( 
-      (compatibility == CMP_COMPAT_INSTA_3_3)) {
-		certReqMsg->certReq->certTemplate->serialNumber = ASN1_INTEGER_new();
-		ASN1_INTEGER_set( certReqMsg->certReq->certTemplate->serialNumber, 0L);
-#warning serialNumber for INSTA is hardcoded
-	}
-
-	/* signingAlg MUST be ommited - INSTA does it but it does *NOT require* it */
-	if( 
-      (compatibility == CMP_COMPAT_INSTA_3_3)) {
-		certReqMsg->certReq->certTemplate->signingAlg = X509_ALGOR_new();
-		X509_ALGOR_set0( certReqMsg->certReq->certTemplate->signingAlg, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
-#warning signingAlg for INSTA is hardcoded
-	}
-#endif
 
 	CRMF_CERTREQMSG_set_certReqId( certReqMsg, certReqId);
 	if (!CRMF_CERTREQMSG_set1_publicKey( certReqMsg, pkey)) {

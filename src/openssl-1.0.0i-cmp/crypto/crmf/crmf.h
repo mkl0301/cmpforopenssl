@@ -555,7 +555,7 @@ DECLARE_ASN1_SET_OF(CRMF_CERTREQMSG) /* CertReqMessages */
 
 /* DECLARATIONS */
 /* crmf_msg.c */
-CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, const int compatibility, int popoMethod, X509_EXTENSIONS *extensions);
+CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, int popoMethod, X509_EXTENSIONS *extensions);
 
 /* crmf_pbm.c */
 CRMF_PBMPARAMETER * CRMF_pbm_new(void);

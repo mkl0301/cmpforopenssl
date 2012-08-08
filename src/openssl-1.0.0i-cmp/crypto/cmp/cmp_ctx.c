@@ -112,7 +112,6 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_SEQUENCE_OPT(CMP_CTX, freeText, STACK_OF(UTF8STRING));
 #endif
 	/* the following are not ASN1 types and present in the declaration in cmp.h
-	 * int compatibilitiy
 	 * char *serverName
 	 * int serverPort
 	 * int transport
@@ -239,7 +238,6 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	/* all other elements are initialized through ASN1 macros */
 	ctx->pkey            = NULL;
 	ctx->newPkey         = NULL;
-	ctx->compatibility   = CMP_COMPAT_RFC;
 	ctx->serverName      = NULL;
 	/* serverPath has to be an empty sting if not set since it is not mandatory */
 	/* this will be freed by CMP_CTX_delete() */
@@ -868,17 +866,6 @@ err:
 	return 0;
 }
 
-/* ################################################################ */
-/* ################################################################ */
-int CMP_CTX_set_compatibility( CMP_CTX *ctx, const int mode) {
-	if (!ctx) goto err;
-
-	ctx->compatibility = mode;
-	return 1;
-err:
-	CMPerr(CMP_F_CMP_CTX_SET_COMPATIBILITY, CMP_R_NULL_ARGUMENT);
-	return 0;
-}
 
 /* ################################################################ *
  * Set the hostname of the proxy server to use for all connections

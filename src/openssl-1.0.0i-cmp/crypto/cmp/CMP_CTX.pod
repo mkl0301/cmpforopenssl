@@ -19,7 +19,6 @@
  CMP_CTX_set1_recipNonce,
  CMP_CTX_set1_protectionAlgor,
  CMP_CTX_set_protectionAlgor,
- CMP_CTX_set_compatibility,
  CMP_CTX_set1_serverName,
  CMP_CTX_set_option,
  CMP_CTX_caPubs_pop,
@@ -93,11 +92,6 @@
  #define CMP_ALG_SIG   2
  int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algId);
 
- #define CMP_COMPAT_RFC		1
- #define CMP_COMPAT_CRYPTLIB	2
- #define CMP_COMPAT_INSTA_3_3	4
- int CMP_CTX_set_compatibility( CMP_CTX *ctx, const int mode);
-
  #define CMP_CTX_OPT_UNSET           0
  #define CMP_CTX_OPT_SET             1
  #define CMP_CTX_OPT_IMPLICITCONFIRM 1
@@ -122,9 +116,8 @@ This is the context API for using CMP (Certificate Management Protocol) with Ope
 
 CMP_CTX_create() allocates and initialized an CMP_CTX structure.
 
-CMP_CTX_init() initializes the context to default values. Compatibility
-is set to RFC, transport to HTTP, proof-of-posession method to
-POPOSigningKey
+CMP_CTX_init() initializes the context to default values. Transport is set to HTTP, 
+proof-of-posession method to POPOSigningKey
 
 CMP_CTX_delete() frees any allocated non-ASN1 fields of CMP_CTX and
 calls the ASN1 defined CMP_CTX_free() function to free the rest.
@@ -182,14 +175,6 @@ CMP_CTX_set1_serverPort() sets the port of the CMP server to connect to.
 
 CMP_CTX_set_protectionAlgor() sets the given definition (CMP_ALG_PBMAG
 or CMP_ALG_SIG) of the algorithm to use in the given CMP_CTX structure.
-
-CMP_CTX_set_compatibility() sets the given compatibility in the given
-CMP_CTX structure. This is needed since the CMP RFC can be interpreted
-in different ways so certain implementations may react different than
-others. Available Options are CMP_COMPAT_RFC for strict RFC conformace,
-CMP_COMPAT_CRYPTLIB for Cryptlib adaption, CMP_COMPAT_INSTA for Insta
-Certifier version < 3.3 adaption and CMP_COMPAT_INSTA_3_3 for Insta Certifier
-version => 3.3 adaption.
 
 CMP_CTX_set_option() sets the given values to the options
 (e.g. CMP_CTX_OPT_IMPLICITCONFIRM) in the given CMP_CTX structure. The

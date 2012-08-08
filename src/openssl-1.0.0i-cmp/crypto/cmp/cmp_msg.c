@@ -292,7 +292,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 		add_altname_extensions(&extensions, ctx->subjectAltNames);
 
 	/* certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->compatibility, ctx->popoMethod, extensions))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, extensions))) goto err;
 
 	if (ctx->regToken && !CRMF_CERTREQMSG_set1_regInfo_regToken(certReq0, ctx->regToken)) goto err;
 
@@ -409,7 +409,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	subject = X509_get_subject_name(ctx->clCert);
 
 	/* certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->compatibility, ctx->popoMethod, NULL))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->popoMethod, NULL))) goto err;
 
 	if( !(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
@@ -471,10 +471,16 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		subject = X509_get_subject_name( (X509*) ctx->clCert);
 
 	/* certReq 0 is not freed on error, but that's because it will become part of kur and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->compatibility, ctx->popoMethod, NULL))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, NULL))) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);
 	if( !(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;
+
+  CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert);
+
+#if 0
+  /* commented out as this is not in the RFC - this would need to replace the
+   * line above */
 
 	/* identify our cert */
 	/* this is like it is described in the RFC:
@@ -483,6 +489,10 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	if( ctx->compatibility != CMP_COMPAT_CRYPTLIB) {
 		CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert);
 	}
+#endif
+
+#if 0
+  /* commented out as this is not in the RFC */
 
 	/* this is like CL likes it:
 	 * set id-aa-signingCertificate "generalInfo" of the CMP header */
@@ -511,6 +521,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		itav->infoValue.signingCertificate = set;
 		CMP_PKIHEADER_generalInfo_item_push0( msg->header, itav);
 	}
+#endif
 
 	sk_CRMF_CERTREQMSG_push( msg->body->value.kur, certReq0);
 

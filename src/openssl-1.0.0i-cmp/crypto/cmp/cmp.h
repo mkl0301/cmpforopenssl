@@ -1262,10 +1262,6 @@ typedef struct cmp_ctx_st
 	ASN1_OCTET_STRING    *recipNonce;
 	/* Algorithm used for protection */
 	X509_ALGOR           *protectionAlgor;
-	/* compatibility mode */
-#define CMP_COMPAT_RFC		1
-#define CMP_COMPAT_CRYPTLIB	2
-	int	   compatibility;
 	char	  *serverName;
 	int	   serverPort;
 	char	  *serverPath;
@@ -1515,7 +1511,6 @@ int CMP_CTX_set1_transactionID( CMP_CTX *ctx, const ASN1_OCTET_STRING *id);
 int CMP_CTX_set1_senderNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
 int CMP_CTX_set1_recipNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
 int CMP_CTX_set1_protectionAlgor( CMP_CTX *ctx, const X509_ALGOR *algor);
-int CMP_CTX_set_compatibility( CMP_CTX *ctx, const int mode);
 int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
 int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
 int CMP_CTX_set1_proxyName( CMP_CTX *ctx, const char *name);
@@ -1610,7 +1605,6 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_SUBJECTNAME			 137
 #define CMP_F_CMP_CTX_SET1_TIMEOUT			 138
 #define CMP_F_CMP_CTX_SET1_TRANSACTIONID		 139
-#define CMP_F_CMP_CTX_SET_COMPATIBILITY			 140
 #define CMP_F_CMP_CTX_SET_PROTECTIONALGOR		 141
 #define CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH1		 142
 #define CMP_F_CMP_DOCERTIFICATEREQUESTSEQ		 143
