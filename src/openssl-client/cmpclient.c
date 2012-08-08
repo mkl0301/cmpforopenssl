@@ -129,7 +129,6 @@ static int opt_doRr=0;
 static int opt_doInfo=0;
 static int opt_doGenM=0;
 static int opt_doPathValidation=0;
-static int opt_compatibility=CMP_COMPAT_RFC;
 int opt_pem=0;
 
 static char** opt_extraCerts=NULL;
@@ -227,12 +226,6 @@ void printUsage( const char* cmdName) {
   printf("                    \"shared secret information\"\n");
   printf("\n");
   printf("Other options are:\n");
-/* XXX TODO: the compatibility options should be removed and replaced with fine-granular options */
-  printf(" --cryptlib    be compatible to Cryptlib\n");
-#ifdef SUPPORT_OLD_INSTA
-  printf(" --insta       be compatible to Insta Certifier < 3.3\n");
-#endif /* SUPPORT_OLD_INSTA */
-  printf(" --insta3.3    be compatible to Insta Certifier >= 3.3\n");
   printf(" --proxy       set proxy from $http_proxy environment variable if available\n");
   printf(" --verbose     ignored so far\n");
   printf(" --brief       ignored so far\n");
@@ -334,7 +327,6 @@ void doIr(CMP_CTX *cmp_ctx) {
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
   if (caCert)
     CMP_CTX_set1_caCert( cmp_ctx, caCert);
-  CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
   CMP_CTX_set1_timeOut( cmp_ctx, 60);
   if (opt_subjectName) {
     X509_NAME *subject = HELP_create_X509_NAME(opt_subjectName);
@@ -462,7 +454,6 @@ void doRr(CMP_CTX *cmp_ctx) {
   CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
   CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
-  CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
   CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
   CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
 
@@ -520,7 +511,6 @@ void doCr(CMP_CTX *cmp_ctx) {
   CMP_CTX_set0_pkey( cmp_ctx, pkey);
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
   CMP_CTX_set1_clCert( cmp_ctx, clCert);
-  CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
   if (opt_nExtraCerts > 0)
     CMP_CTX_set1_extraCertsOut( cmp_ctx, extraCerts);
@@ -590,7 +580,6 @@ void doKur(CMP_CTX *cmp_ctx) {
   CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
   CMP_CTX_set1_clCert( cmp_ctx, clCert);
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
-  CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
   if (opt_nExtraCerts > 0)
     CMP_CTX_set1_extraCertsOut( cmp_ctx, extraCerts);
@@ -633,7 +622,6 @@ void doInfo(CMP_CTX *cmp_ctx) {
   CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
   CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
-  CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
   if (!CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort)) {
     printf( "ERROR: setting up connection to server");
@@ -667,7 +655,6 @@ void doGenM(CMP_CTX *cmp_ctx, int genm_type, void *value) {
   CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
   CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
   CMP_CTX_set1_caCert( cmp_ctx, caCert);
-  CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
   if (!CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort)) {
     printf( "ERROR: setting up connection to server");
@@ -771,7 +758,6 @@ void parseCLA( int argc, char **argv) {
     {"validate_path",no_argument,     0, 'V'},
     {"path",     required_argument,    0, 'o'},
     {"proxy",    optional_argument,    0, 'p'},
-    {"cryptlib", no_argument,          0, 'q'},
     {"cr",	     no_argument,          0, 't'},
     {"rr",	     no_argument,          0, 'r'},
     {"engine",   required_argument,    0, 'u'},
@@ -784,7 +770,7 @@ void parseCLA( int argc, char **argv) {
 
   while (1)
   {
-    c = getopt_long (argc, argv, "a:b:cde:f:g:G:h:iIj:J:k:l:mno:O:p::P:qrR:sS:tT:N:u:U:X:", long_options, &option_index);
+    c = getopt_long (argc, argv, "a:b:cde:f:g:G:h:iIj:J:k:l:mno:O:p::P:rR:sS:tT:N:u:U:X:", long_options, &option_index);
 
     /* Detect the end of the options. */
     if (c == -1)
@@ -951,9 +937,6 @@ void parseCLA( int argc, char **argv) {
         opt_proxy = 1;
         if (optarg)
           createOptStr( &opt_httpProxy);
-        break;
-      case 'q':
-        opt_compatibility = CMP_COMPAT_CRYPTLIB;
         break;
       case 'u':
         createOptStr( &opt_engine);
