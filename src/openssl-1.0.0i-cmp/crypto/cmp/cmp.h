@@ -138,7 +138,7 @@ typedef struct cmp_revanncontent_st
 	CRMF_CERTID              *certId;
 	ASN1_GENERALIZEDTIME     *willBeRevokedAt;
 	ASN1_GENERALIZEDTIME     *badSinceDate;
-	STACK_OF(X509_EXTENSION) *crlDetails;
+	X509_EXTENSIONS          *crlDetails;
 } CMP_REVANNCONTENT;
 DECLARE_ASN1_FUNCTIONS(CMP_REVANNCONTENT)
 
@@ -527,7 +527,7 @@ DECLARE_STACK_OF(CMP_PKISTATUSINFO)
 typedef struct cmp_revdetails_st
 {
 	CRMF_CERTTEMPLATE        *certDetails;
-	STACK_OF(X509_EXTENSION) *crlEntryDetails;
+	X509_EXTENSIONS          *crlEntryDetails;
 } CMP_REVDETAILS;
 DECLARE_ASN1_FUNCTIONS(CMP_REVDETAILS)
 DECLARE_STACK_OF(CMP_REVDETAILS)
