@@ -561,7 +561,6 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 	*/
 	/* TODO: iterate through all the certificates in order to confirm them all */
 
-/* XXX the former value should be freed */
 	CMP_CERTSTATUS_set_certHash( certStatus, ctx->newClCert);
 
 	if (ctx->certConf_cb && ctx->newClCert && ctx->certConf_cb(ctx->lastStatus, ctx->newClCert) == 0) {
