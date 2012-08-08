@@ -830,9 +830,9 @@ typedef struct cmp_pkibody_st
 {
 	int type;
 	union{
-		STACK_OF(CRMF_CERTREQMSG)   *ir;   /* 0 */
+		CRMF_CERTREQMESSAGES   *ir;   /* 0 */
 		CMP_CERTREPMESSAGE          *ip;   /* 1 */
-		STACK_OF(CRMF_CERTREQMSG)   *cr;   /* 2 */
+		CRMF_CERTREQMESSAGES   *cr;   /* 2 */
 		CMP_CERTREPMESSAGE          *cp;   /* 3 */
         /* p10cr    [4]  CertificationRequest,   --imported from [PKCS10] */
 		PKCS10_CERTIFICATIONREQUEST *p10cr;   /* 4 */
@@ -842,9 +842,9 @@ typedef struct cmp_pkibody_st
 	/* popdecr  [6]  POPODecKeyRespContent,  --pop Response */
 	/* POPODecKeyRespContent ::= SEQUENCE OF INTEGER */
 		STACK_OF(ASN1_INTEGER)    *popdecr; /* 6 */
-		STACK_OF(CRMF_CERTREQMSG)   *kur;   /* 7 */
+		CRMF_CERTREQMESSAGES   *kur;   /* 7 */
 		CMP_CERTREPMESSAGE          *kup;   /* 8 */
-		STACK_OF(CRMF_CERTREQMSG)   *krr;   /* 9 */
+		CRMF_CERTREQMESSAGES   *krr;   /* 9 */
 
 	/* krp      [10] KeyRecRepContent,       --Key Recovery Response */
 		CMP_KEYRECREPCONTENT        *krp;   /* 10 */
@@ -853,7 +853,7 @@ typedef struct cmp_pkibody_st
         /* rp       [12] RevRepContent,          --Revocation Response */
 		CMP_REVREPCONTENT   *rp; /* 12 */
         /* ccr      [13] CertReqMessages,        --Cross-Cert. Request */
-		STACK_OF(CRMF_CERTREQMSG)   *crr; /* 13 */
+		CRMF_CERTREQMESSAGES   *ccr; /* 13 */
         /* ccp      [14] CertRepMessage,         --Cross-Cert. Response */
 		CMP_CERTREPMESSAGE          *ccp; /* 14 */
         /* ckuann   [15] CAKeyUpdAnnContent,     --CA Key Update Ann. */
