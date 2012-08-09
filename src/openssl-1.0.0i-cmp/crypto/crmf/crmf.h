@@ -542,7 +542,6 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 
 /* crmf_lib.c */
 int CRMF_CERTREQMSG_push0_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *control);
-int CRMF_CERTREQMSG_push1_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *control);
 int CRMF_CERTREQMSG_set1_control_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *tok);
 int CRMF_CERTREQMSG_set1_control_authenticator( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *auth);
 int CRMF_CERTREQMSG_push0_regInfo( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *regInfo);
