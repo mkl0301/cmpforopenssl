@@ -103,7 +103,6 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 		/* X509v3_add_ext will allocate new stack if there isn't one already */
 		X509v3_add_ext(&certReqMsg->certReq->certTemplate->extensions, sk_X509_EXTENSION_value(extensions, i), i);
 	
-	if (popoMethod != CRMF_POPO_NONE)
 		CRMF_CERTREQMSG_calc_and_set_popo( certReqMsg, pkey, popoMethod);
 
 	return certReqMsg;

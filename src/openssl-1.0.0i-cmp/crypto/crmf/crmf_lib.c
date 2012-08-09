@@ -602,6 +602,7 @@ err:
 /* ############################################################################ *
  * calculate and set the proof of possession based on the popoMethod (define in cmp.h)
  * the following types are supported so far (#defines in crfm.h):
+ *   CRMF_POPO_NONE: ProofOfPossession field omitted, CA/RA uses out-of-band method to verify POP (compare RFC 4211, section 4).
  *   CRMF_POPO_SIGNATURE: according to section 4.1 (only case 3 supported so far)
  *   CRMF_POPO_ENCRCERT:  according to section 4.2 with the indirect method
  *   (subsequentMessage/enccert)
@@ -619,6 +620,8 @@ err:
  * ############################################################################ */
 int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PKEY *pkey, int popoMethod) {
 	CRMF_PROOFOFPOSSESION *newPopo=NULL;
+
+	if (popoMethod == CRMF_POPO_NONE) return 1;  /* nothing to be done */
 
 	if (! certReqMsg) goto err;
 	if (! pkey) goto err;

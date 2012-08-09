@@ -234,8 +234,16 @@ received PKIMessage.
 
 CMP_CTX_set1_popoMethod() sets the proof-of-posession method to be used
 for ir, kur etc. Possible values are defined in crmf.h:
-CMP_POPO_SIGNATURE - according to RFC 4211, section 4.1 (only case 3 supported so far)
-CMP_POPO_ENCRCERT  - according to RFC 4211, section 4.2 with the indirect method (subsequentMessage/enccert)
+
+=over 8
+
+=item * CRMF_POPO_NONE      - ProofOfPossession field omitted, CA/RA uses out-of-band method to verify POP (compare RFC 4211, section 4).
+
+=item * CRMF_POPO_SIGNATURE - POP according to RFC 4211, section 4.1 (only case 3 supported so far) - default after CMP_CTX_init.
+
+=item * CRMF_POPO_ENCRCERT  - POP according to RFC 4211, section 4.2 with the indirect method (subsequentMessage/enccert)
+
+=back
 
 CMP_CTX_set1_proxyName() sets the hostname of the HTTP proxy to be used
 for connecting to the CA server.
