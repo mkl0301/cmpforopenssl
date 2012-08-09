@@ -174,40 +174,21 @@ typedef struct crmf_encrypetedvalue_st
 } CRMF_ENCRYPTEDVALUE;
 DECLARE_ASN1_FUNCTIONS(CRMF_ENCRYPTEDVALUE)
 
-/*
-TODO
-   -- Cryptographic Message Syntax
-   EnvelopedData
-   FROM CryptographicMessageSyntax2004 { iso(1) member-body(2)
-   us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16)
-   modules(0) cms-2004(24) };  -- found in [CMS]
-
-[CMS] Housley, R., "Cryptographic Message Syntax (CMS)", RFC 3852, July 2004.
-
-*/
-typedef struct cms_envelopeddata_st
-{
-	/* TODO
-	 * There is actually much more
-	 * I hope I'll not need that 
-	 */
-	ASN1_INTEGER *version;
-
-} CMS_ENVELOPEDDATA;
-DECLARE_ASN1_FUNCTIONS(CMS_ENVELOPEDDATA)
-
 
 /*
 EncryptedKey ::= CHOICE {
  encryptedValue        EncryptedValue,   -- Deprecated
  envelopedData     [0] EnvelopedData }
+
+
  */
 typedef struct crmf_encryptedkey_st
 {
 	int type;
 	union   {
 		CRMF_ENCRYPTEDVALUE *encryptedValue; /* Deprecated */
-		CMS_ENVELOPEDDATA *envelopedData; /* XXX this is not really implemented so far */ /* 0 */
+    /* TODO: This is not ASN1_NULL but CMS_ENVELOPEDDATA which should be somehow taken from crypto/cms which exists now - this is not used anywhere so far */
+		ASN1_NULL *envelopedData;
 	} value;
 } CRMF_ENCRYPTEDKEY;
 DECLARE_ASN1_FUNCTIONS(CRMF_ENCRYPTEDKEY)
@@ -325,7 +306,8 @@ typedef struct crmf_popoprivkey_st
 		ASN1_INTEGER      *subsequentMessage; /* XXX what to do with the SEQUENCE SIZE... ? */ /* 1 */
 		ASN1_BIT_STRING   *dhMAC; /* 2 */
 		CRMF_PKMACVALUE   *agreeMAC; /* 3 */
-		CMS_ENVELOPEDDATA *encryptedKey; /* 4 */
+    /* TODO: This is not ASN1_NULL but CMS_ENVELOPEDDATA which should be somehow taken from crypto/cms which exists now - this is not used anywhere so far */
+		ASN1_NULL         *encryptedKey; /* 4 */
 	} value;
 } CRMF_POPOPRIVKEY;
 DECLARE_ASN1_FUNCTIONS(CRMF_POPOPRIVKEY)
@@ -540,7 +522,7 @@ typedef struct crmf_certreqmsg_st
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTREQMSG)
 
 typedef STACK_OF(CRMF_CERTREQMSG) CRMF_CERTREQMESSAGES;
-DECLARE_ASN1_FUNCTIONS(CRMF_CERTREQMESSAGES);
+DECLARE_ASN1_FUNCTIONS(CRMF_CERTREQMESSAGES)
 
 DECLARE_STACK_OF(CRMF_CERTREQMSG) /* CertReqMessages */
 DECLARE_ASN1_SET_OF(CRMF_CERTREQMSG) /* CertReqMessages */
