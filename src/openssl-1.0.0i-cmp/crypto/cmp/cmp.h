@@ -236,9 +236,11 @@ typedef struct cmp_infotypeandvalue_st
 
     STACK_OF(ASN1_UTF8STRING) *suppLangTagsValue;
 
+#if 0
+  /* this is what CL likes for KUR - not in the RFC */
 		/* NID_id_smime_aa_signingCertificate */
 		STACK_OF(ESS_SIGNING_CERT) *signingCertificate; 
-		// ESS_SIGNING_CERT *signingCertificate; 
+#endif 
 
 		ASN1_TYPE *other;
 	} infoValue;
