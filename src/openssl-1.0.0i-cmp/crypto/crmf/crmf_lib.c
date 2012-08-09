@@ -87,6 +87,7 @@
 
 /* ############################################################################ *
  * Pushes the given control attribute into the controls stack of a CertRequest
+ * (section 6)
  * ############################################################################ */
 int CRMF_CERTREQMSG_push0_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *control) {
 	int newControls = 0;
@@ -111,75 +112,8 @@ err:
 	return 0;
 }
 
-
 /* ############################################################################ *
- * Pushes the attribute given in regInfo in to the CertReqMsg->regInfo stack.
- * ############################################################################ */
-int CRMF_CERTREQMSG_push0_regInfo( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *regInfo) {
-	int newRegInfo = 0;
-
-	if( !certReqMsg) return 0;
-	if( !regInfo) return 0;
-
-	if( !(certReqMsg->regInfo)) {
-		/* as it is OPTIONAL it might not yet be initialized */
-		if( !(certReqMsg->regInfo = sk_CRMF_ATTRIBUTETYPEANDVALUE_new_null())) goto err;
-		newRegInfo = 1;
-	}
-	if( !sk_CRMF_ATTRIBUTETYPEANDVALUE_push( certReqMsg->regInfo, regInfo)) goto err;
-	return 1;
-err:
-	CRMFerr(CRMF_F_CRMF_CERTREQMSG_PUSH0_REGINFO, CRMF_R_CRMFERROR);
-
-	if( newRegInfo) {
-		sk_CRMF_ATTRIBUTETYPEANDVALUE_pop_free(certReqMsg->regInfo, CRMF_ATTRIBUTETYPEANDVALUE_free);
-		certReqMsg->regInfo = NULL;
-	}
-	return 0;
-}
-
-/* ############################################################################ *
- * Creates a new control attribute of type NID_id_regCtrl_oldCertID and adds
- * it to the control stack of the given certReqMesg.
- * ############################################################################ */
-int CRMF_CERTREQMSG_set1_control_oldCertId( CRMF_CERTREQMSG *certReqMsg, X509 *oldCert) { 
-	CRMF_ATTRIBUTETYPEANDVALUE *atav   = NULL;
-	CRMF_CERTID                *certId = NULL;
-	GENERAL_NAME               *gName  = NULL;
-
-	if ( !certReqMsg) goto err;
-	if ( !oldCert) goto err;
-
-	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())
-			|| !(certId = CRMF_CERTID_new())
-			|| !(gName = GENERAL_NAME_new()))
-		goto err;
-
-	/* X509_NAME_set does not consume the pointer so this is ok */
-	X509_NAME_set( &gName->d.directoryName, X509_get_issuer_name( oldCert));
-	gName->type = GEN_DIRNAME;
-	certId->issuer = gName;
-	if (!(certId->serialNumber = ASN1_INTEGER_dup(X509_get_serialNumber(oldCert)))) goto err;
-
-	atav->type = OBJ_nid2obj(NID_id_regCtrl_oldCertID);
-	atav->value.oldCertId = certId;
-
-	if (!CRMF_CERTREQMSG_push0_control( certReqMsg, atav)) goto err;
-
-	return 1;
-err:
-	if (gName) GENERAL_NAME_free(gName);
-	if (certId) {
-    certId->issuer = NULL;
-    CRMF_CERTID_free(certId);
-  }
-	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
-	return 0;
-}
-
-
-/* ############################################################################ *
- * sets the id-regCtrl-regToken  Control (section 6.1)
+ * sets the id-regCtrl-regToken Control (section 6.1)
  * ############################################################################ */
 int CRMF_CERTREQMSG_set1_control_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING *tok) {
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
@@ -268,14 +202,54 @@ err:
 	return 0;
 }
 
-/* For some reason X509_PUBKEY_dup() does not appear to be implemented by 
+/* ############################################################################ *
+ * sets the id-regCtrl-oldCertID Control (section 6.5)
+ * ############################################################################ */
+int CRMF_CERTREQMSG_set1_control_oldCertId( CRMF_CERTREQMSG *certReqMsg, X509 *oldCert) { 
+	CRMF_ATTRIBUTETYPEANDVALUE *atav   = NULL;
+	CRMF_CERTID                *certId = NULL;
+	GENERAL_NAME               *gName  = NULL;
+
+	if ( !certReqMsg) goto err;
+	if ( !oldCert) goto err;
+
+	if (!(atav = CRMF_ATTRIBUTETYPEANDVALUE_new())
+			|| !(certId = CRMF_CERTID_new())
+			|| !(gName = GENERAL_NAME_new()))
+		goto err;
+
+	/* X509_NAME_set does not consume the pointer so this is ok */
+	X509_NAME_set( &gName->d.directoryName, X509_get_issuer_name( oldCert));
+	gName->type = GEN_DIRNAME;
+	certId->issuer = gName;
+	if (!(certId->serialNumber = ASN1_INTEGER_dup(X509_get_serialNumber(oldCert)))) goto err;
+
+	atav->type = OBJ_nid2obj(NID_id_regCtrl_oldCertID);
+	atav->value.oldCertId = certId;
+
+	if (!CRMF_CERTREQMSG_push0_control( certReqMsg, atav)) goto err;
+
+	return 1;
+err:
+	if (gName) GENERAL_NAME_free(gName);
+	if (certId) {
+    certId->issuer = NULL;
+    CRMF_CERTID_free(certId);
+  }
+	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
+	return 0;
+}
+
+/* ############################################################################ *
+ * For some reason X509_PUBKEY_dup() does not appear to be implemented by 
  * OpenSSL's X509 code, so we implement it here. It's only needed in the following
- * function so it can be declared static. */
-/* TODO: check whether that should go elsewhere */
+ * function so it can be declared static. *
+ * TODO: check whether that should go elsewhere *
+ * ############################################################################ */
 static IMPLEMENT_ASN1_DUP_FUNCTION(X509_PUBKEY);
 
 /* ############################################################################ *
- * sets the id-regCtrl-oldCertID Control (section 6.5)
+ * sets the id-regCtrl-protocolEncrKey Control (section 6.6)
  * ############################################################################ */
 int CRMF_CERTREQMSG_set1_control_protocolEncrKey( CRMF_CERTREQMSG *msg, X509_PUBKEY *pubkey) {	
 	CRMF_ATTRIBUTETYPEANDVALUE *atav=NULL;
@@ -293,6 +267,33 @@ int CRMF_CERTREQMSG_set1_control_protocolEncrKey( CRMF_CERTREQMSG *msg, X509_PUB
 	return 1;
 err:
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
+	return 0;
+}
+
+/* ############################################################################ *
+ * Pushes the attribute given in regInfo in to the CertReqMsg->regInfo stack.
+ * (section 7)
+ * ############################################################################ */
+int CRMF_CERTREQMSG_push0_regInfo( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *regInfo) {
+	int newRegInfo = 0;
+
+	if( !certReqMsg) return 0;
+	if( !regInfo) return 0;
+
+	if( !(certReqMsg->regInfo)) {
+		/* as it is OPTIONAL it might not yet be initialized */
+		if( !(certReqMsg->regInfo = sk_CRMF_ATTRIBUTETYPEANDVALUE_new_null())) goto err;
+		newRegInfo = 1;
+	}
+	if( !sk_CRMF_ATTRIBUTETYPEANDVALUE_push( certReqMsg->regInfo, regInfo)) goto err;
+	return 1;
+err:
+	CRMFerr(CRMF_F_CRMF_CERTREQMSG_PUSH0_REGINFO, CRMF_R_CRMFERROR);
+
+	if( newRegInfo) {
+		sk_CRMF_ATTRIBUTETYPEANDVALUE_pop_free(certReqMsg->regInfo, CRMF_ATTRIBUTETYPEANDVALUE_free);
+		certReqMsg->regInfo = NULL;
+	}
 	return 0;
 }
 	
