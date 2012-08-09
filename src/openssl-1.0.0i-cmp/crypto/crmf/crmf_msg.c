@@ -78,9 +78,16 @@
 #include <string.h>
 
 
-/* ############################################################################ */
-/* TODO there are some optional settings which are not cared for yet */
-CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, int popoMethod, X509_EXTENSIONS *extensions) {
+/* ############################################################################ * 
+ * creates a new CRMF certifcate request message
+ * TODO there are some optional settings which are not cared for yet
+ * TODO maybe create a crmf_ctx?
+ * ############################################################################ */
+CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, 
+                               const EVP_PKEY *pkey, 
+                               const X509_NAME *subject, 
+                               int popoMethod, 
+                               X509_EXTENSIONS *extensions) {
 	CRMF_CERTREQMSG *certReqMsg;
 	int i;
 
