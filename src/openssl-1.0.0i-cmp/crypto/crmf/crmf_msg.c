@@ -60,13 +60,9 @@
  *
  */
 /* ====================================================================
- * Copyright 2007-2010 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
+ * Copyright 2007-2012 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
  * CMP support in OpenSSL originally developed by 
  * Nokia Siemens Networks for contribution to the OpenSSL project.
- */
-
-/* =========================== CHANGE LOG =============================
- * 2007 - Martin Peylo - Initial Creation
  */
 
 /* ############################################################################ */
@@ -100,24 +96,14 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 		goto err;
 	}
 
-#if 0
-	/* CL supports this (for client certificates) for up to 3 years in the future for both dates
-	 * in case the notBefore date is in the past it will be set to the current date without any comment */
-	int CRMF_CERTREQMSG_set_validity( CRMF_CERTREQMSG *certReqMsg, time_t notBefore, time_t notAfter);
-#endif
 	CRMF_CERTREQMSG_set1_subject( certReqMsg, subject);
 
-#if 0
-	/* this could be done here */
-	int CRMF_CERTREQMSG_push0_extension( CRMF_CERTREQMSG *certReqMsg, X509_EXTENSION *ext);
-#endif
+	/* XXX: set validity time here? */
 
-	/* sk_X509_EXTENSION_num will return -1 if extensions is NULL so this is ok */
 	for (i = 0; i < sk_X509_EXTENSION_num(extensions); i++)
 		/* X509v3_add_ext will allocate new stack if there isn't one already */
 		X509v3_add_ext(&certReqMsg->certReq->certTemplate->extensions, sk_X509_EXTENSION_value(extensions, i), i);
-
-
+	
 	if (popoMethod != CMP_POPO_NONE)
 		CRMF_CERTREQMSG_calc_and_set_popo( certReqMsg, pkey, popoMethod);
 
