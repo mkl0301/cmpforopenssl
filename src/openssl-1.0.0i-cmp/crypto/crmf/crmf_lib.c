@@ -601,9 +601,9 @@ err:
 
 /* ############################################################################ *
  * calculate and set the proof of possession based on the popoMethod (define in cmp.h)
- * the following types are supported so far:
- *   CMP_POPO_SIGNATURE: according to section 4.1 (only case 3 supported so far)
- *   CMP_POPO_ENCRCERT:  according to section 4.2 with the indirect method
+ * the following types are supported so far (#defines in crfm.h):
+ *   CRMF_POPO_SIGNATURE: according to section 4.1 (only case 3 supported so far)
+ *   CRMF_POPO_ENCRCERT:  according to section 4.2 with the indirect method
  *   (subsequentMessage/enccert)
  *
       subsequentMessage is used to indicate that the POP will be
@@ -626,12 +626,12 @@ int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PK
 	if( !(newPopo = CRMF_PROOFOFPOSSESION_new())) goto err;
 
 	switch (popoMethod) {
-		case CMP_POPO_SIGNATURE:
+		case CRMF_POPO_SIGNATURE:
 			if( !(newPopo->value.signature = CRMF_poposigningkey_new( certReqMsg->certReq, pkey))) goto err;
 			newPopo->type = CRMF_PROOFOFPOSESSION_SIGNATURE;
 			break;
 
-		case CMP_POPO_ENCRCERT:
+		case CRMF_POPO_ENCRCERT:
 			newPopo->type = CRMF_PROOFOFPOSESSION_KEYENCIPHERMENT;
 			newPopo->value.keyEncipherment = CRMF_POPOPRIVKEY_new();
 

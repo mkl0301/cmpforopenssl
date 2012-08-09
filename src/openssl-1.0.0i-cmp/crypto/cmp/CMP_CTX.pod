@@ -233,8 +233,9 @@ CMP_CTX_sender_get() Returns the name from the sender field of the last
 received PKIMessage.
 
 CMP_CTX_set1_popoMethod() sets the proof-of-posession method to be used
-for ir, kur etc. Possible values are CMP_POPO_SIGNATURE and
-CMP_POPO_ENCRCERT.
+for ir, kur etc. Possible values are defined in crmf.h:
+CMP_POPO_SIGNATURE - according to RFC 4211, section 4.1 (only case 3 supported so far)
+CMP_POPO_ENCRCERT  - according to RFC 4211, section 4.2 with the indirect method (subsequentMessage/enccert)
 
 CMP_CTX_set1_proxyName() sets the hostname of the HTTP proxy to be used
 for connecting to the CA server.

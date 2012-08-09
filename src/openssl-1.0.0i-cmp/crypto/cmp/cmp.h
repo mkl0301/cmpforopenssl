@@ -1279,9 +1279,6 @@ typedef struct cmp_ctx_st
 	 * the trust anchor, and if this fails we reject the message */
 	int validatePath;
 
-#define CMP_POPO_NONE      0
-#define CMP_POPO_SIGNATURE 1
-#define CMP_POPO_ENCRCERT  2
 	/* Proof-of-posession mechanism used. Defaults to signature (POPOsignkingKey) */ 
 	int	popoMethod;
 	/* maximum time in secods to wait for an http transfer to complete

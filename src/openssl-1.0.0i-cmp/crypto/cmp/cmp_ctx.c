@@ -72,6 +72,7 @@
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
 #include <openssl/cmp.h>
+#include <openssl/crmf.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include <openssl/err.h>
@@ -250,9 +251,8 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->implicitConfirm = 0;
 	ctx->setSenderNonce  = 1;
 	ctx->setTransactionID= 1;
-	ctx->popoMethod      = CMP_POPO_SIGNATURE;
+	ctx->popoMethod      = CRMF_POPO_SIGNATURE;
 	ctx->timeOut         = 2*60;
-	/* ctx->popoMethod = CMP_POPO_ENCRCERT; */
 	ctx->validatePath    = 0;
 
 	ctx->error_cb = NULL;
