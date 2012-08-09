@@ -223,7 +223,9 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
         untrusted_chain = CMP_build_cert_chain(cmp_ctx->untrusted_store, cert, 0);
 
     /* failed to get any cert chain, so create an empty one */
-	if (!untrusted_chain) untrusted_chain = sk_X509_new_null();
+    if (!untrusted_chain)
+    	if (!(untrusted_chain = sk_X509_new_null()))
+    		goto end;
 
     /* add the untrusted certs give in arguments (i.e. caPubs/extraCerts) */
     for (i = 0; i < sk_X509_num(uchain); i++)
