@@ -828,6 +828,30 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKIHEADER)
 #define V_CMP_PKIBODY_POLLREQ	25
 #define V_CMP_PKIBODY_POLLREP	26
 
+typedef STACK_OF(CMP_CHALLENGE) CMP_POPODECKEYCHALLCONTENT;
+DECLARE_ASN1_FUNCTIONS(CMP_POPODECKEYCHALLCONTENT)
+
+typedef STACK_OF(ASN1_INTEGER) CMP_POPODECKEYRESPCONTENT;
+DECLARE_ASN1_FUNCTIONS(CMP_POPODECKEYRESPCONTENT)
+
+typedef STACK_OF(CMP_REVDETAILS) CMP_REVREQCONTENT;
+DECLARE_ASN1_FUNCTIONS(CMP_REVREQCONTENT)
+
+typedef STACK_OF(X509_CRL) CMP_CRLANNCONTENT;
+DECLARE_ASN1_FUNCTIONS(CMP_CRLANNCONTENT)
+
+typedef STACK_OF(CMP_INFOTYPEANDVALUE) CMP_GENMSGCONTENT;
+DECLARE_ASN1_FUNCTIONS(CMP_GENMSGCONTENT)
+
+typedef STACK_OF(CMP_INFOTYPEANDVALUE) CMP_GENREPCONTENT;
+DECLARE_ASN1_FUNCTIONS(CMP_GENREPCONTENT)
+
+typedef STACK_OF(CMP_POLLREQ) CMP_POLLREQCONTENT;
+DECLARE_ASN1_FUNCTIONS(CMP_POLLREQCONTENT)
+
+typedef STACK_OF(CMP_POLLREP) CMP_POLLREPCONTENT;
+DECLARE_ASN1_FUNCTIONS(CMP_POLLREPCONTENT)
+
 typedef struct cmp_pkibody_st
 {
 	int type;
@@ -840,12 +864,10 @@ typedef struct cmp_pkibody_st
 		PKCS10_CERTIFICATIONREQUEST *p10cr;   /* 4 */
         /* popdecc  [5]  POPODecKeyChallContent, --pop Challenge */
 	/* POPODecKeyChallContent ::= SEQUENCE OF Challenge */
-    /* XXX this should probably be done as a native POPODecKeyChallContent */
-		STACK_OF(CMP_CHALLENGE) *popdecc; /* 5 */
+		CMP_POPODECKEYCHALLCONTENT *popdecc; /* 5 */
 	/* popdecr  [6]  POPODecKeyRespContent,  --pop Response */
 	/* POPODecKeyRespContent ::= SEQUENCE OF INTEGER */
-    /* XXX this should probably be done as a native POPODecKeyRespContent */
-		STACK_OF(ASN1_INTEGER)    *popdecr; /* 6 */
+		CMP_POPODECKEYRESPCONTENT  *popdecr; /* 6 */
 		CRMF_CERTREQMESSAGES   *kur;   /* 7 */
 		CMP_CERTREPMESSAGE          *kup;   /* 8 */
 		CRMF_CERTREQMESSAGES   *krr;   /* 9 */
@@ -853,8 +875,7 @@ typedef struct cmp_pkibody_st
 	/* krp      [10] KeyRecRepContent,       --Key Recovery Response */
 		CMP_KEYRECREPCONTENT        *krp;   /* 10 */
         /* rr       [11] RevReqContent,          --Revocation Request */
-    /* XXX this should probably be done as a native RevReqContent */
-		STACK_OF(CMP_REVDETAILS)    *rr; /* 11 */
+		CMP_REVREQCONTENT    *rr; /* 11 */
         /* rp       [12] RevRepContent,          --Revocation Response */
 		CMP_REVREPCONTENT   *rp; /* 12 */
         /* ccr      [13] CertReqMessages,        --Cross-Cert. Request */
@@ -870,8 +891,7 @@ typedef struct cmp_pkibody_st
 		CMP_REVANNCONTENT          *rann; /* 17 */
         /* crlann   [18] CRLAnnContent,          --CRL Announcement */
         /* CRLAnnContent ::= SEQUENCE OF CertificateList */
-    /* XXX this should probably be done as a native CRLAnnContent */
-        STACK_OF(X509_CRL)         *crlann;
+        CMP_CRLANNCONTENT         *crlann;
         /* pkiconf  [19] PKIConfirmContent,      --Confirmation */
 	/* CMP_PKICONFIRMCONTENT would be only a typedfef of ASN1_NULL */
 	/* CMP_CONFIRMCONTENT *pkiconf; */
@@ -882,22 +902,18 @@ typedef struct cmp_pkibody_st
 		CMP_PKIMESSAGES                *nested; /* 20 */
         /* genm     [21] GenMsgContent,          --General Message */
         /* GenMsgContent ::= SEQUENCE OF InfoTypeAndValue */
-    /* XXX this should probably be done as a native GenMsgContent */
-		STACK_OF(CMP_INFOTYPEANDVALUE) *genm; /* 21 */
+		CMP_GENMSGCONTENT *genm; /* 21 */
         /* genp     [22] GenRepContent,          --General Response */
 	/* GenRepContent ::= SEQUENCE OF InfoTypeAndValue */
-    /* XXX this should probably be done as a native GenRepContent */
-		STACK_OF(CMP_INFOTYPEANDVALUE) *genp; /* 22 */
+		CMP_GENREPCONTENT *genp; /* 22 */
         /* error    [23] ErrorMsgContent,        --Error Message */
 		CMP_ERRORMSGCONTENT            *error;    /* 23 */
         /* certConf [24] CertConfirmContent,     --Certificate confirm */
 	 	CMP_CERTCONFIRMCONTENT         *certConf; /* 24 */
 		/* pollReq  [25] PollReqContent,         --Polling request */
-    /* XXX this should probably be done as a native PollReqContent */
-	 	STACK_OF(CMP_POLLREQ)          *pollReq;
+	 	CMP_POLLREQCONTENT          *pollReq;
         /* pollRep  [26] PollRepContent          --Polling response */
-    /* XXX this should probably be done as a native PollRepContent */
-	 	STACK_OF(CMP_POLLREP)          *pollRep;
+	 	CMP_POLLREPCONTENT           *pollRep;
 	} value;
 } CMP_PKIBODY;
 DECLARE_ASN1_FUNCTIONS(CMP_PKIBODY)
