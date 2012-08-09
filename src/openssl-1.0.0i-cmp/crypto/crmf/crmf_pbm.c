@@ -60,13 +60,9 @@
  *
  */
 /* ====================================================================
- * Copyright 2007-2010 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
+ * Copyright 2007-2012 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
  * CMP support in OpenSSL originally developed by 
  * Nokia Siemens Networks for contribution to the OpenSSL project.
- */
-
-/* =========================== CHANGE LOG =============================
- * 2007 - Martin Peylo - Initial Creation
  */
 
 #include <openssl/asn1.h>
@@ -80,8 +76,11 @@
 #define SALT_LEN         16
 #define ITERATION_COUNT 500
 
-/* ############################################################################ */
-/* id-PasswordBasedMAC OBJECT IDENTIFIER ::= { 1 2 840 113533 7 66 13} */
+/* ############################################################################ *
+ * creates and initializes CRMF_PBMPARAMETER (section 4.4)
+ * returns pointer to CRMF_PBMPARAMETER on success, NULL on error
+ * TODO: this should take the parameters to be set via the arguments
+ * ############################################################################ */
 CRMF_PBMPARAMETER * CRMF_pbm_new(void) {
 	CRMF_PBMPARAMETER *pbm=NULL;
 	unsigned char salt[SALT_LEN];
@@ -92,7 +91,6 @@ CRMF_PBMPARAMETER * CRMF_pbm_new(void) {
 	 * of the MAC process.  The salt SHOULD be at least 8 octets (64
 	 * bits) long.
 	 */
-	/* XXX XXX XXX */
 	RAND_pseudo_bytes(salt, SALT_LEN);
 	if (!(ASN1_OCTET_STRING_set(pbm->salt, salt, SALT_LEN))) goto err;
 
@@ -115,8 +113,7 @@ CRMF_PBMPARAMETER * CRMF_pbm_new(void) {
 	   */
 	ASN1_INTEGER_set(pbm->iterationCount, ITERATION_COUNT);
 
-	/*
-	   mac identifies the algorithm and associated parameters of the MAC
+	/* mac identifies the algorithm and associated parameters of the MAC
 	   function to be used.  All implementations MUST support HMAC-SHA1
 	   [HMAC].  All implementations SHOULD support DES-MAC and Triple-
 	   DES-MAC [PKCS11].
@@ -132,10 +129,9 @@ err:
 }
 
 
-/* ############################################################################ */
-/* this function calculates the PBM
- * @pbm identifies the algorithms to use TODO: this is not evaluated comletely,
- *      standard parameters are used
+/* ############################################################################
+ * this function calculates the PBM based on the settings of the given CRMF_PBMPARAMENTER
+ * @pbm identifies the algorithms to use
  * @msg message to apply the PBM for
  * @msgLen length of the message
  * @secret key to use
@@ -145,7 +141,7 @@ err:
  * @macLen pointer to the length of the mac, will be set
  *
  * returns 1 at success, 0 at error
- */
+ * ############################################################################ */
 int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 			   const unsigned char* msg, size_t msgLen, 
 			   const unsigned char* secret, size_t secretLen,
