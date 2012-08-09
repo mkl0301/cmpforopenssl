@@ -1402,45 +1402,6 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx);
 int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X509) *uchain, X509 *cert);
 
-/* cmp_itav.c */
-/* CA Protocol Encryption Certificate */
-#define CMP_ITAV_CA_PROT_ENC_CERT	1
-/* Signing Key Pair Types */
-#define CMP_ITAV_SIGN_KEY_PAIR_TYPES	2
-/* Encryption/Key Agreement Key Pair Types */
-#define CMP_ITAV_ENC_KEY_PAIR_TYPES	3
-/* Preferred Symmetric Algorithm */
-#define CMP_ITAV_PREFERRED_SYMM_ALG	4
-/* Updated CA Key Pair */
-#define CMP_ITAV_CA_KEY_UPDATE_INFO	5
-/* CRL */
-#define CMP_ITAV_CURRENT_CRL		6
-/* Unsupported Object Identifiers */
-#define CMP_ITAV_UNSUPPORTED_OIDS	7
-/* Key Pair Parameters */
-#define CMP_ITAV_KEY_PAIR_PARAM_REQ	10
-#define CMP_ITAV_KEY_PAIR_PARAM_REP	11
-/* Revocation Passphrase */
-#define CMP_ITAV_REV_PASSPHRASE		12
-/* ImplicitConfirm */
-#define CMP_ITAV_IMPLICIT_CONFIRM	13
-/* ConfirmWaitTime */
-#define CMP_ITAV_CONFIRM_WAIT_TIME	14
-/* OrigPKIMessage */
-#define CMP_ITAV_ORIG_PKI_MESSAGE	15
-/* Supported Language Tags */
-#define CMP_ITAV_SUPP_LANG_TAGS		16
-/* Defines used by Cryptlib */
-/* 1.3.6.1.4.1.3029.3.1.1 */
-#define CMP_ITAV_CRYPTLIB		101
-/* 1.3.6.1.4.1.3029.3.1.2 */
-#define CMP_ITAV_CRYPTLIB_PKIBOOT	102
-CMP_INFOTYPEANDVALUE *CMP_INFOTYPEANDVALUE_new_by_def_noVal(int def);
-
-#if 0
-int CMP_INFOTYPEANDVALUE_set0(CMP_INFOTYPEANDVALUE *itav, ASN1_OBJECT *aobj, int ptype, void *pval);
-void CMP_INFOTYPEANDVALUE_get0(ASN1_OBJECT **paobj, int *pptype, void **ppval, CMP_INFOTYPEANDVALUE *itav);
-#endif
 
 #ifdef HAVE_CURL
 typedef CURL CMPBIO;
