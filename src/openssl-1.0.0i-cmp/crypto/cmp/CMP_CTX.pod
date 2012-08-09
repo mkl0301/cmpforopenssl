@@ -276,7 +276,7 @@ All other functions return 0 on error, 1 on success.
 
 =head1 EXAMPLE
 
-The following code does an Initial Request with a Cryptlib CA:
+The following code does an Initial Request:
 
 	cmp_ctx = CMP_CTX_create();
 	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
@@ -288,10 +288,10 @@ The following code does an Initial Request with a Cryptlib CA:
 	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
 
 	initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
-	BIO_free(cbio);
+	CMP_delete_http_bio( cbio);
 
-The following code does an Initial Request with an Insta CA, using an
-external identity certificate (Appendix E.7):
+The following code does an Initial Request with, using an
+external identity certificate (RFC 4210, Appendix E.7):
 
 	cmp_ctx = CMP_CTX_create();
 	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
@@ -302,7 +302,7 @@ external identity certificate (Appendix E.7):
 	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
 
 	initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
-	BIO_free(cbio);
+	CMP_delete_http_bio( cbio);
 
 Here externalCert is an X509 certificate granted to the EE by another CA
 which is trusted by the current CA the code will connect to.
@@ -320,36 +320,8 @@ The following code does a Key Update Request:
 	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
 
 	updatedClCert = CMP_doKeyUpdateRequestSeq( cbio, cmp_ctx);
-	BIO_free(cbio);
+	CMP_delete_http_bio( cbio);
 
-The following code does an Key Update Request with a Cryptlib CA:
-
-	cmp_ctx = CMP_CTX_create();
-	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
-	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
-	CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
-	CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
-	CMP_CTX_set1_caCert( cmp_ctx, caCert);
-
-	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
-
-	updatedClCert = CMP_doKeyUpdateRequestSeq( cbio, cmp_ctx);
-	BIO_free(cbio);
-
-The following code does an Key Update Request with an Insta Certifier
-CA:
-
-	cmp_ctx = CMP_CTX_create();
-	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
-	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
-	CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
-	CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
-	CMP_CTX_set1_caCert( cmp_ctx, caCert);
-
-	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
-
-	updatedClCert = CMP_doKeyUpdateRequestSeq( cbio, cmp_ctx);
-	BIO_free(cbio);
 
 =head1 TODO
 
