@@ -211,12 +211,12 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 
 	if (!curl || !ctx || !msg || !out) {
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_NULL_ARGUMENT);
-		return 0;
+		goto err;
 	}
 
 	if (!ctx->serverName || !ctx->serverPath || ctx->serverPort == 0) {
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_NULL_ARGUMENT);
-		return 0;
+		goto err;
 	}
 
 	derLen = i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, &derMsg);
@@ -256,34 +256,37 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
         char num[64];
         snprintf(num, sizeof(num)-1, "%d:", res);
         ERR_add_error_data(2, num, curl_easy_strerror(res));
-        return 0;
+		goto err;
     }
 	else if (res != CURLE_OK) {
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_CURL_ERROR);
         char num[64];
         snprintf(num, sizeof(num)-1, "%d:", res);
         ERR_add_error_data(2, num, curl_easy_strerror(res));
-		return 0;
+		goto err;
 	}
 
 	/* verify that Content-type is application/pkixcmp */
 	curl_easy_getinfo(curl, CURLINFO_CONTENT_TYPE, &content_type);
 	if (content_type == NULL || strcmp(content_type, "application/pkixcmp") != 0) {
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_INVALID_CONTENT_TYPE);
-		free(rdata.memory);
-		return 0;
+		goto err;
 	}
 
 	pder = (unsigned char*) rdata.memory;
     *out = d2i_CMP_PKIMESSAGE( NULL, (const unsigned char**) &pder, rdata.size);
     if (*out == 0) {
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_FAILED_TO_DECODE_PKIMESSAGE);
-		free(rdata.memory);
-		return 0;
+		goto err;
 	}
 
 	free(rdata.memory);
 	return 1;
+
+err:
+	if (rdata.memory)
+		free(rdata.memory);
+	return 0;
 }
 
 int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio, CMP_CTX *ctx,
