@@ -77,6 +77,7 @@
 
 #if !defined(HAVE_CURL) || defined(OPENSSL_NO_CMP)
 
+/* can't use the client without cmp and curl... */
 int MAIN(int argc, char **argv)
     {
     BIO_puts(bio_err, "error: openssl was compiled without libcurl or with cmp support disabled\n");
@@ -89,6 +90,7 @@ int MAIN(int argc, char **argv)
 #include <openssl/crmf.h>
 #include <openssl/pem.h>
 
+/* the type of cmp command we want to send */
 typedef enum { CMP_IR,
                CMP_KUR,
                CMP_CR,
@@ -96,6 +98,12 @@ typedef enum { CMP_IR,
                CMP_CKUANN,
     } cmp_cmd_t;
 
+/* type of a cmdline option.
+ * - OPT_BOOL does not take an additional argument and just
+ *   toggles something on or off
+ * - OPT_NUM takes a number argument and sets that to a variable
+ * - OPT_TXT copies the argument text to a buffer
+ * */
 typedef enum { OPT_BOOL, OPT_NUM, OPT_TXT } opttype_t;
 typedef struct 
     {
@@ -143,6 +151,9 @@ static char *opt_recipient=NULL;
 static char *opt_cacertsout=NULL;
 static char *opt_extracertsout=NULL;
 
+/* Table of commandline options.
+ * NOTE: this table is also used to parse options from
+ *       openssl's config file (openssl.cnf) !*/
 static opt_t cmp_opts[]={
     { "server", "The 'ADDRESS:PORT' for the CMP server", OPT_TXT, {&opt_server} },
     { "path", "Path location inside the server", OPT_TXT, {&opt_path} },
@@ -177,6 +188,7 @@ static opt_t cmp_opts[]={
     { "cacertsout", "File where to save received CA certificates (from IR)", OPT_TXT, {&opt_cacertsout} },
 };
 
+/* print out the help text for each commandline option */
 static void show_help(void)
     {
     const int ALIGN_COL=15;
@@ -194,6 +206,7 @@ static void show_help(void)
     BIO_puts(bio_err, "\n");
     }
 
+/* use the commandline option table to read values from openssl.cnf */
 static int read_config(CONF *conf)
     {
     opt_t *opt=cmp_opts;
@@ -217,6 +230,7 @@ static int read_config(CONF *conf)
     ERR_clear_error();
     }
 
+/* verify that all the necessary options have been set */
 static int check_options(void)
     {
     if (opt_server)
@@ -351,6 +365,7 @@ err:
     return NULL;
     }
 
+/* set up the CMP_CTX structure based on our given options */
 static int setup_ctx(CMP_CTX *ctx)
     {
     EVP_PKEY *pkey=NULL;
@@ -451,6 +466,8 @@ static CONF *conf=NULL;
 /* static CONF *extconf=NULL; */
 static BIO *bio_c_out=NULL;
 
+/* write out the given certificate to the output specified by bio.
+ * depending on options use either PEM or DER format */
 static int write_cert(BIO *bio, X509 *cert)
     {
         if ( (opt_certfmt == FORMAT_PEM && PEM_write_bio_X509(bio, cert))
@@ -459,6 +476,7 @@ static int write_cert(BIO *bio, X509 *cert)
         return 0;               /* failed */
     }
 
+/* writes out the received ca certs to the given file */
 static int save_capubs(CMP_CTX *cmp_ctx,  char *destFile)
     {
     X509 *cert = NULL;
@@ -482,6 +500,7 @@ err:
     return 0;
     }
 
+/* writes out the received extraCerts to the given file */
 static int save_extracerts(CMP_CTX *cmp_ctx,  char *destFile)
     {
     X509 *cert = NULL;
@@ -541,6 +560,7 @@ int MAIN(int argc, char **argv)
         configfile=tofree;
         }
 
+	/* read default values for options from openssl.cnf */
     if (configfile)
         {
         BIO_printf(bio_err,"Using configuration from %s\n",configfile);
@@ -565,6 +585,7 @@ int MAIN(int argc, char **argv)
         tofree = NULL;
         }
 
+	/* parse commandline options */
     while (--argc > 0 && ++argv)
         {
         opt_t *opt=cmp_opts;
@@ -633,14 +654,14 @@ bad_ops:
         goto err;
         }
 
+	/* set up the connection context but don't connect yet */
     if (!CMP_new_http_bio(&cmp_bio, server_address, server_port))
         {
         BIO_puts(bio_err, "error: setting up connection context\n");
         goto err;
         }
 
-    curl_easy_setopt(cmp_bio, CURLOPT_PROXY, 0);
-
+	/* everything is ready, now connect and preform the command! */
     switch (opt_cmd)
         {
         case CMP_IR:
