@@ -204,7 +204,6 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 								CMP_PKIMESSAGE **out)
 {
 	unsigned char *derMsg = NULL, *pder = NULL;
-	char *errormsg = NULL;
 	char *content_type = NULL;
 	int derLen = 0;
 	CURLcode res;
@@ -271,7 +270,6 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	curl_easy_getinfo(curl, CURLINFO_CONTENT_TYPE, &content_type);
 	if (content_type == NULL || strcmp(content_type, "application/pkixcmp") != 0) {
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_INVALID_CONTENT_TYPE);
-		free(errormsg);
 		free(rdata.memory);
 		return 0;
 	}
