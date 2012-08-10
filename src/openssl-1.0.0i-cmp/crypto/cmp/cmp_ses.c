@@ -352,8 +352,8 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *ip=NULL;
 	CMP_PKIMESSAGE *certConf=NULL;
 	CMP_PKIMESSAGE *PKIconf=NULL;
-	STACK_OF(X509) *ca_stack=NULL;
-	X509 *caCert = NULL;
+	STACK_OF(X509) *certStack=NULL;
+	X509 *srvCert = NULL;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->newPkey ||
@@ -387,22 +387,66 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_CTX_set1_sender(ctx, ip->header->sender->d.directoryName);
 
-	/* if initializing with existing cert, first we'll see if the CA (sender) cert
-	 * can be found and validated using our root CA certificates */
+	/* TODO: standard when cert protection: use trusted_store + certs from extra
+	 * certs to validate sender Cert */
+#if 0
+	/* either ctx->caCert or trusted_store are acceptable */
+	if (ip->header->sender->d.directoryName combined with optional ip->header->senderKID is in trusted_store) {
+		/* TODO: what if there is no senderKID but two certificates with the
+		 * same name? */
+		srvCert = identified trust anchor;
+		--> no need to verify chain
+	} else {
+		/* TODO: what if there is no senderKID but two certificates with the
+		 * same name? */
+		srvCert = find_cert_by_name(ip->extraCerts, ip->header->sender->d.directoryName), check optional senderKID;
+
+		if(verify srvCert chain to trusted store, using extraCerts as intermediate is OK) {
+			SUCCESS
+		} else {
+			if(3GPP-E.7-profile-option) {
+				if(srvCert is self-signed) {
+					if( not validate issued certificate included in IP with srvCert as Trust Anchor) { /* This is the 3GPP requirement for accepting a self-singed trust anchor from extaCerts */
+						FAIL
+					}
+				}	
+				if(srvCert is not self-signed) {
+					while (potialTrustAnchor = search(extraCerts for self-signed Certs)) {
+						if( validate issued certificate included in IP with potentialTrustAnchor as Trust Anchor and extraCerts as intermediate certs) { /* This is the 3GPP requirement for accepting a self-singed trust anchor from extaCerts */
+							if( not validate srvCert with potentialTurustAnchor as Trust Anchor and extraCerts as intermediate certs) {
+								FAIL;
+							}
+						} else NEXT;
+					}
+					if (not SUCCESS before) FAIL;
+				}	
+			} else FAIL;
+		}
+	}
+	if (!srvCert) {
+		FAIL /* as sender cert is not known - do we need to send errMsg? */
+	}
+	if( validate CMP Message Protection with srvCert) {
+		SUCCESS
+	} else FAIL;
+#endif
+
+	/* if initializing with existing cert, first we'll see if the sender
+	 * certificate can be found and validated using our root CA certificates */
 	if (ctx->trusted_store) {
 
 		if (CMP_PKIMESSAGE_get_bodytype(ip) == V_CMP_PKIBODY_IP) {
-			ca_stack = ip->body->value.ip->caPubs;
-			caCert = find_cert_by_name(ca_stack, ip->header->sender->d.directoryName);
+			certStack = ip->body->value.ip->caPubs;
+			srvCert = find_cert_by_name(certStack, ip->header->sender->d.directoryName);
 		}
 
-		if (!caCert) {
-			ca_stack = ip->extraCerts;
-			caCert = find_cert_by_name(ca_stack, ip->header->sender->d.directoryName);
+		if (!srvCert) {
+			certStack = ip->extraCerts;
+			srvCert = find_cert_by_name(certStack, ip->header->sender->d.directoryName);
 		}
 
-		if (caCert && CMP_validate_cert_path(ctx, 0, ca_stack, caCert) == 0) {
-			/* if there is a caCert provided, try to use that for verifying 
+		if (srvCert && CMP_validate_cert_path(ctx, 0, certStack, srvCert) == 0) {
+			/* if there is a srvCert provided, try to use that for verifying 
 			 * the message signature. otherwise fail here. */
 			if (!ctx->caCert) {
 				CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
@@ -411,17 +455,17 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		}
 	}
 	/* either not using existing cert or couldn't find the CA cert in extracerts. */
-	if (!caCert) caCert = ctx->caCert;
+	if (!srvCert) srvCert = ctx->caCert;
 
-	if (ctx->validatePath && caCert) {
+	if (ctx->validatePath && srvCert) {
 		CMP_printf(ctx, "INFO: validating CA certificate path");
-		if( CMP_validate_cert_path(ctx, 0, ca_stack, caCert) == 0) {
+		if( CMP_validate_cert_path(ctx, 0, certStack, srvCert) == 0) {
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
 			goto err;
 		}
 	}
 
-	if (CMP_protection_verify( ip, ctx->protectionAlgor, X509_get_pubkey( (X509*) caCert), ctx->secretValue))
+	if (CMP_protection_verify( ip, ctx->protectionAlgor, X509_get_pubkey( (X509*) srvCert), ctx->secretValue))
 		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
 	else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -477,7 +521,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) caCert), ctx->secretValue))
+	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) srvCert), ctx->secretValue))
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
