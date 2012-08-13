@@ -107,7 +107,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	/* EVP_PKEY *newPkey */
 	ASN1_OPT(CMP_CTX, transactionID, ASN1_OCTET_STRING),
 	ASN1_OPT(CMP_CTX, recipNonce, ASN1_OCTET_STRING),
-	ASN1_OPT(CMP_CTX, protectionAlgor, X509_ALGOR),
+	ASN1_OPT(CMP_CTX, protectionAlg, X509_ALGOR),
 #if 0
 	/* this is actually CMP_PKIFREETEXT which is STACK_OF(ANS1_UTF8STRING) */
 	ASN1_SEQUENCE_OPT(CMP_CTX, freeText, STACK_OF(UTF8STRING));
@@ -276,7 +276,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->newClCert       = NULL;
 	ctx->transactionID   = NULL;
 	ctx->recipNonce      = NULL;
-	ctx->protectionAlgor = NULL;
+	ctx->protectionAlg = NULL;
 
 	ctx->subjectName     = NULL;
 	ctx->recipient       = NULL;
@@ -849,20 +849,20 @@ err:
 
 /* ################################################################ */
 /* ################################################################ */
-int CMP_CTX_set1_protectionAlgor( CMP_CTX *ctx, const X509_ALGOR *algor) {
+int CMP_CTX_set1_protectionAlg( CMP_CTX *ctx, const X509_ALGOR *algor) {
 	if (!ctx) goto err;
 	if (!algor) goto err;
 
-	if (ctx->protectionAlgor) {
-		X509_ALGOR_free(ctx->protectionAlgor);
-		ctx->protectionAlgor = NULL;
+	if (ctx->protectionAlg) {
+		X509_ALGOR_free(ctx->protectionAlg);
+		ctx->protectionAlg = NULL;
 	}
 
-	if (!(ctx->protectionAlgor = X509_ALGOR_dup( (X509_ALGOR*)algor)))
+	if (!(ctx->protectionAlg = X509_ALGOR_dup( (X509_ALGOR*)algor)))
 	    return 0;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_PROTECTIONALGOR, CMP_R_NULL_ARGUMENT);
+	CMPerr(CMP_F_CMP_CTX_SET1_PROTECTIONALG, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -989,7 +989,7 @@ err:
  * Sets the protection algorithm to be used for protecting messages.
  * Possible choices are password based MAC and signature.
  * ################################################################ */
-int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algID) {
+int CMP_CTX_set_protectionAlg( CMP_CTX *ctx, const int algID) {
 	int nid;
 
 	if (!ctx) goto err;
@@ -1001,7 +1001,7 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algID) {
 		case CMP_ALG_SIG: {
 			/* first try to set algorithm based on the algorithm 
 			 * used in the certificate, if we already have one */
-			if (ctx->clCert && (ctx->protectionAlgor = ctx->clCert->sig_alg) != NULL)
+			if (ctx->clCert && (ctx->protectionAlg = ctx->clCert->sig_alg) != NULL)
 				return 1;
 
 			if (!ctx->pkey) goto err;
@@ -1024,15 +1024,15 @@ int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algID) {
 			goto err;
 	}
 
-	if (ctx->protectionAlgor) {
-		X509_ALGOR_free(ctx->protectionAlgor);
-		ctx->protectionAlgor = NULL;
+	if (ctx->protectionAlg) {
+		X509_ALGOR_free(ctx->protectionAlg);
+		ctx->protectionAlg = NULL;
 	}
 
-	if (!(ctx->protectionAlgor = CMP_get_protectionAlgor_by_nid(nid))) goto err;
+	if (!(ctx->protectionAlg = CMP_get_protectionAlg_by_nid(nid))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET_PROTECTIONALGOR, CMP_R_ERROR_SETTING_PROTECTION_ALGORITHM);
+	CMPerr(CMP_F_CMP_CTX_SET_PROTECTIONALG, CMP_R_ERROR_SETTING_PROTECTION_ALGORITHM);
 	return 0;
 }
 

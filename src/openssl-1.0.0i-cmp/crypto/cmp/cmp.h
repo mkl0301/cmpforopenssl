@@ -1257,7 +1257,7 @@ typedef struct cmp_ctx_st
 	/* last nonce received */
 	ASN1_OCTET_STRING    *recipNonce;
 	/* Algorithm used for protection */
-	X509_ALGOR           *protectionAlgor;
+	X509_ALGOR           *protectionAlg;
 	char	  *serverName;
 	int	   serverPort;
 	char	  *serverPath;
@@ -1336,9 +1336,9 @@ int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set1_transactionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *transactionID);
 int CMP_PKIHEADER_set1_recipNonce(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *recipNonce);
 int CMP_PKIHEADER_set1_senderKID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *senderKID);
-int CMP_PKIHEADER_set1_protectionAlgor(CMP_PKIHEADER *hdr, const X509_ALGOR *alg);
-X509_ALGOR *CMP_get_protectionAlgor_by_nid(int nid);
-X509_ALGOR *CMP_get_protectionAlgor_pbmac(void);
+int CMP_PKIHEADER_set1_protectionAlg(CMP_PKIHEADER *hdr, const X509_ALGOR *alg);
+X509_ALGOR *CMP_get_protectionAlg_by_nid(int nid);
+X509_ALGOR *CMP_get_protectionAlg_pbmac(void);
 int CMP_PKIHEADER_set_messageTime(CMP_PKIHEADER *hdr);
 int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg);
 int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg);
@@ -1464,7 +1464,7 @@ int CMP_CTX_set1_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
 int CMP_CTX_set1_transactionID( CMP_CTX *ctx, const ASN1_OCTET_STRING *id);
 int CMP_CTX_set1_senderNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
 int CMP_CTX_set1_recipNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
-int CMP_CTX_set1_protectionAlgor( CMP_CTX *ctx, const X509_ALGOR *algor);
+int CMP_CTX_set1_protectionAlg( CMP_CTX *ctx, const X509_ALGOR *algor);
 int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
 int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
 int CMP_CTX_set1_proxyName( CMP_CTX *ctx, const char *name);
@@ -1474,7 +1474,7 @@ int CMP_CTX_set1_popoMethod( CMP_CTX *ctx, int method);
 int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path);
 #define CMP_ALG_PBMAC 1
 #define CMP_ALG_SIG   2
-int CMP_CTX_set_protectionAlgor( CMP_CTX *ctx, const int algId);
+int CMP_CTX_set_protectionAlg( CMP_CTX *ctx, const int algId);
 int CMP_CTX_set_failInfoCode(CMP_CTX *ctx, CMP_PKIFAILUREINFO *failInfo);
 unsigned long CMP_CTX_failInfoCode_get(CMP_CTX *ctx);
 #define CMP_CTX_OPT_UNSET           0
@@ -1544,7 +1544,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_NEWPKEY			 123
 #define CMP_F_CMP_CTX_SET1_PKEY				 124
 #define CMP_F_CMP_CTX_SET1_POPOMETHOD			 125
-#define CMP_F_CMP_CTX_SET1_PROTECTIONALGOR		 126
+#define CMP_F_CMP_CTX_SET1_PROTECTIONALG		 126
 #define CMP_F_CMP_CTX_SET1_PROXYNAME			 127
 #define CMP_F_CMP_CTX_SET1_PROXYPORT			 128
 #define CMP_F_CMP_CTX_SET1_RECIPIENT			 129
@@ -1559,7 +1559,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_SUBJECTNAME			 137
 #define CMP_F_CMP_CTX_SET1_TIMEOUT			 138
 #define CMP_F_CMP_CTX_SET1_TRANSACTIONID		 139
-#define CMP_F_CMP_CTX_SET_PROTECTIONALGOR		 141
+#define CMP_F_CMP_CTX_SET_PROTECTIONALG		 141
 #define CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH1		 142
 #define CMP_F_CMP_DOCERTIFICATEREQUESTSEQ		 143
 #define CMP_F_CMP_DOINITIALREQUESTSEQ			 144

@@ -207,12 +207,12 @@ int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 /* ############################################################################ *
  * Creates an X509_ALGOR structure based on the given algorithm id.
  * ############################################################################ */
-X509_ALGOR *CMP_get_protectionAlgor_by_nid(int nid) {
+X509_ALGOR *CMP_get_protectionAlg_by_nid(int nid) {
 	X509_ALGOR *alg=NULL;
 
 	switch(nid) {
 		case NID_id_PasswordBasedMAC:
-			return CMP_get_protectionAlgor_pbmac();
+			return CMP_get_protectionAlg_pbmac();
 			break;
 		case NID_sha1WithRSAEncryption:
 		case NID_dsaWithSHA1:
@@ -230,7 +230,7 @@ err:
 /* ############################################################################ *
  * Create an X509_ALGOR structure for PasswordBasedMAC protection
  * ############################################################################ */
-X509_ALGOR *CMP_get_protectionAlgor_pbmac(void) {
+X509_ALGOR *CMP_get_protectionAlg_pbmac(void) {
 	X509_ALGOR *alg=NULL;
 	CRMF_PBMPARAMETER *pbm=NULL;
 	unsigned char *pbmDer=NULL;
@@ -389,7 +389,7 @@ err:
 /* ############################################################################ *
  * Set the algorithm to use for message protection.
  * ############################################################################ */
-int CMP_PKIHEADER_set1_protectionAlgor(CMP_PKIHEADER *hdr, const X509_ALGOR *alg) {
+int CMP_PKIHEADER_set1_protectionAlg(CMP_PKIHEADER *hdr, const X509_ALGOR *alg) {
 	if (!hdr) goto err;
 	if (!alg) goto err;
 
@@ -505,8 +505,8 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 
 	if( !CMP_PKIHEADER_set_messageTime(hdr)) goto err;
 
-	if( ctx->protectionAlgor) {
-		if( !CMP_PKIHEADER_set1_protectionAlgor( hdr, ctx->protectionAlgor)) goto err;
+	if( ctx->protectionAlg) {
+		if( !CMP_PKIHEADER_set1_protectionAlg( hdr, ctx->protectionAlg)) goto err;
 	}
 
 	if( ctx->referenceValue) {

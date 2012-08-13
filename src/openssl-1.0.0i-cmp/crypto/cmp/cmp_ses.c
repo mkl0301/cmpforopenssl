@@ -423,11 +423,11 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* E.7: if clCert is set, use that for signing instead of PBMAC */
 	if (! ctx->clCert)
 	{
-		if (CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC)) goto err;
+		if (!CMP_CTX_set_protectionAlg( ctx, CMP_ALG_PBMAC)) goto err;
 	}
 	else 
 	{
-		if (!CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG)) goto err;
+		if (!CMP_CTX_set_protectionAlg( ctx, CMP_ALG_SIG)) goto err;
 	}
 
 	/* create Initialization Request - ir */
@@ -542,7 +542,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		}
 	}
 
-	if (CMP_protection_verify( ip, ctx->protectionAlgor, X509_get_pubkey( (X509*) srvCert), ctx->secretValue))
+	if (CMP_protection_verify( ip, ctx->protectionAlg, X509_get_pubkey( (X509*) srvCert), ctx->secretValue))
 		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
 	else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -598,7 +598,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) srvCert), ctx->secretValue))
+	if (CMP_protection_verify( PKIconf, ctx->protectionAlg, X509_get_pubkey( (X509*) srvCert), ctx->secretValue))
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -648,8 +648,8 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG);
-	// CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
+	CMP_CTX_set_protectionAlg( ctx, CMP_ALG_SIG);
+	// CMP_CTX_set_protectionAlg( ctx, CMP_ALG_PBMAC);
 
 	if (! (rr = CMP_rr_new(ctx))) goto err;
 
@@ -673,7 +673,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 
-	if (CMP_protection_verify( rp, ctx->protectionAlgor, X509_get_pubkey( (X509*) ctx->caCert), ctx->secretValue)) {
+	if (CMP_protection_verify( rp, ctx->protectionAlg, X509_get_pubkey( (X509*) ctx->caCert), ctx->secretValue)) {
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -729,7 +729,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	/* set the protection Algor which will be used during the whole session */
-	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG);
+	CMP_CTX_set_protectionAlg( ctx, CMP_ALG_SIG);
 
 	/* create Certificate Request - cr */
 	if (! (cr = CMP_cr_new(ctx))) goto err;
@@ -777,7 +777,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		}
 	}
 
-	if (CMP_protection_verify( cp, ctx->protectionAlgor, X509_get_pubkey( (X509*) caCert), NULL)) {
+	if (CMP_protection_verify( cp, ctx->protectionAlg, X509_get_pubkey( (X509*) caCert), NULL)) {
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -822,7 +822,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) caCert), NULL)) {
+	if (CMP_protection_verify( PKIconf, ctx->protectionAlg, X509_get_pubkey( (X509*) caCert), NULL)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		/* old: "ERROR: validating protection of incoming message" */
@@ -878,7 +878,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	/* set the protection Algor which will be used during the whole session */
-	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG);
+	CMP_CTX_set_protectionAlg( ctx, CMP_ALG_SIG);
 
 	/* create Key Update Request - kur */
 	if (! (kur = CMP_kur_new(ctx))) goto err;
@@ -918,7 +918,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		}
 	}
 
-	if (CMP_protection_verify( kup, ctx->protectionAlgor, X509_get_pubkey( (X509*) caCert), NULL)) {
+	if (CMP_protection_verify( kup, ctx->protectionAlg, X509_get_pubkey( (X509*) caCert), NULL)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -973,7 +973,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( PKIconf, ctx->protectionAlgor, X509_get_pubkey( (X509*) caCert), NULL)) {
+	if (CMP_protection_verify( PKIconf, ctx->protectionAlg, X509_get_pubkey( (X509*) caCert), NULL)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -1054,7 +1054,7 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 	}
 
 	/* set the protection Algor which will be used during the whole session */
-	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
+	CMP_CTX_set_protectionAlg( ctx, CMP_ALG_PBMAC);
 
 	/* crate GenMsgContent - genm*/
 	// if (! (genm = CMP_genm_new(ctx, NID_id_it_caKeyUpdateInfo))) goto err;
@@ -1072,7 +1072,7 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 
 	CMP_CTX_set1_sender(ctx, genp->header->sender->d.directoryName);
 
-	if (CMP_protection_verify( genp, ctx->protectionAlgor, NULL, ctx->secretValue))
+	if (CMP_protection_verify( genp, ctx->protectionAlg, NULL, ctx->secretValue))
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	else {
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -1124,7 +1124,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	/* set the protection Algor which will be used during the whole session */
-	CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
+	CMP_CTX_set_protectionAlg( ctx, CMP_ALG_PBMAC);
 
 	/* crate GenMsgContent - genm*/
 	if (! (genm = CMP_genm_new(ctx, 0, NULL))) goto err;
@@ -1139,7 +1139,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( genp, ctx->protectionAlgor, NULL, ctx->secretValue))
+	if (CMP_protection_verify( genp, ctx->protectionAlg, NULL, ctx->secretValue))
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	else {
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
