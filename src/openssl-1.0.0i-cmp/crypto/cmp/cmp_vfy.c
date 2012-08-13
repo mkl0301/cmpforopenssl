@@ -189,9 +189,9 @@ typedef struct {
  * Attempt to validate certificate path. returns 1 if the path was
  * validated successfully and 0 if not.
  * ############################################################################ */
-int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X509) *uchain, X509 *cert)
+int CMP_validate_cert_path(CMP_CTX *cmp_ctx, X509 *cert)
 {
-    int i=0,ret=0,valid=0;
+    int ret=0,valid=0;
     X509_STORE *ctx=NULL;
     X509_STORE_CTX *csc=NULL;
     X509_STORE_CTX_ext cscex;
@@ -199,7 +199,7 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
 
     if (cmp_ctx == NULL || cert == NULL) goto end;
 
-    if (!cmp_ctx->trusted_store && !tchain) {
+    if (!cmp_ctx->trusted_store) {
         CMPerr(CMP_F_CMP_VALIDATE_CERT_PATH, CMP_R_NO_TRUSTED_CERTIFICATES_SET);
         goto end;
     }
@@ -217,35 +217,16 @@ int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X5
 		goto end;
     }
 
-    /* include the certs in ctx->untrusted_store in the validation process.
-     * first attempt to find the relevant intermediate certs in the untrusted store */
+    /* attempt to find the relevant intermediate certs in the untrusted store */
     if (cmp_ctx->untrusted_store)
         untrusted_chain = CMP_build_cert_chain(cmp_ctx->untrusted_store, cert, 0);
 
-    /* failed to get any cert chain, so create an empty one */
-    if (!untrusted_chain)
-    	if (!(untrusted_chain = sk_X509_new_null()))
-    		goto end;
-
-    /* add the untrusted certs give in arguments (i.e. caPubs/extraCerts) */
-    for (i = 0; i < sk_X509_num(uchain); i++)
-        sk_X509_push(untrusted_chain, X509_dup(sk_X509_value(uchain, i)));
-    
 	X509_STORE_set_flags(ctx, 0);
 	if(!X509_STORE_CTX_init(csc, ctx, cert, untrusted_chain)) {
 		if (cmp_ctx&&cmp_ctx->error_cb) 
 			ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
 		goto end;
 	}
-
-    /* add whatever stuff we have in tcain to the trusted store.
-     * it we set tchain using X509_STORE_CTX_trusted_stack the
-     * trusted_store will be ignored, so we do it this way... */
-	for (i=0; i < sk_X509_num(tchain); i++)
-		X509_STORE_add_cert(cmp_ctx->trusted_store, X509_dup(sk_X509_value(tchain, i)));
-
-
-    /* if(tchain) X509_STORE_CTX_trusted_stack(csc, tchain); */
 
     /* TODO handle CRLs? */
     /* if (crls) X509_STORE_CTX_set0_crls(csc, crls); */

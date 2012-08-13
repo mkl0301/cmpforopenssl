@@ -1397,7 +1397,7 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 			    EVP_PKEY *pkey,
 			    const ASN1_OCTET_STRING *secret);
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx);
-int CMP_validate_cert_path(CMP_CTX *cmp_ctx, STACK_OF(X509) *tchain, STACK_OF(X509) *uchain, X509 *cert);
+int CMP_validate_cert_path(CMP_CTX *cmp_ctx, X509 *cert);
 
 
 #ifdef HAVE_CURL

@@ -157,6 +157,21 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
 	return out;
 }
 
+ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert);
+
+static X509 *find_cert_by_keyID(STACK_OF(X509) *certs, ASN1_OCTET_STRING *keyid) {
+	if (!certs || !keyid) return NULL;
+	int n = sk_X509_num(certs);
+	while (n --> 0) {
+		X509 *cert = sk_X509_value(certs, n);
+		ASN1_OCTET_STRING *cert_keyid = CMP_get_subject_key_id(cert);
+
+		if (!ASN1_OCTET_STRING_cmp(cert_keyid, keyid))
+			return cert;
+	}
+	return NULL;
+}
+
 static X509 *find_cert_by_name(STACK_OF(X509) *certs, X509_NAME *name) {
 	if (!certs || !name) return NULL;
 	int n = sk_X509_num(certs);
@@ -343,6 +358,36 @@ err:
 	return 0;
 }
 
+/* This function loads all the intermediate certificates from extraCerts into
+ * the untrusted_store, and if the option is set it also loads any self-signed
+ * certs to trusted_store */
+static int load_extraCerts(CMP_CTX *ctx, STACK_OF(X509) *stack)
+{
+	int i;
+
+	if (!stack) goto err;
+
+	for (i = 0; i < sk_X509_num(stack); i++) {
+		X509 *cert = sk_X509_value(stack, i);
+		EVP_PKEY *pubkey = X509_get_pubkey(cert);
+
+		/* check if cert is self-signed */
+		if (X509_verify(cert, pubkey)) {
+			if (/*3GPP_OPTION &&*/ ctx->trusted_store)
+				X509_STORE_add_cert(ctx->trusted_store, X509_dup(cert));
+		}
+		else {
+			if (ctx->untrusted_store)
+				X509_STORE_add_cert(ctx->untrusted_store, X509_dup(cert));
+		}
+	}
+
+	return 1;
+
+err:
+	return 0;
+}
+
 
 
 /* ############################################################################ *
@@ -352,7 +397,6 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *ip=NULL;
 	CMP_PKIMESSAGE *certConf=NULL;
 	CMP_PKIMESSAGE *PKIconf=NULL;
-	STACK_OF(X509) *certStack=NULL;
 	X509 *srvCert = NULL;
 
 	/* check if all necessary options are set */
@@ -431,21 +475,19 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	} else FAIL;
 #endif
 
+	/* load the provided extraCerts to help with cert path validation */
+	load_extraCerts(ctx, ip->extraCerts);
+	/* TODO: load caPubs too? */
+
 	/* if initializing with existing cert, first we'll see if the sender
 	 * certificate can be found and validated using our root CA certificates */
-	if (ctx->trusted_store) {
+	if (ctx->trusted_store && !srvCert) {
+		srvCert = find_cert_by_keyID(ip->extraCerts, ip->header->senderKID);
+		if (!srvCert)
+			/* TODO what if we have two certs with the same name on stack? */
+			srvCert = find_cert_by_name(ip->extraCerts, ip->header->sender->d.directoryName);
 
-		if (CMP_PKIMESSAGE_get_bodytype(ip) == V_CMP_PKIBODY_IP) {
-			certStack = ip->body->value.ip->caPubs;
-			srvCert = find_cert_by_name(certStack, ip->header->sender->d.directoryName);
-		}
-
-		if (!srvCert) {
-			certStack = ip->extraCerts;
-			srvCert = find_cert_by_name(certStack, ip->header->sender->d.directoryName);
-		}
-
-		if (srvCert && CMP_validate_cert_path(ctx, 0, certStack, srvCert) == 0) {
+		if (srvCert && CMP_validate_cert_path(ctx, srvCert) == 0) {
 			/* if there is a srvCert provided, try to use that for verifying 
 			 * the message signature. otherwise fail here. */
 			if (!ctx->caCert) {
@@ -459,7 +501,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	if (ctx->validatePath && srvCert) {
 		CMP_printf(ctx, "INFO: validating CA certificate path");
-		if( CMP_validate_cert_path(ctx, 0, certStack, srvCert) == 0) {
+		if( CMP_validate_cert_path(ctx, srvCert) == 0) {
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
 			goto err;
 		}
@@ -678,7 +720,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	 * can be found and validated using our root CA certificates */
 	if (ctx->trusted_store) {
 		caCert = find_cert_by_name(cp->extraCerts, cp->header->sender->d.directoryName);
-		if (caCert && CMP_validate_cert_path(ctx, 0, cp->extraCerts, caCert) == 0) {
+		if (caCert && CMP_validate_cert_path(ctx, caCert) == 0) {
 			/* if there is a caCert provided, try to use that for verifying 
 			 * the message signature. otherwise fail here. */
 			if (!ctx->caCert) {
@@ -692,7 +734,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	if (ctx->validatePath && caCert) {
 		CMP_printf(ctx, "INFO: validating CA certificate path");
-		if( CMP_validate_cert_path(ctx, 0, cp->extraCerts, caCert) == 0) {
+		if( CMP_validate_cert_path(ctx, caCert) == 0) {
 			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
 			goto err;
 		}
@@ -819,7 +861,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* see if the CA (sender) cert can be found and validated using our root CA certificates */
 	if (ctx->trusted_store) {
 		caCert = find_cert_by_name(kup->extraCerts, kup->header->sender->d.directoryName);
-		if (caCert && CMP_validate_cert_path(ctx, 0, kup->extraCerts, caCert) == 0) {
+		if (caCert && CMP_validate_cert_path(ctx, caCert) == 0) {
 			/* if there is a caCert provided, try to use that for verifying 
 			 * the message signature. otherwise fail here. */
 			if (!ctx->caCert) {
@@ -833,7 +875,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	if (ctx->validatePath && caCert) {
 		CMP_printf(ctx, "INFO: validating CA certificate path");
-		if( CMP_validate_cert_path(ctx, 0, kup->extraCerts, caCert) == 0) {
+		if( CMP_validate_cert_path(ctx, caCert) == 0) {
 			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
 			goto err;
 		}
