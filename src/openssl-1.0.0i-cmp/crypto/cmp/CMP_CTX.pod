@@ -17,8 +17,6 @@
  CMP_CTX_set1_newPkey,
  CMP_CTX_set1_transactionID,
  CMP_CTX_set1_recipNonce,
- CMP_CTX_set1_protectionAlg,
- CMP_CTX_set_protectionAlg,
  CMP_CTX_set1_serverName,
  CMP_CTX_set_option,
  CMP_CTX_caPubs_pop,
@@ -66,7 +64,6 @@
  int CMP_CTX_set1_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
  int CMP_CTX_set1_transactionID( CMP_CTX *ctx, const ASN1_OCTET_STRING *id);
  int CMP_CTX_set1_recipNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
- int CMP_CTX_set1_protectionAlg( CMP_CTX *ctx, const X509_ALGOR *algor);
  int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
  int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
  X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
@@ -85,10 +82,6 @@
 
  int CMP_CTX_set_error_callback( CMP_CTX *ctx, cmp_logfn_t cb)
  int CMP_CTX_set_debug_callback( CMP_CTX *ctx, cmp_logfn_t cb)
-
- #define CMP_ALG_PBMAC 1
- #define CMP_ALG_SIG   2
- int CMP_CTX_set_protectionAlg( CMP_CTX *ctx, const int algId);
 
  #define CMP_CTX_OPT_UNSET           0
  #define CMP_CTX_OPT_SET             1
@@ -161,16 +154,10 @@ CMP_CTX structure.
 CMP_CTX_set1_recipNonce() sets the given recip nonce in the given
 CMP_CTX structure.
 
-CMP_CTX_set1_protectionAlg() sets the protection algorithm, which
-shall be used for the CMP conversation, in the given CMP_CTX structure.
-
 CMP_CTX_set1_serverName() sets the given server Address (as IP or name)
 in the given CMP_CTX structure.
 
 CMP_CTX_set1_serverPort() sets the port of the CMP server to connect to.
-
-CMP_CTX_set_protectionAlg() sets the given definition (CMP_ALG_PBMAG
-or CMP_ALG_SIG) of the algorithm to use in the given CMP_CTX structure.
 
 CMP_CTX_set_option() sets the given values to the options
 (e.g. CMP_CTX_OPT_IMPLICITCONFIRM) in the given CMP_CTX structure. The

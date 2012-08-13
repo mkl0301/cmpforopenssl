@@ -204,28 +204,6 @@ int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 	return CMP_PKIHEADER_set0_sender( hdr, nmDup);
 }
 
-/* ############################################################################ *
- * Creates an X509_ALGOR structure based on the given algorithm id.
- * ############################################################################ */
-X509_ALGOR *CMP_get_protectionAlg_by_nid(int nid) {
-	X509_ALGOR *alg=NULL;
-
-	switch(nid) {
-		case NID_id_PasswordBasedMAC:
-			return CMP_get_protectionAlg_pbmac();
-			break;
-		case NID_sha1WithRSAEncryption:
-		case NID_dsaWithSHA1:
-		default:
-			if( !(alg = X509_ALGOR_new())) goto err;
-			if( !(X509_ALGOR_set0( alg, OBJ_nid2obj(nid), V_ASN1_NULL, NULL))) goto err;
-			break;
-	}
-	return alg;
-err:
-	if (alg) X509_ALGOR_free(alg);
-	return NULL;
-}
 
 /* ############################################################################ *
  * Create an X509_ALGOR structure for PasswordBasedMAC protection
@@ -386,22 +364,6 @@ err:
 	return 0;
 }
 
-/* ############################################################################ *
- * Set the algorithm to use for message protection.
- * ############################################################################ */
-int CMP_PKIHEADER_set1_protectionAlg(CMP_PKIHEADER *hdr, const X509_ALGOR *alg) {
-	if (!hdr) goto err;
-	if (!alg) goto err;
-
-	if (hdr->protectionAlg)
-		X509_ALGOR_free(hdr->protectionAlg);
-
-	if (!(hdr->protectionAlg = X509_ALGOR_dup((X509_ALGOR*)alg))) goto err;
-
-	return 1;
-err:
-	return 0;
-}
 
 /* ############################################################################ */
 /* push an ASN1_UTF8STRING to hdr->freeText and consume the given pointer       */
@@ -506,9 +468,8 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 
 	if( !CMP_PKIHEADER_set_messageTime(hdr)) goto err;
 
-	if( ctx->protectionAlg) {
-		if( !CMP_PKIHEADER_set1_protectionAlg( hdr, ctx->protectionAlg)) goto err;
-	}
+  /* the protectionAlg is set when creating the message protection in
+   * CMP_PKIMESSAGE_protect() */
 
 	if( ctx->referenceValue) {
 		if( !CMP_PKIHEADER_set1_senderKID(hdr, ctx->referenceValue)) goto err;
@@ -669,6 +630,37 @@ err:
 	CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_ERROR_CALCULATING_PROTECTION);
 	if(prot) ASN1_BIT_STRING_free(prot);
 	return NULL;
+}
+
+/* ############################################################################ *
+ * determines which kind of protection should be created based on the ctx
+ * sets this into the protectionAlg field in the message header
+ * calculates the protection and sets it in the protections filed
+ * ############################################################################ */
+int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
+  if(!ctx) goto err;
+  if(!msg) goto err;
+
+  /* use PasswordBasedMac according to 5.1.3.1 if secretValue is given */
+	if (ctx->secretValue) {
+		if (!(msg->header->protectionAlg = CMP_get_protectionAlg_pbmac())) goto err;
+	} else
+  /* use MSG_SIG_ALG according to 5.1.3.3 if client Certificate is given */
+  if (ctx->clCert){
+    if(!ctx->clCert->sig_alg) goto err;
+    if(!(msg->header->protectionAlg = X509_ALGOR_dup(ctx->clCert->sig_alg))) goto err;
+	} else {
+    CMPerr(CMP_F_CMP_PKIMESSAGE_PROTECT, CMP_R_MISSING_KEY_INPUT_FOR_CREATING_PROTECTION);
+    goto err;
+  }
+
+	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) 
+		goto err;
+  
+  return 1;
+err:
+  CMPerr(CMP_F_CMP_PKIMESSAGE_PROTECT, CMP_R_ERROR_PROTECTING_MESSAGE);
+  return 0;
 }
 
 

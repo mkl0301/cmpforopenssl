@@ -1254,8 +1254,6 @@ typedef struct cmp_ctx_st
 	ASN1_OCTET_STRING    *transactionID;
 	/* last nonce received */
 	ASN1_OCTET_STRING    *recipNonce;
-	/* Algorithm used for protection */
-	X509_ALGOR           *protectionAlg;
 	char	  *serverName;
 	int	   serverPort;
 	char	  *serverPath;
@@ -1334,8 +1332,6 @@ int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set1_transactionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *transactionID);
 int CMP_PKIHEADER_set1_recipNonce(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *recipNonce);
 int CMP_PKIHEADER_set1_senderKID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *senderKID);
-int CMP_PKIHEADER_set1_protectionAlg(CMP_PKIHEADER *hdr, const X509_ALGOR *alg);
-X509_ALGOR *CMP_get_protectionAlg_by_nid(int nid);
 X509_ALGOR *CMP_get_protectionAlg_pbmac(void);
 int CMP_PKIHEADER_set_messageTime(CMP_PKIHEADER *hdr);
 int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg);
@@ -1352,6 +1348,8 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 				    X509_ALGOR *_algor,
 				    const EVP_PKEY *pkey,
 				    const ASN1_OCTET_STRING *secret);
+
+int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
 
 int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert);
 
@@ -1391,7 +1389,6 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
 
 /* cmp_vfy.c */
 int CMP_protection_verify(CMP_PKIMESSAGE *msg,
-			    X509_ALGOR *algor,
 			    EVP_PKEY *pkey,
 			    const ASN1_OCTET_STRING *secret);
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx);
@@ -1462,7 +1459,6 @@ int CMP_CTX_set1_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
 int CMP_CTX_set1_transactionID( CMP_CTX *ctx, const ASN1_OCTET_STRING *id);
 int CMP_CTX_set1_senderNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
 int CMP_CTX_set1_recipNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce);
-int CMP_CTX_set1_protectionAlg( CMP_CTX *ctx, const X509_ALGOR *algor);
 int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
 int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
 int CMP_CTX_set1_proxyName( CMP_CTX *ctx, const char *name);
@@ -1470,9 +1466,6 @@ int CMP_CTX_set1_proxyPort( CMP_CTX *ctx, int port);
 int CMP_CTX_set1_timeOut( CMP_CTX *ctx, int time);
 int CMP_CTX_set1_popoMethod( CMP_CTX *ctx, int method);
 int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path);
-#define CMP_ALG_PBMAC 1
-#define CMP_ALG_SIG   2
-int CMP_CTX_set_protectionAlg( CMP_CTX *ctx, const int algId);
 int CMP_CTX_set_failInfoCode(CMP_CTX *ctx, CMP_PKIFAILUREINFO *failInfo);
 unsigned long CMP_CTX_failInfoCode_get(CMP_CTX *ctx);
 #define CMP_CTX_OPT_UNSET           0
@@ -1557,7 +1550,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_SUBJECTNAME			 137
 #define CMP_F_CMP_CTX_SET1_TIMEOUT			 138
 #define CMP_F_CMP_CTX_SET1_TRANSACTIONID		 139
-#define CMP_F_CMP_CTX_SET_PROTECTIONALG		 141
+#define CMP_F_CMP_CTX_SET_PROTECTIONALG			 141
 #define CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH1		 142
 #define CMP_F_CMP_DOCERTIFICATEREQUESTSEQ		 143
 #define CMP_F_CMP_DOINITIALREQUESTSEQ			 144
@@ -1571,9 +1564,11 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_PKIMESSAGE_HTTP_BIO_RECV		 152
 #define CMP_F_CMP_PKIMESSAGE_HTTP_BIO_SEND		 153
 #define CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM		 154
+#define CMP_F_CMP_PKIMESSAGE_PROTECT			 165
 #define CMP_F_CMP_PKISTATUSINFO_PKISTATUS_GET_STRING	 155
 #define CMP_F_CMP_PROTECTION_NEW			 156
 #define CMP_F_CMP_PROTECTION_VERIFY			 157
+#define CMP_F_CMP_PROTECT_MSG				 164
 #define CMP_F_CMP_RR_NEW				 158
 #define CMP_F_CMP_VALIDATE_CERT_PATH			 159
 #define CMP_F_PKEY_DUP					 160
@@ -1599,6 +1594,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_R_ERROR_DECRYPTING_KEY			 116
 #define CMP_R_ERROR_DECRYPTING_SYMMETRIC_KEY		 117
 #define CMP_R_ERROR_PARSING_PKISTATUS			 118
+#define CMP_R_ERROR_PROTECTING_MESSAGE			 152
 #define CMP_R_ERROR_SETTING_CERTHASH			 119
 #define CMP_R_ERROR_SETTING_PROTECTION_ALGORITHM	 120
 #define CMP_R_ERROR_VALIDATING_PROTECTION		 121
@@ -1613,6 +1609,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_R_INVALID_PARAMETERS			 128
 #define CMP_R_IP_NOT_RECEIVED				 129
 #define CMP_R_KUP_NOT_RECEIVED				 130
+#define CMP_R_MISSING_KEY_INPUT_FOR_CREATING_PROTECTION	 153
 #define CMP_R_MISSING_SERVER_CERTIFICATE		 151
 #define CMP_R_NO_CERTIFICATE_RECEIVED			 131
 #define CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC		 132

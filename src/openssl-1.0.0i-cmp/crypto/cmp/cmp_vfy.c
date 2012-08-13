@@ -101,14 +101,12 @@ static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKE
     return ret;
 }
 
-/* ############################################################################ */
-/* Validate the protection of a PKIMessage
+/* ############################################################################ *
+ * Validate the protection of a PKIMessage
  * returns 1 when valid
  * returns 0 when invalid, not existent or on error
- */
-/* ############################################################################ */
+ * ############################################################################ */
 int CMP_protection_verify(CMP_PKIMESSAGE *msg, 
-			    X509_ALGOR *_algor,
 			    EVP_PKEY *senderPkey,
 			    const ASN1_OCTET_STRING *secret)
 {
@@ -125,27 +123,9 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 
     X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
     usedAlgorNid = OBJ_obj2nid(algorOID);
-    if (usedAlgorNid == NID_id_PasswordBasedMAC) {
-        /* need to have params for PBMAC, so check that we have them */
-        if (!algor->parameter || 
-            ASN1_TYPE_get(algor->parameter) == V_ASN1_UNDEF ||
-            ASN1_TYPE_get(algor->parameter) == V_ASN1_NULL) {
-            /* if parameter is not given in PKIMessage, then try to use parameter from arguments */
-            if (!_algor || algor->algorithm->nid != _algor->algorithm->nid || 
-                ASN1_TYPE_get(_algor->parameter) == V_ASN1_UNDEF || 
-                ASN1_TYPE_get(_algor->parameter) == V_ASN1_NULL) {
-                CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM);
-                goto err;
-            }
-            if (!algor->parameter)
-                algor->parameter = ASN1_TYPE_new();
-            ASN1_TYPE_set(algor->parameter, _algor->parameter->type, _algor->parameter->value.ptr);
-        }
-    }
-
-    // printf("INFO: Verifying protection, algorithm %s\n", OBJ_nid2sn(OBJ_obj2nid(msg->header->protectionAlg->algorithm)));
 
     if (usedAlgorNid == NID_id_PasswordBasedMAC)  {
+		/* TODO: create a CMP_verify_MAC and put that there */
         /* password based Mac */ 
         if (!(protection = CMP_protection_new( msg, algor, NULL, secret)))
             goto err; /* failed to generate protection string! */

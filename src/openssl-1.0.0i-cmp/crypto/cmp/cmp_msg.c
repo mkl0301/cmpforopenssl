@@ -220,11 +220,9 @@ CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 
 	sk_CMP_POLLREQ_push(msg->body->value.pollReq, preq);
 
-	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) 
-		goto err;
+  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
-
 err:
 	return NULL;
 }
@@ -294,7 +292,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
-	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
+  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -350,8 +348,7 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	if( !(msg->body->value.rr = sk_CMP_REVDETAILS_new_null())) goto err;
 	sk_CMP_REVDETAILS_push( msg->body->value.rr, rd);
 
-	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, ctx->secretValue);
-	if (!msg->protection) goto err;
+  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -407,8 +404,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
-	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
-	if (!msg->protection) goto err;
+  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -518,8 +514,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
-	msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY*) ctx->pkey, NULL);
-	if (!msg->protection) goto err;
+  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -573,7 +568,7 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 	if( !(msg->body->value.certConf = sk_CMP_CERTSTATUS_new_null())) goto err;
 	if( !sk_CMP_CERTSTATUS_push( msg->body->value.certConf, certStatus)) goto err;
 
-	if( !(msg->protection = CMP_protection_new( msg, NULL, ctx->pkey, ctx->secretValue))) goto err;
+  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -656,7 +651,7 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value) {
 	}
 #endif
 
-	if (!(msg->protection = CMP_protection_new( msg, NULL, NULL, ctx->secretValue))) goto err;
+  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 

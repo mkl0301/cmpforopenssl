@@ -21,7 +21,6 @@
   CMP_PKIHEADER_set0_recipient,
   CMP_PKIHEADER_set0_sender,
   CMP_PKIHEADER_set1,
-  CMP_PKIHEADER_set1_protectionAlg,
   CMP_PKIHEADER_set1_recipNonce,
   CMP_PKIHEADER_set1_recipient,
   CMP_PKIHEADER_set1_sender,
@@ -38,7 +37,6 @@
   CMP_PKISTATUSINFO_PKIFailureInfo_get_string,
   CMP_PKISTATUSINFO_PKIstatus_get,
   CMP_PKISTATUSINFO_PKIstatus_get_string,
-  CMP_get_protectionAlg_by_nid,
   CMP_get_protectionAlg_pbmac,
   CMP_protection_new,
   CMP_CERTREPMESSAGE_PKIStatusString_get0,
@@ -68,7 +66,6 @@
   int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
   int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
   int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx);
-  int CMP_PKIHEADER_set1_protectionAlg(CMP_PKIHEADER *hdr, const X509_ALGOR *alg);
   int CMP_PKIHEADER_set1_recipNonce(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *recipNonce);
   int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
   int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
@@ -84,7 +81,6 @@
   char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo);
   long CMP_PKISTATUSINFO_PKIstatus_get( CMP_PKISTATUSINFO *statusInfo);
   char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusInfo);
-  X509_ALGOR *CMP_get_protectionAlg_by_nid(int nid);
   X509_ALGOR *CMP_get_protectionAlg_pbmac();
   ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage, X509_ALGOR *_algor, const EVP_PKEY *pkey, const ASN1_OCTET_STRING *secret);
   STACK_OF(ASN1_UTF8STRING)* CMP_CERTREPMESSAGE_PKIStatusString_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
@@ -159,10 +155,6 @@ structure.
 CMP_PKIHEADER_set1() initializes a PKIHeader structure based on the
 values in the given CMP_CTX structure.
 
-CMP_PKIHEADER_set1_protectionAlg() sets hdr->protectionAlg to the
-given X509_ALGOR. This field specifies the algorithm that will be used
-to calculate the value of the protection field in a PKIMessage.
-
 CMP_PKIHEADER_set1_recipNonce() sets the recpiNonce field in the given
 hdr to the given value.
 
@@ -200,6 +192,11 @@ the PKIMessage body field.
 CMP_PKIMESSAGE_set_implicitConfirm() sets implicitConfirm in the
 generalInfo field of the header.
 
+CMP_PKIMESSAGE_protect() protects the given message deciding on the algorithm
+depending on the available context information:  If there is a secretValue it
+selects PBMAC if not and there is a clCert it selects Signature.  Generates and
+sets the protection to the given pkimessage.
+
 CMP_PKISTATUSINFO_PKIFailureInfo_get_string() returns a string
 representing the failure code in the given PKIFailureInfo structure.
 
@@ -209,9 +206,6 @@ PKIStatus in that message.
 
 CMP_PKISTATUSINFO_PKIstatus_get_string() returns a string representing
 the status of the given PKIStatusInfo.
-
-CMP_get_protectionAlg_by_nid() creates an X509_ALGOR structure based
-on the given nid. Either a PBMAC algorithm or signature key based.
 
 CMP_get_protectionAlg_pbmac() initializes an X509_ALGOR structure for
 Password Based MAC. Creates a CRMF_PBMPARAMETER structure for the
