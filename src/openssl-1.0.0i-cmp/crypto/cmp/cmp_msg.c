@@ -164,6 +164,7 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeR
 	X509_STORE_CTX *csc;
 	STACK_OF(X509) *chain, *certs = NULL;
 	X509 *last_cert = cert;
+	X509 *issuer = NULL;
 	int i;
 	X509_STORE_set_flags(store, 0);
 
@@ -177,31 +178,17 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeR
 	if(!X509_STORE_CTX_init(csc,store,cert,NULL))
 		goto err;
 
-	sk_X509_push(chain, X509_dup(cert));
-	while ((certs = X509_STORE_get1_certs(csc, X509_get_issuer_name(last_cert))) != NULL) {
-		X509 *issuer = NULL;
-		for (i = 0; i < sk_X509_num(certs); i++) {
-			X509 *current_cert = sk_X509_value(certs, i);
-			EVP_PKEY *pubkey = X509_get_pubkey(current_cert);
-			if (X509_verify(last_cert, pubkey)) {
-				EVP_PKEY_free(pubkey);
-				issuer = current_cert;
-				break;
-			}
-			EVP_PKEY_free(pubkey);
-		}
-		sk_X509_pop_free(certs, X509_free);
-		if (issuer == last_cert) {
+	while (X509_STORE_CTX_get1_issuer(&issuer, csc, last_cert) && issuer != NULL) {
+		if (issuer == last_cert) { /* hit root cert */
 			if (includeRoot)
-				sk_X509_push(chain, X509_dup(last_cert));
+				sk_X509_push(chain, issuer);
 			break;
 		}
-		if (issuer == NULL) break;
+		sk_X509_push(chain, last_cert);
 		last_cert = issuer;
-		sk_X509_push(chain, X509_dup(last_cert));
 	}
-	X509_STORE_CTX_free(csc);
 
+	X509_STORE_CTX_free(csc);
 	return chain;
 err:
 	X509_STORE_CTX_free(csc);
