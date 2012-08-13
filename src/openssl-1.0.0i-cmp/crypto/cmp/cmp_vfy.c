@@ -61,15 +61,9 @@
  *
  */
 /* ====================================================================
- * Copyright 2007-2010 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
+ * Copyright 2007-2012 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
  * CMP support in OpenSSL originally developed by 
  * Nokia Siemens Networks for contribution to the OpenSSL project.
- */
-
-/* =========================== CHANGE LOG =============================
- * 2007 - Martin Peylo - Initial Creation
- * 06/2010 - Miikka Viljanen - Report errors with OpenSSL error codes instead
- *                             of printf statements.
  */
 
 #include <openssl/asn1.h>
