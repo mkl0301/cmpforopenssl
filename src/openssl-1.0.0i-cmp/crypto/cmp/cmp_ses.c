@@ -61,7 +61,7 @@
  *
  */
 /* ====================================================================
- * Copyright 2007-2010 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
+ * Copyright 2007-2012 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
  * CMP support in OpenSSL originally developed by 
  * Nokia Siemens Networks for contribution to the OpenSSL project.
  */
@@ -85,6 +85,8 @@
 #include <unistd.h>
 
 
+/* ############################################################################ *
+ * ############################################################################ */
 int CMP_error_callback(const char *str, size_t len, void *u) {
 	CMP_CTX *ctx = (CMP_CTX*) u;
 	if (ctx && ctx->error_cb) 
@@ -100,6 +102,8 @@ int CMP_error_callback(const char *str, size_t len, void *u) {
 
 // {{{ char V_CMP_TABLE[] 
 
+/* ############################################################################ *
+ * ############################################################################ */
 static char *V_CMP_TABLE[] = {
   "IR",
   "IP",
@@ -157,8 +161,12 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
 	return out;
 }
 
+/* ############################################################################ *
+ * ############################################################################ */
 ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert);
 
+/* ############################################################################ *
+ * ############################################################################ */
 static X509 *find_cert_by_keyID(STACK_OF(X509) *certs, ASN1_OCTET_STRING *keyid) {
 	if (!certs || !keyid) return NULL;
 	int n = sk_X509_num(certs);
@@ -172,6 +180,8 @@ static X509 *find_cert_by_keyID(STACK_OF(X509) *certs, ASN1_OCTET_STRING *keyid)
 	return NULL;
 }
 
+/* ############################################################################ *
+ * ############################################################################ */
 static X509 *find_cert_by_name(STACK_OF(X509) *certs, X509_NAME *name) {
 	if (!certs || !name) return NULL;
 	int n = sk_X509_num(certs);
@@ -184,6 +194,8 @@ static X509 *find_cert_by_name(STACK_OF(X509) *certs, X509_NAME *name) {
 	return NULL;
 }
 
+/* ############################################################################ *
+ * ############################################################################ */
 static void add_error_data(const char *txt) {
     ERR_STATE *es;
 	int i, len, newlen;
@@ -313,6 +325,8 @@ err:
 }
 
 
+/* ############################################################################ *
+ * ############################################################################ */
 static int try_polling(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg) {
 	int i;
 	CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
@@ -358,9 +372,11 @@ err:
 	return 0;
 }
 
-/* This function loads all the intermediate certificates from extraCerts into
+/* ############################################################################ *
+ * This function loads all the intermediate certificates from extraCerts into
  * the untrusted_store, and if the option is set it also loads any self-signed
- * certs to trusted_store */
+ * certs to trusted_store
+ * ############################################################################ */
 static int load_extraCerts(CMP_CTX *ctx, STACK_OF(X509) *stack)
 {
 	int i;
@@ -406,9 +422,13 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* set the protection Algor which will be used during the whole session */
 	/* E.7: if clCert is set, use that for signing instead of PBMAC */
 	if (! ctx->clCert)
-		CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC);
+	{
+		if (CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_PBMAC)) goto err;
+	}
 	else 
+	{
 		if (!CMP_CTX_set_protectionAlgor( ctx, CMP_ALG_SIG)) goto err;
+	}
 
 	/* create Initialization Request - ir */
 	if (! (ir = CMP_ir_new(ctx))) goto err;
@@ -473,7 +493,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	load_extraCerts(ctx, ip->extraCerts);
 	/* TODO: load caPubs too? */
 
-	/* if initializing with existing cert, first we'll see if the sender
+	/* first we'll see if the sender
 	 * certificate can be found and validated using our root CA certificates */
 	if (ctx->trusted_store && !srvCert) {
 		int i;
@@ -615,6 +635,8 @@ err:
 	return NULL;
 }
 
+/* ############################################################################ *
+ * ############################################################################ */
 int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *rr=NULL;
 	CMP_PKIMESSAGE *rp=NULL;
@@ -987,6 +1009,8 @@ err:
 	return NULL;
 }
 
+/* ############################################################################ *
+ * ############################################################################ */
 CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
 {
 #if 0
@@ -1008,6 +1032,8 @@ CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
 	return (CMP_CAKEYUPDANNCONTENT*) CMP_doGeneralMessageSeq( cbio, ctx, NID_id_it_caKeyUpdateInfo, NULL);
 }
 
+/* ############################################################################ *
+ * ############################################################################ */
 X509_CRL *CMP_doCurrentCRLReq( CMPBIO *cbio, CMP_CTX *ctx)
 {
 	return (X509_CRL*) CMP_doGeneralMessageSeq( cbio, ctx, NID_id_it_currentCRL, NULL);
