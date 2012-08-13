@@ -476,10 +476,21 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* if initializing with existing cert, first we'll see if the sender
 	 * certificate can be found and validated using our root CA certificates */
 	if (ctx->trusted_store && !srvCert) {
+		int i;
 		srvCert = find_cert_by_keyID(ip->extraCerts, ip->header->senderKID);
 		if (!srvCert)
 			/* TODO what if we have two certs with the same name on stack? */
 			srvCert = find_cert_by_name(ip->extraCerts, ip->header->sender->d.directoryName);
+
+#if 0
+		/* if 3GPP... */
+		for (i = 0; i < sk_X509_num(ip->extraCerts); i++) {
+			X509 *cert = sk_X509_value(ip->extraCerts, i);
+			EVP_PKEY *pubkey = X509_get_pubkey(cert);
+			if (X509_verify(cert, pubkey))
+				X509_STORE_add_cert(ctx->trusted_store, X509_dup(cert));
+		}
+#endif
 
 		if (srvCert && CMP_validate_cert_path(ctx, srvCert) == 0) {
 			/* if there is a srvCert provided, try to use that for verifying 
