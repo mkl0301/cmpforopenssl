@@ -88,7 +88,6 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
       for (i = sk_X509_num(ctx->caPubs)-1; i >= 0; i--) {
         X509 *cert = sk_X509_value(ctx->caPubs, i);
         EVP_PKEY *pk = X509_get_pubkey(cert);
-        /* make sure that the cert is self-signed (XXX this is true for all root CAs right?) */
         if (!X509_verify(cert, pk)) {
           sk_X509_delete(ctx->caPubs, i);
           X509_free(cert);
