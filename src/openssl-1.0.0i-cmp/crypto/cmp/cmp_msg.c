@@ -108,7 +108,7 @@ static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL
 	return 1;
 }
 
-static ASN1_OCTET_STRING *get_subject_key_id(const X509 *cert) {
+ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert) {
 	const unsigned char *subjKeyIDStrDer = NULL;
 	ASN1_OCTET_STRING *subjKeyIDStr = NULL;
 	X509_EXTENSION *ex = NULL;
@@ -178,7 +178,8 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeR
 	if(!X509_STORE_CTX_init(csc,store,cert,NULL))
 		goto err;
 
-	while (X509_STORE_CTX_get1_issuer(&issuer, csc, last_cert) && issuer != NULL) {
+	X509_STORE_CTX_get1_issuer(&issuer, csc, last_cert);
+	while (issuer != NULL) {
 		if (issuer == last_cert) { /* hit root cert */
 			if (includeRoot)
 				sk_X509_push(chain, issuer);
@@ -186,6 +187,7 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeR
 		}
 		sk_X509_push(chain, last_cert);
 		last_cert = issuer;
+		X509_STORE_CTX_get1_issuer(&issuer, csc, last_cert);
 	}
 
 	X509_STORE_CTX_free(csc);
@@ -254,7 +256,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	/* TODO: make this generic and bring it close together with CMP_protection_new() */
 	if(ctx->clCert)
 	{
-		ASN1_OCTET_STRING *subjKeyIDStr = get_subject_key_id(ctx->clCert);
+		ASN1_OCTET_STRING *subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert);
 		if (subjKeyIDStr) {
 			CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
 			ASN1_OCTET_STRING_free(subjKeyIDStr);
@@ -324,7 +326,7 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_RR);
 
-	if ((subjKeyIDStr = get_subject_key_id(ctx->clCert)) != NULL) {
+	if ((subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert)) != NULL) {
 		CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
 		ASN1_OCTET_STRING_free(subjKeyIDStr);
 	}
@@ -379,7 +381,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	subjKeyIDStr = get_subject_key_id(ctx->clCert);
+	subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert);
 	if (subjKeyIDStr) {
 		CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
 		ASN1_OCTET_STRING_free(subjKeyIDStr);
@@ -440,7 +442,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	/* this is not needed in case protection is done with MSG_MAC_ALG (what is not
 	 * implemented so far) */
 	if( ctx->clCert ) {
-		ASN1_OCTET_STRING *subjKeyIDStr = get_subject_key_id(ctx->clCert);
+		ASN1_OCTET_STRING *subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert);
 		if (subjKeyIDStr) {
 			CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
 			ASN1_OCTET_STRING_free(subjKeyIDStr);
