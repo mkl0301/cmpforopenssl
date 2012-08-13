@@ -97,7 +97,6 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, clCert, X509),
 	ASN1_OPT(CMP_CTX, subjectName, X509_NAME),
 	ASN1_OPT(CMP_CTX, recipient, X509_NAME),
-	ASN1_OPT(CMP_CTX, sender, X509_NAME),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, subjectAltNames, GENERAL_NAME),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, caPubs, X509),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, extraCertsOut, X509),
@@ -661,34 +660,6 @@ int CMP_CTX_subjectAltName_push1( CMP_CTX *ctx, const GENERAL_NAME *name) {
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH1, CMP_R_NULL_ARGUMENT);
-	return 0;
-}
-
-/* ################################################################ *
- * Returns the name from the sender field of the last received 
- * PKIMessage.
- * ################################################################ */
-X509_NAME* CMP_CTX_sender_get( CMP_CTX *ctx) {
-	if (!ctx || !ctx->sender) return NULL;
-	return X509_NAME_dup(ctx->sender);
-}
-
-/* ################################################################ *
- * Set the X509 name of the sender.
- * ################################################################ */
-int CMP_CTX_set1_sender( CMP_CTX *ctx, const X509_NAME *name) {
-	if (!ctx) goto err;
-	if (!name) goto err;
-
-	if (ctx->sender) {
-		X509_NAME_free(ctx->sender);
-		ctx->sender = NULL;
-	}
-
-	if (!(ctx->sender = X509_NAME_dup( (X509_NAME*)name))) goto err;
-	return 1;
-err:
-	CMPerr(CMP_F_CMP_CTX_SET1_SENDER, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 

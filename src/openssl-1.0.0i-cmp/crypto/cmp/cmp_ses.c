@@ -418,6 +418,13 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	/* TODO: we need a nice algorithm to set the protectionAlg:
+	 *			1.) is there username/password supplied --> PBMAC
+	 *			2.) is there a certificate --> SIG
+	 *			3.) FAIL
+	 *	... do we need an extra setting?
+	 *	--> create generic function and call it from everywhere.
+	 */
 
 	/* set the protection Algor which will be used during the whole session */
 	/* E.7: if clCert is set, use that for signing instead of PBMAC */
@@ -442,8 +449,6 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
             add_error_data("unable to send ir");
 		goto err;
 	}
-
-	CMP_CTX_set1_sender(ctx, ip->header->sender->d.directoryName);
 
 	/* TODO: standard when cert protection: use trusted_store + certs from extra
 	 * certs to validate sender Cert */
@@ -488,6 +493,9 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		SUCCESS
 	} else FAIL;
 #endif
+
+	/* TODO: check what kind of of protectionAlg is used by the CMP server? */
+	/* TODO: move the verification to cmp_vfy.c and factorize */
 
 	/* load the provided extraCerts to help with cert path validation */
 	load_extraCerts(ctx, ip->extraCerts);
@@ -663,8 +671,6 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	CMP_CTX_set1_sender(ctx, rp->header->sender->d.directoryName);
-
 	if (CMP_PKIMESSAGE_get_bodytype( rp) != V_CMP_PKIBODY_RP) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_PKIBODY_ERROR);
@@ -743,8 +749,6 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
             add_error_data("unable to send cr");
 		goto err;
 	}
-
-	CMP_CTX_set1_sender(ctx, cp->header->sender->d.directoryName);
 
 	if (CMP_PKIMESSAGE_get_bodytype( cp) != V_CMP_PKIBODY_CP) {
 		char errmsg[256];
@@ -892,8 +896,6 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
             add_error_data("unable to send kur");
 		goto err;
 	}
-
-	CMP_CTX_set1_sender(ctx, kup->header->sender->d.directoryName);
 
 	/* see if the CA (sender) cert can be found and validated using our root CA certificates */
 	if (ctx->trusted_store) {
@@ -1070,8 +1072,6 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 		goto err;
 	}
 
-	CMP_CTX_set1_sender(ctx, genp->header->sender->d.directoryName);
-
 	if (CMP_protection_verify( genp, ctx->protectionAlg, NULL, ctx->secretValue))
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	else {
@@ -1123,7 +1123,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	/* set the protection Algor which will be used during the whole session */
+	/* set the protection Algorithm which will be used during the whole session */
 	CMP_CTX_set_protectionAlg( ctx, CMP_ALG_PBMAC);
 
 	/* crate GenMsgContent - genm*/

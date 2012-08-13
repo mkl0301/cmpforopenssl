@@ -489,6 +489,7 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 
 	/* in case there is no OLD client cert and no subject name is set in ctx,
 	 * the subject name is not set */
+  /* TODO: can we set our subject name differently than through clCert? */
 	if( ctx->clCert) {
 		if( !CMP_PKIHEADER_set1_sender( hdr, X509_get_subject_name( (X509*) ctx->clCert))) goto err;
 	} else {

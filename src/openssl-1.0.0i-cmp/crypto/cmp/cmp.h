@@ -1233,8 +1233,6 @@ typedef struct cmp_ctx_st
 	X509_NAME            *subjectName;
 	/* X509_NAME to set in PKIHEADER->recipient */ 
 	X509_NAME            *recipient;
-	/* This will contain the sender name copied from the last received PKIMessage */
-	X509_NAME            *sender;
 	/* names to be added to the cert template as the subjectAltName extension */
 	STACK_OF(GENERAL_NAME) *subjectAltNames;
 	/* Stack of CA certificates sent by the CA in a IP message */ 
