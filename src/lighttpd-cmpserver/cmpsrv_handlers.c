@@ -116,7 +116,7 @@ CMPHANDLER_FUNC(handlemsg_rr)
   CMP_PKIMESSAGE_set_bodytype( resp, V_CMP_PKIBODY_RP);
   CMP_PKIHEADER_set1(resp->header, ctx);
 
-  CMP_REVREP *rp = CMP_REVREP_new();
+  CMP_REVREPCONTENT *rp = CMP_REVREPCONTENT_new();
   rp->status = sk_CMP_PKISTATUSINFO_new_null();
   CMP_PKISTATUSINFO *s = CMP_PKISTATUSINFO_new();
   // s->status = ASN1_INTEGER_new();
