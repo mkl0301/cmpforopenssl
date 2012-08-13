@@ -497,7 +497,17 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		}
 	}
 	/* either not using existing cert or couldn't find the CA cert in extracerts. */
-	if (!srvCert) srvCert = ctx->caCert;
+	if (!srvCert && !( srvCert = ctx->caCert )) {
+		ASN1_OBJECT *algorOID=NULL;
+		int usedAlgorNid = 0;
+		X509_ALGOR_get0( &algorOID, NULL, NULL, ip->header->protectionAlg);
+		usedAlgorNid = OBJ_obj2nid(algorOID);
+
+		if (usedAlgorNid != NID_id_PasswordBasedMAC) {
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_MISSING_SERVER_CERTIFICATE);
+			goto err;
+		}
+	}
 
 	if (ctx->validatePath && srvCert) {
 		CMP_printf(ctx, "INFO: validating CA certificate path");
