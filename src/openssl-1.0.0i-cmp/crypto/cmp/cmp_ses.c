@@ -365,21 +365,15 @@ static int load_extraCerts(CMP_CTX *ctx, STACK_OF(X509) *stack)
 {
 	int i;
 
-	if (!stack) goto err;
+	if (!stack || !ctx->untrusted_store) goto err;
 
 	for (i = 0; i < sk_X509_num(stack); i++) {
 		X509 *cert = sk_X509_value(stack, i);
 		EVP_PKEY *pubkey = X509_get_pubkey(cert);
 
-		/* check if cert is self-signed */
-		if (X509_verify(cert, pubkey)) {
-			if (/*3GPP_OPTION &&*/ ctx->trusted_store)
-				X509_STORE_add_cert(ctx->trusted_store, X509_dup(cert));
-		}
-		else {
-			if (ctx->untrusted_store)
-				X509_STORE_add_cert(ctx->untrusted_store, X509_dup(cert));
-		}
+		/* don't add self-signed certs here */
+		if (!X509_verify(cert, pubkey))
+			X509_STORE_add_cert(ctx->untrusted_store, X509_dup(cert));
 	}
 
 	return 1;
