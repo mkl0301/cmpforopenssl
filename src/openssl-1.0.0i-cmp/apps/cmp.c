@@ -353,7 +353,7 @@ static X509_STORE *create_cert_store(char *file)
     cert_ctx=X509_STORE_new();
     if (cert_ctx == NULL) goto err;
 
-    lookup = X509_STORE_add_lookup(cert_ctx, X509_LOOKUP_hash_dir());
+    lookup = X509_STORE_add_lookup(cert_ctx, X509_LOOKUP_file());
     if (lookup == NULL) goto err;
 
     X509_LOOKUP_load_file(lookup, file,
