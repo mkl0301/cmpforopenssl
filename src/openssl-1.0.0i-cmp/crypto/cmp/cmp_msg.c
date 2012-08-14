@@ -162,10 +162,9 @@ err:
  * ############################################################################ */
 STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeRoot) {
 	X509_STORE_CTX *csc;
-	STACK_OF(X509) *chain, *certs = NULL;
+	STACK_OF(X509) *chain = NULL;
 	X509 *last_cert = cert;
 	X509 *issuer = NULL;
-	int i;
 	X509_STORE_set_flags(store, 0);
 
 	if( !(csc = X509_STORE_CTX_new()))
