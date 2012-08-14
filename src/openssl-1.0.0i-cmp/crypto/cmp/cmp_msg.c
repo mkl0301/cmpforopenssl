@@ -179,8 +179,9 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeR
 
 	X509_STORE_CTX_get1_issuer(&issuer, csc, last_cert);
 	while (issuer != NULL) {
-		if (issuer == last_cert) { /* hit root cert */
-			if (includeRoot)
+		EVP_PKEY *pubkey = X509_get_pubkey(issuer);
+		if (issuer == last_cert) { /* hit last found cert */
+			if (includeRoot || !X509_verify(issuer, pubkey))
 				sk_X509_push(chain, issuer);
 			break;
 		}
