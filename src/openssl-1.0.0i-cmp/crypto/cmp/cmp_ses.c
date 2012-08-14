@@ -349,7 +349,7 @@ static int try_polling(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, 
 			CMP_PKIMESSAGE_free(preq);
 			if (CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0) != CMP_PKISTATUS_waiting) {
 				*msg = prep;
-				return 1;
+				return 1; /* final success */
 			}
 		} else if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_POLLREP) {
 			int checkAfter;
@@ -374,28 +374,34 @@ err:
 
 /* ############################################################################ *
  * load all the intermediate certificates from extraCerts into untrusted_store
+ * TODO: rename load extra certs to what and from what (msg?)?
+ * TODO: move this to other fitting file (context?)
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 static int load_extraCerts(CMP_CTX *ctx, STACK_OF(X509) *stack)
 {
 	int i;
-
+	EVP_PKEY *pubkey;
+	X509 *cert;
+	
 	if (!stack || !ctx->untrusted_store) goto err;
 
 	for (i = 0; i < sk_X509_num(stack); i++) {
-		X509 *cert = sk_X509_value(stack, i);
-		EVP_PKEY *pubkey = X509_get_pubkey(cert);
+		if(!(cert = sk_X509_value(stack, i))) goto err;
+		if(!(pubkey = X509_get_pubkey(cert))) continue;
 
 		/* don't add self-signed certs here */
 		if (!X509_verify(cert, pubkey))
-			X509_STORE_add_cert(ctx->untrusted_store, cert);
+			X509_STORE_add_cert(ctx->untrusted_store, cert);  /* don't fail as adding existing certificate to store would cause error */
 	}
 
 	return 1;
-
 err:
 	return 0;
 }
 
+/* ############################################################################ *
+ * ############################################################################ */
 static X509 *find_srvCert(CMP_PKIMESSAGE *msg)
 {
 	X509 *srvCert = find_cert_by_keyID(msg->extraCerts, msg->header->senderKID);
@@ -405,6 +411,8 @@ static X509 *find_srvCert(CMP_PKIMESSAGE *msg)
 	return srvCert;
 }
 
+/* ############################################################################ *
+ * ############################################################################ */
 static int getAlgNID(X509_ALGOR *alg)
 {
 	ASN1_OBJECT *algorOID=NULL;
@@ -412,12 +420,42 @@ static int getAlgNID(X509_ALGOR *alg)
 	return OBJ_obj2nid(algorOID);
 }
 
-static int getServerCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg, X509 **srvCertOut, int *validation_status)
+/* ############################################################################ *
+ * search Server certificate based 
+ * - first on key ID as given in msg->PKIheader->senderKID
+ * - second on sender name from PKI header
+ * NB: takes first one it finds
+ * TODO: what happens if there are more than one? --> document
+ * TODO: rename to getSenderCertFromMsg
+ * TODO: move to right file
+ * ############################################################################ */
+/*
+ * valdiates Message Protection
+ * returns 1 on success, 0 on error
+ *
+ * validateMsg {
+ *	srvCert = findSrvCert
+ *	if(!validateCert (srvCert, trustedStore=known, untrustedStore=known+ExtraCerts)) {
+ *		if(3GPP) {
+ *			valdiateCert (srvCert, trustedStore=self-signed-from-extra, untrusted=ExtraCerts)
+ *		} else {
+ *		  FAIL;
+ *		}
+ *	}
+ *	validateMsgProt (msg, srvCert)
+ *}
+ */
+
+static int getServerCert(CMP_CTX *ctx, 
+		                 CMP_PKIMESSAGE *msg, 
+						 X509 **srvCertOut, 
+						 int *validation_status)
 {
+	/* TODO: if caCert in ctx - then enforce - document! */
 	X509 *srvCert = NULL;
 	int srvCert_valid = 0;
 
-	if (getAlgNID(msg->header->protectionAlg) != NID_id_PasswordBasedMAC) {
+	if (getAlgNID(msg->header->protectionAlg) != NID_id_PasswordBasedMAC) { /* TODO: should that whitelist DSA/RSA etc.? -> check all possible options from OpenSSL, should there be a makro? */
 		/* load the provided extraCerts to help with cert path validation */
 		load_extraCerts(ctx, msg->extraCerts);
 
@@ -425,28 +463,31 @@ static int getServerCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg, X509 **srvCertOut, i
 		 * and validate it using our trusted root certs */
 		if (!srvCert && ctx->trusted_store) {
 			srvCert = find_srvCert(msg);
-			if (!(srvCert_valid=CMP_validate_cert_path(ctx, srvCert)) &&
-				ctx->includeExtraRoots &&
-				/* XXX extra roots can only come in ip, right? */
-				CMP_PKIMESSAGE_get_bodytype(msg) == V_CMP_PKIBODY_IP)
-			{
-				X509_STORE *roots_temp = X509_STORE_new(), *temp = NULL;
-				int i;
-				X509_STORE_set_verify_cb(roots_temp, CMP_cert_callback);
+			if (!(srvCert_valid=CMP_validate_cert_path(ctx, srvCert))) {
+			/* do the 3GPP */
+				if ( /* TODO: change to ctx->permitTAInExtraCertsForIR --> document, refer to 3GPP TS 33.310 */
+					ctx->includeExtraRoots &&
+					CMP_PKIMESSAGE_get_bodytype(msg) == V_CMP_PKIBODY_IP)
+				{
+					X509_STORE *roots_temp = X509_STORE_new(), *tempStore = NULL;
+					int i;
+					X509_STORE_set_verify_cb(roots_temp, CMP_cert_callback);
 
-				for (i = 0; i < sk_X509_num(msg->extraCerts); i++) {
-					X509 *cert = sk_X509_value(msg->extraCerts, i);
-					EVP_PKEY *pubkey = X509_get_pubkey(cert);
-					if (X509_verify(cert, pubkey))
-						X509_STORE_add_cert(roots_temp, cert);
+					for (i = 0; i < sk_X509_num(msg->extraCerts); i++) {
+						X509 *cert = sk_X509_value(msg->extraCerts, i);
+						EVP_PKEY *pubkey = X509_get_pubkey(cert);
+						if (X509_verify(cert, pubkey))
+							X509_STORE_add_cert(roots_temp, cert);
+					}
+
+					/* TODO: don't mess with the ctx */
+					tempStore = ctx->trusted_store;
+					ctx->trusted_store = roots_temp;
+					srvCert_valid = CMP_validate_cert_path(ctx, srvCert);
+					ctx->trusted_store = tempStore;
+
+					X509_STORE_free(roots_temp);
 				}
-
-				temp = ctx->trusted_store;
-				ctx->trusted_store = roots_temp;
-				srvCert_valid = CMP_validate_cert_path(ctx, srvCert);
-				ctx->trusted_store = temp;
-
-				X509_STORE_free(roots_temp);
 			}
 		}
 
