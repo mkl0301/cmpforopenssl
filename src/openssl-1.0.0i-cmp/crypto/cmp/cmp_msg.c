@@ -427,11 +427,13 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
-	if (!ctx->caCert) goto err;
 	if (!ctx->clCert) goto err;
 	if (!ctx->pkey) goto err;
 	if (!ctx->newPkey) goto err;
 
+	if (!ctx->caCert && !ctx->recipient)
+		ctx->recipient = X509_get_issuer_name(ctx->clCert);
+		
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
 	/* get the subject_key_id from the certificate to set it later as senderKID */
