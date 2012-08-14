@@ -257,13 +257,16 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->debug_cb = (cmp_logfn_t) puts;
 	ctx->certConf_cb = NULL;
 
-	ctx->trusted_store   = NULL;
-	ctx->untrusted_store = NULL;
+	ctx->trusted_store   = X509_STORE_new();
+	ctx->untrusted_store = X509_STORE_new();
+    X509_STORE_set_verify_cb(ctx->trusted_store, CMP_cert_callback);
 
 	ctx->maxPollCount = 3;
 
 	ctx->lastStatus = -1;
 	ctx->failInfoCode = 0;
+
+	ctx->includeExtraRoots = 1;
 
 #if 0
 	/* These are initialized already by the call to CMP_CTX_new() */
