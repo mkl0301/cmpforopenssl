@@ -1299,6 +1299,9 @@ typedef struct cmp_ctx_st
 	/* */
 	X509_STORE *trusted_store;
 	X509_STORE *untrusted_store;
+
+	/* include root certs from extracerts when validating? */
+	int includeExtraRoots;
 } CMP_CTX;
 
 DECLARE_ASN1_FUNCTIONS(CMP_CTX)
@@ -1553,6 +1556,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET_PROTECTIONALG			 141
 #define CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH1		 142
 #define CMP_F_CMP_DOCERTIFICATEREQUESTSEQ		 143
+#define CMP_F_CMP_DOGENERALMESSAGESEQ			 166
 #define CMP_F_CMP_DOINITIALREQUESTSEQ			 144
 #define CMP_F_CMP_DOKEYUPDATEREQUESTSEQ			 145
 #define CMP_F_CMP_DOPKIINFOREQSEQ			 146
