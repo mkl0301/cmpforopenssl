@@ -396,6 +396,80 @@ err:
 	return 0;
 }
 
+static X509 *find_srvCert(CMP_PKIMESSAGE *msg)
+{
+	X509 *srvCert = find_cert_by_keyID(msg->extraCerts, msg->header->senderKID);
+	if (!srvCert)
+		/* TODO what if we have two certs with the same name on stack? */
+		srvCert = find_cert_by_name(msg->extraCerts, msg->header->sender->d.directoryName);
+	return srvCert;
+}
+
+static int getAlgNID(X509_ALGOR *alg)
+{
+	ASN1_OBJECT *algorOID=NULL;
+	X509_ALGOR_get0( &algorOID, NULL, NULL, alg);
+	return OBJ_obj2nid(algorOID);
+}
+
+static int getServerCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg, X509 **srvCertOut, int *validation_status)
+{
+	X509 *srvCert = NULL;
+	int srvCert_valid = 0;
+
+	if (getAlgNID(msg->header->protectionAlg) != NID_id_PasswordBasedMAC) {
+		/* load the provided extraCerts to help with cert path validation */
+		load_extraCerts(ctx, msg->extraCerts);
+
+		/* no server certificate is set, so we'll try to find it in extraCerts
+		 * and validate it using our trusted root certs */
+		if (!srvCert && ctx->trusted_store) {
+			srvCert = find_srvCert(msg);
+			if (!(srvCert_valid=CMP_validate_cert_path(ctx, srvCert)) &&
+				ctx->includeExtraRoots &&
+				/* XXX extra roots can only come in ip, right? */
+				CMP_PKIMESSAGE_get_bodytype(msg) == V_CMP_PKIBODY_IP)
+			{
+				X509_STORE *roots_temp = X509_STORE_new(), *temp = NULL;
+				int i;
+				X509_STORE_set_verify_cb(roots_temp, CMP_cert_callback);
+
+				for (i = 0; i < sk_X509_num(msg->extraCerts); i++) {
+					X509 *cert = sk_X509_value(msg->extraCerts, i);
+					EVP_PKEY *pubkey = X509_get_pubkey(cert);
+					if (X509_verify(cert, pubkey))
+						X509_STORE_add_cert(roots_temp, cert);
+				}
+
+				temp = ctx->trusted_store;
+				ctx->trusted_store = roots_temp;
+				srvCert_valid = CMP_validate_cert_path(ctx, srvCert);
+				ctx->trusted_store = temp;
+
+				X509_STORE_free(roots_temp);
+			}
+		}
+
+		/* if there is a srvCert provided in ctx, try to use that for verifying 
+		 * the message signature. otherwise fail here. */
+		if (!srvCert || !srvCert_valid) {
+			if (ctx->caCert) {
+				srvCert = ctx->caCert;
+				srvCert_valid = CMP_validate_cert_path(ctx, srvCert);
+			}
+			else goto err;
+		}
+	}
+
+	*srvCertOut = srvCert;
+	*validation_status = srvCert_valid;
+	return 1;
+
+err:
+	*srvCertOut = NULL;
+	*validation_status = 0;
+	return 0;
+}
 
 
 /* ############################################################################ *
@@ -406,6 +480,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *certConf=NULL;
 	CMP_PKIMESSAGE *PKIconf=NULL;
 	X509 *srvCert = NULL;
+	int srvCert_valid=0;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->newPkey ||
@@ -476,56 +551,16 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* TODO: check what kind of of protectionAlg is used by the CMP server? */
 	/* TODO: move the verification to cmp_vfy.c and factorize */
 
-	/* load the provided extraCerts to help with cert path validation */
-	load_extraCerts(ctx, ip->extraCerts);
 
-	/* first we'll see if the sender
-	 * certificate can be found and validated using our root CA certificates */
-	if (ctx->trusted_store && !srvCert) {
-		int i;
-		srvCert = find_cert_by_keyID(ip->extraCerts, ip->header->senderKID);
-		if (!srvCert)
-			/* TODO what if we have two certs with the same name on stack? */
-			srvCert = find_cert_by_name(ip->extraCerts, ip->header->sender->d.directoryName);
-
-#if 0
-		/* if 3GPP... */
-		for (i = 0; i < sk_X509_num(ip->extraCerts); i++) {
-			X509 *cert = sk_X509_value(ip->extraCerts, i);
-			EVP_PKEY *pubkey = X509_get_pubkey(cert);
-			if (X509_verify(cert, pubkey))
-				X509_STORE_add_cert(ctx->trusted_store, X509_dup(cert));
-		}
-#endif
-
-		if (srvCert && CMP_validate_cert_path(ctx, srvCert) == 0) {
-			/* if there is a srvCert provided, try to use that for verifying 
-			 * the message signature. otherwise fail here. */
-			if (!ctx->caCert) {
-				CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
-				goto err;
-			}
-		}
-	}
-	/* either not using existing cert or couldn't find the CA cert in extracerts. */
-	if (!srvCert && !( srvCert = ctx->caCert )) {
-		ASN1_OBJECT *algorOID=NULL;
-		int usedAlgorNid = 0;
-		X509_ALGOR_get0( &algorOID, NULL, NULL, ip->header->protectionAlg);
-		usedAlgorNid = OBJ_obj2nid(algorOID);
-
-		if (usedAlgorNid != NID_id_PasswordBasedMAC) {
-			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_MISSING_SERVER_CERTIFICATE);
-			goto err;
-		}
+	if (!getServerCert(ctx, ip, &srvCert, &srvCert_valid)) {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_MISSING_SERVER_CERTIFICATE);
+		goto err;
 	}
 
-	if (ctx->validatePath && srvCert) {
-		CMP_printf(ctx, "INFO: validating CA certificate path");
-		if( CMP_validate_cert_path(ctx, srvCert) == 0) {
-			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
-			goto err;
-		}
+
+	if (ctx->validatePath && !srvCert_valid) {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
+		goto err;
 	}
 
 	if (CMP_protection_verify( ip, X509_get_pubkey( (X509*) srvCert), ctx->secretValue))
@@ -626,7 +661,7 @@ err:
 int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *rr=NULL;
 	CMP_PKIMESSAGE *rp=NULL;
-	// X509 *caCert=NULL;
+	// X509 *srvCert=NULL;
 
 	if (!cbio || !ctx || !ctx->serverName || !ctx->pkey ||
 		!ctx->clCert || !ctx->caCert) {
@@ -699,7 +734,8 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *cp=NULL;
 	CMP_PKIMESSAGE *certConf=NULL;
 	CMP_PKIMESSAGE *PKIconf=NULL;
-	X509 *caCert=NULL;
+	X509 *srvCert=NULL;
+	int srvCert_valid=0;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->serverName
@@ -722,6 +758,26 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	if (!getServerCert(ctx, cp, &srvCert, &srvCert_valid)) {
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_MISSING_SERVER_CERTIFICATE);
+		goto err;
+	}
+
+	if (ctx->validatePath && !srvCert_valid) {
+		CMP_printf(ctx, "INFO: validating CA certificate path");
+		if( CMP_validate_cert_path(ctx, srvCert) == 0) {
+			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
+			goto err;
+		}
+	}
+
+	if (CMP_protection_verify( cp, X509_get_pubkey( (X509*) srvCert), NULL)) {
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
+
 	if (CMP_PKIMESSAGE_get_bodytype( cp) != V_CMP_PKIBODY_CP) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
@@ -729,36 +785,6 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	/* if  initializing with existing cert, first we'll see if the CA (sender) cert
-	 * can be found and validated using our root CA certificates */
-	if (ctx->trusted_store) {
-		caCert = find_cert_by_name(cp->extraCerts, cp->header->sender->d.directoryName);
-		if (caCert && CMP_validate_cert_path(ctx, caCert) == 0) {
-			/* if there is a caCert provided, try to use that for verifying 
-			 * the message signature. otherwise fail here. */
-			if (!ctx->caCert) {
-				CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
-				goto err;
-			}
-		}
-	}
-	/* either not using existing cert or couldn't find the CA cert in extracerts. */
-	if (!caCert) caCert = ctx->caCert;
-
-	if (ctx->validatePath && caCert) {
-		CMP_printf(ctx, "INFO: validating CA certificate path");
-		if( CMP_validate_cert_path(ctx, caCert) == 0) {
-			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
-			goto err;
-		}
-	}
-
-	if (CMP_protection_verify( cp, X509_get_pubkey( (X509*) caCert), NULL)) {
-		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
 
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0) == CMP_PKISTATUS_waiting)
 		if (!try_polling(ctx, cbio, cp->body->value.cp, &cp)) {
@@ -798,7 +824,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( PKIconf, X509_get_pubkey( (X509*) caCert), NULL)) {
+	if (CMP_protection_verify( PKIconf, X509_get_pubkey( (X509*) srvCert), NULL)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		/* old: "ERROR: validating protection of incoming message" */
@@ -843,7 +869,8 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *kup=NULL;
 	CMP_PKIMESSAGE *certConf=NULL;
 	CMP_PKIMESSAGE *PKIconf=NULL;
-	X509 *caCert = NULL;
+	X509 *srvCert = NULL;
+	int srvCert_valid=0;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->serverName
@@ -866,30 +893,20 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	/* see if the CA (sender) cert can be found and validated using our root CA certificates */
-	if (ctx->trusted_store) {
-		caCert = find_cert_by_name(kup->extraCerts, kup->header->sender->d.directoryName);
-		if (caCert && CMP_validate_cert_path(ctx, caCert) == 0) {
-			/* if there is a caCert provided, try to use that for verifying 
-			 * the message signature. otherwise fail here. */
-			if (!ctx->caCert) {
-				CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
-				goto err;
-			}
-		}
+	if (!getServerCert(ctx, kup, &srvCert, &srvCert_valid)) {
+		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_MISSING_SERVER_CERTIFICATE);
+		goto err;
 	}
-	/* either not using existing cert or couldn't find the CA cert in extracerts. */
-	if (!caCert) caCert = ctx->caCert;
 
-	if (ctx->validatePath && caCert) {
+	if (ctx->validatePath && !srvCert_valid) {
 		CMP_printf(ctx, "INFO: validating CA certificate path");
-		if( CMP_validate_cert_path(ctx, caCert) == 0) {
+		if( CMP_validate_cert_path(ctx, srvCert) == 0) {
 			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
 			goto err;
 		}
 	}
 
-	if (CMP_protection_verify( kup, X509_get_pubkey( (X509*) caCert), NULL)) {
+	if (CMP_protection_verify( kup, X509_get_pubkey( (X509*) srvCert), NULL)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -944,7 +961,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( PKIconf, X509_get_pubkey( (X509*) caCert), NULL)) {
+	if (CMP_protection_verify( PKIconf, X509_get_pubkey( (X509*) srvCert), NULL)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -1017,10 +1034,12 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 	CMP_PKIMESSAGE *genm=NULL;
 	CMP_PKIMESSAGE *genp=NULL;
 	CMP_INFOTYPEANDVALUE *itav=NULL;
+	X509 *srvCert = NULL;
+	int srvCert_valid=0;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->caCert || !ctx->referenceValue || !ctx->secretValue) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_INVALID_ARGS);
+		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_INVALID_ARGS);
 	 	goto err;
 	}
 
@@ -1032,16 +1051,21 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_GENP_NOT_RECEIVED);
+            CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_GENP_NOT_RECEIVED);
         else
             add_error_data("unable to send genm");
 		goto err;
 	}
 
-	if (CMP_protection_verify( genp, NULL, ctx->secretValue))
+	if (!getServerCert(ctx, genp, &srvCert, &srvCert_valid)) {
+		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_MISSING_SERVER_CERTIFICATE);
+		goto err;
+	}
+
+	if (CMP_protection_verify( genp, X509_get_pubkey( (X509*) srvCert), ctx->secretValue))
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	else {
-		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
@@ -1051,11 +1075,11 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 		ASN1_UTF8STRING *status = NULL;
 
 		char errmsg[256];
-		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_PKIBODY_ERROR);
+		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data(genp, errmsg, sizeof(errmsg)));
 
 
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_UNKNOWN_PKISTATUS);
 		while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 			ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 		goto err;
@@ -1085,7 +1109,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->caCert || !ctx->referenceValue || !ctx->secretValue) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_INVALID_ARGS);
+		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_INVALID_ARGS);
 		goto err;
 	}
 
@@ -1096,7 +1120,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_GENP_NOT_RECEIVED);
+            CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_GENP_NOT_RECEIVED);
         else
             add_error_data("unable to send genm");
 		goto err;
@@ -1119,7 +1143,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		ERR_add_error_data(1, PKIError_data(genp, errmsg, sizeof(errmsg)));
 
 
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_UNKNOWN_PKISTATUS);
 		while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 			ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 		goto err;
