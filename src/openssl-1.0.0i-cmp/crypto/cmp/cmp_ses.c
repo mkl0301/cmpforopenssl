@@ -373,9 +373,7 @@ err:
 }
 
 /* ############################################################################ *
- * This function loads all the intermediate certificates from extraCerts into
- * the untrusted_store, and if the option is set it also loads any self-signed
- * certs to trusted_store
+ * load all the intermediate certificates from extraCerts into untrusted_store
  * ############################################################################ */
 static int load_extraCerts(CMP_CTX *ctx, STACK_OF(X509) *stack)
 {
@@ -389,7 +387,7 @@ static int load_extraCerts(CMP_CTX *ctx, STACK_OF(X509) *stack)
 
 		/* don't add self-signed certs here */
 		if (!X509_verify(cert, pubkey))
-			X509_STORE_add_cert(ctx->untrusted_store, X509_dup(cert));
+			X509_STORE_add_cert(ctx->untrusted_store, cert);
 	}
 
 	return 1;
