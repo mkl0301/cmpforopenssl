@@ -461,6 +461,9 @@ static int getServerCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg, X509 **srvCertOut, i
 		}
 	}
 
+	if (srvCert && !ctx->caCert)
+		ctx->caCert = srvCert;
+
 	*srvCertOut = srvCert;
 	*validation_status = srvCert_valid;
 	return 1;

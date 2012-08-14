@@ -217,7 +217,7 @@ end:
 		sk_X509_pop_free(untrusted_chain, X509_free);
     
     if (valid > 0) {
-        CMP_printf(cmp_ctx, "Validation OK\n");
+        CMP_printf(cmp_ctx, "INFO: certificate Validation OK\n");
         ret=1;
     }
     else if (cmp_ctx&&cmp_ctx->error_cb) 
