@@ -377,12 +377,12 @@ static X509_STORE *createTempTrustedStore(STACK_OF(X509) *stack)
 /* ############################################################################
  * Validates the protection of the given PKIMessage using either password
  * based mac or a signature algorithm. In the case of signature algorithm, the
- * certificate can be provided in ctx->caCert or we can try to find it in
+ * certificate can be provided in ctx->srvCert or we can try to find it in
  * extraCerts and validate.
  * ############################################################################ */
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 {
-	X509 *srvCert = ctx->caCert;
+	X509 *srvCert = ctx->srvCert;
 	int srvCert_valid = 0;
 
 	/* TODO: should that whitelist DSA/RSA etc.? -> check all possible options from OpenSSL,

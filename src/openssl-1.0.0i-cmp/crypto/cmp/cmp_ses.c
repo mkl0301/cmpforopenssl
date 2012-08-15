@@ -370,7 +370,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* TODO: standard when cert protection: use trusted_store + certs from extra
 	 * certs to validate sender Cert */
 #if 0
-	/* either ctx->caCert or trusted_store are acceptable */
+	/* either ctx->srvCert or trusted_store are acceptable */
 	if (ip->header->sender->d.directoryName combined with optional ip->header->senderKID is in trusted_store) {
 		/* TODO: what if there is no senderKID but two certificates with the
 		 * same name? */
@@ -513,7 +513,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	// X509 *srvCert=NULL;
 
 	if (!cbio || !ctx || !ctx->serverName || !ctx->pkey ||
-		!ctx->clCert || !ctx->caCert) {
+		!ctx->clCert || !ctx->srvCert) {
 		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_INVALID_ARGS);
 		goto err;
 	}
@@ -587,7 +587,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->serverName
 		|| !ctx->pkey || !ctx->clCert ||
-		(!ctx->caCert && !ctx->trusted_store)) {
+		(!ctx->srvCert && !ctx->trusted_store)) {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_INVALID_ARGS);
 		goto err;
 	}
@@ -707,7 +707,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->serverName
 		|| !ctx->pkey || !ctx->newPkey || !ctx->clCert
-		|| (!ctx->caCert && !ctx->trusted_store)) {
+		|| (!ctx->srvCert && !ctx->trusted_store)) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_INVALID_ARGS);
 		goto err;
 	}
@@ -855,7 +855,7 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 	CMP_INFOTYPEANDVALUE *itav=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio || !ctx || !ctx->caCert || !ctx->referenceValue || !ctx->secretValue) {
+	if (!cbio || !ctx || !ctx->srvCert || !ctx->referenceValue || !ctx->secretValue) {
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_INVALID_ARGS);
 	 	goto err;
 	}
@@ -920,7 +920,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *genp=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio || !ctx || !ctx->caCert || !ctx->referenceValue || !ctx->secretValue) {
+	if (!cbio || !ctx || !ctx->srvCert || !ctx->referenceValue || !ctx->secretValue) {
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_INVALID_ARGS);
 		goto err;
 	}

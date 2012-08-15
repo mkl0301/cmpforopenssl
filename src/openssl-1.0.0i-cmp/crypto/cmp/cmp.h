@@ -1225,7 +1225,7 @@ typedef struct cmp_ctx_st
 	ASN1_OCTET_STRING    *secretValue;
 	ASN1_UTF8STRING      *regToken;
 	/* CA certificate used to identify the CA */
-	X509                 *caCert;
+	X509                 *srvCert;
 	/* current client certificate used to identify and sign */
 	X509                 *clCert;
 	/* subject name to be used in the cert template. note: if clcert is set,

@@ -238,9 +238,6 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
-#if 0
-	if (!ctx->caCert) goto err;
-#endif
 	/* for authentication we need either a reference value/secret or external identity certificate and private key */
 	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
 	if (!ctx->newPkey) goto err;
@@ -316,7 +313,7 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
 #if 0
-	if (!ctx->caCert) goto err;
+	if (!ctx->srvCert) goto err;
 #endif
 	if (!ctx->clCert) goto err;
 	if (!ctx->pkey) goto err;
@@ -372,7 +369,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
-	if (!ctx->caCert) goto err;
+	if (!ctx->srvCert) goto err;
 	if (!ctx->clCert) goto err;
 	if (!ctx->pkey) goto err;
 
@@ -431,7 +428,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	if (!ctx->pkey) goto err;
 	if (!ctx->newPkey) goto err;
 
-	if (!ctx->caCert && !ctx->recipient)
+	if (!ctx->srvCert && !ctx->recipient)
 		ctx->recipient = X509_get_issuer_name(ctx->clCert);
 		
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
@@ -537,7 +534,7 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
-	/* if (!ctx->caCert) goto err; */
+	/* if (!ctx->srvCert) goto err; */
 	if (!ctx->newClCert) goto err;
 	if ( (!ctx->pkey) && ((!ctx->referenceValue) && (!ctx->secretValue)) ) goto err;
 

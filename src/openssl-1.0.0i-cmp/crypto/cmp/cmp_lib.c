@@ -458,8 +458,8 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 		if( !CMP_PKIHEADER_set1_sender( hdr, NULL)) goto err;
 	}
 
-	if( ctx->caCert) {
-		if( !CMP_PKIHEADER_set1_recipient( hdr, X509_get_subject_name( (X509*) ctx->caCert))) goto err;
+	if( ctx->srvCert) {
+		if( !CMP_PKIHEADER_set1_recipient( hdr, X509_get_subject_name( (X509*) ctx->srvCert))) goto err;
 	} else if( ctx->recipient) {
 		if( !CMP_PKIHEADER_set1_recipient( hdr, ctx->recipient)) goto err;
 	}else {
