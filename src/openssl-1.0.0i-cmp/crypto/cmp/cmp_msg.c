@@ -136,7 +136,7 @@ static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 			int i;
 			for(i = 0; i < sk_X509_num(chain); i++)
 				sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
-			sk_X509_free(chain);
+			sk_X509_pop_free(chain, X509_free);
 		}
 		if (sk_X509_num(msg->extraCerts) == 0)
 			/* Make sure that at least our own cert gets sent */
@@ -182,10 +182,10 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeR
 		EVP_PKEY *pubkey = X509_get_pubkey(issuer);
 		if (issuer == last_cert) { /* hit last found cert */
 			if (includeRoot || !X509_verify(issuer, pubkey))
-				sk_X509_push(chain, issuer);
+				sk_X509_push(chain, X509_dup(issuer));
 			break;
 		}
-		sk_X509_push(chain, last_cert);
+		sk_X509_push(chain, X509_dup(last_cert));
 		last_cert = issuer;
 		X509_STORE_CTX_get1_issuer(&issuer, csc, last_cert);
 	}
