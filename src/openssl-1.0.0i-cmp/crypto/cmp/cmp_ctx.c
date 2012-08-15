@@ -621,6 +621,27 @@ err:
  * Sets the CA certificate that is to be used for verifying response
  * messages. Pointer is not consumed.
  * ################################################################ */
+int CMP_CTX_set1_srvCert( CMP_CTX *ctx, const X509 *cert) {
+	if (!ctx) goto err;
+	if (!cert) goto err;
+
+	if (ctx->srvCert) {
+		X509_free(ctx->srvCert);
+		ctx->srvCert = NULL;
+	}
+
+	if (!(ctx->srvCert = X509_dup( (X509*)cert))) goto err;
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_CACERT, CMP_R_NULL_ARGUMENT);
+	return 0;
+}
+
+/* ################################################################ *
+ * NOTE: this is replaced by CMP_CTX_set1_srvCert() and may be removed eventually
+ * Sets the CA certificate that is to be used for verifying response
+ * messages. Pointer is not consumed.
+ * ################################################################ */
 int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert) {
 	if (!ctx) goto err;
 	if (!cert) goto err;
