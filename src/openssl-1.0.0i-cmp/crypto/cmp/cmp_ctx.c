@@ -266,7 +266,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->lastStatus = -1;
 	ctx->failInfoCode = 0;
 
-	ctx->includeExtraRoots = 1;
+	ctx->permitTAInExtraCertsForIR = 1;
 
 #if 0
 	/* These are initialized already by the call to CMP_CTX_new() */

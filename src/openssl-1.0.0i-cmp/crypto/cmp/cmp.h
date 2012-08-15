@@ -1301,7 +1301,7 @@ typedef struct cmp_ctx_st
 	X509_STORE *untrusted_store;
 
 	/* include root certs from extracerts when validating? */
-	int includeExtraRoots;
+	int permitTAInExtraCertsForIR;
 } CMP_CTX;
 
 DECLARE_ASN1_FUNCTIONS(CMP_CTX)
