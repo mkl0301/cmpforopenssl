@@ -75,6 +75,17 @@
 int CMP_error_callback(const char *str, size_t len, void *u);
 
 /* ############################################################################ *
+ * Return the NID of the algorithm used in the given X509_ALGOR structure
+ * ############################################################################ */
+static int getAlgNID(X509_ALGOR *alg)
+{
+	ASN1_OBJECT *algorOID=NULL;
+	X509_ALGOR_get0( &algorOID, NULL, NULL, alg);
+	return OBJ_obj2nid(algorOID);
+}
+
+
+/* ############################################################################ *
  * validate a protected message (sha1+RSA/DSA or any other algorithm supported by OpenSSL)
  * ############################################################################ */
 static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKEY *senderPkey) {
@@ -112,19 +123,13 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 {
     ASN1_BIT_STRING *protection=NULL;
     X509_ALGOR *algor=NULL;
-    ASN1_OBJECT *algorOID=NULL;
     int valid = 0;
-
-    int usedAlgorNid;
 
     if (!msg->protection) goto err;
     if (!msg->header->protectionAlg) goto err;
     if (!(algor = X509_ALGOR_dup(msg->header->protectionAlg))) goto err;
 
-    X509_ALGOR_get0( &algorOID, NULL, NULL, algor);
-    usedAlgorNid = OBJ_obj2nid(algorOID);
-
-    if (usedAlgorNid == NID_id_PasswordBasedMAC)  {
+    if (getAlgNID(algor) == NID_id_PasswordBasedMAC)  {
 		/* TODO: create a CMP_verify_MAC and put that there */
         /* password based Mac */ 
         if (!(protection = CMP_protection_new( msg, algor, NULL, secret)))
@@ -151,123 +156,55 @@ err:
 }
 
 /* ############################################################################ *
- * Structure to hold the X509_STORE_CTX and a pointer to CMP_CTX so that we can
- * provide extra data to the cert validation callback
- * ############################################################################ */
-typedef struct {
-    X509_STORE_CTX cert_ctx;
-    CMP_CTX *cmp_ctx;
-} X509_STORE_CTX_ext;
-
-/* ############################################################################ *
  * Attempt to validate certificate path. returns 1 if the path was
  * validated successfully and 0 if not.
  * ############################################################################ */
-int CMP_validate_cert_path(CMP_CTX *cmp_ctx, X509 *cert)
+int CMP_validate_cert_path(CMP_CTX *ctx,
+                           X509_STORE *trusted_store,
+                           X509_STORE *untrusted_store,
+                           X509 *cert)
 {
     int ret=0,valid=0;
-    X509_STORE *ctx=NULL;
     X509_STORE_CTX *csc=NULL;
-    X509_STORE_CTX_ext cscex;
     STACK_OF(X509) *untrusted_chain=NULL;
 
-    if (cmp_ctx == NULL || cert == NULL) goto end;
+    if (ctx == NULL || cert == NULL) goto end;
 
-    if (!cmp_ctx->trusted_store) {
+    if (!trusted_store) {
         CMPerr(CMP_F_CMP_VALIDATE_CERT_PATH, CMP_R_NO_TRUSTED_CERTIFICATES_SET);
         goto end;
     }
 
-    if (!cmp_ctx->trusted_store)
-        cmp_ctx->trusted_store = ctx = X509_STORE_new();
-    else
-        ctx = cmp_ctx->trusted_store;
-    if (!ctx) goto end;
-
-    csc = X509_STORE_CTX_new();
-    if (csc == NULL) {
-		if (cmp_ctx&&cmp_ctx->error_cb) 
-			ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
-		goto end;
-    }
+    if (!(csc = X509_STORE_CTX_new())) goto end;
 
     /* attempt to find the relevant intermediate certs in the untrusted store */
-    if (cmp_ctx->untrusted_store)
-        untrusted_chain = CMP_build_cert_chain(cmp_ctx->untrusted_store, cert, 0);
+    if (ctx->untrusted_store)
+        untrusted_chain = CMP_build_cert_chain(ctx->untrusted_store, cert, 0);
 
-	X509_STORE_set_flags(ctx, 0);
-	if(!X509_STORE_CTX_init(csc, ctx, cert, untrusted_chain)) {
-		if (cmp_ctx&&cmp_ctx->error_cb) 
-			ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
+	X509_STORE_set_flags(trusted_store, 0);
+	if(!X509_STORE_CTX_init(csc, trusted_store, cert, untrusted_chain))
 		goto end;
-	}
 
-    /* TODO handle CRLs? */
+    /* TODO handle CRLs */
     /* if (crls) X509_STORE_CTX_set0_crls(csc, crls); */
 
-    cscex.cert_ctx = *csc;
-    cscex.cmp_ctx = cmp_ctx;
-    valid=X509_verify_cert((X509_STORE_CTX*) &cscex);
+    valid=X509_verify_cert(csc);
 
     X509_STORE_CTX_free(csc);
 
     ret=0;
+
 end:
 	if (untrusted_chain)
 		sk_X509_pop_free(untrusted_chain, X509_free);
     
     if (valid > 0) {
-        CMP_printf(cmp_ctx, "INFO: certificate Validation OK\n");
-        ret=1;
+        CMP_printf(ctx, "INFO: certificate Validation OK\n");
+        ret = 1;
     }
-    else if (cmp_ctx&&cmp_ctx->error_cb) 
-    	ERR_print_errors_cb(CMP_error_callback, (void*) cmp_ctx);
 
     return(ret);
 }
-
-#if 0
-static void nodes_print(BIO *out, const char *name,
-    STACK_OF(X509_POLICY_NODE) *nodes)
-    {
-    X509_POLICY_NODE *node;
-    int i;
-    BIO_printf(out, "%s Policies:", name);
-    if (nodes)
-        {
-        BIO_puts(out, "\n");
-        for (i = 0; i < sk_X509_POLICY_NODE_num(nodes); i++)
-            {
-            node = sk_X509_POLICY_NODE_value(nodes, i);
-            X509_POLICY_NODE_print(out, node, 2);
-            }
-        }
-    else
-        BIO_puts(out, " <empty>\n");
-    }
-
-
-static void policies_print(BIO *out, X509_STORE_CTX *ctx)
-    {
-    X509_POLICY_TREE *tree;
-    int explicit_policy;
-    int free_out = 0;
-    if (out == NULL)
-        {
-        out = BIO_new_fp(stderr, BIO_NOCLOSE);
-        free_out = 1;
-        }
-    tree = X509_STORE_CTX_get0_policy_tree(ctx);
-    explicit_policy = X509_STORE_CTX_get_explicit_policy(ctx);
-
-    BIO_printf(out, "Require explicit Policy: %s\n", explicit_policy ? "True" : "False");
-
-    nodes_print(out, "Authority", X509_policy_tree_get0_policies(tree));
-    nodes_print(out, "User", X509_policy_tree_get0_user_policies(tree));
-    if (free_out)
-        BIO_free(out);
-    }
-#endif
 
 /* ############################################################################ *
  * This is called for every valid certificate. Here we could add additional checks,
@@ -275,11 +212,8 @@ static void policies_print(BIO *out, X509_STORE_CTX *ctx)
  * ############################################################################ */
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 {
-    X509_STORE_CTX_ext *ctxext = (X509_STORE_CTX_ext*) ctx;
     int cert_error = X509_STORE_CTX_get_error(ctx);
     X509 *current_cert = X509_STORE_CTX_get_current_cert(ctx);
-
-    /* TODO: we could check policies here too */
 
     if (!ok)
     {
@@ -292,12 +226,15 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
             BIO_free(bio);
         }
 
-        CMP_printf(ctxext->cmp_ctx, "Certificate '%s': %serror %d at %d depth lookup:%s\n",
-                   cert_name,
-                   X509_STORE_CTX_get0_parent_ctx(ctx) ? "[CRL path]" : "",
-                   cert_error,
-                   X509_STORE_CTX_get_error_depth(ctx),
-                   X509_verify_cert_error_string(cert_error));
+		#if 0
+        printf("Certificate '%s': %serror %d at %d depth lookup:%s\n",
+			   cert_name,
+			   X509_STORE_CTX_get0_parent_ctx(ctx) ? "[CRL path]" : "",
+			   cert_error,
+			   X509_STORE_CTX_get_error_depth(ctx),
+			   X509_verify_cert_error_string(cert_error)); 
+		#endif
+
         switch(cert_error)
         {
             case X509_V_ERR_NO_EXPLICIT_POLICY:
@@ -322,16 +259,169 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 
         }
 
-        CMP_printf(ctxext->cmp_ctx, "cert_error = %d\n", cert_error);
+        // printf("cert_error = %d\n", cert_error);
 
         return ok;
 
     }
+
 #if 0
+    /* TODO: we could check policies here too */
     if (cert_error == X509_V_OK && ok == 2)
         policies_print(NULL, ctx);
 #endif
 
     return(ok);
 }
+
+
+/* ############################################################################ *
+ * search Server certificate based 
+ * - first on key ID as given in msg->PKIheader->senderKID
+ * - second on sender name from PKI header
+ * NB: takes first one it finds
+ * TODO: what happens if there are more than one? --> document
+ * TODO: rename to getSenderCertFromMsg
+ * TODO: move to right file
+ * ############################################################################ */
+/*
+ * valdiates Message Protection
+ * returns 1 on success, 0 on error
+ *
+ * validateMsg {
+ *	srvCert = findSrvCert
+ *	if(!validateCert (srvCert, trustedStore=known, untrustedStore=known+ExtraCerts)) {
+ *		if(3GPP) {
+ *			valdiateCert (srvCert, trustedStore=self-signed-from-extra, untrusted=ExtraCerts)
+ *		} else {
+ *		  FAIL;
+ *		}
+ *	}
+ *	validateMsgProt (msg, srvCert)
+ *}
+ */
+
+X509 *findSrvCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
+{
+	X509 *srvCert = NULL;
+	X509_STORE_CTX *csc = X509_STORE_CTX_new();
+
+	/* first attempt lookup in trusted_store */
+	if (csc != NULL && X509_STORE_CTX_init(csc, ctx->trusted_store, NULL, NULL)) {
+		X509_OBJECT obj;
+		if (X509_STORE_get_by_subject(csc, X509_LU_X509, msg->header->sender->d.directoryName, &obj))
+			srvCert = obj.data.x509;
+		X509_STORE_CTX_free(csc);
+	}
+
+	/* not found in trusted_store, so look through extraCerts */
+	if (!srvCert) {
+		STACK_OF(X509) *found_certs = sk_X509_new_null();
+		int n;
+
+		for (n = 0; n < sk_X509_num(msg->extraCerts); n++) {
+			X509 *cert = sk_X509_value(msg->extraCerts, n);
+			X509_NAME *name = NULL;
+			if (!cert) continue;
+			name = X509_get_subject_name(cert);
+
+			if (name && !X509_NAME_cmp(name, msg->header->sender->d.directoryName))
+				sk_X509_push(found_certs, cert);
+		}
+
+		/* if found exactly one cert, we'll use that */
+		if (sk_X509_num(found_certs) == 1)
+			srvCert = sk_X509_pop(found_certs);
+
+		/* found more than one, so try to search by key ID if we have it.
+		   if not, just return first one. */
+		else if (sk_X509_num(found_certs) > 1) {
+			if (msg->header->senderKID)
+				for (n = 0; n < sk_X509_num(found_certs); n++) {
+					X509 *cert = sk_X509_value(found_certs, n);
+					ASN1_OCTET_STRING *cert_keyid = CMP_get_subject_key_id(cert);
+
+					if (!ASN1_OCTET_STRING_cmp(cert_keyid, msg->header->senderKID)) {
+						srvCert = cert;
+						break;
+					}
+				}
+			else	
+				srvCert = sk_X509_pop(found_certs);
+		}
+
+		sk_X509_free(found_certs);
+	}
+
+	return srvCert;
+}
+
+
+
+/* ############################################################################ *
+ * Creates a new certificate store and adds all the self-signed certificates in 
+ * the given stack to the store.
+ * ############################################################################ */
+static X509_STORE *createTempTrustedStore(STACK_OF(X509) *stack)
+{
+	X509_STORE *store = X509_STORE_new();
+	int i;
+
+	X509_STORE_set_verify_cb(store, CMP_cert_callback);
+
+	for (i = 0; i < sk_X509_num(stack); i++) {
+		X509 *cert = sk_X509_value(stack, i);
+		EVP_PKEY *pubkey = X509_get_pubkey(cert);
+
+		if (X509_verify(cert, pubkey))
+			X509_STORE_add_cert(store, cert);
+	}
+
+	return store;
+}
+
+int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
+{
+	/* TODO: if caCert in ctx - then enforce - document! */
+	X509 *srvCert = ctx->caCert;
+	int srvCert_valid = 0;
+
+	/* TODO: should that whitelist DSA/RSA etc.? -> check all possible options from OpenSSL,
+	   should there be a makro? */
+	if (!srvCert && getAlgNID(msg->header->protectionAlg) != NID_id_PasswordBasedMAC) {
+
+		if (ctx->validatedSrvCert &&
+			!X509_NAME_cmp(X509_get_subject_name(ctx->validatedSrvCert), msg->header->sender->d.directoryName)) {
+			srvCert = ctx->validatedSrvCert;
+			srvCert_valid = 1;
+		}
+		else {
+			/* load the provided extraCerts to help with cert path validation */
+			CMP_CTX_loadUntrustedStack(ctx, msg->extraCerts);
+
+			/* try to find the server certificate */
+			srvCert = findSrvCert(ctx, msg);
+
+			if (!(srvCert_valid = CMP_validate_cert_path(ctx, ctx->trusted_store,
+														 ctx->untrusted_store, srvCert))) {
+				/* do the 3GPP */
+				/* TODO:  document, refer to 3GPP TS 33.310 */
+				if (ctx->permitTAInExtraCertsForIR && CMP_PKIMESSAGE_get_bodytype(msg) == V_CMP_PKIBODY_IP) {
+					X509_STORE *tempStore = createTempTrustedStore(msg->extraCerts);
+					srvCert_valid = CMP_validate_cert_path(ctx, tempStore , ctx->untrusted_store, srvCert);
+					X509_STORE_free(tempStore);
+				}
+			}
+		}
+		
+		if (!srvCert || !srvCert_valid)
+			return 0; 
+
+		ctx->validatedSrvCert = srvCert;
+	}
+
+	return CMP_protection_verify(msg, X509_get_pubkey((X509*) srvCert), ctx->secretValue);
+}
+
+
 

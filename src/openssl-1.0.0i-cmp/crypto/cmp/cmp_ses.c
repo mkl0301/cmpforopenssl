@@ -143,55 +143,22 @@ static char *V_CMP_TABLE[] = {
 /* Prints error data of the given CMP_PKIMESSAGE into a buffer specified by out */
 /* and returns pointer to the buffer.                                           */
 /* ############################################################################ */
-static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
+static char *PKIError_data(CMP_CTX *ctx, CMP_PKIMESSAGE *msg, char *out, int outsize) {
 	char tempbuf[256];
 	switch (CMP_PKIMESSAGE_get_bodytype(msg)) {
 		case V_CMP_PKIBODY_ERROR:
-			BIO_snprintf(out, outsize, "message=%d, error=\"%s\"",
+			CMP_printf(ctx, "message=%d, error=\"%s\"",
 					CMP_PKIMESSAGE_get_bodytype( msg),
 					CMP_PKIMESSAGE_parse_error_msg( msg, tempbuf, sizeof(tempbuf)));
 			break;
 		case -1:
-			BIO_snprintf(out, outsize, "received NO message");
+			CMP_printf(ctx, "received NO message");
 			break;
 		default:
-			BIO_snprintf(out, outsize, "received unexpected message of type '%s'", MSG_TYPE_STR(CMP_PKIMESSAGE_get_bodytype( msg)));
+			CMP_printf(ctx, "received unexpected message of type '%s'", MSG_TYPE_STR(CMP_PKIMESSAGE_get_bodytype( msg)));
 			break;
 	}
 	return out;
-}
-
-/* ############################################################################ *
- * ############################################################################ */
-ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert);
-
-/* ############################################################################ *
- * ############################################################################ */
-static X509 *find_cert_by_keyID(STACK_OF(X509) *certs, ASN1_OCTET_STRING *keyid) {
-	if (!certs || !keyid) return NULL;
-	int n = sk_X509_num(certs);
-	while (n --> 0) {
-		X509 *cert = sk_X509_value(certs, n);
-		ASN1_OCTET_STRING *cert_keyid = CMP_get_subject_key_id(cert);
-
-		if (!ASN1_OCTET_STRING_cmp(cert_keyid, keyid))
-			return cert;
-	}
-	return NULL;
-}
-
-/* ############################################################################ *
- * ############################################################################ */
-static X509 *find_cert_by_name(STACK_OF(X509) *certs, X509_NAME *name) {
-	if (!certs || !name) return NULL;
-	int n = sk_X509_num(certs);
-	while (n --> 0) {
-		X509 *cert = sk_X509_value(certs, n);
-		X509_NAME *cert_name = X509_get_subject_name(cert);
-		if (!X509_NAME_cmp(cert_name, name))
-			return cert;
-	}
-	return NULL;
 }
 
 /* ############################################################################ *
@@ -264,7 +231,6 @@ static X509 *certrep_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep, 
 			break;
 
 		case CMP_PKISTATUS_rejection: {
-			/* XXX Should a certconf message be sent even in case of rejection? */
 			char *statusString = NULL;
 			int statusLen = 0;
 			ASN1_UTF8STRING *status = NULL;
@@ -308,7 +274,6 @@ static X509 *certrep_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep, 
 			ASN1_UTF8STRING *status = NULL;
 
 			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_UNKNOWN_PKISTATUS);
-			/* XXX ERR_add_error_data overwrites the previous error data, fix this! */
 			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 
@@ -373,158 +338,12 @@ err:
 }
 
 /* ############################################################################ *
- * load all the intermediate certificates from extraCerts into untrusted_store
- * TODO: rename load extra certs to what and from what (msg?)?
- * TODO: move this to other fitting file (context?)
- * returns 1 on success, 0 on error
- * ############################################################################ */
-static int load_extraCerts(CMP_CTX *ctx, STACK_OF(X509) *stack)
-{
-	int i;
-	EVP_PKEY *pubkey;
-	X509 *cert;
-	
-	if (!stack || !ctx->untrusted_store) goto err;
-
-	for (i = 0; i < sk_X509_num(stack); i++) {
-		if(!(cert = sk_X509_value(stack, i))) goto err;
-		if(!(pubkey = X509_get_pubkey(cert))) continue;
-
-		/* don't add self-signed certs here */
-		if (!X509_verify(cert, pubkey))
-			X509_STORE_add_cert(ctx->untrusted_store, cert);  /* don't fail as adding existing certificate to store would cause error */
-	}
-
-	return 1;
-err:
-	return 0;
-}
-
-/* ############################################################################ *
- * ############################################################################ */
-static X509 *find_srvCert(CMP_PKIMESSAGE *msg)
-{
-	X509 *srvCert = find_cert_by_keyID(msg->extraCerts, msg->header->senderKID);
-	if (!srvCert)
-		/* TODO what if we have two certs with the same name on stack? */
-		srvCert = find_cert_by_name(msg->extraCerts, msg->header->sender->d.directoryName);
-	return srvCert;
-}
-
-/* ############################################################################ *
- * ############################################################################ */
-static int getAlgNID(X509_ALGOR *alg)
-{
-	ASN1_OBJECT *algorOID=NULL;
-	X509_ALGOR_get0( &algorOID, NULL, NULL, alg);
-	return OBJ_obj2nid(algorOID);
-}
-
-/* ############################################################################ *
- * search Server certificate based 
- * - first on key ID as given in msg->PKIheader->senderKID
- * - second on sender name from PKI header
- * NB: takes first one it finds
- * TODO: what happens if there are more than one? --> document
- * TODO: rename to getSenderCertFromMsg
- * TODO: move to right file
- * ############################################################################ */
-/*
- * valdiates Message Protection
- * returns 1 on success, 0 on error
- *
- * validateMsg {
- *	srvCert = findSrvCert
- *	if(!validateCert (srvCert, trustedStore=known, untrustedStore=known+ExtraCerts)) {
- *		if(3GPP) {
- *			valdiateCert (srvCert, trustedStore=self-signed-from-extra, untrusted=ExtraCerts)
- *		} else {
- *		  FAIL;
- *		}
- *	}
- *	validateMsgProt (msg, srvCert)
- *}
- */
-
-static int getServerCert(CMP_CTX *ctx, 
-		                 CMP_PKIMESSAGE *msg, 
-						 X509 **srvCertOut, 
-						 int *validation_status)
-{
-	/* TODO: if caCert in ctx - then enforce - document! */
-	X509 *srvCert = NULL;
-	int srvCert_valid = 0;
-
-	if (getAlgNID(msg->header->protectionAlg) != NID_id_PasswordBasedMAC) { /* TODO: should that whitelist DSA/RSA etc.? -> check all possible options from OpenSSL, should there be a makro? */
-		/* load the provided extraCerts to help with cert path validation */
-		load_extraCerts(ctx, msg->extraCerts);
-
-		/* no server certificate is set, so we'll try to find it in extraCerts
-		 * and validate it using our trusted root certs */
-		if (!srvCert && ctx->trusted_store) {
-			srvCert = find_srvCert(msg);
-			if (!(srvCert_valid=CMP_validate_cert_path(ctx, srvCert))) {
-			/* do the 3GPP */
-				if ( /* TODO: change to ctx->permitTAInExtraCertsForIR --> document, refer to 3GPP TS 33.310 */
-					ctx->includeExtraRoots &&
-					CMP_PKIMESSAGE_get_bodytype(msg) == V_CMP_PKIBODY_IP)
-				{
-					X509_STORE *roots_temp = X509_STORE_new(), *tempStore = NULL;
-					int i;
-					X509_STORE_set_verify_cb(roots_temp, CMP_cert_callback);
-
-					for (i = 0; i < sk_X509_num(msg->extraCerts); i++) {
-						X509 *cert = sk_X509_value(msg->extraCerts, i);
-						EVP_PKEY *pubkey = X509_get_pubkey(cert);
-						if (X509_verify(cert, pubkey))
-							X509_STORE_add_cert(roots_temp, cert);
-					}
-
-					/* TODO: don't mess with the ctx */
-					tempStore = ctx->trusted_store;
-					ctx->trusted_store = roots_temp;
-					srvCert_valid = CMP_validate_cert_path(ctx, srvCert);
-					ctx->trusted_store = tempStore;
-
-					X509_STORE_free(roots_temp);
-				}
-			}
-		}
-
-		/* if there is a srvCert provided in ctx, try to use that for verifying 
-		 * the message signature. otherwise fail here. */
-		if (!srvCert || !srvCert_valid) {
-			if (ctx->caCert) {
-				srvCert = ctx->caCert;
-				srvCert_valid = CMP_validate_cert_path(ctx, srvCert);
-			}
-			else goto err;
-		}
-	}
-
-	if (srvCert && !ctx->caCert)
-		ctx->caCert = srvCert;
-
-	*srvCertOut = srvCert;
-	*validation_status = srvCert_valid;
-	return 1;
-
-err:
-	*srvCertOut = NULL;
-	*validation_status = 0;
-	return 0;
-}
-
-
-/* ############################################################################ *
  * ############################################################################ */
 X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *ir=NULL;
 	CMP_PKIMESSAGE *ip=NULL;
 	CMP_PKIMESSAGE *certConf=NULL;
 	CMP_PKIMESSAGE *PKIconf=NULL;
-	X509 *srvCert = NULL;
-	int srvCert_valid=0;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->newPkey ||
@@ -592,24 +411,10 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	} else FAIL;
 #endif
 
-	/* TODO: check what kind of of protectionAlg is used by the CMP server? */
-	/* TODO: move the verification to cmp_vfy.c and factorize */
-
-
-	if (!getServerCert(ctx, ip, &srvCert, &srvCert_valid)) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_MISSING_SERVER_CERTIFICATE);
-		goto err;
-	}
-
-
-	if (ctx->validatePath && !srvCert_valid) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
-		goto err;
-	}
-
-	if (CMP_protection_verify( ip, X509_get_pubkey( (X509*) srvCert), ctx->secretValue))
+	
+	if (CMP_validate_msg(ctx, ip)) {
 		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
-	else {
+	} else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
@@ -619,7 +424,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		ASN1_UTF8STRING *ftstr = NULL;
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(ip, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data(ctx, ip, errmsg, sizeof(errmsg)));
 		while ((ftstr = sk_ASN1_UTF8STRING_pop(ip->header->freeText)))
 			ERR_add_error_data(3, "freeText=\"", ftstr->data, "\"");
 		goto err;
@@ -663,9 +468,9 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( PKIconf, X509_get_pubkey( (X509*) srvCert), ctx->secretValue)) 
+	if (CMP_validate_msg(ctx, PKIconf)) {
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
-	else {
+	} else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
@@ -674,7 +479,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(PKIconf, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data(ctx, PKIconf, errmsg, sizeof(errmsg)));
 		goto err;
 	}
 
@@ -728,12 +533,12 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (CMP_PKIMESSAGE_get_bodytype( rp) != V_CMP_PKIBODY_RP) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(rp, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data(ctx, rp, errmsg, sizeof(errmsg)));
 		goto err;
 	}
 
 
-	if (CMP_protection_verify( rp, X509_get_pubkey( (X509*) ctx->caCert), ctx->secretValue)) {
+	if (CMP_validate_msg(ctx, rp)) {
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -778,8 +583,6 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *cp=NULL;
 	CMP_PKIMESSAGE *certConf=NULL;
 	CMP_PKIMESSAGE *PKIconf=NULL;
-	X509 *srvCert=NULL;
-	int srvCert_valid=0;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->serverName
@@ -802,20 +605,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (!getServerCert(ctx, cp, &srvCert, &srvCert_valid)) {
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_MISSING_SERVER_CERTIFICATE);
-		goto err;
-	}
-
-	if (ctx->validatePath && !srvCert_valid) {
-		CMP_printf(ctx, "INFO: validating CA certificate path");
-		if( CMP_validate_cert_path(ctx, srvCert) == 0) {
-			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
-			goto err;
-		}
-	}
-
-	if (CMP_protection_verify( cp, X509_get_pubkey( (X509*) srvCert), NULL)) {
+	if (CMP_validate_msg(ctx, cp)) {
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -825,7 +615,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (CMP_PKIMESSAGE_get_bodytype( cp) != V_CMP_PKIBODY_CP) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(cp, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data(ctx, cp, errmsg, sizeof(errmsg)));
 		goto err;
 	}
 
@@ -868,7 +658,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( PKIconf, X509_get_pubkey( (X509*) srvCert), NULL)) {
+	if (CMP_validate_msg(ctx, PKIconf)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		/* old: "ERROR: validating protection of incoming message" */
@@ -880,7 +670,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(PKIconf, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data(ctx, PKIconf, errmsg, sizeof(errmsg)));
 		goto err;
 	}
 
@@ -913,8 +703,6 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *kup=NULL;
 	CMP_PKIMESSAGE *certConf=NULL;
 	CMP_PKIMESSAGE *PKIconf=NULL;
-	X509 *srvCert = NULL;
-	int srvCert_valid=0;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->serverName
@@ -937,20 +725,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (!getServerCert(ctx, kup, &srvCert, &srvCert_valid)) {
-		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_MISSING_SERVER_CERTIFICATE);
-		goto err;
-	}
-
-	if (ctx->validatePath && !srvCert_valid) {
-		CMP_printf(ctx, "INFO: validating CA certificate path");
-		if( CMP_validate_cert_path(ctx, srvCert) == 0) {
-			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH);
-			goto err;
-		}
-	}
-
-	if (CMP_protection_verify( kup, X509_get_pubkey( (X509*) srvCert), NULL)) {
+	if (CMP_validate_msg(ctx, kup)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -961,7 +736,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		ASN1_UTF8STRING *ftstr = NULL;
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(kup, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data(ctx, kup, errmsg, sizeof(errmsg)));
 		while ((ftstr = sk_ASN1_UTF8STRING_pop(kup->header->freeText)))
 			ERR_add_error_data(3, "freeText=\"", ftstr->data, "\"");
 		goto err;
@@ -1005,7 +780,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( PKIconf, X509_get_pubkey( (X509*) srvCert), NULL)) {
+	if (CMP_validate_msg(ctx, PKIconf)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -1016,7 +791,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(PKIconf, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data(ctx, PKIconf, errmsg, sizeof(errmsg)));
 		goto err;
 	}
 
@@ -1078,8 +853,6 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 	CMP_PKIMESSAGE *genm=NULL;
 	CMP_PKIMESSAGE *genp=NULL;
 	CMP_INFOTYPEANDVALUE *itav=NULL;
-	X509 *srvCert = NULL;
-	int srvCert_valid=0;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->caCert || !ctx->referenceValue || !ctx->secretValue) {
@@ -1101,14 +874,9 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 		goto err;
 	}
 
-	if (!getServerCert(ctx, genp, &srvCert, &srvCert_valid)) {
-		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_MISSING_SERVER_CERTIFICATE);
-		goto err;
-	}
-
-	if (CMP_protection_verify( genp, X509_get_pubkey( (X509*) srvCert), ctx->secretValue))
+	if (CMP_validate_msg(ctx, genp)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
-	else {
+	} else {
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
@@ -1120,7 +888,7 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(genp, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data(ctx, genp, errmsg, sizeof(errmsg)));
 
 
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_UNKNOWN_PKISTATUS);
@@ -1170,9 +938,9 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_protection_verify( genp, NULL, ctx->secretValue))
+	if (CMP_validate_msg(ctx, genp)) {
 		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
-	else {
+	} else {
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
@@ -1184,7 +952,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(genp, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data(ctx, genp, errmsg, sizeof(errmsg)));
 
 
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_UNKNOWN_PKISTATUS);
