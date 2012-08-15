@@ -1302,6 +1302,7 @@ typedef struct cmp_ctx_st
 
 	/* include root certs from extracerts when validating? */
 	int permitTAInExtraCertsForIR;
+	X509 *validatedSrvCert;
 } CMP_CTX;
 
 DECLARE_ASN1_FUNCTIONS(CMP_CTX)
@@ -1323,6 +1324,7 @@ CMP_PKIMESSAGE *CMP_ckuann_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey);
 CMP_PKIMESSAGE *CMP_pollReq_new( CMP_CTX *ctx, int reqId);
 STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeRoot);
+ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert);
 
 /* cmp_lib.c */
 
@@ -1453,6 +1455,7 @@ STACK_OF(X509)* CMP_CTX_extraCertsIn_get1( CMP_CTX *ctx);
 int CMP_CTX_set1_extraCertsIn( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsIn);
 X509 *CMP_CTX_extraCertsIn_pop( CMP_CTX *ctx);
 int CMP_CTX_extraCertsIn_num( CMP_CTX *ctx);
+int CMP_CTX_loadUntrustedStack(CMP_CTX *ctx, STACK_OF(X509) *stack);
 
 int CMP_CTX_set1_newClCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey);

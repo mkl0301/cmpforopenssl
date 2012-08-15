@@ -106,6 +106,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	/* EVP_PKEY *newPkey */
 	ASN1_OPT(CMP_CTX, transactionID, ASN1_OCTET_STRING),
 	ASN1_OPT(CMP_CTX, recipNonce, ASN1_OCTET_STRING),
+	ASN1_OPT(CMP_CTX, validatedSrvCert, X509),
 #if 0
 	/* this is actually CMP_PKIFREETEXT which is STACK_OF(ANS1_UTF8STRING) */
 	ASN1_SEQUENCE_OPT(CMP_CTX, freeText, STACK_OF(UTF8STRING));
@@ -267,6 +268,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->failInfoCode = 0;
 
 	ctx->permitTAInExtraCertsForIR = 1;
+	ctx->validatedSrvCert = NULL;
 
 #if 0
 	/* These are initialized already by the call to CMP_CTX_new() */
@@ -490,6 +492,35 @@ err:
 	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_PUSH1, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
+
+/* ############################################################################ *
+ * load all the intermediate certificates from the given stack into untrusted_store
+ * returns 1 on success, 0 on error
+ * ############################################################################ */
+int CMP_CTX_loadUntrustedStack(CMP_CTX *ctx, STACK_OF(X509) *stack)
+{
+	int i;
+	EVP_PKEY *pubkey;
+	X509 *cert;
+	
+	if (!stack) goto err;
+	if (!ctx->untrusted_store && !( ctx->untrusted_store = X509_STORE_new() ))
+		goto err;
+
+	for (i = 0; i < sk_X509_num(stack); i++) {
+		if(!(cert = sk_X509_value(stack, i))) goto err;
+		if(!(pubkey = X509_get_pubkey(cert))) continue;
+
+		/* don't add self-signed certs here */
+		if (!X509_verify(cert, pubkey))
+			X509_STORE_add_cert(ctx->untrusted_store, cert);  /* don't fail as adding existing certificate to store would cause error */
+	}
+
+	return 1;
+err:
+	return 0;
+}
+
 
 /* ################################################################ *
  * Return the number of certificates we have in the outbound 
