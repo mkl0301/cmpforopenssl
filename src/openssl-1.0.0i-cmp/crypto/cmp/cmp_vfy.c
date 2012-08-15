@@ -113,6 +113,25 @@ static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKE
 }
 
 /* ############################################################################ *
+ * Validates a message protected with PBMAC
+ * ############################################################################ */
+static int CMP_verify_MAC( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, const ASN1_OCTET_STRING *secret)
+{
+	ASN1_BIT_STRING *protection=NULL;
+	int valid = 0;
+	
+	/* password based Mac */ 
+	if (!(protection = CMP_protection_new( msg, algor, NULL, secret)))
+		goto err; /* failed to generate protection string! */
+	
+	valid = M_ASN1_BIT_STRING_cmp( protection, msg->protection) == 0;
+	ASN1_BIT_STRING_free(protection);
+	return valid;
+err:
+	return 0;
+}
+
+/* ############################################################################ *
  * Validate the protection of a PKIMessage
  * returns 1 when valid
  * returns 0 when invalid, not existent or on error
@@ -121,7 +140,6 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
 			    EVP_PKEY *senderPkey,
 			    const ASN1_OCTET_STRING *secret)
 {
-    ASN1_BIT_STRING *protection=NULL;
     X509_ALGOR *algor=NULL;
     int valid = 0;
 
@@ -129,21 +147,10 @@ int CMP_protection_verify(CMP_PKIMESSAGE *msg,
     if (!msg->header->protectionAlg) goto err;
     if (!(algor = X509_ALGOR_dup(msg->header->protectionAlg))) goto err;
 
-    if (getAlgNID(algor) == NID_id_PasswordBasedMAC)  {
-		/* TODO: create a CMP_verify_MAC and put that there */
-        /* password based Mac */ 
-        if (!(protection = CMP_protection_new( msg, algor, NULL, secret)))
-            goto err; /* failed to generate protection string! */
-        if (!M_ASN1_BIT_STRING_cmp( protection, msg->protection))
-            /* protection is valid */
-            valid = 1;
-        else
-            /* strings are not equal */
-            valid = 0;
-    }
-    else {
+    if (getAlgNID(algor) == NID_id_PasswordBasedMAC)
+		valid = CMP_verify_MAC(msg, algor, secret);
+    else
         valid = CMP_verify_signature(msg, algor, senderPkey);
-    }
 
     X509_ALGOR_free(algor);
 
@@ -276,32 +283,14 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 
 
 /* ############################################################################ *
- * search Server certificate based 
- * - first on key ID as given in msg->PKIheader->senderKID
- * - second on sender name from PKI header
- * NB: takes first one it finds
- * TODO: what happens if there are more than one? --> document
- * TODO: rename to getSenderCertFromMsg
- * TODO: move to right file
+ * Find server certificate by:
+ * - first see if we can find it in trusted store
+ * - then search for certs with matching name in extraCerts
+ *   - if only one match found, return that
+ *   - if more than one, try to find a cert with the matching senderKID if available
+ *   - if keyID is not available, return first cert found
  * ############################################################################ */
-/*
- * valdiates Message Protection
- * returns 1 on success, 0 on error
- *
- * validateMsg {
- *	srvCert = findSrvCert
- *	if(!validateCert (srvCert, trustedStore=known, untrustedStore=known+ExtraCerts)) {
- *		if(3GPP) {
- *			valdiateCert (srvCert, trustedStore=self-signed-from-extra, untrusted=ExtraCerts)
- *		} else {
- *		  FAIL;
- *		}
- *	}
- *	validateMsgProt (msg, srvCert)
- *}
- */
-
-X509 *findSrvCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
+static X509 *findSrvCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 {
 	X509 *srvCert = NULL;
 	X509_STORE_CTX *csc = X509_STORE_CTX_new();
@@ -336,7 +325,7 @@ X509 *findSrvCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 		/* found more than one, so try to search by key ID if we have it.
 		   if not, just return first one. */
 		else if (sk_X509_num(found_certs) > 1) {
-			if (msg->header->senderKID)
+			if (msg->header->senderKID) {
 				for (n = 0; n < sk_X509_num(found_certs); n++) {
 					X509 *cert = sk_X509_value(found_certs, n);
 					ASN1_OCTET_STRING *cert_keyid = CMP_get_subject_key_id(cert);
@@ -346,8 +335,13 @@ X509 *findSrvCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 						break;
 					}
 				}
-			else	
+			}
+
+			if (!srvCert) {
+				/* key id not available or we didn't find a cert with matching keyID.
+				 * -> return the first one with matching name */
 				srvCert = sk_X509_pop(found_certs);
+			}
 		}
 
 		sk_X509_free(found_certs);
@@ -359,7 +353,7 @@ X509 *findSrvCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 
 
 /* ############################################################################ *
- * Creates a new certificate store and adds all the self-signed certificates in 
+ * Creates a new certificate store and adds all the self-signed certificates from
  * the given stack to the store.
  * ############################################################################ */
 static X509_STORE *createTempTrustedStore(STACK_OF(X509) *stack)
@@ -380,16 +374,22 @@ static X509_STORE *createTempTrustedStore(STACK_OF(X509) *stack)
 	return store;
 }
 
+/* ############################################################################
+ * Validates the protection of the given PKIMessage using either password
+ * based mac or a signature algorithm. In the case of signature algorithm, the
+ * certificate can be provided in ctx->caCert or we can try to find it in
+ * extraCerts and validate.
+ * ############################################################################ */
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 {
-	/* TODO: if caCert in ctx - then enforce - document! */
 	X509 *srvCert = ctx->caCert;
 	int srvCert_valid = 0;
 
 	/* TODO: should that whitelist DSA/RSA etc.? -> check all possible options from OpenSSL,
 	   should there be a makro? */
 	if (!srvCert && getAlgNID(msg->header->protectionAlg) != NID_id_PasswordBasedMAC) {
-
+		/* if we've already found and validated a server cert, and it matches the sender name,
+		 * we will use that */
 		if (ctx->validatedSrvCert &&
 			!X509_NAME_cmp(X509_get_subject_name(ctx->validatedSrvCert), msg->header->sender->d.directoryName)) {
 			srvCert = ctx->validatedSrvCert;
