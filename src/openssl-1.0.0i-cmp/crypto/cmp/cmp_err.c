@@ -135,6 +135,7 @@ static ERR_STRING_DATA CMP_str_functs[]=
 {ERR_FUNC(CMP_F_CMP_RR_NEW),	"CMP_rr_new"},
 {ERR_FUNC(CMP_F_CMP_VALIDATE_CERT_PATH),	"CMP_validate_cert_path"},
 {ERR_FUNC(CMP_F_PKEY_DUP),	"PKEY_DUP"},
+{ERR_FUNC(CMP_F_POLLFORRESPONSE),	"POLLFORRESPONSE"},
 {ERR_FUNC(CMP_F_TRY_POLLING),	"TRY_POLLING"},
 {0,NULL}
 	};
@@ -184,6 +185,7 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_PKIBODY_ERROR)         ,"pkibody error"},
 {ERR_REASON(CMP_R_PKICONF_NOT_RECEIVED)  ,"pkiconf not received"},
 {ERR_REASON(CMP_R_POLLING_FAILED)        ,"polling failed"},
+{ERR_REASON(CMP_R_POLLREP_NOT_RECEIVED)  ,"pollrep not received"},
 {ERR_REASON(CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ),"received invalid response to pollreq"},
 {ERR_REASON(CMP_R_REQUEST_REJECTED_BY_CA),"request rejected by ca"},
 {ERR_REASON(CMP_R_RP_NOT_RECEIVED)       ,"rp not received"},

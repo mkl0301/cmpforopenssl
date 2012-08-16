@@ -1581,6 +1581,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_RR_NEW				 158
 #define CMP_F_CMP_VALIDATE_CERT_PATH			 159
 #define CMP_F_PKEY_DUP					 160
+#define CMP_F_POLLFORRESPONSE				 167
 #define CMP_F_TRY_POLLING				 161
 
 /* Reason codes. */
@@ -1627,6 +1628,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_R_PKIBODY_ERROR				 135
 #define CMP_R_PKICONF_NOT_RECEIVED			 136
 #define CMP_R_POLLING_FAILED				 150
+#define CMP_R_POLLREP_NOT_RECEIVED			 154
 #define CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ	 137
 #define CMP_R_REQUEST_REJECTED_BY_CA			 138
 #define CMP_R_RP_NOT_RECEIVED				 139

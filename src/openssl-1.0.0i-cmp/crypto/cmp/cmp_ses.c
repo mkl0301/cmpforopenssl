@@ -200,6 +200,12 @@ static void add_error_data(const char *txt) {
 }
 
 /* ############################################################################ *
+ * When a 'waiting' PKIStatus has been received, this function is used to attempt
+ * to poll for a response message. The maximum number of times to attempt polling
+ * is set in ctx->maxPollCount, and between polling it waits the number of seconds
+ * specified in pollrep->checkAfter.
+ *
+ * TODO: need to be able to set a maximum waiting time
  * ############################################################################ */
 static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg) {
 	int i;
@@ -212,30 +218,23 @@ static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certr
 		if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
 			if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
 				&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-				CMPerr(CMP_F_POLLFORRESPONSE, CMP_R_IP_NOT_RECEIVED);
+				CMPerr(CMP_F_POLLFORRESPONSE, CMP_R_POLLREP_NOT_RECEIVED);
 			else
 				add_error_data("unable to send ir");
 			goto err;
 		}
 
 		/* TODO handle multiple pollreqs */
-		if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_IP) {
-			CMP_PKIMESSAGE_free(preq);
-			if (CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0) != CMP_PKISTATUS_waiting) {
-				*msg = prep;
-				return 1; /* final success */
-			}
-		} else if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_POLLREP) {
+		if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_POLLREP) {
 			int checkAfter;
 			pollRep = sk_CMP_POLLREP_value(prep->body->value.pollRep, 0);
 			checkAfter = ASN1_INTEGER_get(pollRep->checkAfter);
 			CMP_printf(ctx, "INFO: Waiting %ld seconds before sending pollReq...\n", checkAfter);
 			sleep(checkAfter);
-		} else {
-			CMP_PKIMESSAGE_free(preq);
-			CMP_PKIMESSAGE_free(prep);
-			CMPerr(CMP_F_POLLFORRESPONSE, CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ);
-			goto err;
+		}
+		else if (CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0) != CMP_PKISTATUS_waiting) {
+			*msg = prep;
+			return 1; /* final success */
 		}
 
 		CMP_PKIMESSAGE_free(preq);
