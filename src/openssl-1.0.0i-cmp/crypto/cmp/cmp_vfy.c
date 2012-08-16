@@ -72,8 +72,6 @@
 #include <openssl/cmp.h>
 #include <openssl/err.h>
 
-int CMP_error_callback(const char *str, size_t len, void *u);
-
 /* ############################################################################ *
  * Return the NID of the algorithm used in the given X509_ALGOR structure
  * ############################################################################ */

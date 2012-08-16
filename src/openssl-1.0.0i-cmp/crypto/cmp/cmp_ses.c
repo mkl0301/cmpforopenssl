@@ -85,17 +85,6 @@
 #include <unistd.h>
 
 
-/* ############################################################################ *
- * This callback is used to print out the OpenSSL error queue via'
- * ERR_print_errors_cb() to the ctx->error_cb() function set by the user
- * ############################################################################ */
-int CMP_error_callback(const char *str, size_t len, void *u) {
-	CMP_CTX *ctx = (CMP_CTX*) u;
-	if (ctx && ctx->error_cb) 
-		ctx->error_cb(str);
-	return 1;
-}
-
 #ifndef HAVE_CURL
 
 /* show some warning here? */
@@ -411,7 +400,7 @@ err:
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
 
 	return NULL;
 }
@@ -482,7 +471,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	return 1;
 
 err:
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
 	return 0;
 }
 
@@ -596,7 +585,7 @@ err:
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
 
 	return NULL;
 }
@@ -713,7 +702,7 @@ err:
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
 
 	return NULL;
 }
@@ -810,7 +799,7 @@ err:
 	if (genp) CMP_PKIMESSAGE_free(genp);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
 
 	return NULL;
 }
@@ -872,7 +861,7 @@ err:
 	if (genp) CMP_PKIMESSAGE_free(genp);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_error_callback, (void*) ctx);
+	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
 
 	return 0;
 }

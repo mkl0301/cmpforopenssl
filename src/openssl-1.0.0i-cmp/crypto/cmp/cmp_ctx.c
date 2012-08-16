@@ -1090,3 +1090,14 @@ long CMP_get_http_code(const CMPBIO *bio) {
 }
 #endif
 
+/* ############################################################################ *
+ * This callback is used to print out the OpenSSL error queue via'
+ * ERR_print_errors_cb() to the ctx->error_cb() function set by the user
+ * ############################################################################ */
+int CMP_CTX_error_callback(const char *str, size_t len, void *u) {
+	CMP_CTX *ctx = (CMP_CTX*) u;
+	if (ctx && ctx->error_cb) 
+		ctx->error_cb(str);
+	return 1;
+}
+

@@ -1487,6 +1487,8 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
 #endif
 
+int CMP_CTX_error_callback(const char *str, size_t len, void *u);
+
 #ifdef HAVE_CURL
 long CMP_get_http_code(const CMPBIO *bio);
 #endif
