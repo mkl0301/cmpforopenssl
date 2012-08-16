@@ -320,14 +320,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 #endif
 
 	
-	if (CMP_validate_msg(ctx, ip)) {
-		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
-
-	/* make sure the received messagetype indicates an IP message */
+	/* catch if the received messagetype does not indicate an IP message (e.g. error)*/
 	if (CMP_PKIMESSAGE_get_bodytype(ip) != V_CMP_PKIBODY_IP) {
 		ASN1_UTF8STRING *ftstr = NULL;
 		char errmsg[256];
@@ -335,6 +328,14 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		ERR_add_error_data(1, PKIError_data(ip, errmsg, sizeof(errmsg)));
 		while ((ftstr = sk_ASN1_UTF8STRING_pop(ip->header->freeText)))
 			ERR_add_error_data(3, "freeText=\"", ftstr->data, "\"");
+		goto err;
+	}
+
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, ip)) {
+		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
@@ -376,18 +377,20 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_validate_msg(ctx, PKIconf)) {
-		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
 
 	/* make sure the received messagetype indicates an PKIconf message */
 	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data( PKIconf, errmsg, sizeof(errmsg)));
+		goto err;
+	}
+
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, PKIconf)) {
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
@@ -438,6 +441,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	/* make sure the received messagetype indicates an RP message */
 	if (CMP_PKIMESSAGE_get_bodytype( rp) != V_CMP_PKIBODY_RP) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_PKIBODY_ERROR);
@@ -445,20 +449,21 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-
+	/* validate message protection */
 	if (CMP_validate_msg(ctx, rp)) {
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	} else {
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
+	/* evaluate PKIStatus field */
 	switch (CMP_REVREPCONTENT_PKIStatus_get( rp->body->value.rp, 0)) 
 	{
 		case CMP_PKISTATUS_grantedWithMods:
-			CMP_printf(  ctx, "WARNING: got \"grantedWithMods\"");
+			CMP_printf( ctx, "WARNING: got \"grantedWithMods\"");
 		case CMP_PKISTATUS_accepted:
-			CMP_printf(  ctx, "INFO: revocation accepted");
+			CMP_printf( ctx, "INFO: revocation accepted");
 			break;
 		case CMP_PKISTATUS_rejection:
 			goto err;
@@ -467,11 +472,9 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		case CMP_PKISTATUS_revocationWarning:
 		case CMP_PKISTATUS_revocationNotification:
 		case CMP_PKISTATUS_keyUpdateWarning:
-			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_NO_CERTIFICATE_RECEIVED);
-			goto err;
 			break;
 		default:
-			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+			CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
 			goto err;
 			break;
 	}
@@ -513,13 +516,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_validate_msg(ctx, cp)) {
-		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
-
+	/* make sure the received messagetype indicates an CP message */
 	if (CMP_PKIMESSAGE_get_bodytype( cp) != V_CMP_PKIBODY_CP) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
@@ -527,17 +524,24 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, cp)) {
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
 
+	/* evaluate PKIStatus field */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0) == CMP_PKISTATUS_waiting)
 		if (!pollForResponse(ctx, cbio, cp->body->value.cp, &cp)) {
-            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
+            CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
 			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
 			goto err;
 		}
 
 	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, cp->body->value.cp);
 	if (ctx->newClCert == NULL) goto err;
-
 
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (cp->extraCerts)
@@ -553,17 +557,9 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
+            CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
         else
             add_error_data("unable to send certConf");
-		goto err;
-	}
-
-	if (CMP_validate_msg(ctx, PKIconf)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
-	} else {
-		/* old: "ERROR: validating protection of incoming message" */
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
@@ -572,6 +568,15 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data( PKIconf, errmsg, sizeof(errmsg)));
+		goto err;
+	}
+
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, PKIconf)) {
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
+	} else {
+		/* old: "ERROR: validating protection of incoming message" */
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
@@ -620,16 +625,9 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, kur, &kup))) {
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
+            CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
         else
             add_error_data("unable to send kur");
-		goto err;
-	}
-
-	if (CMP_validate_msg(ctx, kup)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
@@ -643,12 +641,22 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_CERTREPMESSAGE_PKIStatus_get( kup->body->value.kup, 0) == CMP_PKISTATUS_waiting)
+	/* make sure the received messagetype indicates an KUP message */
+	if (CMP_CERTREPMESSAGE_PKIStatus_get( kup->body->value.kup, 0) == CMP_PKISTATUS_waiting) {
 		if (!pollForResponse(ctx, cbio, kup->body->value.kup, &kup)) {
-            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
+            CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
 			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
 			goto err;
 		}
+	}
+
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, kup)) {
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
 
 	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, kup->body->value.kup);
 	if (ctx->newClCert == NULL) goto err;
@@ -667,16 +675,9 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
         if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
+            CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
         else
             add_error_data("unable to send certConf");
-		goto err;
-	}
-
-	if (CMP_validate_msg(ctx, PKIconf)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
@@ -685,6 +686,14 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data( PKIconf, errmsg, sizeof(errmsg)));
+		goto err;
+	}
+
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, PKIconf)) {
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
@@ -767,13 +776,6 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 		goto err;
 	}
 
-	if (CMP_validate_msg(ctx, genp)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
-
 	/* make sure the received messagetype indicates an GENP message */
 	if (CMP_PKIMESSAGE_get_bodytype(genp) != V_CMP_PKIBODY_GENP) {
 		STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(genp->body->value.ip, 0);
@@ -787,6 +789,14 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_UNKNOWN_PKISTATUS);
 		while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 			ERR_add_error_data(3, "statusString=\"", status->data, "\"");
+		goto err;
+	}
+
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, genp)) {
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 
@@ -831,13 +841,6 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	if (CMP_validate_msg(ctx, genp)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
-
 	/* make sure the received messagetype indicates an GENP message */
 	if (CMP_PKIMESSAGE_get_bodytype(genp) != V_CMP_PKIBODY_GENP) {
 		STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(genp->body->value.ip, 0);
@@ -851,6 +854,14 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_UNKNOWN_PKISTATUS);
 		while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 			ERR_add_error_data(3, "statusString=\"", status->data, "\"");
+		goto err;
+	}
+
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, genp)) {
+		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
 

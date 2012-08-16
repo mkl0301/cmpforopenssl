@@ -285,6 +285,7 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 /* ############################################################################ *
  * Find server certificate by:
  * - first see if we can find it in trusted store
+ * - TODO: untrusted store
  * - then search for certs with matching name in extraCerts
  *   - if only one match found, return that
  *   - if more than one, try to find a cert with the matching senderKID if available
@@ -377,19 +378,33 @@ static X509_STORE *createTempTrustedStore(STACK_OF(X509) *stack)
 /* ############################################################################
  * Validates the protection of the given PKIMessage using either password
  * based mac or a signature algorithm. In the case of signature algorithm, the
- * certificate can be provided in ctx->srvCert or we can try to find it in
- * extraCerts and validate.
+ * certificate can be provided in ctx->srvCert or it is taken from 
+ * extraCerts and validate against ctx->trusted_store utilizing 
+ * ctx->untrusted_store and extraCerts.
+ *
+ * If ctx->permitTAInExtraCertsForIR is true, the trust anchor may be taken from
+ * the extraCerts field when a self-signed certificate is found there which can
+ * be used to validate the issued certificate returned in IP.  This is according
+ * to the need given in 3GPP TS 33.310.
  * ############################################################################ */
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 {
 	X509 *srvCert = ctx->srvCert;
 	int srvCert_valid = 0;
 
-	/* TODO: should that whitelist DSA/RSA etc.? -> check all possible options from OpenSSL,
-	   should there be a makro? */
-	if (!srvCert && getAlgNID(msg->header->protectionAlg) != NID_id_PasswordBasedMAC) {
+	/* 5.1.3.1.  Shared Secret Information */
+	if (getAlgNID(msg->header->protectionAlg) == NID_id_PasswordBasedMAC) {
+		return CMP_protection_verify(msg, NULL, ctx->secretValue);
+	}
+
+	/* TODO: 5.1.3.2.  DH Key Pairs */
+
+	/* 5.1.3.3.  Signature */
+	/* TODO: should that whitelist DSA/RSA etc.? -> check all possible options from OpenSSL, should there be a makro? */
+	if (!srvCert) {
 		/* if we've already found and validated a server cert, and it matches the sender name,
-		 * we will use that */
+		 * we will use that, this is used for PKIconf where the server
+		 * certificate and others could be missing from the extraCerts */
 		if (ctx->validatedSrvCert &&
 			!X509_NAME_cmp(X509_get_subject_name(ctx->validatedSrvCert), msg->header->sender->d.directoryName)) {
 			srvCert = ctx->validatedSrvCert;
@@ -399,16 +414,19 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 			/* load the provided extraCerts to help with cert path validation */
 			CMP_CTX_loadUntrustedStack(ctx, msg->extraCerts);
 
-			/* try to find the server certificate */
+			/* try to find the server certificate from 1) trusted_store 2) untrusted_store 3) extaCerts*/
 			srvCert = findSrvCert(ctx, msg);
 
+			/* validate the that the found server Certificate is trusted */
 			if (!(srvCert_valid = CMP_validate_cert_path(ctx, ctx->trusted_store,
 														 ctx->untrusted_store, srvCert))) {
 				/* do the 3GPP */
 				/* TODO:  document, refer to 3GPP TS 33.310 */
 				if (ctx->permitTAInExtraCertsForIR && CMP_PKIMESSAGE_get_bodytype(msg) == V_CMP_PKIBODY_IP) {
 					X509_STORE *tempStore = createTempTrustedStore(msg->extraCerts);
-					srvCert_valid = CMP_validate_cert_path(ctx, tempStore , ctx->untrusted_store, srvCert);
+					/* TODO: check that issued certificates can validate against
+					 * trust achnor - and then exclusively use this CA */
+					srvCert_valid = CMP_validate_cert_path(ctx, tempStore, ctx->untrusted_store, srvCert);
 					X509_STORE_free(tempStore);
 				}
 			}
