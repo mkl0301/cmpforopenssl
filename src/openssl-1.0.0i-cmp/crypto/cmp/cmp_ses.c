@@ -201,7 +201,7 @@ static void add_error_data(const char *txt) {
 
 /* ############################################################################ *
  * ############################################################################ */
-static int try_polling(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg) {
+static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg) {
 	int i;
 	CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
 	for (i = 0; i < ctx->maxPollCount; i++) {
@@ -212,7 +212,7 @@ static int try_polling(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, 
 		if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
 			if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
 				&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-				CMPerr(CMP_F_TRY_POLLING, CMP_R_IP_NOT_RECEIVED);
+				CMPerr(CMP_F_POLLFORRESPONSE, CMP_R_IP_NOT_RECEIVED);
 			else
 				add_error_data("unable to send ir");
 			goto err;
@@ -234,7 +234,7 @@ static int try_polling(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, 
 		} else {
 			CMP_PKIMESSAGE_free(preq);
 			CMP_PKIMESSAGE_free(prep);
-			CMPerr(CMP_F_TRY_POLLING, CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ);
+			CMPerr(CMP_F_POLLFORRESPONSE, CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ);
 			goto err;
 		}
 
@@ -343,7 +343,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* TODO - there could be two CERTrepmessages */
 
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0) == CMP_PKISTATUS_waiting)
-		if (!try_polling(ctx, cbio, ip->body->value.ip, &ip)) {
+		if (!pollForResponse(ctx, cbio, ip->body->value.ip, &ip)) {
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
 			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
 			goto err;
@@ -530,7 +530,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0) == CMP_PKISTATUS_waiting)
-		if (!try_polling(ctx, cbio, cp->body->value.cp, &cp)) {
+		if (!pollForResponse(ctx, cbio, cp->body->value.cp, &cp)) {
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
 			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
 			goto err;
@@ -652,7 +652,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( kup->body->value.kup, 0) == CMP_PKISTATUS_waiting)
-		if (!try_polling(ctx, cbio, kup->body->value.kup, &kup)) {
+		if (!pollForResponse(ctx, cbio, kup->body->value.kup, &kup)) {
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
 			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
 			goto err;
