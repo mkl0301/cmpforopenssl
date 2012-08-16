@@ -169,7 +169,7 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
  * queue. ERR_add_error_data() simply overwrites the previous contents of the error
  * data, while this function can be used to add a string to the end of it.
  * ############################################################################ */
-static void add_error_data(const char *txt) {
+void CMP_add_error_data(const char *txt) {
     ERR_STATE *es;
 	int i, len, newlen;
     char *err;
@@ -220,7 +220,7 @@ static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certr
 				&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
 				CMPerr(CMP_F_POLLFORRESPONSE, CMP_R_POLLREP_NOT_RECEIVED);
 			else
-				add_error_data("unable to send ir");
+				CMP_add_error_data("unable to send ir");
 			goto err;
 		}
 
@@ -271,7 +271,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
         else
-            add_error_data("unable to send ir");
+            CMP_add_error_data("unable to send ir");
 		goto err;
 	}
 
@@ -372,7 +372,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
         else
-            add_error_data("unable to send certConf");
+            CMP_add_error_data("unable to send certConf");
 		goto err;
 	}
 
@@ -434,7 +434,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_RP_NOT_RECEIVED);
         else
-            add_error_data("unable to send rr");
+            CMP_add_error_data("unable to send rr");
 		goto err;
 	}
 
@@ -509,7 +509,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
         else
-            add_error_data("unable to send cr");
+            CMP_add_error_data("unable to send cr");
 		goto err;
 	}
 
@@ -562,7 +562,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
         else
-            add_error_data("unable to send certConf");
+            CMP_add_error_data("unable to send certConf");
 		goto err;
 	}
 
@@ -629,7 +629,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
         else
-            add_error_data("unable to send kur");
+            CMP_add_error_data("unable to send kur");
 		goto err;
 	}
 
@@ -684,7 +684,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
         else
-            add_error_data("unable to send certConf");
+            CMP_add_error_data("unable to send certConf");
 		goto err;
 	}
 
@@ -778,7 +778,7 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_GENP_NOT_RECEIVED);
         else
-            add_error_data("unable to send genm");
+            CMP_add_error_data("unable to send genm");
 		goto err;
 	}
 
@@ -842,7 +842,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
             && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
             CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_GENP_NOT_RECEIVED);
         else
-            add_error_data("unable to send genm");
+            CMP_add_error_data("unable to send genm");
 		goto err;
 	}
 
