@@ -232,7 +232,7 @@ static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certr
 			CMP_printf(ctx, "INFO: Waiting %ld seconds before sending pollReq...\n", checkAfter);
 			sleep(checkAfter);
 		}
-		else if (CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0) != CMP_PKISTATUS_waiting) {
+		else {
 			*msg = prep;
 			return 1; /* final success */
 		}
