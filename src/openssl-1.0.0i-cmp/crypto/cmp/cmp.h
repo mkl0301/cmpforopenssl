@@ -1394,9 +1394,6 @@ int CMP_PKIMESSAGE_get_bodytype( CMP_PKIMESSAGE *msg);
 char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int bufsize);
 
 /* cmp_vfy.c */
-int CMP_protection_verify(CMP_PKIMESSAGE *msg,
-			    EVP_PKEY *pkey,
-			    const ASN1_OCTET_STRING *secret);
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx);
 int CMP_validate_cert_path(CMP_CTX *ctx, X509_STORE *trusted_store, X509_STORE *untrusted_store, X509 *cert);
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);

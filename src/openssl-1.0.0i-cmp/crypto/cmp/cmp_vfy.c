@@ -82,11 +82,10 @@ static int getAlgNID(X509_ALGOR *alg)
 	return OBJ_obj2nid(algorOID);
 }
 
-
 /* ############################################################################ *
  * validate a protected message (sha1+RSA/DSA or any other algorithm supported by OpenSSL)
  * ############################################################################ */
-static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKEY *senderPkey) {
+static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509 *cert) {
     EVP_MD_CTX *ctx=NULL;
     CMP_PROTECTEDPART protPart;
     int ret;
@@ -94,16 +93,16 @@ static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKE
     size_t protPartDerLen;
     unsigned char *protPartDer=NULL;
 
-    if (!msg || !algor || !senderPkey) return 0;
+    if (!msg || !cert) return 0;
 
     protPart.header = msg->header;
     protPart.body   = msg->body;
     protPartDerLen  = i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
 
     ctx=EVP_MD_CTX_create();
-    EVP_VerifyInit_ex(ctx, EVP_get_digestbynid(OBJ_obj2nid(algor->algorithm)), NULL);
+    EVP_VerifyInit_ex(ctx, EVP_get_digestbynid(OBJ_obj2nid(msg->header->protectionAlg->algorithm)), NULL);
     EVP_VerifyUpdate(ctx, protPartDer, protPartDerLen);
-    ret = EVP_VerifyFinal(ctx, msg->protection->data, msg->protection->length, senderPkey);
+    ret = EVP_VerifyFinal(ctx, msg->protection->data, msg->protection->length, X509_get_pubkey((X509*) cert));
 
     /* cleanup */
     EVP_MD_CTX_destroy(ctx);
@@ -113,13 +112,13 @@ static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, EVP_PKE
 /* ############################################################################ *
  * Validates a message protected with PBMAC
  * ############################################################################ */
-static int CMP_verify_MAC( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, const ASN1_OCTET_STRING *secret)
+static int CMP_verify_MAC( CMP_PKIMESSAGE *msg, const ASN1_OCTET_STRING *secret)
 {
 	ASN1_BIT_STRING *protection=NULL;
 	int valid = 0;
 	
 	/* password based Mac */ 
-	if (!(protection = CMP_protection_new( msg, algor, NULL, secret)))
+	if (!(protection = CMP_protection_new( msg, msg->header->protectionAlg, NULL, secret)))
 		goto err; /* failed to generate protection string! */
 	
 	valid = M_ASN1_BIT_STRING_cmp( protection, msg->protection) == 0;
@@ -127,37 +126,6 @@ static int CMP_verify_MAC( CMP_PKIMESSAGE *msg, X509_ALGOR *algor, const ASN1_OC
 	return valid;
 err:
 	return 0;
-}
-
-/* ############################################################################ *
- * Validate the protection of a PKIMessage
- * returns 1 when valid
- * returns 0 when invalid, not existent or on error
- * ############################################################################ */
-int CMP_protection_verify(CMP_PKIMESSAGE *msg, 
-			    EVP_PKEY *senderPkey,
-			    const ASN1_OCTET_STRING *secret)
-{
-    X509_ALGOR *algor=NULL;
-    int valid = 0;
-
-    if (!msg->protection) goto err;
-    if (!msg->header->protectionAlg) goto err;
-    if (!(algor = X509_ALGOR_dup(msg->header->protectionAlg))) goto err;
-
-    if (getAlgNID(algor) == NID_id_PasswordBasedMAC)
-		valid = CMP_verify_MAC(msg, algor, secret);
-    else
-        valid = CMP_verify_signature(msg, algor, senderPkey);
-
-    X509_ALGOR_free(algor);
-
-    return valid;
-
-err:
-    if (algor) X509_ALGOR_free(algor);
-    CMPerr(CMP_F_CMP_PROTECTION_VERIFY, CMP_R_ERROR_VERIFYING_PROTECTION);
-    return 0;
 }
 
 /* ############################################################################ *
@@ -392,7 +360,7 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 
 	/* 5.1.3.1.  Shared Secret Information */
 	if (getAlgNID(msg->header->protectionAlg) == NID_id_PasswordBasedMAC) {
-		return CMP_protection_verify(msg, NULL, ctx->secretValue);
+		return CMP_verify_MAC(msg, ctx->secretValue);
 	}
 
 	/* TODO: 5.1.3.2.  DH Key Pairs */
@@ -418,8 +386,9 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 			/* validate the that the found server Certificate is trusted */
 			if (!(srvCert_valid = CMP_validate_cert_path(ctx, ctx->trusted_store,
 														 ctx->untrusted_store, srvCert))) {
-				/* do the 3GPP */
-				/* TODO:  document, refer to 3GPP TS 33.310 */
+				/* For IP: when the ctxOption is set, extract the Trust Anchor from
+				 * ExtraCerts, provided that there is a self-signed certificate
+				 * which can be used to validate the issued certificate - refer to 3GPP TS 33.310 */
 				if (ctx->permitTAInExtraCertsForIR && CMP_PKIMESSAGE_get_bodytype(msg) == V_CMP_PKIBODY_IP) {
 					X509_STORE *tempStore = createTempTrustedStore(msg->extraCerts);
 					/* TODO: check that issued certificates can validate against
@@ -436,7 +405,7 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 		ctx->validatedSrvCert = srvCert;
 	}
 
-	return CMP_protection_verify(msg, X509_get_pubkey((X509*) srvCert), ctx->secretValue);
+	return CMP_verify_signature(msg, srvCert);
 }
 
 
