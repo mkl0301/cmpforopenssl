@@ -1350,7 +1350,6 @@ int CMP_PKIHEADER_set1_freeText( CMP_PKIHEADER *hdr, STACK_OF(ASN1_UTF8STRING) *
 int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx);
 
 ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
-				    X509_ALGOR *_algor,
 				    const EVP_PKEY *pkey,
 				    const ASN1_OCTET_STRING *secret);
 

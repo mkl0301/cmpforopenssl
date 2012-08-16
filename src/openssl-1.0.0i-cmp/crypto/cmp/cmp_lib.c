@@ -536,13 +536,11 @@ err:
    */
 
 ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
-				    X509_ALGOR *_algor,
 				    const EVP_PKEY *pkey,
 				    const ASN1_OCTET_STRING *secret) {
 	ASN1_BIT_STRING *prot=NULL;
 	CMP_PROTECTEDPART protPart;
 	ASN1_STRING *pbmStr=NULL;
-	X509_ALGOR *algor=NULL;
 	ASN1_OBJECT *algorOID=NULL;
 
 	CRMF_PBMPARAMETER *pbm=NULL;
@@ -566,15 +564,7 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 	protPart.body   = pkimessage->body;
 	protPartDerLen  = i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
 
-	if (_algor) {
-		/* algorithm is given with the arguments */
-		algor = _algor;
-	} else {
-		/* algorithm is taken from the message */
-		algor = pkimessage->header->protectionAlg;
-	}
-
-	X509_ALGOR_get0( &algorOID, &pptype, &ppval, algor);
+	X509_ALGOR_get0( &algorOID, &pptype, &ppval, pkimessage->header->protectionAlg);
 	usedAlgorNid = OBJ_obj2nid(algorOID);
 
 	if (usedAlgorNid == NID_id_PasswordBasedMAC) {
@@ -655,7 +645,7 @@ int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
     goto err;
   }
 
-	if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) 
+	if( !(msg->protection = CMP_protection_new( msg, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) 
 		goto err;
   
   return 1;

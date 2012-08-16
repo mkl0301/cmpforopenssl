@@ -118,7 +118,7 @@ static int CMP_verify_MAC( CMP_PKIMESSAGE *msg, const ASN1_OCTET_STRING *secret)
 	int valid = 0;
 	
 	/* password based Mac */ 
-	if (!(protection = CMP_protection_new( msg, msg->header->protectionAlg, NULL, secret)))
+	if (!(protection = CMP_protection_new( msg, NULL, secret)))
 		goto err; /* failed to generate protection string! */
 	
 	valid = M_ASN1_BIT_STRING_cmp( protection, msg->protection) == 0;
