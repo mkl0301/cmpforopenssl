@@ -1394,9 +1394,7 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
 
 /* cmp_vfy.c */
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx);
-int CMP_validate_cert_path(CMP_CTX *ctx, X509_STORE *trusted_store, X509_STORE *untrusted_store, X509 *cert);
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
-
 
 #ifdef HAVE_CURL
 typedef CURL CMPBIO;
@@ -1579,11 +1577,13 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_RR_NEW				 158
 #define CMP_F_CMP_VALIDATE_CERT_PATH			 159
 #define CMP_F_CMP_VALIDATE_MSG				 168
+#define CMP_F_CMP_VERIFY_SIGNATURE			 169
 #define CMP_F_PKEY_DUP					 160
 #define CMP_F_POLLFORRESPONSE				 167
 #define CMP_F_TRY_POLLING				 161
 
 /* Reason codes. */
+#define CMP_R_ALGORITHM_NOT_SUPPORTED			 156
 #define CMP_R_CERTIFICATE_NOT_FOUND			 100
 #define CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH	 101
 #define CMP_R_CP_NOT_RECEIVED				 102

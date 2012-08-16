@@ -73,6 +73,8 @@
 #include <openssl/err.h>
 
 /* ############################################################################ *
+ * internal function
+ *
  * validate a message protected by signature according to section 5.1.3.3
  * (sha1+RSA/DSA or any other algorithm supported by OpenSSL)
  * returns 0 on error
@@ -95,7 +97,7 @@ static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509 *cert) {
 
     /* verify prtotection of protected part */
     ctx = EVP_MD_CTX_create();
-    if(!(digest = EVP_get_digestbynid(OBJ_obj2nid(msg->header->protectionAlg->algorithm)))) goto notsup;
+    if(!(digest = (EVP_MD *)EVP_get_digestbynid(OBJ_obj2nid(msg->header->protectionAlg->algorithm)))) goto notsup;
     EVP_VerifyInit_ex(ctx, digest, NULL);
     EVP_VerifyUpdate(ctx, protPartDer, protPartDerLen);
     ret = EVP_VerifyFinal(ctx, msg->protection->data, msg->protection->length, X509_get_pubkey((X509*) cert));
@@ -109,6 +111,8 @@ notsup:
 }
 
 /* ############################################################################ *
+ * internal function
+ *
  * Validates a message protected with PBMAC
  * ############################################################################ */
 static int CMP_verify_MAC( CMP_PKIMESSAGE *msg, const ASN1_OCTET_STRING *secret)
@@ -128,11 +132,12 @@ err:
 }
 
 /* ############################################################################ *
+ * internal function
+ *
  * Attempt to validate certificate path. returns 1 if the path was
  * validated successfully and 0 if not.
  * ############################################################################ */
-int CMP_validate_cert_path(CMP_CTX *ctx,
-                           X509_STORE *trusted_store,
+int CMP_validate_cert_path(X509_STORE *trusted_store,
                            X509_STORE *untrusted_store,
                            X509 *cert)
 {
@@ -140,7 +145,7 @@ int CMP_validate_cert_path(CMP_CTX *ctx,
     X509_STORE_CTX *csc=NULL;
     STACK_OF(X509) *untrusted_chain=NULL;
 
-    if (ctx == NULL || cert == NULL) goto end;
+    if (!cert) goto end;
 
     if (!trusted_store) {
         CMPerr(CMP_F_CMP_VALIDATE_CERT_PATH, CMP_R_NO_TRUSTED_CERTIFICATES_SET);
@@ -150,8 +155,8 @@ int CMP_validate_cert_path(CMP_CTX *ctx,
     if (!(csc = X509_STORE_CTX_new())) goto end;
 
     /* attempt to find the relevant intermediate certs in the untrusted store */
-    if (ctx->untrusted_store)
-        untrusted_chain = CMP_build_cert_chain(ctx->untrusted_store, cert, 0);
+    if (untrusted_store)
+        untrusted_chain = CMP_build_cert_chain(untrusted_store, cert, 0);
 
 	X509_STORE_set_flags(trusted_store, 0);
 	if(!X509_STORE_CTX_init(csc, trusted_store, cert, untrusted_chain))
@@ -171,7 +176,6 @@ end:
 		sk_X509_pop_free(untrusted_chain, X509_free);
     
     if (valid > 0) {
-        CMP_printf(ctx, "INFO: certificate Validation OK\n");
         ret = 1;
     }
 
@@ -179,8 +183,11 @@ end:
 }
 
 /* ############################################################################ *
+ * internal function
+ *
  * This is called for every valid certificate. Here we could add additional checks,
  * for policies for example.
+ * TODO: check this function for debugging output - remove?
  * ############################################################################ */
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 {
@@ -197,15 +204,6 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
             BIO_read(bio, cert_name, sizeof(cert_name));
             BIO_free(bio);
         }
-
-		#if 0
-        printf("Certificate '%s': %serror %d at %d depth lookup:%s\n",
-			   cert_name,
-			   X509_STORE_CTX_get0_parent_ctx(ctx) ? "[CRL path]" : "",
-			   cert_error,
-			   X509_STORE_CTX_get_error_depth(ctx),
-			   X509_verify_cert_error_string(cert_error)); 
-		#endif
 
         switch(cert_error)
         {
@@ -231,10 +229,7 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 
         }
 
-        // printf("cert_error = %d\n", cert_error);
-
         return ok;
-
     }
 
 #if 0
@@ -248,6 +243,8 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 
 
 /* ############################################################################ *
+ * internal function
+ *
  * Find server certificate by:
  * - first see if we can find it in trusted store
  * - TODO: untrusted store
@@ -317,8 +314,9 @@ static X509 *findSrvCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 }
 
 
-
 /* ############################################################################ *
+ * internal function
+ *
  * Creates a new certificate store and adds all the self-signed certificates from
  * the given stack to the store.
  * ############################################################################ */
@@ -395,8 +393,10 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 					srvCert = findSrvCert(ctx, msg);
 
 					/* validate the that the found server Certificate is trusted */
-					if (!(srvCert_valid = CMP_validate_cert_path(ctx, ctx->trusted_store,
-																 ctx->untrusted_store, srvCert))) {
+					srvCert_valid = CMP_validate_cert_path(ctx->trusted_store, ctx->untrusted_store, srvCert);
+
+					/* do an exceptional handling for 3GPP */	
+					if (!srvCert_valid) {
 						/* For IP: when the ctxOption is set, extract the Trust Anchor from
 						 * ExtraCerts, provided that there is a self-signed certificate
 						 * which can be used to validate the issued certificate - refer to 3GPP TS 33.310 */
@@ -404,21 +404,20 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 							X509_STORE *tempStore = createTempTrustedStore(msg->extraCerts);
 							/* TODO: check that issued certificates can validate against
 							 * trust achnor - and then exclusively use this CA */
-							srvCert_valid = CMP_validate_cert_path(ctx, tempStore, ctx->untrusted_store, srvCert);
+							srvCert_valid = CMP_validate_cert_path(tempStore, ctx->untrusted_store, srvCert);
 							X509_STORE_free(tempStore);
 						}
 					}
 				}
 				
-				if (!srvCert || !srvCert_valid)
-					return 0; 
+				/* verification failed if no valid server cert was found */
+				if (!srvCert_valid) return 0; 
 
+				/* store trusted server cert for future messages in this interaction */
 				ctx->validatedSrvCert = srvCert;
 			}
 			return CMP_verify_signature(msg, srvCert);
 	}
 	return 0;
 }
-
-
 
