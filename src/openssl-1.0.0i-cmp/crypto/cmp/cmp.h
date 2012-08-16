@@ -1578,6 +1578,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_PROTECT_MSG				 164
 #define CMP_F_CMP_RR_NEW				 158
 #define CMP_F_CMP_VALIDATE_CERT_PATH			 159
+#define CMP_F_CMP_VALIDATE_MSG				 168
 #define CMP_F_PKEY_DUP					 160
 #define CMP_F_POLLFORRESPONSE				 167
 #define CMP_F_TRY_POLLING				 161
@@ -1638,6 +1639,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_R_UNKNOWN_PKISTATUS				 144
 #define CMP_R_UNSUPPORTED_ALGORITHM			 145
 #define CMP_R_UNSUPPORTED_KEY_TYPE			 146
+#define CMP_R_UNSUPPORTED_PROTECTION_ALG_DHBASEDMAC	 155
 
 #ifdef  __cplusplus
 }

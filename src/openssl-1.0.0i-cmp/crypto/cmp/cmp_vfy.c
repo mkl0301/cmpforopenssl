@@ -73,40 +73,39 @@
 #include <openssl/err.h>
 
 /* ############################################################################ *
- * Return the NID of the algorithm used in the given X509_ALGOR structure
- * ############################################################################ */
-static int getAlgNID(X509_ALGOR *alg)
-{
-	ASN1_OBJECT *algorOID=NULL;
-	X509_ALGOR_get0( &algorOID, NULL, NULL, alg);
-	return OBJ_obj2nid(algorOID);
-}
-
-/* ############################################################################ *
- * validate a protected message (sha1+RSA/DSA or any other algorithm supported by OpenSSL)
+ * validate a message protected by signature according to section 5.1.3.3
+ * (sha1+RSA/DSA or any other algorithm supported by OpenSSL)
+ * returns 0 on error
  * ############################################################################ */
 static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509 *cert) {
     EVP_MD_CTX *ctx=NULL;
     CMP_PROTECTEDPART protPart;
     int ret;
+    EVP_MD *digest;
 
     size_t protPartDerLen;
     unsigned char *protPartDer=NULL;
 
     if (!msg || !cert) return 0;
 
+	/* create the DER representation of protected part */
     protPart.header = msg->header;
     protPart.body   = msg->body;
     protPartDerLen  = i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
 
-    ctx=EVP_MD_CTX_create();
-    EVP_VerifyInit_ex(ctx, EVP_get_digestbynid(OBJ_obj2nid(msg->header->protectionAlg->algorithm)), NULL);
+    /* verify prtotection of protected part */
+    ctx = EVP_MD_CTX_create();
+    if(!(digest = EVP_get_digestbynid(OBJ_obj2nid(msg->header->protectionAlg->algorithm)))) goto notsup;
+    EVP_VerifyInit_ex(ctx, digest, NULL);
     EVP_VerifyUpdate(ctx, protPartDer, protPartDerLen);
     ret = EVP_VerifyFinal(ctx, msg->protection->data, msg->protection->length, X509_get_pubkey((X509*) cert));
 
     /* cleanup */
     EVP_MD_CTX_destroy(ctx);
     return ret;
+notsup:
+    CMPerr(CMP_F_CMP_VERIFY_SIGNATURE, CMP_R_ALGORITHM_NOT_SUPPORTED);
+    return 0;
 }
 
 /* ############################################################################ *
@@ -352,60 +351,73 @@ static X509_STORE *createTempTrustedStore(STACK_OF(X509) *stack)
  * the extraCerts field when a self-signed certificate is found there which can
  * be used to validate the issued certificate returned in IP.  This is according
  * to the need given in 3GPP TS 33.310.
+ *
+ * returns 1 on success, 0 on error or validation failed
  * ############################################################################ */
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 {
 	X509 *srvCert = ctx->srvCert;
 	int srvCert_valid = 0;
+	int nid = 0;
+	ASN1_OBJECT *algorOID=NULL;
 
-	/* 5.1.3.1.  Shared Secret Information */
-	if (getAlgNID(msg->header->protectionAlg) == NID_id_PasswordBasedMAC) {
-		return CMP_verify_MAC(msg, ctx->secretValue);
-	}
+	/* determine the nid for the used protection algorithm */
+	X509_ALGOR_get0( &algorOID, NULL, NULL, msg->header->protectionAlg);
+	nid = OBJ_obj2nid(algorOID);
 
-	/* TODO: 5.1.3.2.  DH Key Pairs */
+	switch (nid) {
+		/* 5.1.3.1.  Shared Secret Information */
+		case NID_id_PasswordBasedMAC:
+			return CMP_verify_MAC(msg, ctx->secretValue);
 
-	/* 5.1.3.3.  Signature */
-	/* TODO: should that whitelist DSA/RSA etc.? -> check all possible options from OpenSSL, should there be a makro? */
-	if (!srvCert) {
-		/* if we've already found and validated a server cert, and it matches the sender name,
-		 * we will use that, this is used for PKIconf where the server
-		 * certificate and others could be missing from the extraCerts */
-		if (ctx->validatedSrvCert &&
-			!X509_NAME_cmp(X509_get_subject_name(ctx->validatedSrvCert), msg->header->sender->d.directoryName)) {
-			srvCert = ctx->validatedSrvCert;
-			srvCert_valid = 1;
-		}
-		else {
-			/* load the provided extraCerts to help with cert path validation */
-			CMP_CTX_loadUntrustedStack(ctx, msg->extraCerts);
+		/* TODO: 5.1.3.2.  DH Key Pairs */
+		case NID_id_DHBasedMac:
+			CMPerr(CMP_F_CMP_VALIDATE_MSG, CMP_R_UNSUPPORTED_PROTECTION_ALG_DHBASEDMAC);
+			break;
 
-			/* try to find the server certificate from 1) trusted_store 2) untrusted_store 3) extaCerts*/
-			srvCert = findSrvCert(ctx, msg);
-
-			/* validate the that the found server Certificate is trusted */
-			if (!(srvCert_valid = CMP_validate_cert_path(ctx, ctx->trusted_store,
-														 ctx->untrusted_store, srvCert))) {
-				/* For IP: when the ctxOption is set, extract the Trust Anchor from
-				 * ExtraCerts, provided that there is a self-signed certificate
-				 * which can be used to validate the issued certificate - refer to 3GPP TS 33.310 */
-				if (ctx->permitTAInExtraCertsForIR && CMP_PKIMESSAGE_get_bodytype(msg) == V_CMP_PKIBODY_IP) {
-					X509_STORE *tempStore = createTempTrustedStore(msg->extraCerts);
-					/* TODO: check that issued certificates can validate against
-					 * trust achnor - and then exclusively use this CA */
-					srvCert_valid = CMP_validate_cert_path(ctx, tempStore, ctx->untrusted_store, srvCert);
-					X509_STORE_free(tempStore);
+		/* 5.1.3.3.  Signature */
+		/* TODO: should that better whitelist DSA/RSA etc.? -> check all possible options from OpenSSL, should there be a makro? */
+		default:
+			if (!srvCert) {
+				/* if we've already found and validated a server cert, and it matches the sender name,
+				 * we will use that, this is used for PKIconf where the server
+				 * certificate and others could be missing from the extraCerts */
+				if (ctx->validatedSrvCert &&
+					!X509_NAME_cmp(X509_get_subject_name(ctx->validatedSrvCert), msg->header->sender->d.directoryName)) {
+					srvCert = ctx->validatedSrvCert;
+					srvCert_valid = 1;
 				}
+				else {
+					/* load the provided extraCerts to help with cert path validation */
+					CMP_CTX_loadUntrustedStack(ctx, msg->extraCerts);
+
+					/* try to find the server certificate from 1) trusted_store 2) untrusted_store 3) extaCerts*/
+					srvCert = findSrvCert(ctx, msg);
+
+					/* validate the that the found server Certificate is trusted */
+					if (!(srvCert_valid = CMP_validate_cert_path(ctx, ctx->trusted_store,
+																 ctx->untrusted_store, srvCert))) {
+						/* For IP: when the ctxOption is set, extract the Trust Anchor from
+						 * ExtraCerts, provided that there is a self-signed certificate
+						 * which can be used to validate the issued certificate - refer to 3GPP TS 33.310 */
+						if (ctx->permitTAInExtraCertsForIR && CMP_PKIMESSAGE_get_bodytype(msg) == V_CMP_PKIBODY_IP) {
+							X509_STORE *tempStore = createTempTrustedStore(msg->extraCerts);
+							/* TODO: check that issued certificates can validate against
+							 * trust achnor - and then exclusively use this CA */
+							srvCert_valid = CMP_validate_cert_path(ctx, tempStore, ctx->untrusted_store, srvCert);
+							X509_STORE_free(tempStore);
+						}
+					}
+				}
+				
+				if (!srvCert || !srvCert_valid)
+					return 0; 
+
+				ctx->validatedSrvCert = srvCert;
 			}
-		}
-		
-		if (!srvCert || !srvCert_valid)
-			return 0; 
-
-		ctx->validatedSrvCert = srvCert;
+			return CMP_verify_signature(msg, srvCert);
 	}
-
-	return CMP_verify_signature(msg, srvCert);
+	return 0;
 }
 
 
