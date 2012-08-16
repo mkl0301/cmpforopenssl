@@ -539,13 +539,6 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (ctx->newClCert == NULL) goto err;
 
 
-#if 0 /* those can only come in an IR --> 5.3.2 */
-	/* if the CA returned certificates in the caPubs field, copy them
-	 * to the context so that they can be retrieved if necessary */
-	if (cp->body->value.cp->caPubs)
-		CMP_CTX_set1_caPubs(ctx, cp->body->value.cp->caPubs);
-#endif /* 0 */
-
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (cp->extraCerts)
 		CMP_CTX_set1_extraCertsIn(ctx, cp->extraCerts);
@@ -659,14 +652,6 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, kup->body->value.kup);
 	if (ctx->newClCert == NULL) goto err;
-
-
-#if 0 /* those can only come in an IR --> 5.3.2 */
-	/* if the CA returned certificates in the caPubs field, copy them
-	 * to the context so that they can be retrieved if necessary */
-	if (kup->body->value.kup->caPubs)
-		CMP_CTX_set1_caPubs(ctx, kup->body->value.kup->caPubs);
-#endif /* 0 */
 
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (kup->extraCerts)
