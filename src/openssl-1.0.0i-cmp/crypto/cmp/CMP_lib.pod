@@ -82,7 +82,7 @@
   long CMP_PKISTATUSINFO_PKIstatus_get( CMP_PKISTATUSINFO *statusInfo);
   char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusInfo);
   X509_ALGOR *CMP_get_protectionAlg_pbmac();
-  ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage, X509_ALGOR *_algor, const EVP_PKEY *pkey, const ASN1_OCTET_STRING *secret);
+  ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage, const EVP_PKEY *pkey, const ASN1_OCTET_STRING *secret);
   STACK_OF(ASN1_UTF8STRING)* CMP_CERTREPMESSAGE_PKIStatusString_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
   STACK_OF(ASN1_UTF8STRING)* CMP_CERTRESPONSE_PKIStatusString_get0( CMP_CERTRESPONSE *resp);
   int CMP_ITAV_stack_item_push0(STACK_OF(CMP_INFOTYPEANDVALUE) **itav_sk_p, const CMP_INFOTYPEANDVALUE *itav);
