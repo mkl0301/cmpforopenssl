@@ -1286,7 +1286,6 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
 	return errormsg;
 }
 
-void CMP_add_error_data(const char *txt);
 /* ############################################################################ *
  * Retrieve the returned certificate from the given certrepmessage.
  * ############################################################################ */
@@ -1350,7 +1349,7 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 			}
 
 			strcat(statusString, "\"");
-			CMP_add_error_data(statusString);
+			ERR_add_error_data(1, statusString);
 
 			goto err;
 			break;
