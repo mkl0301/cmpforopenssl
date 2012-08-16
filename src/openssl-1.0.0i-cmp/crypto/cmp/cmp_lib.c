@@ -1286,3 +1286,101 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
 	return errormsg;
 }
 
+
+/* ############################################################################ *
+ * Retrieve the returned certificate from the given certrepmessage.
+ * ############################################################################ */
+X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep) {
+	X509 *newClCert = NULL;
+	
+	CMP_CTX_set_failInfoCode(ctx, CMP_CERTREPMESSAGE_PKIFailureInfo_get0(certrep, 0));
+
+	ctx->lastStatus = CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0);
+	switch (ctx->lastStatus) {
+
+		case CMP_PKISTATUS_waiting:
+			goto err;
+			break;
+
+		case CMP_PKISTATUS_grantedWithMods:
+			CMP_printf( ctx, "WARNING: got \"grantedWithMods\"");
+
+		case CMP_PKISTATUS_accepted:
+			/* if we received a certificate then place it to ctx->newClCert and return,
+			 * if the cert is encrypted then we first decrypt it. */
+			switch (CMP_CERTREPMESSAGE_certType_get(certrep, 0)) {
+				case CMP_CERTORENCCERT_CERTIFICATE:
+					if( !(newClCert = CMP_CERTREPMESSAGE_cert_get1(certrep,0))) {
+						CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
+						goto err;
+					}					
+					break;
+				case CMP_CERTORENCCERT_ENCRYPTEDCERT:
+					if( !(newClCert = CMP_CERTREPMESSAGE_encCert_get1(certrep,0,ctx->newPkey))) {
+						CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
+						goto err;
+					}					
+					break;
+			}
+			break;
+
+		case CMP_PKISTATUS_rejection: {
+			char *statusString = NULL;
+			int statusLen = 0;
+			ASN1_UTF8STRING *status = NULL;
+			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(certrep, 0);
+
+			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_REQUEST_REJECTED_BY_CA);
+
+			statusString = CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(certrep, 0);
+			if (!statusString) goto err;
+			statusString = OPENSSL_strdup(statusString);
+			if (!statusString) goto err;
+			statusLen = strlen(statusString);
+
+			statusString = OPENSSL_realloc(statusString, statusLen+20);
+			strcat(statusString, ", statusString: \"");
+			statusLen = strlen(statusString);
+
+			while ((status = sk_ASN1_UTF8STRING_pop(strstack))) {
+				statusLen += strlen((char*)status->data)+2;
+				statusString = OPENSSL_realloc(statusString, statusLen);
+				if (!statusString) goto err;
+				strcat(statusString, (char*)status->data);
+			}
+
+			strcat(statusString, "\"");
+			add_error_data(statusString);
+
+			goto err;
+			break;
+		}
+
+		case CMP_PKISTATUS_revocationWarning:
+		case CMP_PKISTATUS_revocationNotification:
+		case CMP_PKISTATUS_keyUpdateWarning:
+			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_NO_CERTIFICATE_RECEIVED);
+			goto err;
+			break;
+
+		default: {
+			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(certrep, 0);
+			ASN1_UTF8STRING *status = NULL;
+
+			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_UNKNOWN_PKISTATUS);
+			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
+				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
+
+			CMP_printf( ctx, "ERROR: unknown pkistatus %ld", CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0));
+			goto err;
+			break;
+		}
+	}
+
+
+	return newClCert;
+err:
+	return NULL;
+}
+
+
