@@ -86,6 +86,8 @@
 
 
 /* ############################################################################ *
+ * This callback is used to print out the OpenSSL error queue via'
+ * ERR_print_errors_cb() to the ctx->error_cb() function set by the user
  * ############################################################################ */
 int CMP_error_callback(const char *str, size_t len, void *u) {
 	CMP_CTX *ctx = (CMP_CTX*) u;
@@ -143,19 +145,19 @@ static char *V_CMP_TABLE[] = {
 /* Prints error data of the given CMP_PKIMESSAGE into a buffer specified by out */
 /* and returns pointer to the buffer.                                           */
 /* ############################################################################ */
-static char *PKIError_data(CMP_CTX *ctx, CMP_PKIMESSAGE *msg, char *out, int outsize) {
+static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
 	char tempbuf[256];
 	switch (CMP_PKIMESSAGE_get_bodytype(msg)) {
 		case V_CMP_PKIBODY_ERROR:
-			CMP_printf(ctx, "message=%d, error=\"%s\"",
+			BIO_snprintf(out, outsize, "message=%d, error=\"%s\"",
 					CMP_PKIMESSAGE_get_bodytype( msg),
 					CMP_PKIMESSAGE_parse_error_msg( msg, tempbuf, sizeof(tempbuf)));
 			break;
 		case -1:
-			CMP_printf(ctx, "received NO message");
+			BIO_snprintf(out, outsize, "received NO message");
 			break;
 		default:
-			CMP_printf(ctx, "received unexpected message of type '%s'", MSG_TYPE_STR(CMP_PKIMESSAGE_get_bodytype( msg)));
+			BIO_snprintf(out, outsize, "received unexpected message of type '%s'", MSG_TYPE_STR(CMP_PKIMESSAGE_get_bodytype( msg)));
 			break;
 	}
 	return out;
@@ -424,7 +426,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		ASN1_UTF8STRING *ftstr = NULL;
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(ctx, ip, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data(ip, errmsg, sizeof(errmsg)));
 		while ((ftstr = sk_ASN1_UTF8STRING_pop(ip->header->freeText)))
 			ERR_add_error_data(3, "freeText=\"", ftstr->data, "\"");
 		goto err;
@@ -479,7 +481,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(ctx, PKIconf, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data( PKIconf, errmsg, sizeof(errmsg)));
 		goto err;
 	}
 
@@ -533,7 +535,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (CMP_PKIMESSAGE_get_bodytype( rp) != V_CMP_PKIBODY_RP) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(ctx, rp, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data( rp, errmsg, sizeof(errmsg)));
 		goto err;
 	}
 
@@ -615,7 +617,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (CMP_PKIMESSAGE_get_bodytype( cp) != V_CMP_PKIBODY_CP) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(ctx, cp, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data( cp, errmsg, sizeof(errmsg)));
 		goto err;
 	}
 
@@ -670,7 +672,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(ctx, PKIconf, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data( PKIconf, errmsg, sizeof(errmsg)));
 		goto err;
 	}
 
@@ -736,7 +738,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		ASN1_UTF8STRING *ftstr = NULL;
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(ctx, kup, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data( kup, errmsg, sizeof(errmsg)));
 		while ((ftstr = sk_ASN1_UTF8STRING_pop(kup->header->freeText)))
 			ERR_add_error_data(3, "freeText=\"", ftstr->data, "\"");
 		goto err;
@@ -791,7 +793,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(ctx, PKIconf, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data( PKIconf, errmsg, sizeof(errmsg)));
 		goto err;
 	}
 
@@ -888,7 +890,7 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(ctx, genp, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data( genp, errmsg, sizeof(errmsg)));
 
 
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_UNKNOWN_PKISTATUS);
@@ -952,7 +954,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data(ctx, genp, errmsg, sizeof(errmsg)));
+		ERR_add_error_data(1, PKIError_data( genp, errmsg, sizeof(errmsg)));
 
 
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_UNKNOWN_PKISTATUS);
