@@ -159,6 +159,10 @@ err:
 /* ############################################################################ 
  * Returns the trust chain for a given certificate up to and including
  * the trust anchor
+ *
+ * TODO: make this strictly internal of move it somewhere else
+ * TODO: review this
+ * TODO: is it good to use X509_STORE_CTX_get1_chain to figure out our own chain *
  * ############################################################################ */
 STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeRoot) {
 	X509_STORE_CTX *csc;

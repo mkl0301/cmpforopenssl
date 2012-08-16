@@ -143,7 +143,7 @@ int CMP_validate_cert_path(X509_STORE *trusted_store,
 {
     int ret=0,valid=0;
     X509_STORE_CTX *csc=NULL;
-    STACK_OF(X509) *untrusted_chain=NULL;
+    STACK_OF(X509) *untrusted_stack=NULL;
 
     if (!cert) goto end;
 
@@ -155,14 +155,17 @@ int CMP_validate_cert_path(X509_STORE *trusted_store,
     if (!(csc = X509_STORE_CTX_new())) goto end;
 
     /* attempt to find the relevant intermediate certs in the untrusted store */
+	/* TODO: figure out if checking the cert_cain here is overkill - should that
+	 * just create a simple stack of everything we have?  Comment if there's no
+	 * change... */
     if (untrusted_store)
-        untrusted_chain = CMP_build_cert_chain(untrusted_store, cert, 0);
+        untrusted_stack = CMP_build_cert_chain(untrusted_store, cert, 0);
 
 	X509_STORE_set_flags(trusted_store, 0);
-	if(!X509_STORE_CTX_init(csc, trusted_store, cert, untrusted_chain))
+	if(!X509_STORE_CTX_init(csc, trusted_store, cert, untrusted_stack))
 		goto end;
 
-    /* TODO handle CRLs */
+    /* CRLs could be handled here */
     /* if (crls) X509_STORE_CTX_set0_crls(csc, crls); */
 
     valid=X509_verify_cert(csc);
@@ -172,8 +175,8 @@ int CMP_validate_cert_path(X509_STORE *trusted_store,
     ret=0;
 
 end:
-	if (untrusted_chain)
-		sk_X509_pop_free(untrusted_chain, X509_free);
+	if (untrusted_stack)
+		sk_X509_pop_free(untrusted_stack, X509_free);
     
     if (valid > 0) {
         ret = 1;
@@ -183,7 +186,7 @@ end:
 }
 
 /* ############################################################################ *
- * internal function
+ * used from cmp_ctx.c
  *
  * This is called for every valid certificate. Here we could add additional checks,
  * for policies for example.
