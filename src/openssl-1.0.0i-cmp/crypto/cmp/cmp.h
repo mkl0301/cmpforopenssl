@@ -1323,7 +1323,6 @@ CMP_PKIMESSAGE *CMP_ckuann_new( CMP_CTX *ctx);
 #endif
 CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey);
 CMP_PKIMESSAGE *CMP_pollReq_new( CMP_CTX *ctx, int reqId);
-STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeRoot);
 ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert);
 
 /* cmp_lib.c */
@@ -1393,7 +1392,6 @@ int CMP_PKIMESSAGE_get_bodytype( CMP_PKIMESSAGE *msg);
 char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int bufsize);
 
 /* cmp_vfy.c */
-int CMP_cert_callback(int ok, X509_STORE_CTX *ctx);
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
 
 #ifdef HAVE_CURL
@@ -1482,6 +1480,8 @@ int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
 #endif
 
 int CMP_CTX_error_callback(const char *str, size_t len, void *u);
+
+STACK_OF(X509) *CMP_CTX_build_cert_chain(X509_STORE *store, X509 *cert);
 
 #ifdef HAVE_CURL
 long CMP_get_http_code(const CMPBIO *bio);

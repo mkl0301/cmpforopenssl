@@ -132,10 +132,12 @@ static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 
 		/* if we have untrusted store, try to add all the intermediate certs and our own */
 		if (ctx->untrusted_store) {
-			STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert, 0);
+			STACK_OF(X509) *chain = CMP_CTX_build_cert_chain(ctx->untrusted_store, ctx->clCert);
 			int i;
-			for(i = 0; i < sk_X509_num(chain); i++)
-				sk_X509_push(msg->extraCerts, sk_X509_value(chain, i));
+			for(i = 0; i < sk_X509_num(chain); i++) {
+				X509 *certDup = sk_X509_dup(sk_X509_value(chain, i));
+				sk_X509_push(msg->extraCerts, certDup);
+			}
 			sk_X509_pop_free(chain, X509_free);
 		}
 		if (sk_X509_num(msg->extraCerts) == 0)
@@ -143,7 +145,7 @@ static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 			sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
 	}
 
-	/* add any extraCertsOut that are set in the context */
+	/* add any additional certificates from ctx->extraCertsOut */
 	if (sk_X509_num(ctx->extraCertsOut) > 0) {
 		int i;
 		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
@@ -154,52 +156,6 @@ static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 	return 1;
 err:
 	return 0;
-}
-
-/* ############################################################################ 
- * Returns the trust chain for a given certificate up to and including
- * the trust anchor
- *
- * TODO: make this strictly internal of move it somewhere else
- * TODO: review this
- * TODO: is it good to use X509_STORE_CTX_get1_chain to figure out our own chain *
- * ############################################################################ */
-STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert, int includeRoot) {
-	X509_STORE_CTX *csc;
-	STACK_OF(X509) *chain = NULL;
-	X509 *last_cert = cert;
-	X509 *issuer = NULL;
-	X509_STORE_set_flags(store, 0);
-
-	if( !(csc = X509_STORE_CTX_new()))
-		return NULL;
-	if( !(chain = sk_X509_new_null())) {
-		X509_STORE_CTX_free(csc);
-		return NULL;
-	}
-
-	if(!X509_STORE_CTX_init(csc,store,cert,NULL))
-		goto err;
-
-	X509_STORE_CTX_get1_issuer(&issuer, csc, last_cert);
-	while (issuer != NULL) {
-		EVP_PKEY *pubkey = X509_get_pubkey(issuer);
-		if (issuer == last_cert) { /* hit last found cert */
-			if (includeRoot || !X509_verify(issuer, pubkey))
-				sk_X509_push(chain, X509_dup(issuer));
-			break;
-		}
-		sk_X509_push(chain, X509_dup(last_cert));
-		last_cert = issuer;
-		X509_STORE_CTX_get1_issuer(&issuer, csc, last_cert);
-	}
-
-	X509_STORE_CTX_free(csc);
-	return chain;
-err:
-	X509_STORE_CTX_free(csc);
-	sk_X509_free(chain);
-	return NULL;
 }
 
 /* ############################################################################ *

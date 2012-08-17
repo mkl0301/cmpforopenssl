@@ -152,6 +152,9 @@ int CMP_validate_cert_path(X509_STORE *trusted_store,
         goto end;
     }
 
+	/* A cert callback could be used to do additional checking, policies for example.*/
+	/* X509_STORE_set_verify_cb(trusted_store, CMP_cert_callback); */
+
     if (!(csc = X509_STORE_CTX_new())) goto end;
 
     /* attempt to find the relevant intermediate certs in the untrusted store */
@@ -159,7 +162,7 @@ int CMP_validate_cert_path(X509_STORE *trusted_store,
 	 * just create a simple stack of everything we have?  Comment if there's no
 	 * change... */
     if (untrusted_store)
-        untrusted_stack = CMP_build_cert_chain(untrusted_store, cert, 0);
+        untrusted_stack = CMP_CTX_build_cert_chain(untrusted_store, cert);
 
 	X509_STORE_set_flags(trusted_store, 0);
 	if(!X509_STORE_CTX_init(csc, trusted_store, cert, untrusted_stack))
@@ -185,12 +188,13 @@ end:
     return(ret);
 }
 
+#if 0
 /* ############################################################################ *
- * used from cmp_ctx.c
- *
+ * NOTE: This is only needed if/when we want to do additional checking on the certificates!
+ *       It is not currently used.
+ * 
  * This is called for every valid certificate. Here we could add additional checks,
  * for policies for example.
- * TODO: check this function for debugging output - remove?
  * ############################################################################ */
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 {
@@ -199,15 +203,6 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 
     if (!ok)
     {
-        char cert_name[512] = {0};
-        if (current_cert)
-        {
-            BIO *bio = BIO_new(BIO_s_mem());
-            X509_NAME_print(bio, X509_get_subject_name(current_cert), XN_FLAG_ONELINE);
-            BIO_read(bio, cert_name, sizeof(cert_name));
-            BIO_free(bio);
-        }
-
         switch(cert_error)
         {
             case X509_V_ERR_NO_EXPLICIT_POLICY:
@@ -243,6 +238,7 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 
     return(ok);
 }
+#endif
 
 
 /* ############################################################################ *
@@ -327,8 +323,6 @@ static X509_STORE *createTempTrustedStore(STACK_OF(X509) *stack)
 {
 	X509_STORE *store = X509_STORE_new();
 	int i;
-
-	X509_STORE_set_verify_cb(store, CMP_cert_callback);
 
 	for (i = 0; i < sk_X509_num(stack); i++) {
 		X509 *cert = sk_X509_value(stack, i);

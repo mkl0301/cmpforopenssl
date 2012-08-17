@@ -187,7 +187,6 @@ err:
  * ############################################################################ */
 int CMP_CTX_set0_trustedStore( CMP_CTX *ctx, X509_STORE *store) {
 	if (!store) return 0;
-    X509_STORE_set_verify_cb(store, CMP_cert_callback);
     if (ctx->trusted_store)
     	X509_STORE_free(ctx->trusted_store);
 	ctx->trusted_store = store;
@@ -209,7 +208,6 @@ int CMP_CTX_set1_trustedStore( CMP_CTX *ctx, X509_STORE *store) {
  * ############################################################################ */
 int CMP_CTX_set0_untrustedStore( CMP_CTX *ctx, X509_STORE *store) {
 	if (!store) return 0;
-    X509_STORE_set_verify_cb(store, CMP_cert_callback);
     if (ctx->untrusted_store)
     	X509_STORE_free(ctx->untrusted_store);
 	ctx->untrusted_store = store;
@@ -260,7 +258,6 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 
 	ctx->trusted_store   = X509_STORE_new();
 	ctx->untrusted_store = X509_STORE_new();
-    X509_STORE_set_verify_cb(ctx->trusted_store, CMP_cert_callback);
 
 	ctx->maxPollCount = 3;
 
@@ -521,6 +518,44 @@ err:
 	return 0;
 }
 
+/* ################################################################ *
+ * Builds up the certificate chain of cert as high up as possible using
+ * the given X509_STORE.
+ * 
+ * NOTE: This creates duplicates of the stack AND of each certificate,
+ * so when the stack is no longer needed it should be freed with
+ * sk_X509_pop_free()
+ * ################################################################ */
+ STACK_OF(X509) *CMP_CTX_build_cert_chain(X509_STORE *store, X509 *cert) {
+	STACK_OF(X509) *chain = NULL;
+	X509_STORE_CTX *csc = NULL;
+	int i=0;
+
+	if( !(csc = X509_STORE_CTX_new()))
+		goto err;
+
+	if( !(chain = sk_X509_new_null()))
+		goto err;
+
+	X509_STORE_set_flags(store, 0);
+	if(!X509_STORE_CTX_init(csc,store,cert,NULL))
+		goto err;
+
+	X509_verify_cert(csc);
+
+	for (i = 0; i < sk_X509_num(csc->chain); i++) {
+		X509 *certDup = X509_dup( sk_X509_value(csc->chain, i) );
+		sk_X509_push(chain, certDup);
+	}
+	X509_STORE_CTX_free(csc);
+
+	return chain;
+
+err:
+	if (csc) X509_STORE_CTX_free(csc);
+	if (chain) sk_X509_free(chain);
+	return NULL;
+}
 
 /* ################################################################ *
  * Return the number of certificates we have in the outbound 
