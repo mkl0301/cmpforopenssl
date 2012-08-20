@@ -135,10 +135,10 @@ static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 			STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert);
 			int i;
 			for(i = 0; i < sk_X509_num(chain); i++) {
-				X509 *certDup = sk_X509_dup(sk_X509_value(chain, i));
+				X509 *cert = sk_X509_value(chain, i);
 				sk_X509_push(msg->extraCerts, certDup);
 			}
-			sk_X509_pop_free(chain, X509_free);
+			sk_X509_free(chain);
 		}
 		if (sk_X509_num(msg->extraCerts) == 0)
 			/* Make sure that at least our own cert gets sent */
