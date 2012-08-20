@@ -324,15 +324,20 @@ static X509_STORE *createTempTrustedStore(STACK_OF(X509) *stack)
 	X509_STORE *store = X509_STORE_new();
 	int i;
 
+	if (!store) goto err;
+
 	for (i = 0; i < sk_X509_num(stack); i++) {
 		X509 *cert = sk_X509_value(stack, i);
 		EVP_PKEY *pubkey = X509_get_pubkey(cert);
 
-		if (X509_verify(cert, pubkey))
+		if (pubkey && X509_verify(cert, pubkey))
 			X509_STORE_add_cert(store, cert);
 	}
 
 	return store;
+
+err:
+	return NULL;	
 }
 
 /* ############################################################################
