@@ -1412,7 +1412,7 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert) {
 
 err:
 	if (csc) X509_STORE_CTX_free(csc);
-	if (chain) sk_X509_free(chain);
+	if (chainDup) sk_X509_free(chainDup);
 	return NULL;
 }
 
