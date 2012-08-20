@@ -414,7 +414,7 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 								if (newClCert) {
 									EVP_PKEY *srvKey = X509_get_pubkey((X509*) srvCert);
 									if (X509_NAME_cmp(newClCert->cert_info->issuer, srvCert->cert_info->subject) != 0
-										|| !srvkey || !X509_verify(newClCert, srvKey))
+										|| !srvKey || !X509_verify(newClCert, srvKey))
 										/* received cert cannot be validated using this srvCert */
 										srvCert_valid = 0;
 								}
