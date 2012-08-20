@@ -136,7 +136,7 @@ static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 			int i;
 			for(i = 0; i < sk_X509_num(chain); i++) {
 				X509 *cert = sk_X509_value(chain, i);
-				sk_X509_push(msg->extraCerts, certDup);
+				sk_X509_push(msg->extraCerts, cert);
 			}
 			sk_X509_free(chain);
 		}
