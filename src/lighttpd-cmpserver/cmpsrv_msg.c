@@ -29,11 +29,6 @@ CMP_PKIMESSAGE * CMP_pollRep_new( CMP_CTX *ctx) {
     msg->body->value.pollRep = sk_CMP_POLLREP_new_null();
     sk_CMP_POLLREP_push(msg->body->value.pollRep, prep);
 
-    if( !(msg->protection = CMP_protection_new( msg, NULL, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) goto err;
-
-    /* TODO: make a generic function to create msg protection and set this, do
-     * this for all message types */
-    CMP_CTX_set1_protectionAlgor( ctx, msg->header->protectionAlg);
     return msg;
 
 err:
@@ -54,7 +49,7 @@ CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx, X509 *cert)
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
 	ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert);
-	ASN1_OCTET_STRING *subjKeyIDStr = CMP_get_subject_key_id(ctx->caCert);
+	ASN1_OCTET_STRING *subjKeyIDStr = CMP_get_subject_key_id(ctx->srvCert);
 	if (subjKeyIDStr) {
 		CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
 		ASN1_OCTET_STRING_free(subjKeyIDStr);
@@ -63,7 +58,7 @@ CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx, X509 *cert)
 	CMP_PKIHEADER_set1(msg->header, ctx);
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IP);
 
-	CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*)ctx->caCert));
+	CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*)ctx->srvCert));
 
 
 #if 0
@@ -135,7 +130,7 @@ CMP_PKIMESSAGE * CMP_kup_new( CMP_CTX *ctx, X509 *cert)
 	CMP_PKIHEADER_set1(msg->header, ctx);
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUP);
 
-	CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*)ctx->caCert));
+	CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*)ctx->srvCert));
 
 
 #if 0

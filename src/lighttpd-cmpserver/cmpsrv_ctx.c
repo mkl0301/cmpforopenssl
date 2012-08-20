@@ -46,7 +46,7 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
   CMP_CTX_set1_referenceValue( cmp_ctx, (const unsigned char*)p->userID->ptr, strlen(p->userID->ptr));
   CMP_CTX_set1_secretValue( cmp_ctx, (const unsigned char*)p->secretKey->ptr, strlen(p->secretKey->ptr));
   // CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
-  // CMP_CTX_set1_caCert( cmp_ctx, caCert);
+  // CMP_CTX_set1_srvCert( cmp_ctx, caCert);
   // CMP_CTX_set_compatibility( cmp_ctx, opt_compatibility);
 
   X509 *caCert = HELP_read_der_cert(p->caCert->ptr);
@@ -79,12 +79,12 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
 
   if (cmp_ctx->untrusted_store) {
     int n=0;
-    ctx->extraCerts = CMP_build_cert_chain( cmp_ctx->untrusted_store, cmp_ctx->caCert, 0);
+    ctx->extraCerts = CMP_build_cert_chain( cmp_ctx->untrusted_store, cmp_ctx->srvCert);
     n = sk_X509_num(ctx->extraCerts);
     if (n > 0 && cmp_ctx->trusted_store) {
       X509 *last = sk_X509_value(ctx->extraCerts, n-1);
       int i = 0;
-      ctx->caPubs = CMP_build_cert_chain( cmp_ctx->trusted_store, last, 0);
+      ctx->caPubs = CMP_build_cert_chain( cmp_ctx->trusted_store, last);
       for (i = sk_X509_num(ctx->caPubs)-1; i >= 0; i--) {
         X509 *cert = sk_X509_value(ctx->caPubs, i);
         EVP_PKEY *pk = X509_get_pubkey(cert);
@@ -102,8 +102,6 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
 #endif
     }
   }
-
-  CMP_CTX_set_protectionAlgor( cmp_ctx, CMP_ALG_PBMAC);
 
   ctx->cmp_ctx = cmp_ctx;
   ctx->p_d = p;

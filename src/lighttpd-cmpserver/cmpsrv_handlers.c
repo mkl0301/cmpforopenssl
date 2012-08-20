@@ -62,7 +62,7 @@ CMPHANDLER_FUNC(handlemsg_ir)
     CMP_PKIMESSAGE *msg = CMP_PKIMESSAGE_new();
     CMP_PKIHEADER_set1(msg->header, ctx);
     CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IP);
-    CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*)ctx->caCert));
+    CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*)ctx->srvCert));
 
     CMP_CERTREPMESSAGE *resp = CMP_CERTREPMESSAGE_new();
 
@@ -190,6 +190,8 @@ CMPHANDLER_FUNC(handlemsg_certConf)
   resp->body->value.pkiconf = t;
 
   *out = resp;
+  (*out)->extraCerts = X509_stack_dup(srv_ctx->extraCerts);
+
   return 0;
 }
 
@@ -261,7 +263,7 @@ CMPHANDLER_FUNC(handlemsg_genm)
     ckuann->newWithNew = HELP_read_der_cert(certfn);
 #endif
 
-    create_ckuann_certs(srv_ctx->caKey, ctx->caCert, &ckuann->oldWithNew, &ckuann->newWithOld, &ckuann->newWithNew);
+    create_ckuann_certs(srv_ctx->caKey, ctx->srvCert, &ckuann->oldWithNew, &ckuann->newWithOld, &ckuann->newWithNew);
 
 
     itav->infoValue.caKeyUpdateInfo = ckuann;
@@ -293,6 +295,10 @@ CMPHANDLER_FUNC(handlemsg_genm)
 
 CMPHANDLER_FUNC(handlemsg_pollReq)
 {
+  UNUSED(srv);
+  UNUSED(srv_ctx);
+  UNUSED(msg);
+  UNUSED(out);
 #ifdef TEST_POLLREQ
   static int n = 0;
 
@@ -374,8 +380,6 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
   // EVP_PKEY *clkey = NULL;
 
   int bodyType = CMP_PKIMESSAGE_get_bodytype(msg);
-  // CMP_CTX_set_protectionAlgor( ctx->cmp_ctx, CMP_ALG_SIG);
-  ctx->cmp_ctx->protectionAlgor = X509_ALGOR_dup(msg->header->protectionAlg);
   int protectionAlg = OBJ_obj2nid(msg->header->protectionAlg->algorithm);
 
   if (ctx->cmp_ctx->transactionID != NULL)
@@ -437,14 +441,15 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
       dbgmsg("s", "ERROR: could not find client public key in database");
   }
 
-  if (!CMP_protection_verify(msg, msg->header->protectionAlg, clkey,
-                             ctx->cmp_ctx->secretValue)) {
+#if 0
+  if (!CMP_validate_msg(ctx->cmp_ctx, msg)) {
     dbgmsg("s", "ERROR: protection not valid!");
     /* TODO send back error message */
     log_cmperrors(srv);
     return 0;
   }
   else dbgmsg("s", "protection validated successfully");
+#endif
 
   if (msg_handlers[bodyType] != 0) {
     if (msg_handlers[bodyType](srv, ctx, msg, &resp) == 0) {
@@ -455,8 +460,12 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
       CMP_PKIHEADER_push0_freeText(resp->header, idstr);
 
       resp->header->recipient = GENERAL_NAME_dup(msg->header->sender);
+      CMP_PKIHEADER_set1_sender( resp->header, X509_get_subject_name((X509*)ctx->cmp_ctx->srvCert));
 
-      resp->protection = CMP_protection_new(resp, NULL, ctx->caKey, ctx->cmp_ctx->secretValue);
+      resp->header->protectionAlg = X509_ALGOR_dup(msg->header->protectionAlg);
+      dbgmsg("s", "protecting message ...");
+      resp->protection = CMP_protection_new(resp, ctx->caKey, ctx->cmp_ctx->secretValue);
+      dbgmsg("s", "done.");
       result = 1;
     }
     else

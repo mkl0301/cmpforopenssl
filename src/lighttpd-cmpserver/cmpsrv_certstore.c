@@ -24,7 +24,7 @@ X509 *cert_create(cmpsrv_ctx *ctx, CRMF_CERTTEMPLATE *tpl)
   ASN1_TIME_set(cert->cert_info->validity->notBefore, time(0));
   ASN1_TIME_set(cert->cert_info->validity->notAfter, time(0)+60*60*24*365*10);
   X509_set_subject_name(cert, tpl->subject);
-  X509_set_issuer_name(cert, X509_get_subject_name(ctx->cmp_ctx->caCert));
+  X509_set_issuer_name(cert, X509_get_subject_name(ctx->cmp_ctx->srvCert));
   cert->cert_info->key = X509_PUBKEY_dup(tpl->publicKey);
   // X509_set_pubkey(cert, tpl->publicKey->pkey);
 
