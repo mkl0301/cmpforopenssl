@@ -1387,6 +1387,8 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert) {
 	X509_STORE_CTX *csc = NULL;
 	int i=0;
 
+	if (!store || !cert) goto err;
+
 	csc = X509_STORE_CTX_new();
 	if (!csc) goto err;
 
@@ -1406,7 +1408,7 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert) {
 	}
 	X509_STORE_CTX_free(csc);
 
-	return chain;
+	return chainDup;
 
 err:
 	if (csc) X509_STORE_CTX_free(csc);
