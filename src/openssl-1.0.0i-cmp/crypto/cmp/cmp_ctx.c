@@ -149,6 +149,8 @@ err:
 static EVP_PKEY *pkey_dup(const EVP_PKEY *pkey)
 {
 	EVP_PKEY *pkeyDup = EVP_PKEY_new();
+	if (!pkeyDup) goto err;
+	
 	switch (pkey->type) {
 #ifndef OPENSSL_NO_RSA
 		case EVP_PKEY_RSA:
@@ -177,7 +179,7 @@ static EVP_PKEY *pkey_dup(const EVP_PKEY *pkey)
 	return pkeyDup;
 
 err:
-	EVP_PKEY_free(pkeyDup);
+	if (pkeyDup) EVP_PKEY_free(pkeyDup);
 	return NULL;
 }
 
