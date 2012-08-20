@@ -2,7 +2,7 @@
 /* apps/cmp.c
  */
 /* ====================================================================
- * Originally written by Miikka Viljanen
+ * Written by Miikka Viljanen, based on cmpclient by Martin Peylo
  */
 /* ====================================================================
  * Copyright (c) 2007-2010 The OpenSSL Project.  All rights reserved.
