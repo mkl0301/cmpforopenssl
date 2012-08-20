@@ -136,8 +136,8 @@ static int set_http_path(CURL *curl, const char *path) {
 		/* path is already set, let's not do it again... */
 		return 1;
 
-	if( !(url = malloc(strlen(current_url) + strlen(path) + 2)))
-		return 0;
+	url = malloc(strlen(current_url) + strlen(path) + 2);
+	if (!url) return 0;
 
 	sprintf(url, "%s/%s", current_url, path);
 	curl_easy_setopt(curl, CURLOPT_URL, url);

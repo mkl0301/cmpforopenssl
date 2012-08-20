@@ -1374,3 +1374,43 @@ err:
 }
 
 
+/* ################################################################ *
+ * Builds up the certificate chain of cert as high up as possible using
+ * the given X509_STORE.
+ * 
+ * NOTE: This creates duplicates of the stack AND of each certificate,
+ * so when the stack is no longer needed it should be freed with
+ * sk_X509_pop_free()
+ * ################################################################ */
+STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert) {
+	STACK_OF(X509) *chain = NULL, *chainDup = NULL;
+	X509_STORE_CTX *csc = NULL;
+	int i=0;
+
+	csc = X509_STORE_CTX_new();
+	if (!csc) goto err;
+
+	chainDup = sk_X509_new_null();
+	if (!chainDup) goto err;
+
+	X509_STORE_set_flags(store, 0);
+	if(!X509_STORE_CTX_init(csc,store,cert,NULL))
+		goto err;
+
+	X509_verify_cert(csc);
+
+	chain = X509_STORE_CTX_get_chain(csc);
+	for (i = 0; i < sk_X509_num(chain); i++) {
+		X509 *certDup = X509_dup( sk_X509_value(chain, i) );
+		sk_X509_push(chainDup, certDup);
+	}
+	X509_STORE_CTX_free(csc);
+
+	return chain;
+
+err:
+	if (csc) X509_STORE_CTX_free(csc);
+	if (chain) sk_X509_free(chain);
+	return NULL;
+}
+

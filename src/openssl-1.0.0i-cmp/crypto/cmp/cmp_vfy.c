@@ -157,12 +157,11 @@ int CMP_validate_cert_path(X509_STORE *trusted_store,
 
     if (!(csc = X509_STORE_CTX_new())) goto end;
 
-    /* attempt to find the relevant intermediate certs in the untrusted store */
-	/* TODO: figure out if checking the cert_cain here is overkill - should that
-	 * just create a simple stack of everything we have?  Comment if there's no
-	 * change... */
-    if (untrusted_store)
-        untrusted_stack = CMP_CTX_build_cert_chain(untrusted_store, cert);
+    /* note: there doesn't seem to be a good way to get a stack of all
+	 * the certs in an X509_STORE, so we need to try and find the chain
+	 * of intermediate certs here. */
+	if (untrusted_store)
+        untrusted_stack = CMP_build_cert_chain(untrusted_store, cert);
 
 	X509_STORE_set_flags(trusted_store, 0);
 	if(!X509_STORE_CTX_init(csc, trusted_store, cert, untrusted_stack))

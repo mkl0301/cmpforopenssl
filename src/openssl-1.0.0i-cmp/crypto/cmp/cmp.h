@@ -1391,6 +1391,8 @@ int CMP_PKIMESSAGE_get_bodytype( CMP_PKIMESSAGE *msg);
 
 char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int bufsize);
 
+STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert);
+
 /* cmp_vfy.c */
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
 
@@ -1480,8 +1482,6 @@ int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
 #endif
 
 int CMP_CTX_error_callback(const char *str, size_t len, void *u);
-
-STACK_OF(X509) *CMP_CTX_build_cert_chain(X509_STORE *store, X509 *cert);
 
 #ifdef HAVE_CURL
 long CMP_get_http_code(const CMPBIO *bio);
