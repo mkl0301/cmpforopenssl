@@ -475,7 +475,7 @@ int CMP_CTX_set1_extraCertsIn( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsIn)
 
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_CAEXTRACERTS, CMP_R_NULL_ARGUMENT);
+	CMPerr(CMP_F_CMP_CTX_SET1_EXTRACERTSIN, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
@@ -632,7 +632,7 @@ int CMP_CTX_set1_srvCert( CMP_CTX *ctx, const X509 *cert) {
 	if (!(ctx->srvCert = X509_dup( (X509*)cert))) goto err;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_CACERT, CMP_R_NULL_ARGUMENT);
+	CMPerr(CMP_F_CMP_CTX_SET1_SRVCERT, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 
