@@ -490,6 +490,10 @@ ASN1_BIT_STRING *CMP_calc_protection_pbmac(CMP_PKIMESSAGE *pkimessage, const ASN
 	if(!(prot = ASN1_BIT_STRING_new())) goto err;
 	ASN1_BIT_STRING_set(prot, mac, macLen);
 
+	/* Actually this should not be needed but OpenSSL defaults all bitstrings to be a NamedBitList */
+	prot->flags &= ~0x07;
+	prot->flags |= ASN1_STRING_FLAG_BITS_LEFT;
+
 	/* cleanup */
 	if (mac) OPENSSL_free(mac);
 	return prot;
@@ -558,6 +562,10 @@ ASN1_BIT_STRING *CMP_calc_protection_sig(CMP_PKIMESSAGE *pkimessage, EVP_PKEY *p
 
 	if(!(prot = ASN1_BIT_STRING_new())) goto err;
 	ASN1_BIT_STRING_set(prot, mac, macLen);
+
+	/* Actually this should not be needed but OpenSSL defaults all bitstrings to be a NamedBitList */
+	prot->flags &= ~0x07;
+	prot->flags |= ASN1_STRING_FLAG_BITS_LEFT;
 
 	/* cleanup */
 	if (evp_ctx) EVP_MD_CTX_destroy(evp_ctx);
