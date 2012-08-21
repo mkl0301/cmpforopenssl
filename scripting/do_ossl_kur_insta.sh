@@ -10,10 +10,9 @@ fi
 set -x
 
 ${CMPCLIENT} --kur \
-             --insta3.3 \
              --server ${INSTA_SERVER} \
 	     --port ${INSTA_PORT} \
-	     --cacert ${INSTA_CACERT} \
+	     --srvcert ${INSTA_CACERT} \
 	     --path "pkix/" \
 	     --key ${CLKEY} \
 	     --newkey ${NEWCLKEY} \
