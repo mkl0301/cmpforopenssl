@@ -427,12 +427,6 @@ int CRMF_CERTREQMSG_set_validity( CRMF_CERTREQMSG *certReqMsg, time_t notBefore,
 	return 1;
 err:
 	CRMFerr(CRMF_F_CRMF_CERTREQMSG_SET_VALIDITY, CRMF_R_CRMFERROR);
-
-	if (validity) {
-		CRMF_OPTIONALVALIDITY_free(validity);
-		notBeforeAsn = NULL;
-		notAfterAsn = NULL;
-	}
 	if (notBeforeAsn) ASN1_TIME_free(notBeforeAsn);
 	if (notAfterAsn) ASN1_TIME_free(notAfterAsn);
 	return 0;
