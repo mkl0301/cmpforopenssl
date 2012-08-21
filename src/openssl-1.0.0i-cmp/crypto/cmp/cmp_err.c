@@ -7,36 +7,36 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *	  notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ *	  notice, this list of conditions and the following disclaimer in
+ *	  the documentation and/or other materials provided with the
+ *	  distribution.
  *
  * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.OpenSSL.org/)"
+ *	  software must display the following acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit. (http://www.OpenSSL.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    openssl-core@OpenSSL.org.
+ *	  endorse or promote products derived from this software without
+ *	  prior written permission. For written permission, please contact
+ *	  openssl-core@OpenSSL.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
- *    nor may "OpenSSL" appear in their names without prior written
- *    permission of the OpenSSL Project.
+ *	  nor may "OpenSSL" appear in their names without prior written
+ *	  permission of the OpenSSL Project.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.OpenSSL.org/)"
+ *	  acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit (http://www.OpenSSL.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ * PURPOSE ARE DISCLAIMED.	IN NO EVENT SHALL THE OpenSSL PROJECT OR
  * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -147,17 +147,17 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_ALGORITHM_NOT_SUPPORTED),"algorithm not supported"},
 {ERR_REASON(CMP_R_CERTIFICATE_NOT_FOUND) ,"certificate not found"},
 {ERR_REASON(CMP_R_COULD_NOT_VALIDATE_CERTIFICATE_PATH),"could not validate certificate path"},
-{ERR_REASON(CMP_R_CP_NOT_RECEIVED)       ,"cp not received"},
-{ERR_REASON(CMP_R_CURL_ERROR)            ,"curl error"},
-{ERR_REASON(CMP_R_DEPRECATED_FUNCTION)   ,"deprecated function"},
+{ERR_REASON(CMP_R_CP_NOT_RECEIVED)		 ,"cp not received"},
+{ERR_REASON(CMP_R_CURL_ERROR)			 ,"curl error"},
+{ERR_REASON(CMP_R_DEPRECATED_FUNCTION)	 ,"deprecated function"},
 {ERR_REASON(CMP_R_ERROR_CALCULATING_PROTECTION),"error calculating protection"},
 {ERR_REASON(CMP_R_ERROR_CREATING_CERTCONF),"error creating certconf"},
 {ERR_REASON(CMP_R_ERROR_CREATING_CKUANN) ,"error creating ckuann"},
-{ERR_REASON(CMP_R_ERROR_CREATING_CR)     ,"error creating cr"},
-{ERR_REASON(CMP_R_ERROR_CREATING_GENM)   ,"error creating genm"},
-{ERR_REASON(CMP_R_ERROR_CREATING_IR)     ,"error creating ir"},
-{ERR_REASON(CMP_R_ERROR_CREATING_KUR)    ,"error creating kur"},
-{ERR_REASON(CMP_R_ERROR_CREATING_RR)     ,"error creating rr"},
+{ERR_REASON(CMP_R_ERROR_CREATING_CR)	 ,"error creating cr"},
+{ERR_REASON(CMP_R_ERROR_CREATING_GENM)	 ,"error creating genm"},
+{ERR_REASON(CMP_R_ERROR_CREATING_IR)	 ,"error creating ir"},
+{ERR_REASON(CMP_R_ERROR_CREATING_KUR)	 ,"error creating kur"},
+{ERR_REASON(CMP_R_ERROR_CREATING_RR)	 ,"error creating rr"},
 {ERR_REASON(CMP_R_ERROR_DECODING_CERTIFICATE),"error decoding certificate"},
 {ERR_REASON(CMP_R_ERROR_DECRYPTING_CERTIFICATE),"error decrypting certificate"},
 {ERR_REASON(CMP_R_ERROR_DECRYPTING_ENCCERT),"error decrypting enccert"},
@@ -171,33 +171,33 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_ERROR_VERIFYING_PROTECTION),"error verifying protection"},
 {ERR_REASON(CMP_R_FAILED_TO_DECODE_PKIMESSAGE),"failed to decode pkimessage"},
 {ERR_REASON(CMP_R_FAILED_TO_DETERMINE_PROTECTION_ALGORITHM),"failed to determine protection algorithm"},
-{ERR_REASON(CMP_R_GENP_NOT_RECEIVED)     ,"genp not received"},
-{ERR_REASON(CMP_R_INVALID_ARGS)          ,"invalid args"},
+{ERR_REASON(CMP_R_GENP_NOT_RECEIVED)	 ,"genp not received"},
+{ERR_REASON(CMP_R_INVALID_ARGS)			 ,"invalid args"},
 {ERR_REASON(CMP_R_INVALID_CONTENT_TYPE)  ,"invalid content type"},
-{ERR_REASON(CMP_R_INVALID_CONTEXT)       ,"invalid context"},
-{ERR_REASON(CMP_R_INVALID_KEY)           ,"invalid key"},
-{ERR_REASON(CMP_R_INVALID_PARAMETERS)    ,"invalid parameters"},
-{ERR_REASON(CMP_R_IP_NOT_RECEIVED)       ,"ip not received"},
-{ERR_REASON(CMP_R_KUP_NOT_RECEIVED)      ,"kup not received"},
+{ERR_REASON(CMP_R_INVALID_CONTEXT)		 ,"invalid context"},
+{ERR_REASON(CMP_R_INVALID_KEY)			 ,"invalid key"},
+{ERR_REASON(CMP_R_INVALID_PARAMETERS)	 ,"invalid parameters"},
+{ERR_REASON(CMP_R_IP_NOT_RECEIVED)		 ,"ip not received"},
+{ERR_REASON(CMP_R_KUP_NOT_RECEIVED)		 ,"kup not received"},
 {ERR_REASON(CMP_R_MISSING_KEY_INPUT_FOR_CREATING_PROTECTION),"missing key input for creating protection"},
 {ERR_REASON(CMP_R_MISSING_SERVER_CERTIFICATE),"missing server certificate"},
 {ERR_REASON(CMP_R_NO_CERTIFICATE_RECEIVED),"no certificate received"},
 {ERR_REASON(CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC),"no secret value given for pbmac"},
 {ERR_REASON(CMP_R_NO_TRUSTED_CERTIFICATES_SET),"no trusted certificates set"},
-{ERR_REASON(CMP_R_NULL_ARGUMENT)         ,"null argument"},
-{ERR_REASON(CMP_R_PKIBODY_ERROR)         ,"pkibody error"},
+{ERR_REASON(CMP_R_NULL_ARGUMENT)		 ,"null argument"},
+{ERR_REASON(CMP_R_PKIBODY_ERROR)		 ,"pkibody error"},
 {ERR_REASON(CMP_R_PKICONF_NOT_RECEIVED)  ,"pkiconf not received"},
-{ERR_REASON(CMP_R_POLLING_FAILED)        ,"polling failed"},
+{ERR_REASON(CMP_R_POLLING_FAILED)		 ,"polling failed"},
 {ERR_REASON(CMP_R_POLLREP_NOT_RECEIVED)  ,"pollrep not received"},
 {ERR_REASON(CMP_R_RECEIVED_INVALID_RESPONSE_TO_POLLREQ),"received invalid response to pollreq"},
 {ERR_REASON(CMP_R_REQUEST_REJECTED_BY_CA),"request rejected by ca"},
-{ERR_REASON(CMP_R_RP_NOT_RECEIVED)       ,"rp not received"},
+{ERR_REASON(CMP_R_RP_NOT_RECEIVED)		 ,"rp not received"},
 {ERR_REASON(CMP_R_SERVER_NOT_REACHABLE)  ,"server not reachable"},
 {ERR_REASON(CMP_R_SUBJECT_NAME_NOT_SET)  ,"subject name not set"},
 {ERR_REASON(CMP_R_UNABLE_TO_CREATE_CONTEXT),"unable to create context"},
 {ERR_REASON(CMP_R_UNKNOWN_ALGORITHM_ID)  ,"unknown algorithm id"},
-{ERR_REASON(CMP_R_UNKNOWN_CIPHER)        ,"unknown cipher"},
-{ERR_REASON(CMP_R_UNKNOWN_PKISTATUS)     ,"unknown pkistatus"},
+{ERR_REASON(CMP_R_UNKNOWN_CIPHER)		 ,"unknown cipher"},
+{ERR_REASON(CMP_R_UNKNOWN_PKISTATUS)	 ,"unknown pkistatus"},
 {ERR_REASON(CMP_R_UNSUPPORTED_ALGORITHM) ,"unsupported algorithm"},
 {ERR_REASON(CMP_R_UNSUPPORTED_KEY_TYPE)  ,"unsupported key type"},
 {ERR_REASON(CMP_R_UNSUPPORTED_PROTECTION_ALG_DHBASEDMAC),"unsupported protection alg dhbasedmac"},

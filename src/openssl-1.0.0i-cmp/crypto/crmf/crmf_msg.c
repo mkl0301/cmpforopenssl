@@ -1,3 +1,4 @@
+/* vim: set noet ts=4 sts=4 sw=4: */
 /* crypto/crmf/crmf_msg.c
  * Functions for creating CRMF (RFC 4211) messages for OpenSSL
  */
@@ -14,36 +15,36 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *	  notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ *	  notice, this list of conditions and the following disclaimer in
+ *	  the documentation and/or other materials provided with the
+ *	  distribution.
  *
  * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+ *	  software must display the following acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    openssl-core@openssl.org.
+ *	  endorse or promote products derived from this software without
+ *	  prior written permission. For written permission, please contact
+ *	  openssl-core@openssl.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
- *    nor may "OpenSSL" appear in their names without prior written
- *    permission of the OpenSSL Project.
+ *	  nor may "OpenSSL" appear in their names without prior written
+ *	  permission of the OpenSSL Project.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+ *	  acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit (http://www.openssl.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ * PURPOSE ARE DISCLAIMED.	IN NO EVENT SHALL THE OpenSSL PROJECT OR
  * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -66,7 +67,7 @@
  */
 
 /* ############################################################################ */
-/* In this file are the functions which build and evaluate the CRMF messages    */
+/* In this file are the functions which build and evaluate the CRMF messages	*/
 /* ############################################################################ */
 
 #include <openssl/asn1.h>
@@ -84,10 +85,10 @@
  * TODO maybe create a crmf_ctx?
  * ############################################################################ */
 CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, 
-                               const EVP_PKEY *pkey, 
-                               const X509_NAME *subject, 
-                               int popoMethod, 
-                               X509_EXTENSIONS *extensions) {
+							   const EVP_PKEY *pkey, 
+							   const X509_NAME *subject, 
+							   int popoMethod, 
+							   X509_EXTENSIONS *extensions) {
 	CRMF_CERTREQMSG *certReqMsg;
 	int i;
 

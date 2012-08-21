@@ -15,36 +15,36 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *	  notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ *	  notice, this list of conditions and the following disclaimer in
+ *	  the documentation and/or other materials provided with the
+ *	  distribution.
  *
  * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+ *	  software must display the following acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    openssl-core@openssl.org.
+ *	  endorse or promote products derived from this software without
+ *	  prior written permission. For written permission, please contact
+ *	  openssl-core@openssl.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
- *    nor may "OpenSSL" appear in their names without prior written
- *    permission of the OpenSSL Project.
+ *	  nor may "OpenSSL" appear in their names without prior written
+ *	  permission of the OpenSSL Project.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+ *	  acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit (http://www.openssl.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ * PURPOSE ARE DISCLAIMED.	IN NO EVENT SHALL THE OpenSSL PROJECT OR
  * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -80,34 +80,34 @@
  * returns 0 on error
  * ############################################################################ */
 static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509 *cert) {
-    EVP_MD_CTX *ctx=NULL;
-    CMP_PROTECTEDPART protPart;
-    int ret;
-    EVP_MD *digest;
+	EVP_MD_CTX *ctx=NULL;
+	CMP_PROTECTEDPART protPart;
+	int ret;
+	EVP_MD *digest;
 
-    size_t protPartDerLen;
-    unsigned char *protPartDer=NULL;
+	size_t protPartDerLen;
+	unsigned char *protPartDer=NULL;
 
-    if (!msg || !cert) return 0;
+	if (!msg || !cert) return 0;
 
 	/* create the DER representation of protected part */
-    protPart.header = msg->header;
-    protPart.body   = msg->body;
-    protPartDerLen  = i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
+	protPart.header = msg->header;
+	protPart.body	= msg->body;
+	protPartDerLen	= i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
 
-    /* verify prtotection of protected part */
-    ctx = EVP_MD_CTX_create();
-    if(!(digest = (EVP_MD *)EVP_get_digestbynid(OBJ_obj2nid(msg->header->protectionAlg->algorithm)))) goto notsup;
-    EVP_VerifyInit_ex(ctx, digest, NULL);
-    EVP_VerifyUpdate(ctx, protPartDer, protPartDerLen);
-    ret = EVP_VerifyFinal(ctx, msg->protection->data, msg->protection->length, X509_get_pubkey((X509*) cert));
+	/* verify prtotection of protected part */
+	ctx = EVP_MD_CTX_create();
+	if(!(digest = (EVP_MD *)EVP_get_digestbynid(OBJ_obj2nid(msg->header->protectionAlg->algorithm)))) goto notsup;
+	EVP_VerifyInit_ex(ctx, digest, NULL);
+	EVP_VerifyUpdate(ctx, protPartDer, protPartDerLen);
+	ret = EVP_VerifyFinal(ctx, msg->protection->data, msg->protection->length, X509_get_pubkey((X509*) cert));
 
-    /* cleanup */
-    EVP_MD_CTX_destroy(ctx);
-    return ret;
+	/* cleanup */
+	EVP_MD_CTX_destroy(ctx);
+	return ret;
 notsup:
-    CMPerr(CMP_F_CMP_VERIFY_SIGNATURE, CMP_R_ALGORITHM_NOT_SUPPORTED);
-    return 0;
+	CMPerr(CMP_F_CMP_VERIFY_SIGNATURE, CMP_R_ALGORITHM_NOT_SUPPORTED);
+	return 0;
 }
 
 /* ############################################################################ *
@@ -138,104 +138,104 @@ err:
  * validated successfully and 0 if not.
  * ############################################################################ */
 int CMP_validate_cert_path(X509_STORE *trusted_store,
-                           X509_STORE *untrusted_store,
-                           X509 *cert)
+						   X509_STORE *untrusted_store,
+						   X509 *cert)
 {
-    int ret=0,valid=0;
-    X509_STORE_CTX *csc=NULL;
-    STACK_OF(X509) *untrusted_stack=NULL;
+	int ret=0,valid=0;
+	X509_STORE_CTX *csc=NULL;
+	STACK_OF(X509) *untrusted_stack=NULL;
 
-    if (!cert) goto end;
+	if (!cert) goto end;
 
-    if (!trusted_store) {
-        CMPerr(CMP_F_CMP_VALIDATE_CERT_PATH, CMP_R_NO_TRUSTED_CERTIFICATES_SET);
-        goto end;
-    }
+	if (!trusted_store) {
+		CMPerr(CMP_F_CMP_VALIDATE_CERT_PATH, CMP_R_NO_TRUSTED_CERTIFICATES_SET);
+		goto end;
+	}
 
 	/* A cert callback could be used to do additional checking, policies for example.*/
 	/* X509_STORE_set_verify_cb(trusted_store, CMP_cert_callback); */
 
-    if (!(csc = X509_STORE_CTX_new())) goto end;
+	if (!(csc = X509_STORE_CTX_new())) goto end;
 
-    /* note: there doesn't seem to be a good way to get a stack of all
+	/* note: there doesn't seem to be a good way to get a stack of all
 	 * the certs in an X509_STORE, so we need to try and find the chain
 	 * of intermediate certs here. */
 	if (untrusted_store)
-        untrusted_stack = CMP_build_cert_chain(untrusted_store, cert);
+		untrusted_stack = CMP_build_cert_chain(untrusted_store, cert);
 
 	X509_STORE_set_flags(trusted_store, 0);
 	if(!X509_STORE_CTX_init(csc, trusted_store, cert, untrusted_stack))
 		goto end;
 
-    /* CRLs could be handled here */
-    /* if (crls) X509_STORE_CTX_set0_crls(csc, crls); */
+	/* CRLs could be handled here */
+	/* if (crls) X509_STORE_CTX_set0_crls(csc, crls); */
 
-    valid=X509_verify_cert(csc);
+	valid=X509_verify_cert(csc);
 
-    X509_STORE_CTX_free(csc);
+	X509_STORE_CTX_free(csc);
 
-    ret=0;
+	ret=0;
 
 end:
 	if (untrusted_stack)
 		sk_X509_pop_free(untrusted_stack, X509_free);
-    
-    if (valid > 0) {
-        ret = 1;
-    }
+	
+	if (valid > 0) {
+		ret = 1;
+	}
 
-    return(ret);
+	return(ret);
 }
 
 #if 0
 /* ############################################################################ *
  * NOTE: This is only needed if/when we want to do additional checking on the certificates!
- *       It is not currently used.
+ *		 It is not currently used.
  * 
  * This is called for every valid certificate. Here we could add additional checks,
  * for policies for example.
  * ############################################################################ */
 int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 {
-    int cert_error = X509_STORE_CTX_get_error(ctx);
-    X509 *current_cert = X509_STORE_CTX_get_current_cert(ctx);
+	int cert_error = X509_STORE_CTX_get_error(ctx);
+	X509 *current_cert = X509_STORE_CTX_get_current_cert(ctx);
 
-    if (!ok)
-    {
-        switch(cert_error)
-        {
-            case X509_V_ERR_NO_EXPLICIT_POLICY:
-                // policies_print(NULL, ctx);
-            case X509_V_ERR_CERT_HAS_EXPIRED:
+	if (!ok)
+	{
+		switch(cert_error)
+		{
+			case X509_V_ERR_NO_EXPLICIT_POLICY:
+				// policies_print(NULL, ctx);
+			case X509_V_ERR_CERT_HAS_EXPIRED:
 
-                /* since we are just checking the certificates, it is
-                 * ok if they are self signed. But we should still warn
-                 * the user.
-                 */
+				/* since we are just checking the certificates, it is
+				 * ok if they are self signed. But we should still warn
+				 * the user.
+				 */
 
-            case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-                /* Continue after extension errors too */
-            case X509_V_ERR_INVALID_CA:
-            case X509_V_ERR_INVALID_NON_CA:
-            case X509_V_ERR_PATH_LENGTH_EXCEEDED:
-            case X509_V_ERR_INVALID_PURPOSE:
-            case X509_V_ERR_CRL_HAS_EXPIRED:
-            case X509_V_ERR_CRL_NOT_YET_VALID:
-            case X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION:
-                ok = 1;
+			case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+				/* Continue after extension errors too */
+			case X509_V_ERR_INVALID_CA:
+			case X509_V_ERR_INVALID_NON_CA:
+			case X509_V_ERR_PATH_LENGTH_EXCEEDED:
+			case X509_V_ERR_INVALID_PURPOSE:
+			case X509_V_ERR_CRL_HAS_EXPIRED:
+			case X509_V_ERR_CRL_NOT_YET_VALID:
+			case X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION:
+				ok = 1;
 
-        }
+		}
 
-        return ok;
-    }
+		return ok;
+	}
 
 #if 0
-    /* TODO: we could check policies here too */
-    if (cert_error == X509_V_OK && ok == 2)
-        policies_print(NULL, ctx);
+	/* TODO: we could check policies here too */
+	if (cert_error == X509_V_OK && ok == 2)
+		policies_print(NULL, ctx);
 #endif
 
-    return(ok);
+	return(ok);
 }
 #endif
 
@@ -247,9 +247,9 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
  * - first see if we can find it in trusted store
  * - TODO: untrusted store
  * - then search for certs with matching name in extraCerts
- *   - if only one match found, return that
- *   - if more than one, try to find a cert with the matching senderKID if available
- *   - if keyID is not available, return first cert found
+ *	 - if only one match found, return that
+ *	 - if more than one, try to find a cert with the matching senderKID if available
+ *	 - if keyID is not available, return first cert found
  * ############################################################################ */
 static X509 *findSrvCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 {

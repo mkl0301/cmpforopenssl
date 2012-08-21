@@ -1,3 +1,4 @@
+/* vim: set noet ts=4 sts=4 sw=4: */
 /* cmp_asn.c
  * OpenSSL ASN.1 definitions for CMP (RFC 4210)
  */
@@ -14,36 +15,36 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *	  notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ *	  notice, this list of conditions and the following disclaimer in
+ *	  the documentation and/or other materials provided with the
+ *	  distribution.
  *
  * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+ *	  software must display the following acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    openssl-core@openssl.org.
+ *	  endorse or promote products derived from this software without
+ *	  prior written permission. For written permission, please contact
+ *	  openssl-core@openssl.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
- *    nor may "OpenSSL" appear in their names without prior written
- *    permission of the OpenSSL Project.
+ *	  nor may "OpenSSL" appear in their names without prior written
+ *	  permission of the OpenSSL Project.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+ *	  acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit (http://www.openssl.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ * PURPOSE ARE DISCLAIMED.	IN NO EVENT SHALL THE OpenSSL PROJECT OR
  * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -91,12 +92,12 @@ IMPLEMENT_ASN1_FUNCTIONS(CMP_CHALLENGE)
 
 
 ASN1_ITEM_TEMPLATE(CMP_POPODECKEYCHALLCONTENT) =
-  ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_POPODECKEYCHALLCONTENT, CMP_CHALLENGE)
+	ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_POPODECKEYCHALLCONTENT, CMP_CHALLENGE)
 ASN1_ITEM_TEMPLATE_END(CMP_POPODECKEYCHALLCONTENT)
 
 
 ASN1_ITEM_TEMPLATE(CMP_POPODECKEYRESPCONTENT) =
-  ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_POPODECKEYRESPCONTENT, ASN1_INTEGER)
+	ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_POPODECKEYRESPCONTENT, ASN1_INTEGER)
 ASN1_ITEM_TEMPLATE_END(CMP_POPODECKEYRESPCONTENT)
 
 
@@ -122,24 +123,24 @@ IMPLEMENT_ASN1_FUNCTIONS(CMP_ERRORMSGCONTENT)
 ASN1_ADB_TEMPLATE(infotypeandvalue_default) = ASN1_OPT(CMP_INFOTYPEANDVALUE, infoValue.other, ASN1_ANY);
 ASN1_ADB(CMP_INFOTYPEANDVALUE) = {
 	/* CMP_CMPCERTIFICATE is effectively X509 so it is used directly */
-	ADB_ENTRY(NID_id_it_caProtEncCert,   ASN1_OPT(CMP_INFOTYPEANDVALUE,             infoValue.caProtEncCert,     X509)),
+	ADB_ENTRY(NID_id_it_caProtEncCert,	 ASN1_OPT(CMP_INFOTYPEANDVALUE,				infoValue.caProtEncCert,	 X509)),
 	ADB_ENTRY(NID_id_it_signKeyPairTypes,ASN1_SEQUENCE_OF_OPT(CMP_INFOTYPEANDVALUE, infoValue.signKeyPairTypes,  X509_ALGOR)),
-	ADB_ENTRY(NID_id_it_encKeyPairTypes, ASN1_SEQUENCE_OF_OPT(CMP_INFOTYPEANDVALUE, infoValue.encKeyPairTypes,   X509_ALGOR)),
-	ADB_ENTRY(NID_id_it_preferredSymmAlg,ASN1_OPT(CMP_INFOTYPEANDVALUE,             infoValue.preferredSymmAlg,  X509_ALGOR)),
-	ADB_ENTRY(NID_id_it_caKeyUpdateInfo, ASN1_OPT(CMP_INFOTYPEANDVALUE,             infoValue.caKeyUpdateInfo,   CMP_CAKEYUPDANNCONTENT)),
-	ADB_ENTRY(NID_id_it_currentCRL,      ASN1_OPT(CMP_INFOTYPEANDVALUE,             infoValue.currentCRL,        X509_CRL)),
-	ADB_ENTRY(NID_id_it_unsupportedOIDs, ASN1_SEQUENCE_OF_OPT(CMP_INFOTYPEANDVALUE, infoValue.unsupportedOIDs,   ASN1_OBJECT)),
-	ADB_ENTRY(NID_id_it_keyPairParamReq, ASN1_OPT(CMP_INFOTYPEANDVALUE,             infoValue.keyPairParamReq,   ASN1_OBJECT)),
-	ADB_ENTRY(NID_id_it_keyPairParamRep, ASN1_OPT(CMP_INFOTYPEANDVALUE,             infoValue.keyPairParamRep,   X509_ALGOR)),
-	ADB_ENTRY(NID_id_it_revPassphrase,   ASN1_OPT(CMP_INFOTYPEANDVALUE,             infoValue.revPassphrase,     CRMF_ENCRYPTEDVALUE)),
-	ADB_ENTRY(NID_id_it_implicitConfirm, ASN1_OPT(CMP_INFOTYPEANDVALUE,             infoValue.implicitConfirm,   ASN1_NULL)),
-	ADB_ENTRY(NID_id_it_confirmWaitTime, ASN1_OPT(CMP_INFOTYPEANDVALUE,             infoValue.confirmWaitTime,   ASN1_GENERALIZEDTIME)),
-	ADB_ENTRY(NID_id_it_origPKIMessage,  ASN1_OPT(CMP_INFOTYPEANDVALUE,             infoValue.origPKIMessage,    CMP_PKIMESSAGES)),
-	ADB_ENTRY(NID_id_it_suppLangTags,    ASN1_SEQUENCE_OF_OPT(CMP_INFOTYPEANDVALUE, infoValue.suppLangTagsValue, ASN1_UTF8STRING)),
+	ADB_ENTRY(NID_id_it_encKeyPairTypes, ASN1_SEQUENCE_OF_OPT(CMP_INFOTYPEANDVALUE, infoValue.encKeyPairTypes,	 X509_ALGOR)),
+	ADB_ENTRY(NID_id_it_preferredSymmAlg,ASN1_OPT(CMP_INFOTYPEANDVALUE,				infoValue.preferredSymmAlg,  X509_ALGOR)),
+	ADB_ENTRY(NID_id_it_caKeyUpdateInfo, ASN1_OPT(CMP_INFOTYPEANDVALUE,				infoValue.caKeyUpdateInfo,	 CMP_CAKEYUPDANNCONTENT)),
+	ADB_ENTRY(NID_id_it_currentCRL,		 ASN1_OPT(CMP_INFOTYPEANDVALUE,				infoValue.currentCRL,		 X509_CRL)),
+	ADB_ENTRY(NID_id_it_unsupportedOIDs, ASN1_SEQUENCE_OF_OPT(CMP_INFOTYPEANDVALUE, infoValue.unsupportedOIDs,	 ASN1_OBJECT)),
+	ADB_ENTRY(NID_id_it_keyPairParamReq, ASN1_OPT(CMP_INFOTYPEANDVALUE,				infoValue.keyPairParamReq,	 ASN1_OBJECT)),
+	ADB_ENTRY(NID_id_it_keyPairParamRep, ASN1_OPT(CMP_INFOTYPEANDVALUE,				infoValue.keyPairParamRep,	 X509_ALGOR)),
+	ADB_ENTRY(NID_id_it_revPassphrase,	 ASN1_OPT(CMP_INFOTYPEANDVALUE,				infoValue.revPassphrase,	 CRMF_ENCRYPTEDVALUE)),
+	ADB_ENTRY(NID_id_it_implicitConfirm, ASN1_OPT(CMP_INFOTYPEANDVALUE,				infoValue.implicitConfirm,	 ASN1_NULL)),
+	ADB_ENTRY(NID_id_it_confirmWaitTime, ASN1_OPT(CMP_INFOTYPEANDVALUE,				infoValue.confirmWaitTime,	 ASN1_GENERALIZEDTIME)),
+	ADB_ENTRY(NID_id_it_origPKIMessage,  ASN1_OPT(CMP_INFOTYPEANDVALUE,				infoValue.origPKIMessage,	 CMP_PKIMESSAGES)),
+	ADB_ENTRY(NID_id_it_suppLangTags,	 ASN1_SEQUENCE_OF_OPT(CMP_INFOTYPEANDVALUE, infoValue.suppLangTagsValue, ASN1_UTF8STRING)),
 #if 0
-  /* this is what CL likes for KUR - not in the RFC */
+	/* this is what CL likes for KUR - not in the RFC */
 	ADB_ENTRY(NID_id_smime_aa_signingCertificate, ASN1_SET_OF(CMP_INFOTYPEANDVALUE, infoValue.signingCertificate, ESS_SIGNING_CERT))
-  /* this is how signingCertificate should probably be actually used */
+	/* this is how signingCertificate should probably be actually used */
 	/* ADB_ENTRY(NID_id_smime_aa_signingCertificate, ASN1_SIMPLE(CMP_INFOTYPEANDVALUE, infoValue.signingCertificate, ESS_SIGNING_CERT)) */
 #endif 
 } ASN1_ADB_END(CMP_INFOTYPEANDVALUE, 0, infoType, 0, &infotypeandvalue_default_tt, NULL);
@@ -176,14 +177,14 @@ IMPLEMENT_ASN1_FUNCTIONS(CMP_REVDETAILS)
 
 
 ASN1_ITEM_TEMPLATE(CMP_REVREQCONTENT) =
-  ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_REVREQCONTENT, CMP_REVDETAILS)
+	ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_REVREQCONTENT, CMP_REVDETAILS)
 ASN1_ITEM_TEMPLATE_END(CMP_REVREQCONTENT)
 
 
 ASN1_SEQUENCE(CMP_REVREPCONTENT) = {
 	ASN1_SEQUENCE_OF(CMP_REVREPCONTENT, status, CMP_PKISTATUSINFO),
 	ASN1_EXP_SEQUENCE_OF_OPT(CMP_REVREPCONTENT, certId, CRMF_CERTID, 0),
-	ASN1_EXP_SEQUENCE_OF_OPT(CMP_REVREPCONTENT, crls,   X509, 1)
+	ASN1_EXP_SEQUENCE_OF_OPT(CMP_REVREPCONTENT, crls,	X509, 1)
 } ASN1_SEQUENCE_END(CMP_REVREPCONTENT)
 IMPLEMENT_ASN1_FUNCTIONS(CMP_REVREPCONTENT)
 
@@ -258,7 +259,7 @@ ASN1_SEQUENCE(CMP_POLLREQ) = {
 IMPLEMENT_ASN1_FUNCTIONS(CMP_POLLREQ)
 
 ASN1_ITEM_TEMPLATE(CMP_POLLREQCONTENT) =
-  ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_POLLREQCONTENT, CMP_POLLREQ)
+	ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_POLLREQCONTENT, CMP_POLLREQ)
 ASN1_ITEM_TEMPLATE_END(CMP_POLLREQCONTENT)
 
 ASN1_SEQUENCE(CMP_POLLREP) = {
@@ -269,7 +270,7 @@ ASN1_SEQUENCE(CMP_POLLREP) = {
 IMPLEMENT_ASN1_FUNCTIONS(CMP_POLLREP)
 
 ASN1_ITEM_TEMPLATE(CMP_POLLREPCONTENT) =
-  ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_POLLREPCONTENT, CMP_POLLREP)
+	ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_POLLREPCONTENT, CMP_POLLREP)
 ASN1_ITEM_TEMPLATE_END(CMP_POLLREPCONTENT)
 
 ASN1_SEQUENCE(CMP_CERTREPMESSAGE) = {
@@ -280,15 +281,15 @@ ASN1_SEQUENCE(CMP_CERTREPMESSAGE) = {
 IMPLEMENT_ASN1_FUNCTIONS(CMP_CERTREPMESSAGE)
 
 ASN1_ITEM_TEMPLATE(CMP_GENMSGCONTENT) =
-  ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_GENMSGCONTENT, CMP_INFOTYPEANDVALUE)
+	ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_GENMSGCONTENT, CMP_INFOTYPEANDVALUE)
 ASN1_ITEM_TEMPLATE_END(CMP_GENMSGCONTENT)
 
 ASN1_ITEM_TEMPLATE(CMP_GENREPCONTENT) =
-  ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_GENREPCONTENT, CMP_INFOTYPEANDVALUE)
+	ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_GENREPCONTENT, CMP_INFOTYPEANDVALUE)
 ASN1_ITEM_TEMPLATE_END(CMP_GENREPCONTENT)
 
 ASN1_ITEM_TEMPLATE(CMP_CRLANNCONTENT) =
-  ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_CRLANNCONTENT, X509_CRL)
+	ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_CRLANNCONTENT, X509_CRL)
 ASN1_ITEM_TEMPLATE_END(CMP_CRLANNCONTENT)
 
 ASN1_CHOICE(CMP_PKIBODY) = {
@@ -355,6 +356,6 @@ ASN1_SEQUENCE(CMP_PKIMESSAGE) = {
 IMPLEMENT_ASN1_FUNCTIONS(CMP_PKIMESSAGE)
 
 ASN1_ITEM_TEMPLATE(CMP_PKIMESSAGES) =
-  ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_PKIMESSAGES, CMP_PKIMESSAGE)
+	ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CMP_PKIMESSAGES, CMP_PKIMESSAGE)
 ASN1_ITEM_TEMPLATE_END(CMP_PKIMESSAGES)
 

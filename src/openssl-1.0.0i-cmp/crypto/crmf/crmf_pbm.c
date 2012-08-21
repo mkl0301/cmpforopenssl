@@ -1,3 +1,4 @@
+/* vim: set noet ts=4 sts=4 sw=4: */
 /* crypto/crmf/crmf_pbm.c
  * CRMF (RFC 4211) "Password Based Mac" functions for OpenSSL
  */
@@ -14,36 +15,36 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *	  notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ *	  notice, this list of conditions and the following disclaimer in
+ *	  the documentation and/or other materials provided with the
+ *	  distribution.
  *
  * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+ *	  software must display the following acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    openssl-core@openssl.org.
+ *	  endorse or promote products derived from this software without
+ *	  prior written permission. For written permission, please contact
+ *	  openssl-core@openssl.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
- *    nor may "OpenSSL" appear in their names without prior written
- *    permission of the OpenSSL Project.
+ *	  nor may "OpenSSL" appear in their names without prior written
+ *	  permission of the OpenSSL Project.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+ *	  acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit (http://www.openssl.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ * PURPOSE ARE DISCLAIMED.	IN NO EVENT SHALL THE OpenSSL PROJECT OR
  * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -73,7 +74,7 @@
 #include <openssl/hmac.h>
 #include <openssl/err.h>
 
-#define SALT_LEN         16
+#define SALT_LEN		 16
 #define ITERATION_COUNT 500
 
 /* ############################################################################ *
@@ -88,7 +89,7 @@ CRMF_PBMPARAMETER * CRMF_pbm_new(void) {
 	if(!(pbm = CRMF_PBMPARAMETER_new())) goto err;
 
 	/* salt contains a randomly generated value used in computing the key
-	 * of the MAC process.  The salt SHOULD be at least 8 octets (64
+	 * of the MAC process.	The salt SHOULD be at least 8 octets (64
 	 * bits) long.
 	 */
 	RAND_pseudo_bytes(salt, SALT_LEN);
@@ -103,8 +104,8 @@ CRMF_PBMPARAMETER * CRMF_pbm_new(void) {
 
 	/*
 	   iterationCount identifies the number of times the hash is applied
-	   during the key computation process.  The iterationCount MUST be a
-	   minimum of 100.  Many people suggest using values as high as 1000
+	   during the key computation process.	The iterationCount MUST be a
+	   minimum of 100.	Many people suggest using values as high as 1000
 	   iterations as the minimum value.  The trade off here is between
 	   protection of the password from attacks and the time spent by the
 	   server processing all of the different iterations in deriving
@@ -115,7 +116,7 @@ CRMF_PBMPARAMETER * CRMF_pbm_new(void) {
 
 	/* mac identifies the algorithm and associated parameters of the MAC
 	   function to be used.  All implementations MUST support HMAC-SHA1
-	   [HMAC].  All implementations SHOULD support DES-MAC and Triple-
+	   [HMAC].	All implementations SHOULD support DES-MAC and Triple-
 	   DES-MAC [PKCS11].
 	   */
 	/* TODO right now HMAC-SHA1 is hardcoded */
@@ -137,7 +138,7 @@ err:
  * @secret key to use
  * @secretLen length of the key
  * @mac pointer to the computed mac, is allocated here, will be freed if not
- *      pointing to NULL
+ *		pointing to NULL
  * @macLen pointer to the length of the mac, will be set
  *
  * returns 1 at success, 0 at error
@@ -193,7 +194,7 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 	/*
 	 * mac identifies the algorithm and associated parameters of the MAC
 	 * function to be used.  All implementations MUST support HMAC-SHA1
-	 * [HMAC].  All implementations SHOULD support DES-MAC and Triple-
+	 * [HMAC].	All implementations SHOULD support DES-MAC and Triple-
 	 * DES-MAC [PKCS11].
 	 */
 	switch (OBJ_obj2nid(pbm->mac->algorithm)) {

@@ -1,3 +1,4 @@
+/* vim: set noet ts=4 sts=4 sw=4: */
 /* crypto/cmp/cmp_ctx.c
  * CMP (RFC 4210) context functions for OpenSSL
  */
@@ -14,36 +15,36 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *	  notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ *	  notice, this list of conditions and the following disclaimer in
+ *	  the documentation and/or other materials provided with the
+ *	  distribution.
  *
  * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+ *	  software must display the following acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    openssl-core@openssl.org.
+ *	  endorse or promote products derived from this software without
+ *	  prior written permission. For written permission, please contact
+ *	  openssl-core@openssl.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
- *    nor may "OpenSSL" appear in their names without prior written
- *    permission of the OpenSSL Project.
+ *	  nor may "OpenSSL" appear in their names without prior written
+ *	  permission of the OpenSSL Project.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+ *	  acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit (http://www.openssl.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ * PURPOSE ARE DISCLAIMED.	IN NO EVENT SHALL THE OpenSSL PROJECT OR
  * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -79,14 +80,14 @@
 #include <string.h>
 #include <dirent.h>
 
- /* NAMING
-  * The 0 version uses the supplied structure pointer directly in the parent and
-  * it will be freed up when the parent is freed. In the above example crl would
-  * be freed but rev would not.
-  *
-  * The 1 function uses a copy of the supplied structure pointer (or in some
-  * cases increases its link count) in the parent and so both (x and obj above)
-  * should be freed up.
+/* NAMING
+ * The 0 version uses the supplied structure pointer directly in the parent and
+ * it will be freed up when the parent is freed. In the above example crl would
+ * be freed but rev would not.
+ *
+ * The 1 function uses a copy of the supplied structure pointer (or in some
+ * cases increases its link count) in the parent and so both (x and obj above)
+ * should be freed up.
  */
 
 ASN1_SEQUENCE(CMP_CTX) = {
@@ -189,8 +190,8 @@ err:
  * ############################################################################ */
 int CMP_CTX_set0_trustedStore( CMP_CTX *ctx, X509_STORE *store) {
 	if (!store) return 0;
-    if (ctx->trusted_store)
-    	X509_STORE_free(ctx->trusted_store);
+	if (ctx->trusted_store)
+		X509_STORE_free(ctx->trusted_store);
 	ctx->trusted_store = store;
 	return 1;
 }
@@ -210,8 +211,8 @@ int CMP_CTX_set1_trustedStore( CMP_CTX *ctx, X509_STORE *store) {
  * ############################################################################ */
 int CMP_CTX_set0_untrustedStore( CMP_CTX *ctx, X509_STORE *store) {
 	if (!store) return 0;
-    if (ctx->untrusted_store)
-    	X509_STORE_free(ctx->untrusted_store);
+	if (ctx->untrusted_store)
+		X509_STORE_free(ctx->untrusted_store);
 	ctx->untrusted_store = store;
 	return 1;
 }
@@ -236,29 +237,29 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	}
 
 	/* all other elements are initialized through ASN1 macros */
-	ctx->pkey            = NULL;
-	ctx->newPkey         = NULL;
-	ctx->serverName      = NULL;
+	ctx->pkey			 = NULL;
+	ctx->newPkey		 = NULL;
+	ctx->serverName		 = NULL;
 	/* serverPath has to be an empty sting if not set since it is not mandatory */
 	/* this will be freed by CMP_CTX_delete() */
-	ctx->serverPath      = OPENSSL_malloc(1);
-	ctx->serverPath[0]   = 0;
-	ctx->serverPort      = 0;
-	ctx->proxyName       = NULL;
-	ctx->proxyPort       = 0;
-	ctx->transport       = CMP_TRANSPORT_HTTP;
+	ctx->serverPath		 = OPENSSL_malloc(1);
+	ctx->serverPath[0]	 = 0;
+	ctx->serverPort		 = 0;
+	ctx->proxyName		 = NULL;
+	ctx->proxyPort		 = 0;
+	ctx->transport		 = CMP_TRANSPORT_HTTP;
 	ctx->implicitConfirm = 0;
 	ctx->setSenderNonce  = 1;
 	ctx->setTransactionID= 1;
-	ctx->popoMethod      = CRMF_POPO_SIGNATURE;
-	ctx->timeOut         = 2*60;
-	ctx->validatePath    = 0;
+	ctx->popoMethod		 = CRMF_POPO_SIGNATURE;
+	ctx->timeOut		 = 2*60;
+	ctx->validatePath	 = 0;
 
 	ctx->error_cb = NULL;
 	ctx->debug_cb = (cmp_logfn_t) puts;
 	ctx->certConf_cb = NULL;
 
-	ctx->trusted_store   = X509_STORE_new();
+	ctx->trusted_store	 = X509_STORE_new();
 	ctx->untrusted_store = X509_STORE_new();
 
 	ctx->maxPollCount = 3;
@@ -272,18 +273,18 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 #if 0
 	/* These are initialized already by the call to CMP_CTX_new() */
 	ctx->referenceValue  = NULL;
-	ctx->secretValue     = NULL;
-	ctx->srvCert         = NULL;
-	ctx->clCert          = NULL;
-	ctx->newClCert       = NULL;
-	ctx->transactionID   = NULL;
-	ctx->recipNonce      = NULL;
-	ctx->subjectName     = NULL;
-	ctx->recipient       = NULL;
+	ctx->secretValue	 = NULL;
+	ctx->srvCert		 = NULL;
+	ctx->clCert			 = NULL;
+	ctx->newClCert		 = NULL;
+	ctx->transactionID	 = NULL;
+	ctx->recipNonce		 = NULL;
+	ctx->subjectName	 = NULL;
+	ctx->recipient		 = NULL;
 	ctx->subjectAltNames = NULL;
-	ctx->caPubs          = NULL;
-	ctx->extraCertsOut   = NULL;
-	ctx->extraCertsIn    = NULL;
+	ctx->caPubs			 = NULL;
+	ctx->extraCertsOut	 = NULL;
+	ctx->extraCertsIn	 = NULL;
 #endif
 
 	/* initialize OpenSSL */
@@ -425,7 +426,7 @@ STACK_OF(X509)* CMP_CTX_extraCertsIn_get1( CMP_CTX *ctx) {
 	if (!ctx) goto err;
 	if (!ctx->extraCertsIn) return 0;
 	return X509_stack_dup(ctx->extraCertsIn);
-  err:
+err:
 	CMPerr(CMP_F_CMP_CTX_EXTRACERTSIN_GET1, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
@@ -451,7 +452,7 @@ int CMP_CTX_extraCertsIn_num( CMP_CTX *ctx)
 	if (!ctx) goto err;
 	if (!ctx->extraCertsIn) return 0;
 	return sk_X509_num(ctx->extraCertsIn);
-  err:
+err:
 	CMPerr(CMP_F_CMP_CTX_EXTRACERTSIN_NUM, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
@@ -529,7 +530,7 @@ int CMP_CTX_extraCertsOut_num( CMP_CTX *ctx)
 	if (!ctx) goto err;
 	if (!ctx->extraCertsOut) return 0;
 	return sk_X509_num(ctx->extraCertsOut);
-  err:
+err:
 	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_NUM, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
@@ -563,7 +564,7 @@ STACK_OF(X509)* CMP_CTX_caPubs_get1( CMP_CTX *ctx) {
 	if (!ctx) goto err;
 	if (!ctx->caPubs) return 0;
 	return X509_stack_dup(ctx->caPubs);
-  err:
+err:
 	CMPerr(CMP_F_CMP_CTX_CAPUBS_GET1, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
@@ -841,7 +842,7 @@ int CMP_CTX_set1_transactionID( CMP_CTX *ctx, const ASN1_OCTET_STRING *id) {
 	}
 
 	if (!(ctx->transactionID = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)id)))
-	    return 0;
+		return 0;
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_TRANSACTIONID, CMP_R_NULL_ARGUMENT);
@@ -861,7 +862,7 @@ int CMP_CTX_set1_recipNonce( CMP_CTX *ctx, const ASN1_OCTET_STRING *nonce) {
 	}
 
 	if (!(ctx->recipNonce = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)nonce))) 
-	    return 0;
+		return 0;
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_RECIPNONCE, CMP_R_NULL_ARGUMENT);
@@ -1026,9 +1027,9 @@ int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text) {
 	if( !(utf8string = ASN1_UTF8STRING_new())) goto err;
 	ASN1_UTF8STRING_set(utf8string, text, strlen(text));
 	if( !(sk_ASN1_UTF8STRING_push(ctx->freeText, utf8string) goto err;
-    return 1;
+	return 1;
 err:
-    CMP_printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
+	CMP_printf( "ERROR in FILE: %s, LINE: %d\n", __FILE__, __LINE__);
 	if (utf8string) ASN1_UTF8STRING_free(utf8string);
 	return 0;
 }

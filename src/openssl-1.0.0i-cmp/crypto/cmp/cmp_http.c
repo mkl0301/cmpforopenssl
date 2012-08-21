@@ -1,3 +1,4 @@
+/* vim: set noet ts=4 sts=4 sw=4: */
 /* crypto/cmp/cmp_http.c
  * HTTP functions for CMP (RFC 4210) for OpenSSL
  */
@@ -14,36 +15,36 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *	  notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ *	  notice, this list of conditions and the following disclaimer in
+ *	  the documentation and/or other materials provided with the
+ *	  distribution.
  *
  * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+ *	  software must display the following acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    openssl-core@openssl.org.
+ *	  endorse or promote products derived from this software without
+ *	  prior written permission. For written permission, please contact
+ *	  openssl-core@openssl.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
- *    nor may "OpenSSL" appear in their names without prior written
- *    permission of the OpenSSL Project.
+ *	  nor may "OpenSSL" appear in their names without prior written
+ *	  permission of the OpenSSL Project.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+ *	  acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit (http://www.openssl.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ * PURPOSE ARE DISCLAIMED.	IN NO EVENT SHALL THE OpenSSL PROJECT OR
  * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -95,7 +96,7 @@ typedef struct rdata_s {
 static void *myrealloc(void *ptr, size_t size)
 {
 	/* There might be a realloc() out there that doesn't like reallocing
-	 *      NULL pointers, so we take care of it here */ 
+	 *		NULL pointers, so we take care of it here */ 
 	if(ptr)
 		return realloc(ptr, size);
 	else
@@ -155,7 +156,7 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 	
 	static int curl_initialized = 0;
 	if (curl_initialized == 0) {
-		curl_initialized =  1;
+		curl_initialized =	1;
 		curl_global_init(CURL_GLOBAL_ALL);
 	}
 
@@ -251,18 +252,18 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 		|| res == CURLE_RECV_ERROR
 		|| res == CURLE_OPERATION_TIMEDOUT
 		|| res == CURLE_INTERFACE_FAILED)
-    {
-        CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_SERVER_NOT_REACHABLE);
-        char num[64];
-        snprintf(num, sizeof(num)-1, "%d:", res);
-        ERR_add_error_data(2, num, curl_easy_strerror(res));
+	{
+		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_SERVER_NOT_REACHABLE);
+		char num[64];
+		snprintf(num, sizeof(num)-1, "%d:", res);
+		ERR_add_error_data(2, num, curl_easy_strerror(res));
 		goto err;
-    }
+	}
 	else if (res != CURLE_OK) {
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_CURL_ERROR);
-        char num[64];
-        snprintf(num, sizeof(num)-1, "%d:", res);
-        ERR_add_error_data(2, num, curl_easy_strerror(res));
+		char num[64];
+		snprintf(num, sizeof(num)-1, "%d:", res);
+		ERR_add_error_data(2, num, curl_easy_strerror(res));
 		goto err;
 	}
 
@@ -274,8 +275,8 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	}
 
 	pder = (unsigned char*) rdata.memory;
-    *out = d2i_CMP_PKIMESSAGE( NULL, (const unsigned char**) &pder, rdata.size);
-    if (*out == 0) {
+	*out = d2i_CMP_PKIMESSAGE( NULL, (const unsigned char**) &pder, rdata.size);
+	if (*out == 0) {
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_FAILED_TO_DECODE_PKIMESSAGE);
 		goto err;
 	}

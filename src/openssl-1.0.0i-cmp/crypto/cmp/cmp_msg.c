@@ -1,3 +1,4 @@
+/* vim: set noet ts=4 sts=4 sw=4: */
 /* crypto/cmp/cmp_msg.c
  * Functions for creating CMP (RFC 4210) messages for OpenSSL
  */
@@ -14,36 +15,36 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *	  notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ *	  notice, this list of conditions and the following disclaimer in
+ *	  the documentation and/or other materials provided with the
+ *	  distribution.
  *
  * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+ *	  software must display the following acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    openssl-core@openssl.org.
+ *	  endorse or promote products derived from this software without
+ *	  prior written permission. For written permission, please contact
+ *	  openssl-core@openssl.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
- *    nor may "OpenSSL" appear in their names without prior written
- *    permission of the OpenSSL Project.
+ *	  nor may "OpenSSL" appear in their names without prior written
+ *	  permission of the OpenSSL Project.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+ *	  acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit (http://www.openssl.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ * PURPOSE ARE DISCLAIMED.	IN NO EVENT SHALL THE OpenSSL PROJECT OR
  * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -68,12 +69,12 @@
 /* =========================== CHANGE LOG =============================
  * 2007 - Martin Peylo - Initial Creation
  * 2008 - Sami Lehtonen - added CMP_cr_new()
- *                      - bugfix in CMP_certConf_new(): pkey or ref/secret pair is enough
+ *						- bugfix in CMP_certConf_new(): pkey or ref/secret pair is enough
  * 06/2010 - Miikka Viljanen - Report errors with OpenSSL error codes instead
- *                             of printf statements.
+ *							   of printf statements.
  * 06/10/2010 - Martin Peylo - fixed potential NPD in CMP_ir_new(), CMP_cr_new() and 
- *                             CMP_kur_new() and CMP_certConf_new() in case of failing 
- *                             OPENSSL_malloc() and potential MLKS in error cases
+ *							   CMP_kur_new() and CMP_certConf_new() in case of failing 
+ *							   OPENSSL_malloc() and potential MLKS in error cases
  */
 
 #include <openssl/asn1.h>
@@ -180,7 +181,7 @@ CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 
 	sk_CMP_POLLREQ_push(msg->body->value.pollReq, preq);
 
-  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 err:
@@ -191,7 +192,7 @@ err:
  * Create a new Initial Request PKIMessage
  * ############################################################################ */
 CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
-	CMP_PKIMESSAGE  *msg=NULL;
+	CMP_PKIMESSAGE	*msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
 	X509_EXTENSIONS *extensions = NULL;
 	X509_NAME *subject=NULL;
@@ -249,7 +250,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
-  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -264,7 +265,7 @@ err:
  * Creates a new Revocation Request PKIMessage
  * ############################################################################ */
 CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
-	CMP_PKIMESSAGE  *msg=NULL;
+	CMP_PKIMESSAGE	*msg=NULL;
 	CRMF_CERTTEMPLATE *certTpl=NULL;
 	X509_NAME *subject=NULL;
 	CMP_REVDETAILS *rd=NULL;
@@ -305,7 +306,7 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	if( !(msg->body->value.rr = sk_CMP_REVDETAILS_new_null())) goto err;
 	sk_CMP_REVDETAILS_push( msg->body->value.rr, rd);
 
-  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -321,7 +322,7 @@ err:
  * Creates a new Certificate Request PKIMessage
  * ############################################################################ */
 CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
-	CMP_PKIMESSAGE  *msg=NULL;
+	CMP_PKIMESSAGE	*msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
 
 	X509_NAME *subject=NULL;
@@ -361,7 +362,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
-  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -420,11 +421,11 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);
 	if( !(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;
 
-  CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert);
+	CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert);
 
 #if 0
-  /* commented out as this is not in the RFC - this would need to replace the
-   * line above */
+	/* commented out as this is not in the RFC - this would need to replace the
+	 * line above */
 
 	/* identify our cert */
 	/* this is like it is described in the RFC:
@@ -436,7 +437,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 #endif
 
 #if 0
-  /* commented out as this is not in the RFC */
+	/* commented out as this is not in the RFC */
 
 	/* this is like CL likes it:
 	 * set id-aa-signingCertificate "generalInfo" of the CMP header */
@@ -473,7 +474,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 	/* XXX what about setting the optional 2nd certreqmsg? */
 
-  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -509,10 +510,9 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 	/* set the # of the certReq */
 	ASN1_INTEGER_set(certStatus->certReqId,0L);
 
-	/*
-        -- the hash of the certificate, using the same hash algorithm
-        -- as is used to create and verify the certificate signature
-	*/
+	/* -- the hash of the certificate, using the same hash algorithm
+	 * -- as is used to create and verify the certificate signature
+	 */
 	/* TODO: iterate through all the certificates in order to confirm them all */
 
 	CMP_CERTSTATUS_set_certHash( certStatus, ctx->newClCert);
@@ -527,14 +527,14 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 	if( !(msg->body->value.certConf = sk_CMP_CERTSTATUS_new_null())) goto err;
 	if( !sk_CMP_CERTSTATUS_push( msg->body->value.certConf, certStatus)) goto err;
 
-  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
 err:
 	CMPerr(CMP_F_CMP_CERTCONF_NEW, CMP_R_ERROR_CREATING_CERTCONF);
 	if (msg) CMP_PKIMESSAGE_free(msg);
-    
+
 	return NULL;
 }
 
@@ -610,7 +610,7 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value) {
 	}
 #endif
 
-  if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -626,17 +626,17 @@ err:
 	/* CKUANN looks like:
 	 * ckuann message:
 	 *
-	 * Field        Value                        Comment
+	 * Field		Value						 Comment
 	 * --------------------------------------------------------------
-	 * sender       CA name CA name
-	 * body         ckuann(CAKeyUpdAnnContent)
-	 * oldWithNew   present                  see Appendix E.3 above
-	 * newWithOld   present                  see Appendix E.3 above
-	 * newWithNew   present                  see Appendix E.3 above
-	 * extraCerts   optionally present       can be used to "publish"
-	 * 					 certificates (e.g.,
-	 * 					 certificates signed using
-	 * 					 the new private key)
+	 * sender		CA name CA name
+	 * body			ckuann(CAKeyUpdAnnContent)
+	 * oldWithNew	present					 see Appendix E.3 above
+	 * newWithOld	present					 see Appendix E.3 above
+	 * newWithNew	present					 see Appendix E.3 above
+	 * extraCerts	optionally present		 can be used to "publish"
+	 *					 certificates (e.g.,
+	 *					 certificates signed using
+	 *					 the new private key)
 	 */
 /* ############################################################################ */
 CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey) {

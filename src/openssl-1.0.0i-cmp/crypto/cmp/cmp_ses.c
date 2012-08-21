@@ -15,36 +15,36 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *		notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ *		notice, this list of conditions and the following disclaimer in
+ *		the documentation and/or other materials provided with the
+ *		distribution.
  *
  * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+ *		software must display the following acknowledgment:
+ *		"This product includes software developed by the OpenSSL Project
+ *		for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    openssl-core@openssl.org.
+ *		endorse or promote products derived from this software without
+ *		prior written permission. For written permission, please contact
+ *		openssl-core@openssl.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
- *    nor may "OpenSSL" appear in their names without prior written
- *    permission of the OpenSSL Project.
+ *		nor may "OpenSSL" appear in their names without prior written
+ *		permission of the OpenSSL Project.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+ *		acknowledgment:
+ *		"This product includes software developed by the OpenSSL Project
+ *		for use in the OpenSSL Toolkit (http://www.openssl.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ * PURPOSE ARE DISCLAIMED.	IN NO EVENT SHALL THE OpenSSL PROJECT OR
  * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -70,7 +70,7 @@
  * 2007 - Martin Peylo - Initial Creation
  * 2008 - Sami Lehtonen - added CMP_doCertificateRequestSeq()
  * 06/2010 - Miikka Viljanen - Report errors with OpenSSL error codes instead
- *                             of printf statements.
+ *								 of printf statements.
  */
 
 #include <string.h>
@@ -97,43 +97,43 @@
  * table used to translate PKIMessage body type number into a printable string
  * ############################################################################ */
 static char *V_CMP_TABLE[] = {
-  "IR",
-  "IP",
-  "CR",
-  "CP",
-  "P10CR",
-  "POPDECC",
-  "POPDECR",
-  "KUR",
-  "KUP",
-  "KRR",
-  "KRP",
-  "RR",
-  "RP",
-  "CCR",
-  "CCP",
-  "CKUANN",
-  "CANN",
-  "RANN",
-  "CRLANN",
-  "PKICONF",
-  "NESTED",
-  "GENM",
-  "GENP",
-  "ERROR",
-  "CERTCONF",
-  "POLLREQ",
-  "POLLREP",
+	"IR",
+	"IP",
+	"CR",
+	"CP",
+	"P10CR",
+	"POPDECC",
+	"POPDECR",
+	"KUR",
+	"KUP",
+	"KRR",
+	"KRP",
+	"RR",
+	"RP",
+	"CCR",
+	"CCP",
+	"CKUANN",
+	"CANN",
+	"RANN",
+	"CRLANN",
+	"PKICONF",
+	"NESTED",
+	"GENM",
+	"GENP",
+	"ERROR",
+	"CERTCONF",
+	"POLLREQ",
+	"POLLREP",
 };
 
-//      }}}
-#define MSG_TYPE_STR(type)  \
-  (((unsigned int) (type) < sizeof(V_CMP_TABLE)/sizeof(V_CMP_TABLE[0])) \
-   ? V_CMP_TABLE[(unsigned int)(type)] : "unknown")
+//		}}}
+#define MSG_TYPE_STR(type)	\
+	(((unsigned int) (type) < sizeof(V_CMP_TABLE)/sizeof(V_CMP_TABLE[0])) \
+	 ? V_CMP_TABLE[(unsigned int)(type)] : "unknown")
 
 /* ############################################################################ */
 /* Prints error data of the given CMP_PKIMESSAGE into a buffer specified by out */
-/* and returns pointer to the buffer.                                           */
+/* and returns pointer to the buffer.											*/
 /* ############################################################################ */
 static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
 	char tempbuf[256];
@@ -159,33 +159,33 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
  * data, while this function can be used to add a string to the end of it.
  * ############################################################################ */
 static void add_error_data(const char *txt) {
-    ERR_STATE *es;
+	ERR_STATE *es;
 	int i, len, newlen;
-    char *err;
-    
-    es=ERR_get_state();
+	char *err;
+
+	es=ERR_get_state();
 
 	i=es->top;
 	if (i == 0)
 		i=ERR_NUM_ERRORS-1;
-    err=es->err_data[i];
+	err=es->err_data[i];
 
-    if (err == NULL) {
-        ERR_add_error_data(1, txt);
-        return;
-    }
+	if (err == NULL) {
+		ERR_add_error_data(1, txt);
+		return;
+	}
 
-    len = strlen(es->err_data[i]);
-    newlen = len + 1 + strlen(txt);
+	len = strlen(es->err_data[i]);
+	newlen = len + 1 + strlen(txt);
 
-    if (newlen > 80) {
-        err=OPENSSL_realloc(err, newlen+1);
-        if (err == NULL)
-            return;
-    }
+	if (newlen > len) {
+		err=OPENSSL_realloc(err, newlen+20);
+		if (err == NULL)
+			return;
+	}
 
-    BUF_strlcat(err, ":", (size_t)newlen+1);        
-    BUF_strlcat(err, txt, (size_t)newlen+1);        
+	BUF_strlcat(err, ":", (size_t)newlen+1);		
+	BUF_strlcat(err, txt, (size_t)newlen+1);		
 }
 
 /* ############################################################################ *
@@ -245,7 +245,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->newPkey ||
 		 /* for authentication we need either reference/secret or external 
-		  * identity certificate and private key */
+			* identity certificate and private key */
 		 (!(ctx->referenceValue && ctx->secretValue) && !(ctx->pkey && ctx->clCert)) ) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_INVALID_ARGS);
 		goto err;
@@ -256,11 +256,11 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf(ctx, "INFO: Sending Initialization Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, ir, &ip))) {
-        if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
-            && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
-        else
-            add_error_data("unable to send ir");
+		if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
+			&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
+		else
+			add_error_data("unable to send ir");
 		goto err;
 	}
 
@@ -286,7 +286,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 					if( not validate issued certificate included in IP with srvCert as Trust Anchor) { /* This is the 3GPP requirement for accepting a self-singed trust anchor from extaCerts */
 						FAIL
 					}
-				}	
+				} 
 				if(srvCert is not self-signed) {
 					while (potialTrustAnchor = search(extraCerts for self-signed Certs)) {
 						if( validate issued certificate included in IP with potentialTrustAnchor as Trust Anchor and extraCerts as intermediate certs) { /* This is the 3GPP requirement for accepting a self-singed trust anchor from extaCerts */
@@ -296,7 +296,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 						} else NEXT;
 					}
 					if (not SUCCESS before) FAIL;
-				}	
+				} 
 			} else FAIL;
 		}
 	}
@@ -333,7 +333,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0) == CMP_PKISTATUS_waiting)
 		if (!pollForResponse(ctx, cbio, ip->body->value.ip, &ip)) {
-            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
 			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
 			goto err;
 		}
@@ -358,11 +358,11 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
-        if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
-            && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
-        else
-            add_error_data("unable to send certConf");
+		if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
+			&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
+		else
+			add_error_data("unable to send certConf");
 		goto err;
 	}
 
@@ -422,11 +422,11 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending Revocation Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, rr, &rp))) {
-        if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
-            && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_RP_NOT_RECEIVED);
-        else
-            add_error_data("unable to send rr");
+		if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
+			&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
+			CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_RP_NOT_RECEIVED);
+		else
+			add_error_data("unable to send rr");
 		goto err;
 	}
 
@@ -497,11 +497,11 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending Certificate Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, cr, &cp))) {
-        if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
-            && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
-        else
-            add_error_data("unable to send cr");
+		if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
+			&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
+			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
+		else
+			add_error_data("unable to send cr");
 		goto err;
 	}
 
@@ -524,7 +524,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* evaluate PKIStatus field */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0) == CMP_PKISTATUS_waiting)
 		if (!pollForResponse(ctx, cbio, cp->body->value.cp, &cp)) {
-            CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
+			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
 			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
 			goto err;
 		}
@@ -544,11 +544,11 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
-        if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
-            && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
-        else
-            add_error_data("unable to send certConf");
+		if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
+			&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
+			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
+		else
+			add_error_data("unable to send certConf");
 		goto err;
 	}
 
@@ -562,7 +562,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, PKIconf)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
+		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
 	} else {
 		/* old: "ERROR: validating protection of incoming message" */
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
@@ -612,11 +612,11 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending Key Update Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, kur, &kup))) {
-        if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
-            && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
-        else
-            add_error_data("unable to send kur");
+		if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
+			&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
+			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
+		else
+			add_error_data("unable to send kur");
 		goto err;
 	}
 
@@ -633,7 +633,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* make sure the received messagetype indicates an KUP message */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( kup->body->value.kup, 0) == CMP_PKISTATUS_waiting) {
 		if (!pollForResponse(ctx, cbio, kup->body->value.kup, &kup)) {
-            CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
+			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
 			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
 			goto err;
 		}
@@ -641,7 +641,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, kup)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
+		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -662,11 +662,11 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
-        if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
-            && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
-        else
-            add_error_data("unable to send certConf");
+		if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
+			&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
+			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED);
+		else
+			add_error_data("unable to send certConf");
 		goto err;
 	}
 
@@ -680,7 +680,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, PKIconf)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
+		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -748,7 +748,7 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->srvCert || !ctx->referenceValue || !ctx->secretValue) {
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_INVALID_ARGS);
-	 	goto err;
+		goto err;
 	}
 
 	/* crate GenMsgContent - genm*/
@@ -757,11 +757,11 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 
 	CMP_printf( ctx, "INFO: Sending General Message");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
-        if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
-            && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_GENP_NOT_RECEIVED);
-        else
-            add_error_data("unable to send genm");
+		if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
+			&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
+			CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_GENP_NOT_RECEIVED);
+		else
+			add_error_data("unable to send genm");
 		goto err;
 	}
 
@@ -783,7 +783,7 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, genp)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
+		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -822,11 +822,11 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	CMP_printf( ctx, "INFO: Sending General Message");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
-        if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
-            && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
-            CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_GENP_NOT_RECEIVED);
-        else
-            add_error_data("unable to send genm");
+		if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
+			&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
+			CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_GENP_NOT_RECEIVED);
+		else
+			add_error_data("unable to send genm");
 		goto err;
 	}
 
@@ -848,7 +848,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, genp)) {
-		CMP_printf( ctx,  "SUCCESS: validating protection of incoming message");
+		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;

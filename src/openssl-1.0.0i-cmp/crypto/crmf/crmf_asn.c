@@ -1,3 +1,4 @@
+/* vim: set noet ts=4 sts=4 sw=4: */
 /* crmf_asn.c
  * OpenSSL ASN.1 definitions for CRMF (RFC 4211)
  */
@@ -14,36 +15,36 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *	  notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ *	  notice, this list of conditions and the following disclaimer in
+ *	  the documentation and/or other materials provided with the
+ *	  distribution.
  *
  * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+ *	  software must display the following acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    openssl-core@openssl.org.
+ *	  endorse or promote products derived from this software without
+ *	  prior written permission. For written permission, please contact
+ *	  openssl-core@openssl.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
- *    nor may "OpenSSL" appear in their names without prior written
- *    permission of the OpenSSL Project.
+ *	  nor may "OpenSSL" appear in their names without prior written
+ *	  permission of the OpenSSL Project.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+ *	  acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit (http://www.openssl.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ * PURPOSE ARE DISCLAIMED.	IN NO EVENT SHALL THE OpenSSL PROJECT OR
  * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -112,7 +113,7 @@ IMPLEMENT_ASN1_FUNCTIONS(CRMF_ENCRYPTEDVALUE)
 
 ASN1_CHOICE(CRMF_ENCRYPTEDKEY) = {
 	ASN1_IMP(CRMF_ENCRYPTEDKEY, value.encryptedValue, CRMF_ENCRYPTEDVALUE, 0),
-  /* TODO: This is not ASN1_NULL but CMS_ENVELOPEDDATA which should be somehow taken from crypto/cms which exists now - this is not used anywhere so far */
+	/* TODO: This is not ASN1_NULL but CMS_ENVELOPEDDATA which should be somehow taken from crypto/cms which exists now - this is not used anywhere so far */
 	ASN1_IMP(CRMF_ENCRYPTEDKEY, value.envelopedData, ASN1_NULL, 1)
 } ASN1_CHOICE_END(CRMF_ENCRYPTEDKEY)
 IMPLEMENT_ASN1_FUNCTIONS(CRMF_ENCRYPTEDKEY)
@@ -154,7 +155,7 @@ ASN1_CHOICE(CRMF_POPOPRIVKEY) = {
 	ASN1_IMP(CRMF_POPOPRIVKEY, value.subsequentMessage, ASN1_INTEGER, 1),
 	ASN1_IMP(CRMF_POPOPRIVKEY, value.dhMAC, ASN1_BIT_STRING, 2),
 	ASN1_IMP(CRMF_POPOPRIVKEY, value.agreeMAC, CRMF_PKMACVALUE, 3),
-  /* TODO: This is not ASN1_NULL but CMS_ENVELOPEDDATA which should be somehow taken from crypto/cms which exists now - this is not used anywhere so far */
+	/* TODO: This is not ASN1_NULL but CMS_ENVELOPEDDATA which should be somehow taken from crypto/cms which exists now - this is not used anywhere so far */
 	ASN1_IMP(CRMF_POPOPRIVKEY, value.encryptedKey, ASN1_NULL, 4),
 } ASN1_CHOICE_END(CRMF_POPOPRIVKEY)
 IMPLEMENT_ASN1_FUNCTIONS(CRMF_POPOPRIVKEY)
@@ -202,14 +203,14 @@ IMPLEMENT_ASN1_FUNCTIONS(CRMF_PROOFOFPOSSESION)
 
 ASN1_ADB_TEMPLATE(attributetypeandvalue_default) = ASN1_OPT(CRMF_ATTRIBUTETYPEANDVALUE, value.other, ASN1_ANY);
 ASN1_ADB(CRMF_ATTRIBUTETYPEANDVALUE) = {
-	ADB_ENTRY(NID_id_regCtrl_regToken,           ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.regToken,           ASN1_UTF8STRING)),
-	ADB_ENTRY(NID_id_regCtrl_authenticator,      ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.authenticator,      ASN1_UTF8STRING)),
+	ADB_ENTRY(NID_id_regCtrl_regToken,			 ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.regToken,		   ASN1_UTF8STRING)),
+	ADB_ENTRY(NID_id_regCtrl_authenticator,		 ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.authenticator,	   ASN1_UTF8STRING)),
 	ADB_ENTRY(NID_id_regCtrl_pkiPublicationInfo, ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.pkiPublicationInfo, CRMF_PKIPUBLICATIONINFO)),
 	ADB_ENTRY(NID_id_regCtrl_pkiArchiveOptions,  ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.pkiArchiveOptions,  CRMF_PKIARCHIVEOPTIONS)),
-	ADB_ENTRY(NID_id_regCtrl_oldCertID,          ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.oldCertId,          CRMF_CERTID)),
-	ADB_ENTRY(NID_id_regCtrl_protocolEncrKey,    ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.protocolEncrKey,    X509_PUBKEY)),
-	ADB_ENTRY(NID_id_regInfo_utf8Pairs,          ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.utf8pairs,          ASN1_UTF8STRING)),
-	ADB_ENTRY(NID_id_regInfo_certReq,            ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.certReq,            CRMF_CERTREQUEST)),
+	ADB_ENTRY(NID_id_regCtrl_oldCertID,			 ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.oldCertId,		   CRMF_CERTID)),
+	ADB_ENTRY(NID_id_regCtrl_protocolEncrKey,	 ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.protocolEncrKey,    X509_PUBKEY)),
+	ADB_ENTRY(NID_id_regInfo_utf8Pairs,			 ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.utf8pairs,		   ASN1_UTF8STRING)),
+	ADB_ENTRY(NID_id_regInfo_certReq,			 ASN1_SIMPLE(CRMF_ATTRIBUTETYPEANDVALUE, value.certReq,			   CRMF_CERTREQUEST)),
 } ASN1_ADB_END(CRMF_ATTRIBUTETYPEANDVALUE, 0, type, 0, &attributetypeandvalue_default_tt, NULL);
 
 
@@ -235,7 +236,7 @@ ASN1_SEQUENCE(CRMF_CERTTEMPLATE) = {
 	/* serialNumber MUST be omitted.  This field is assigned by the CA
 	 * during certificate creation. */
 	ASN1_IMP_OPT(CRMF_CERTTEMPLATE, serialNumber, ASN1_INTEGER, 1),
-	/* signingAlg MUST be omitted.  This field is assigned by the CA
+	/* signingAlg MUST be omitted.	This field is assigned by the CA
 	 * during certificate creation. */
 	ASN1_IMP_OPT(CRMF_CERTTEMPLATE, signingAlg, X509_ALGOR, 2),
 	ASN1_EXP_OPT(CRMF_CERTTEMPLATE, issuer, X509_NAME, 3),
@@ -269,6 +270,6 @@ IMPLEMENT_ASN1_FUNCTIONS(CRMF_CERTREQMSG)
 
 
 ASN1_ITEM_TEMPLATE(CRMF_CERTREQMESSAGES) =
-  ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CRMF_CERTREQMESSAGES, CRMF_CERTREQMSG)
+	ASN1_EX_TEMPLATE_TYPE(ASN1_TFLG_SEQUENCE_OF, 0, CRMF_CERTREQMESSAGES, CRMF_CERTREQMSG)
 ASN1_ITEM_TEMPLATE_END(CRMF_CERTREQMESSAGES)
 

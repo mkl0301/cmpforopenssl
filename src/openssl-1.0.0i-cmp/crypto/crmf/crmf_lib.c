@@ -1,3 +1,4 @@
+/* vim: set noet ts=4 sts=4 sw=4: */
 /* crypto/crmf/crmf_lib.c
  * CRMF (RFC 4211) library functions for OpenSSL
  */
@@ -14,36 +15,36 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *	  notice, this list of conditions and the following disclaimer. 
  *
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
+ *	  notice, this list of conditions and the following disclaimer in
+ *	  the documentation and/or other materials provided with the
+ *	  distribution.
  *
  * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+ *	  software must display the following acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
  *
  * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    openssl-core@openssl.org.
+ *	  endorse or promote products derived from this software without
+ *	  prior written permission. For written permission, please contact
+ *	  openssl-core@openssl.org.
  *
  * 5. Products derived from this software may not be called "OpenSSL"
- *    nor may "OpenSSL" appear in their names without prior written
- *    permission of the OpenSSL Project.
+ *	  nor may "OpenSSL" appear in their names without prior written
+ *	  permission of the OpenSSL Project.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by the OpenSSL Project
- *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+ *	  acknowledgment:
+ *	  "This product includes software developed by the OpenSSL Project
+ *	  for use in the OpenSSL Toolkit (http://www.openssl.org/)"
  *
  * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+ * PURPOSE ARE DISCLAIMED.	IN NO EVENT SHALL THE OpenSSL PROJECT OR
  * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
  * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -74,8 +75,8 @@
  * should be freed up. 
  */
 /* ############################################################################ *
- * In this file are the functions which set the individual items inside         *
- * the CRMF structures                                                          *
+ * In this file are the functions which set the individual items inside			*
+ * the CRMF structures															*
  * ############################################################################ */
 
 #include <openssl/asn1.h>
@@ -214,8 +215,8 @@ err:
  * ############################################################################ */
 int CRMF_CERTREQMSG_set1_control_oldCertId( CRMF_CERTREQMSG *certReqMsg, X509 *oldCert) { 
 	CRMF_ATTRIBUTETYPEANDVALUE *atav   = NULL;
-	CRMF_CERTID                *certId = NULL;
-	GENERAL_NAME               *gName  = NULL;
+	CRMF_CERTID				   *certId = NULL;
+	GENERAL_NAME			   *gName  = NULL;
 
 	if ( !certReqMsg) goto err;
 	if ( !oldCert) goto err;
@@ -240,9 +241,9 @@ int CRMF_CERTREQMSG_set1_control_oldCertId( CRMF_CERTREQMSG *certReqMsg, X509 *o
 err:
 	if (gName) GENERAL_NAME_free(gName);
 	if (certId) {
-    certId->issuer = NULL;
-    CRMF_CERTID_free(certId);
-  }
+		certId->issuer = NULL;
+		CRMF_CERTID_free(certId);
+	}
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
 	return 0;
 }
@@ -383,7 +384,7 @@ err:
 
 /* ############################################################################ *
  * sets version to 2 in cert Template (section 5)
- *   version MUST be 2 if supplied.  It SHOULD be omitted.
+ *	 version MUST be 2 if supplied.  It SHOULD be omitted.
  * returns 1 on success, 0 on error
  * ############################################################################ */
 int CRMF_CERTREQMSG_set_version2( CRMF_CERTREQMSG *certReqMsg) {
@@ -419,19 +420,19 @@ int CRMF_CERTREQMSG_set_validity( CRMF_CERTREQMSG *certReqMsg, time_t notBefore,
 	if (!(validity = CRMF_OPTIONALVALIDITY_new())) goto err;
 
 	validity->notBefore = notBeforeAsn;
-	validity->notAfter  = notAfterAsn;
+	validity->notAfter	= notAfterAsn;
 
 	certReqMsg->certReq->certTemplate->validity = validity;
 
 	return 1;
 err:
-    CRMFerr(CRMF_F_CRMF_CERTREQMSG_SET_VALIDITY, CRMF_R_CRMFERROR);
+	CRMFerr(CRMF_F_CRMF_CERTREQMSG_SET_VALIDITY, CRMF_R_CRMFERROR);
 
 	if (validity) {
-    CRMF_OPTIONALVALIDITY_free(validity);
-    notBeforeAsn = NULL;
-    notAfterAsn = NULL;
-  }
+		CRMF_OPTIONALVALIDITY_free(validity);
+		notBeforeAsn = NULL;
+		notAfterAsn = NULL;
+	}
 	if (notBeforeAsn) ASN1_TIME_free(notBeforeAsn);
 	if (notAfterAsn) ASN1_TIME_free(notAfterAsn);
 	return 0;
@@ -439,9 +440,9 @@ err:
 
 /* ############################################################################ *
  * set the certReqId (section 5)
- *    certReqId contains an integer value that is used by the
- *    certificate requestor to associate a specific certificate request
- *    with a certificate response.
+ *	  certReqId contains an integer value that is used by the
+ *	  certificate requestor to associate a specific certificate request
+ *	  with a certificate response.
  * returns 0 on error, 1 on success
  * ############################################################################ */
 int CRMF_CERTREQMSG_set_certReqId( CRMF_CERTREQMSG *certReqMsg, const long certReqId) {
@@ -455,10 +456,10 @@ err:
 
 /* ############################################################################ *
  * set the public Key to the certTemplate (chapgter 5)
- *    publicKey contains the public key for which the certificate is
- *    being created.  This field MUST be filled in if the requestor
- *    generates its own key.  The field is omitted if the key is
- *    generated by the RA/CA.
+ *	  publicKey contains the public key for which the certificate is
+ *	  being created.  This field MUST be filled in if the requestor
+ *	  generates its own key.  The field is omitted if the key is
+ *	  generated by the RA/CA.
  * returns 0 on error, 1 on success
  * ############################################################################ */
 int CRMF_CERTREQMSG_set1_publicKey( CRMF_CERTREQMSG *certReqMsg, const EVP_PKEY *pkey) {
@@ -474,9 +475,9 @@ err:
 
 /* ############################################################################ *
  * Set the subject name in the given certificate template (section 5)
- *    subject is filled in with the suggested name for the requestor.
- *    This would normally be filled in by a name that has been
- *    previously issued to the requestor by the CA.
+ *	  subject is filled in with the suggested name for the requestor.
+ *	  This would normally be filled in by a name that has been
+ *	  previously issued to the requestor by the CA.
  * returns 1 on success, 0 on error
  * ############################################################################ */
 int CRMF_CERTREQMSG_set1_subject( CRMF_CERTREQMSG *certReqMsg, const X509_NAME *subject) {
@@ -491,9 +492,9 @@ err:
 
 /* ############################################################################ *
  * push an extension to the extension stack (section 5)
- *    extensions contains extensions that the requestor wants to have
- *    placed in the certificate.  These extensions would generally deal
- *    with things such as setting the key usage to keyEncipherment.
+ *	  extensions contains extensions that the requestor wants to have
+ *	  placed in the certificate.  These extensions would generally deal
+ *	  with things such as setting the key usage to keyEncipherment.
  * returns 1 on success, 0 on error
  * ############################################################################ */
 int CRMF_CERTREQMSG_push0_extension( CRMF_CERTREQMSG *certReqMsg, X509_EXTENSION *ext) {
@@ -526,14 +527,14 @@ err:
  *
  * TODO:
  * This function does not yet work for cases other than the one listed in case 3
- * of section 4.1.  For this it needs to put subject name and public key into
+ * of section 4.1.	For this it needs to put subject name and public key into
  * the POPOSigningKey:
  *
    3.  The certificate subject places its name in the Certificate
-       Template structure along with the public key.  In this case the
-       poposkInput field is omitted from the POPOSigningKey structure.
-       The signature field is computed over the DER-encoded certificate
-       template structure.
+	   Template structure along with the public key.  In this case the
+	   poposkInput field is omitted from the POPOSigningKey structure.
+	   The signature field is computed over the DER-encoded certificate
+	   template structure.
  *
  * TODO: only RSA/DSA keys are supported so far
  *
@@ -559,23 +560,23 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 	signature = OPENSSL_malloc(maxSignatureSize);
 
 	/* set the type of the algorithm */
-  switch (EVP_PKEY_type(pkey->type)){
+	switch (EVP_PKEY_type(pkey->type)){
 #ifndef OPENSSL_NO_DSA
-  case EVP_PKEY_DSA:
-		X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_dsaWithSHA1), V_ASN1_NULL, NULL);
-		alg = EVP_dss1();
-    break;
+		case EVP_PKEY_DSA:
+			X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_dsaWithSHA1), V_ASN1_NULL, NULL);
+			alg = EVP_dss1();
+			break;
 #endif
 #ifndef OPENSSL_NO_RSA
-  case EVP_PKEY_RSA:
-		X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
-		alg = EVP_sha1();
-    break;
+		case EVP_PKEY_RSA:
+			X509_ALGOR_set0(poposig->algorithmIdentifier, OBJ_nid2obj(NID_sha1WithRSAEncryption), V_ASN1_NULL, NULL);
+			alg = EVP_sha1();
+			break;
 #endif
-  default:
-  /* TODO: error msg - unsupported key */
-    goto err;
-  }
+		default:
+			/* TODO: error msg - unsupported key */
+			goto err;
+	}
 
 	ctx=EVP_MD_CTX_create();
 	if (!(EVP_SignInit_ex(ctx, alg, NULL))) goto err;
@@ -591,7 +592,7 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 	OPENSSL_free(signature);
 	return poposig;
 err:
-  /* TODO: error msg */
+	/* TODO: error msg */
 	if( poposig) CRMF_POPOSIGNINGKEY_free( poposig);
 	if( certReqDer) OPENSSL_free(certReqDer);
 	if( ctx) EVP_MD_CTX_destroy(ctx);
@@ -602,20 +603,20 @@ err:
 /* ############################################################################ *
  * calculate and set the proof of possession based on the popoMethod (define in cmp.h)
  * the following types are supported so far (#defines in crfm.h):
- *   CRMF_POPO_NONE: ProofOfPossession field omitted, CA/RA uses out-of-band method to verify POP (compare RFC 4211, section 4).
- *   CRMF_POPO_SIGNATURE: according to section 4.1 (only case 3 supported so far)
- *   CRMF_POPO_ENCRCERT:  according to section 4.2 with the indirect method
- *   (subsequentMessage/enccert)
+ *	 CRMF_POPO_NONE: ProofOfPossession field omitted, CA/RA uses out-of-band method to verify POP (compare RFC 4211, section 4).
+ *	 CRMF_POPO_SIGNATURE: according to section 4.1 (only case 3 supported so far)
+ *	 CRMF_POPO_ENCRCERT:  according to section 4.2 with the indirect method
+ *	 (subsequentMessage/enccert)
  *
-      subsequentMessage is used to indicate that the POP will be
-      completed by decrypting a message from the CA/RA and returning a
-      response.  The type of message to be decrypted is indicated by the
-      value used.
+	  subsequentMessage is used to indicate that the POP will be
+	  completed by decrypting a message from the CA/RA and returning a
+	  response.  The type of message to be decrypted is indicated by the
+	  value used.
 
-         encrCert indicates that the certificate issued is to be
-         returned in an encrypted form.  The requestor is required to
-         decrypt the certificate and prove success to the CA/RA.  The
-         details of this are provided by the CRP.
+		 encrCert indicates that the certificate issued is to be
+		 returned in an encrypted form.  The requestor is required to
+		 decrypt the certificate and prove success to the CA/RA.  The
+		 details of this are provided by the CRP.
  * returns 1 on success, 0 on error
  * ############################################################################ */
 int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PKEY *pkey, int popoMethod) {
@@ -645,7 +646,7 @@ int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PK
 			break;
 
 		default: 
-      goto err;
+	  goto err;
 	}
 
 	if(certReqMsg->popo) 
@@ -657,7 +658,7 @@ int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PK
 
 	return 1;
 err:
-  /* TODO: error msg */
+	/* TODO: error msg */
 	if( newPopo) CRMF_PROOFOFPOSSESION_free( newPopo);
 	return 0;
 }
