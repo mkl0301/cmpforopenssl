@@ -99,104 +99,88 @@
 #include <time.h>
 #include <string.h>
 
-
 /* ############################################################################ *
  * Sets the protocol version number in PKIHeader.
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version) {
-	if( !hdr) return 0;
+	if( !hdr) goto err;
 
-	ASN1_INTEGER_set(hdr->pvno, version);
+	if(! ASN1_INTEGER_set(hdr->pvno, version)) goto err;
 
 	return 1;
+err:
+	return 0;
 }
 
 /* ############################################################################ *
- * Set the recipient name of PKIHeader. The pointer nm is used directly!
- * ############################################################################ */
-int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
-{
-	GENERAL_NAME *gen=NULL;
-	if( !hdr) return 0;
-
-	gen = GENERAL_NAME_new();
-	if( !gen) return 0;
-
-	/* if nm is not set an empty dirname will be set */
-	if (nm == NULL) {
-		if(gen->d.directoryName) X509_NAME_free(gen->d.directoryName);
-		gen->d.directoryName = X509_NAME_new();
-	} else {
-		if (!X509_NAME_set(&gen->d.directoryName, (X509_NAME*) nm))
-		{
-			GENERAL_NAME_free(gen);
-			return 0;
-		}
-	}
-	gen->type = GEN_DIRNAME;
-	if (hdr->recipient)
-		GENERAL_NAME_free(hdr->recipient);
-	hdr->recipient = gen;
-	return 1;
-}
-
-/* ############################################################################ *
- * Set the recipient name of PKIHeader. The contents of nm is copied.
+ * Set the recipient name of PKIHeader.
+ * when nm is NULL, recipient is set to an empty string
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 {
-	X509_NAME *nmDup=NULL;
-
-	if( !hdr) return 0;
-
-	if(nm && !(nmDup = X509_NAME_dup( (X509_NAME*) nm)))
-		return 0;
-
-	return CMP_PKIHEADER_set0_recipient( hdr, nmDup);
-}
-
-/* ############################################################################ *
- * Set the sender name in PKIHeader.
- * ############################################################################ */
-int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
-{
 	GENERAL_NAME *gen=NULL;
-	if( !hdr) return 0;
+	if( !hdr) goto err;
 
 	gen = GENERAL_NAME_new();
-	if( !gen) return 0;
+	if( !gen) goto err;
+
+	gen->type = GEN_DIRNAME;
 
 	/* if nm is not set an empty dirname will be set */
 	if (nm == NULL) {
-		if(gen->d.directoryName) X509_NAME_free(gen->d.directoryName);
 		gen->d.directoryName = X509_NAME_new();
 	} else {
 		if (!X509_NAME_set(&gen->d.directoryName, (X509_NAME*) nm))
 		{
 			GENERAL_NAME_free(gen);
-			return 0;
+			goto err;
 		}
 	}
-	gen->type = GEN_DIRNAME;
-	if (hdr->sender)
-		GENERAL_NAME_free(hdr->sender);
-	hdr->sender = gen;
+
+	if (hdr->recipient)
+		GENERAL_NAME_free(hdr->recipient);
+	hdr->recipient = gen;
+
 	return 1;
+err:
+	return 0;
 }
 
+
 /* ############################################################################ *
- * Set the sender name in PKIHeader. The contents of nm is duplicated.
+ * Set the sender name in PKIHeader.
+ * when nm is NULL, sender is set to an empty string
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm)
 {
-	X509_NAME *nmDup=NULL;
+	GENERAL_NAME *gen=NULL;
+	if( !hdr) goto err;
 
-	if( !hdr) return 0;
+	gen = GENERAL_NAME_new();
+	if( !gen) goto err;
 
-	if(nm)
-		nmDup = X509_NAME_dup( (X509_NAME*) nm);
+	gen->type = GEN_DIRNAME;
 
-	return CMP_PKIHEADER_set0_sender( hdr, nmDup);
+	/* if nm is not set an empty dirname will be set */
+	if (nm == NULL) {
+		gen->d.directoryName = X509_NAME_new();
+	} else {
+		if (!X509_NAME_set(&gen->d.directoryName, (X509_NAME*) nm))
+		{
+			GENERAL_NAME_free(gen);
+			goto err;
+		}
+	}
+	if (hdr->sender)
+		GENERAL_NAME_free(hdr->sender);
+	hdr->sender = gen;
+
+	return 1;
+err:
+	return 0;
 }
 
 

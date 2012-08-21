@@ -1330,9 +1330,7 @@ ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert);
 
 long CMP_REVREPCONTENT_PKIStatus_get(CMP_REVREPCONTENT *revRep, long reqId);
 int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version);
-int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
-int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set1_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
 int CMP_PKIHEADER_set1_transactionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *transactionID);
 int CMP_PKIHEADER_set1_recipNonce(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *recipNonce);
