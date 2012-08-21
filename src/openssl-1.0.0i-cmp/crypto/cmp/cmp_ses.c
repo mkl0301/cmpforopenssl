@@ -235,6 +235,7 @@ err:
 }
 
 /* ############################################################################ *
+ * TODO: the received Nonces should be checked and compared to the sent ones
  * ############################################################################ */
 X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *ir=NULL;
