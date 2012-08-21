@@ -502,7 +502,6 @@ err:
 	return NULL;
 }
 
-
 /* ############################################################################ * 
  * only used internally
  *
@@ -613,6 +612,8 @@ err:
  * determines which kind of protection should be created based on the ctx
  * sets this into the protectionAlg field in the message header
  * calculates the protection and sets it in the protections filed
+ *
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 	if(!ctx) goto err;
@@ -624,11 +625,11 @@ int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 		if(!(msg->protection = CMP_calc_protection_pbmac( msg, ctx->secretValue))) 
 			goto err;
 	} else {
-		/* use MSG_SIG_ALG according to 5.1.3.3 if client Certificate is given */
-		if (ctx->clCert){
+		/* use MSG_SIG_ALG according to 5.1.3.3 if client Certificate and private key is given */
+		if (ctx->clCert && ctx->pkey) {
 			if(!ctx->clCert->sig_alg) goto err;
 			if(!(msg->header->protectionAlg = X509_ALGOR_dup(ctx->clCert->sig_alg))) goto err;
-			if(!(msg->protection = CMP_calc_protection_sig( msg, (EVP_PKEY *) ctx->pkey))) 
+			if(!(msg->protection = CMP_calc_protection_sig( msg, ctx->pkey))) 
 				goto err;
 		} else {
 			CMPerr(CMP_F_CMP_PKIMESSAGE_PROTECT, CMP_R_MISSING_KEY_INPUT_FOR_CREATING_PROTECTION);
@@ -642,10 +643,11 @@ err:
 	return 0;
 }
 
-
 /* ############################################################################ * 
 		-- the hash of the certificate, using the same hash algorithm
 		-- as is used to create and verify the certificate signature
+ *
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 	ASN1_OCTET_STRING *certHash=NULL;
@@ -682,9 +684,9 @@ err:
 	return 0;
 }
 
-
-/* ############################################################################ */
-/* sets implicitConfirm in the generalInfo field of the header
+/* ############################################################################ *
+ * sets implicitConfirm in the generalInfo field of the header
+ *
  * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg) {
@@ -705,13 +707,13 @@ err:
 
 /* ############################################################################
  * checks if implicitConfirm in the generalInfo field of the header is set
+ *
  * returns 1 if it is set, 0 if not
  * ############################################################################ */
 int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg) {
 	int itavCount;
 	int i;
 	CMP_INFOTYPEANDVALUE *itav=NULL;
-
 
 	if (!msg) return 0;
 
@@ -727,8 +729,9 @@ int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg) {
 	return 0;
 }
 
-
 /* ############################################################################ * 
+ *
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIHEADER_generalInfo_item_push0(CMP_PKIHEADER *hdr, const CMP_INFOTYPEANDVALUE *itav) {
 	if( !hdr)
@@ -746,8 +749,10 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ * 
+ *
+ * returns 1 on success, 0 on error
+ * ############################################################################ */
 int CMP_PKIMESSAGE_genm_item_push0(CMP_PKIMESSAGE *msg, const CMP_INFOTYPEANDVALUE *itav) {
 	if( !msg)
 		return 0;
@@ -764,10 +769,12 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* @itav: a pointer to the infoTypeAndValue item to push on the stack. */
-/*		  If NULL it will be only made sure the stack exists */
-/* ############################################################################ */
+/* ############################################################################ * 
+ * @itav: a pointer to the infoTypeAndValue item to push on the stack.
+ *		  If NULL it will be only made sure the stack exists
+ *
+ * returns 1 on success, 0 on error
+ * ############################################################################ */
 int CMP_ITAV_stack_item_push0(STACK_OF(CMP_INFOTYPEANDVALUE) **itav_sk_p, const CMP_INFOTYPEANDVALUE *itav) {
 	int created = 0;
 
@@ -797,28 +804,28 @@ err:
 	return 0;
 }
 
-/* ############################################################################ */
-/* returns the PKIStatus of the given PKIStatusInfo */
-/* returns -1 on error */
-/* ############################################################################ */
+/* ############################################################################ * 
+ * returns the PKIStatus of the given PKIStatusInfo
+ * returns -1 on error
+ * ############################################################################ */
 long CMP_PKISTATUSINFO_PKIstatus_get( CMP_PKISTATUSINFO *statusInfo) {
 	if (!statusInfo) return -1;
 	return ASN1_INTEGER_get(statusInfo->status);
 }
 
-/* ############################################################################ */
-/* returns the PKIStatus of the given ErrorMessage */
-/* returns -1 on error */
-/* ############################################################################ */
+/* ############################################################################ * 
+ * returns the PKIStatus of the given ErrorMessage
+ * returns -1 on error
+ * ############################################################################ */
 long CMP_ERRORMSGCONTENT_PKIStatus_get( CMP_ERRORMSGCONTENT *error) {
 	if (!error) return -1;
 	return CMP_PKISTATUSINFO_PKIstatus_get(error->pKIStatusInfo);
 }
 
-/* ############################################################################ */
-/* returns the PKIStatus of the given PKIStatusInfo */
-/* or NULL on error */
-/* ############################################################################ */
+/* ############################################################################ * 
+ * returns the PKIStatus of the given PKIStatusInfo
+ * or NULL on error
+ * ############################################################################ */
 char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusInfo) {
 	long PKIstatus;
 
@@ -848,19 +855,19 @@ char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusInfo) {
 	return 0;
 }
 
-/* ############################################################################ */
-/* returns the PKIStatus info of the given error message */
-/* returns 0 on error */
-/* ############################################################################ */
+/* ############################################################################ * 
+ * returns the PKIStatus info of the given error message
+ * returns 0 on error
+ * ############################################################################ */
 char *CMP_ERRORMSGCONTENT_PKIStatus_get_string( CMP_ERRORMSGCONTENT *error) {
 	if (!error) return 0;
 	return CMP_PKISTATUSINFO_PKIstatus_get_string(error->pKIStatusInfo);
 }
 
-/* ############################################################################ */
-/* returns the PKIStatus of the given Certresponse */
-/* returns -1 on error */
-/* ############################################################################ */
+/* ############################################################################ * 
+ * returns the PKIStatus of the given Certresponse
+ * returns -1 on error
+ * ############################################################################ */
 long CMP_CERTRESPONSE_PKIStatus_get( CMP_CERTRESPONSE *resp) {
 	if (!resp) return -1;
 	return CMP_PKISTATUSINFO_PKIstatus_get(resp->status);
@@ -873,10 +880,10 @@ STACK_OF(ASN1_UTF8STRING)* CMP_CERTRESPONSE_PKIStatusString_get0( CMP_CERTRESPON
 	return resp->status->statusString;
 }
 
-/* ############################################################################ */
-/* returns the PKIFailureInfo */
-/* returns 0 on error */
-/* ############################################################################ */
+/* ############################################################################ * 
+ * returns the PKIFailureInfo
+ * returns 0 on error
+ * ############################################################################ */
 char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo) {
 	int i;
 
@@ -987,6 +994,8 @@ long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReq
 }
 
 /* ############################################################################ * 
+ * returns pointer to PKIFailureInfo of given certRep message
+ * returns NULL on error or if no matching failInfo was found
  * ############################################################################ */
 CMP_PKIFAILUREINFO *CMP_CERTREPMESSAGE_PKIFailureInfo_get0(CMP_CERTREPMESSAGE *certRep, long certReqId) {
 	CMP_CERTRESPONSE *certResponse=NULL;
@@ -1003,6 +1012,8 @@ CMP_PKIFAILUREINFO *CMP_CERTREPMESSAGE_PKIFailureInfo_get0(CMP_CERTREPMESSAGE *c
 }
 
 /* ############################################################################ * 
+ * returns pointer to PKIFailureInfoString character array of given certRep message
+ * returns NULL on error or if no matching failInfo was found
  * ############################################################################ */
 char *CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(CMP_CERTREPMESSAGE *certRep, long certReqId) {
 	CMP_CERTRESPONSE *certResponse=NULL;
@@ -1268,6 +1279,8 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
 
 /* ############################################################################ *
  * Retrieve the returned certificate from the given certrepmessage.
+ * returns NULL if not found
+ * TODO: what if there are more than one?
  * ############################################################################ */
 X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep) {
 	X509 *newClCert = NULL;
@@ -1356,12 +1369,10 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 		}
 	}
 
-
 	return newClCert;
 err:
 	return NULL;
 }
-
 
 /* ################################################################ *
  * Builds up the certificate chain of cert as high up as possible using
