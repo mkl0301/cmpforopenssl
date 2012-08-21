@@ -184,37 +184,6 @@ err:
 }
 
 
-/* ############################################################################ *
- * Create an X509_ALGOR structure for PasswordBasedMAC protection
- * ############################################################################ */
-X509_ALGOR *CMP_get_protectionAlg_pbmac(void) {
-	X509_ALGOR *alg=NULL;
-	CRMF_PBMPARAMETER *pbm=NULL;
-	unsigned char *pbmDer=NULL;
-	int pbmDerLen;
-	ASN1_STRING *pbmStr=NULL;
-
-	if (!(alg = X509_ALGOR_new())) goto err;
-	if (!(pbm = CRMF_pbm_new())) goto err;
-	if (!(pbmStr = ASN1_STRING_new())) goto err;
-
-	pbmDerLen = i2d_CRMF_PBMPARAMETER( pbm, &pbmDer);
-
-	ASN1_STRING_set( pbmStr, pbmDer, pbmDerLen);
-	OPENSSL_free( pbmDer);
-	pbmDer = NULL; /* to avoid double free in case there would be a "goto err" inserted behind this point later in development */
-
-	X509_ALGOR_set0( alg, OBJ_nid2obj(NID_id_PasswordBasedMAC), V_ASN1_SEQUENCE, pbmStr);
-	pbmStr = NULL; /* pbmStr is not freed explicityly because the pointer was consumed by X509_ALGOR_set0() */
-
-	CRMF_PBMPARAMETER_free( pbm);
-	return alg;
-err:
-	if (alg) X509_ALGOR_free(alg);
-	if (pbm) CRMF_PBMPARAMETER_free( pbm);
-	if (pbmDer) OPENSSL_free( pbmDer);
-	return NULL;
-}
 
 /* ############################################################################ *
  * It is RECOMMENDED that the clients fill the transactionID field with
@@ -595,6 +564,41 @@ err:
 }
 
 /* ############################################################################ *
+ * internal function
+ * Create an X509_ALGOR structure for PasswordBasedMAC protection
+ * returns pointer to X509_ALGOR on success, NULL on error
+ * TODO: this could take options to configure the pbmac
+ * ############################################################################ */
+X509_ALGOR *CMP_create_pbmac_algor(void) {
+	X509_ALGOR *alg=NULL;
+	CRMF_PBMPARAMETER *pbm=NULL;
+	unsigned char *pbmDer=NULL;
+	int pbmDerLen;
+	ASN1_STRING *pbmStr=NULL;
+
+	if (!(alg = X509_ALGOR_new())) goto err;
+	if (!(pbm = CRMF_pbm_new())) goto err;
+	if (!(pbmStr = ASN1_STRING_new())) goto err;
+
+	pbmDerLen = i2d_CRMF_PBMPARAMETER( pbm, &pbmDer);
+
+	ASN1_STRING_set( pbmStr, pbmDer, pbmDerLen);
+	OPENSSL_free( pbmDer);
+	pbmDer = NULL; /* to avoid double free in case there would be a "goto err" inserted behind this point later in development */
+
+	X509_ALGOR_set0( alg, OBJ_nid2obj(NID_id_PasswordBasedMAC), V_ASN1_SEQUENCE, pbmStr);
+	pbmStr = NULL; /* pbmStr is not freed explicityly because the pointer was consumed by X509_ALGOR_set0() */
+
+	CRMF_PBMPARAMETER_free( pbm);
+	return alg;
+err:
+	if (alg) X509_ALGOR_free(alg);
+	if (pbm) CRMF_PBMPARAMETER_free( pbm);
+	if (pbmDer) OPENSSL_free( pbmDer);
+	return NULL;
+}
+
+/* ############################################################################ *
  * determines which kind of protection should be created based on the ctx
  * sets this into the protectionAlg field in the message header
  * calculates the protection and sets it in the protections filed
@@ -605,7 +609,7 @@ int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 
 	/* use PasswordBasedMac according to 5.1.3.1 if secretValue is given */
 	if (ctx->secretValue) {
-		if (!(msg->header->protectionAlg = CMP_get_protectionAlg_pbmac())) goto err;
+		if (!(msg->header->protectionAlg = CMP_create_pbmac_algor())) goto err;
 	} else
 		/* use MSG_SIG_ALG according to 5.1.3.3 if client Certificate is given */
 		if (ctx->clCert){
