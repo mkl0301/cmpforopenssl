@@ -437,29 +437,15 @@ err:
 
 
 /* ############################################################################ * 
- * In the above protectionAlg, the salt value is appended to the shared
- * secret input.  The OWF is then applied iterationCount times, where
- * the salted secret is the input to the first iteration and, for each
- * successive iteration, the input is set to be the output of the
- * previous iteration.	The output of the final iteration (called
- * "BASEKEY" for ease of reference, with a size of "H") is what is used
- * to form the symmetric key.  If the MAC algorithm requires a K-bit key
- * and K <= H, then the most significant K bits of BASEKEY are used.  If
- * K > H, then all of BASEKEY is used for the most significant H bits of
- * the key, OWF("1" || BASEKEY) is used for the next most significant H
- * bits of the key, OWF("2" || BASEKEY) is used for the next most
- * significant H bits of the key, and so on, until all K bits have been
- * derived.  [Here "N" is the ASCII byte encoding the number N and "||"
- * represents concatenation.]
-
- * Note: it is RECOMMENDED that the fields of PBMParameter remain
- * constant throughout the messages of a single transaction (e.g.,
- * ir/ip/certConf/pkiConf) in order to reduce the overhead associated
- * with PasswordBasedMAC computation).
+ * also used for verification from cmp_vfy
+ *
+ * calculate PBM protection for given PKImessage utilizing the given secret and the
+ * pbm-parameters set inside the message header's protectionAlg
+ *
+ * returns pointer to ASN1_BIT_STRING containing protection on success, NULL on
+ * error
  * ############################################################################ */
-ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
-					const EVP_PKEY *pkey,
-					const ASN1_OCTET_STRING *secret) {
+ASN1_BIT_STRING *CMP_calc_protection_pbmac(CMP_PKIMESSAGE *pkimessage, const ASN1_OCTET_STRING *secret) {
 	ASN1_BIT_STRING *prot=NULL;
 	CMP_PROTECTEDPART protPart;
 	ASN1_STRING *pbmStr=NULL;
@@ -469,78 +455,119 @@ ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
 
 	size_t protPartDerLen;
 	unsigned int macLen;
-	size_t maxMacLen;
 	unsigned char *protPartDer=NULL;
 	unsigned char *mac=NULL;
 	const unsigned char *pbmStrUchar=NULL;
 
-	int pptype=0;
 	void *ppval=NULL;
 
-	int usedAlgorNid;
-
-	EVP_MD_CTX	 *ctx=NULL;
-	const EVP_MD *md=NULL;
+	if (!secret) {
+		CMPerr(CMP_F_CMP_CALC_PROTECTION_PBMAC, CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC);
+		goto err;
+	}
 
 	protPart.header = pkimessage->header;
 	protPart.body	= pkimessage->body;
 	protPartDerLen	= i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
 
-	X509_ALGOR_get0( &algorOID, &pptype, &ppval, pkimessage->header->protectionAlg);
-	usedAlgorNid = OBJ_obj2nid(algorOID);
+	X509_ALGOR_get0( &algorOID, NULL, &ppval, pkimessage->header->protectionAlg);
 
-	if (usedAlgorNid == NID_id_PasswordBasedMAC) {
+	if (NID_id_PasswordBasedMAC == OBJ_obj2nid(algorOID)) {
 		/* there is no pmb set in this message */
 		if (!ppval) goto err;
-		if (!secret) {
-			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC);
-			goto err;
-		}
 
 		pbmStr = (ASN1_STRING *)ppval;
 		pbmStrUchar = (unsigned char *)pbmStr->data;
 		pbm = d2i_CRMF_PBMPARAMETER( NULL, &pbmStrUchar, pbmStr->length);
 
 		if(!(CRMF_passwordBasedMac_new(pbm, protPartDer, protPartDerLen, secret->data, secret->length, &mac, &macLen))) goto err;
-	}
-	else if ((md = EVP_get_digestbynid(usedAlgorNid)) != NULL) {
-		// printf("INFO: protecting with pkey, algorithm %s\n", OBJ_nid2sn(usedAlgorNid));
-		if (!pkey) { /* EVP_SignFinal() will check that pkey type is correct for the algorithm */
-			CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_INVALID_KEY);
-			ERR_add_error_data(1, "pkey was NULL although it is supposed to be used for generating protection");
-			goto err;
-		}
-
-		maxMacLen = EVP_PKEY_size( (EVP_PKEY*) pkey);
-		mac = OPENSSL_malloc(maxMacLen);
-
-		ctx = EVP_MD_CTX_create();
-		if (!(EVP_SignInit_ex(ctx, md, NULL))) goto err;
-		if (!(EVP_SignUpdate(ctx, protPartDer, protPartDerLen))) goto err;
-		if (!(EVP_SignFinal(ctx, mac, &macLen, (EVP_PKEY*) pkey))) goto err;
-	}
-	else {
-		CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_UNKNOWN_ALGORITHM_ID);
+	} else {
+		CMPerr(CMP_F_CMP_CALC_PROTECTION_PBMAC, CMP_R_WRONG_ALGORITHM_OID);
 		goto err;
 	}
 
 	if(!(prot = ASN1_BIT_STRING_new())) goto err;
 	ASN1_BIT_STRING_set(prot, mac, macLen);
 
-	/* Actually this should not be needed but OpenSSL defaults all bitstrings to be a NamedBitList */
-	prot->flags &= ~0x07;
-	prot->flags |= ASN1_STRING_FLAG_BITS_LEFT;
-
 	/* cleanup */
-	if (ctx) EVP_MD_CTX_destroy(ctx);
 	if (mac) OPENSSL_free(mac);
 	return prot;
 
 err:
-	if (ctx) EVP_MD_CTX_destroy(ctx);
 	if (mac) OPENSSL_free(mac);
 
-	CMPerr(CMP_F_CMP_PROTECTION_NEW, CMP_R_ERROR_CALCULATING_PROTECTION);
+	CMPerr(CMP_F_CMP_CALC_PROTECTION_PBMAC, CMP_R_ERROR_CALCULATING_PROTECTION);
+	if(prot) ASN1_BIT_STRING_free(prot);
+	return NULL;
+}
+
+
+/* ############################################################################ * 
+ * only used internally
+ *
+ * calculate signature protection for given PKImessage utilizing the given secret key 
+ * and the algorithm parameters set inside the message header's protectionAlg
+ *
+ * returns pointer to ASN1_BIT_STRING containing protection on success, NULL on
+ * error
+ * ############################################################################ */
+ASN1_BIT_STRING *CMP_calc_protection_sig(CMP_PKIMESSAGE *pkimessage, EVP_PKEY *pkey) {
+	ASN1_BIT_STRING *prot=NULL;
+	CMP_PROTECTEDPART protPart;
+	ASN1_OBJECT *algorOID=NULL;
+
+	size_t protPartDerLen;
+	unsigned int macLen;
+	size_t maxMacLen;
+	unsigned char *protPartDer=NULL;
+	unsigned char *mac=NULL;
+
+	void *ppval=NULL;
+
+	EVP_MD_CTX	 *evp_ctx=NULL;
+	const EVP_MD *md=NULL;
+
+	if (!pkey) { /* EVP_SignFinal() will check that pkey type is correct for the algorithm */
+		CMPerr(CMP_F_CMP_CALC_PROTECTION_SIG, CMP_R_INVALID_KEY);
+		ERR_add_error_data(1, "pkey was NULL although it is supposed to be used for generating protection");
+		goto err;
+	}
+
+	/* construct data to be signed */
+	protPart.header = pkimessage->header;
+	protPart.body	= pkimessage->body;
+	protPartDerLen	= i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
+
+	X509_ALGOR_get0( &algorOID, NULL, &ppval, pkimessage->header->protectionAlg);
+
+	if ((md = EVP_get_digestbynid(OBJ_obj2nid(algorOID)))) {
+
+		maxMacLen = EVP_PKEY_size(pkey);
+		mac = OPENSSL_malloc(maxMacLen);
+
+		/* calculate signature */
+		evp_ctx = EVP_MD_CTX_create();
+		if (!(EVP_SignInit_ex(evp_ctx, md, NULL))) goto err;
+		if (!(EVP_SignUpdate(evp_ctx, protPartDer, protPartDerLen))) goto err;
+		if (!(EVP_SignFinal(evp_ctx, mac, &macLen, pkey))) goto err;
+	} else {
+		CMPerr(CMP_F_CMP_CALC_PROTECTION_SIG, CMP_R_UNKNOWN_ALGORITHM_ID);
+		goto err;
+	}
+
+	if(!(prot = ASN1_BIT_STRING_new())) goto err;
+	ASN1_BIT_STRING_set(prot, mac, macLen);
+
+	/* cleanup */
+	if (evp_ctx) EVP_MD_CTX_destroy(evp_ctx);
+	if (mac) OPENSSL_free(mac);
+	return prot;
+
+err:
+	if (evp_ctx) EVP_MD_CTX_destroy(evp_ctx);
+	if (mac) OPENSSL_free(mac);
+
+	CMPerr(CMP_F_CMP_CALC_PROTECTION_SIG, CMP_R_ERROR_CALCULATING_PROTECTION);
 	if(prot) ASN1_BIT_STRING_free(prot);
 	return NULL;
 }
@@ -591,19 +618,21 @@ int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 
 	/* use PasswordBasedMac according to 5.1.3.1 if secretValue is given */
 	if (ctx->secretValue) {
-		if (!(msg->header->protectionAlg = CMP_create_pbmac_algor())) goto err;
-	} else
+		if(!(msg->header->protectionAlg = CMP_create_pbmac_algor())) goto err;
+		if(!(msg->protection = CMP_calc_protection_pbmac( msg, ctx->secretValue))) 
+			goto err;
+	} else {
 		/* use MSG_SIG_ALG according to 5.1.3.3 if client Certificate is given */
 		if (ctx->clCert){
 			if(!ctx->clCert->sig_alg) goto err;
 			if(!(msg->header->protectionAlg = X509_ALGOR_dup(ctx->clCert->sig_alg))) goto err;
+			if(!(msg->protection = CMP_calc_protection_sig( msg, (EVP_PKEY *) ctx->pkey))) 
+				goto err;
 		} else {
 			CMPerr(CMP_F_CMP_PKIMESSAGE_PROTECT, CMP_R_MISSING_KEY_INPUT_FOR_CREATING_PROTECTION);
 			goto err;
 		}
-
-	if( !(msg->protection = CMP_protection_new( msg, (EVP_PKEY *) ctx->pkey, ctx->secretValue))) 
-		goto err;
+	}
 
 	return 1;
 err:

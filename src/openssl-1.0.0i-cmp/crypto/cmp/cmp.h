@@ -1344,9 +1344,7 @@ int CMP_PKIHEADER_push1_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text);
 
 int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx);
 
-ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage,
-					const EVP_PKEY *pkey,
-					const ASN1_OCTET_STRING *secret);
+ASN1_BIT_STRING *CMP_calc_protection_pbmac(CMP_PKIMESSAGE *pkimessage, const ASN1_OCTET_STRING *secret);
 
 int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
 
@@ -1509,6 +1507,8 @@ void ERR_load_CMP_strings(void);
 
 /* Function codes. */
 #define CMP_F_CERTREP_GET_CERTIFICATE			 162
+#define CMP_F_CMP_CALC_PROTECTION_PBMAC			 170
+#define CMP_F_CMP_CALC_PROTECTION_SIG			 171
 #define CMP_F_CMP_CERTCONF_NEW				 100
 #define CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1		 101
 #define CMP_F_CMP_CERTSTATUS_SET_CERTHASH		 102
@@ -1636,8 +1636,9 @@ void ERR_load_CMP_strings(void);
 #define CMP_R_UNSUPPORTED_ALGORITHM			 145
 #define CMP_R_UNSUPPORTED_KEY_TYPE			 146
 #define CMP_R_UNSUPPORTED_PROTECTION_ALG_DHBASEDMAC	 155
+#define CMP_R_WRONG_ALGORITHM_OID			 157
 
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif
 #endif
