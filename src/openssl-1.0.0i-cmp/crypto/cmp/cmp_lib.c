@@ -460,6 +460,7 @@ ASN1_BIT_STRING *CMP_calc_protection_pbmac(CMP_PKIMESSAGE *pkimessage, const ASN
 	const unsigned char *pbmStrUchar=NULL;
 
 	void *ppval=NULL;
+	int pptype=0;
 
 	if (!secret) {
 		CMPerr(CMP_F_CMP_CALC_PROTECTION_PBMAC, CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC);
@@ -470,7 +471,7 @@ ASN1_BIT_STRING *CMP_calc_protection_pbmac(CMP_PKIMESSAGE *pkimessage, const ASN
 	protPart.body	= pkimessage->body;
 	protPartDerLen	= i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
 
-	X509_ALGOR_get0( &algorOID, NULL, &ppval, pkimessage->header->protectionAlg);
+	X509_ALGOR_get0( &algorOID, &pptype, &ppval, pkimessage->header->protectionAlg);
 
 	if (NID_id_PasswordBasedMAC == OBJ_obj2nid(algorOID)) {
 		/* there is no pmb set in this message */
@@ -523,6 +524,7 @@ ASN1_BIT_STRING *CMP_calc_protection_sig(CMP_PKIMESSAGE *pkimessage, EVP_PKEY *p
 	unsigned char *mac=NULL;
 
 	void *ppval=NULL;
+	int pptype=0;
 
 	EVP_MD_CTX	 *evp_ctx=NULL;
 	const EVP_MD *md=NULL;
@@ -538,7 +540,7 @@ ASN1_BIT_STRING *CMP_calc_protection_sig(CMP_PKIMESSAGE *pkimessage, EVP_PKEY *p
 	protPart.body	= pkimessage->body;
 	protPartDerLen	= i2d_CMP_PROTECTEDPART(&protPart, &protPartDer);
 
-	X509_ALGOR_get0( &algorOID, NULL, &ppval, pkimessage->header->protectionAlg);
+	X509_ALGOR_get0( &algorOID, &pptype, &ppval, pkimessage->header->protectionAlg);
 
 	if ((md = EVP_get_digestbynid(OBJ_obj2nid(algorOID)))) {
 
