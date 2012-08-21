@@ -148,7 +148,6 @@ err:
 	return 0;
 }
 
-
 /* ############################################################################ *
  * Set the sender name in PKIHeader.
  * when nm is NULL, sender is set to an empty string
@@ -183,35 +182,39 @@ err:
 	return 0;
 }
 
-
-
 /* ############################################################################ *
+ * (re-)set given transaction ID in CMP header
+ * if given *transactionID is NULL, a random one is created with 128 bit
+ * according to section 5.1.1:
+ *
  * It is RECOMMENDED that the clients fill the transactionID field with
  * 128 bits of (pseudo-) random data for the start of a transaction to
  * reduce the probability of having the transactionID in use at the
  * server.
+ *
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIHEADER_set1_transactionID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *transactionID) {
 #define TRANSACTIONID_LENGTH 16
 	unsigned char *transactionIDuchar=NULL;
 
-	if( !hdr) goto err;
+	if(!hdr) goto err;
 
-	if (hdr->transactionID == NULL) {
-		hdr->transactionID = ASN1_OCTET_STRING_new();
-	}
-
-	/* generate a new value if none was given */
-	if (transactionID == NULL) {
-		transactionIDuchar = (unsigned char*)OPENSSL_malloc(TRANSACTIONID_LENGTH);
-		RAND_pseudo_bytes(transactionIDuchar, TRANSACTIONID_LENGTH);
-		if (!(ASN1_OCTET_STRING_set(hdr->transactionID, transactionIDuchar, TRANSACTIONID_LENGTH))) goto err;
-	} else {
+	if(transactionID) {
 		if (!(hdr->transactionID = ASN1_OCTET_STRING_dup((ASN1_OCTET_STRING *)transactionID))) goto err;
+	} else {
+		/* generate a random value if none was given */
+		if(!(transactionIDuchar = (unsigned char*)OPENSSL_malloc(TRANSACTIONID_LENGTH))) goto err;
+		RAND_pseudo_bytes(transactionIDuchar, TRANSACTIONID_LENGTH);
+
+		if(hdr->transactionID == NULL) {
+			hdr->transactionID = ASN1_OCTET_STRING_new();
+		}
+		if(!(ASN1_OCTET_STRING_set(hdr->transactionID, transactionIDuchar, TRANSACTIONID_LENGTH))) goto err;
+
+		OPENSSL_free(transactionIDuchar);
 	}
 
-	if(transactionIDuchar)
-		OPENSSL_free(transactionIDuchar);
 	return 1;
 err:
 	if(transactionIDuchar)
