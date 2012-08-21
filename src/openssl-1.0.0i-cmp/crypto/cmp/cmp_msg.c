@@ -397,6 +397,8 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	/* get the subject_key_id from the certificate to set it later as senderKID */
 	/* this is not needed in case protection is done with MSG_MAC_ALG (what is not
 	 * implemented so far) */
+	/* TODO: should that be shifted to the function doing the protection with
+	 * the signature? This is done in multiple places... */
 	if( ctx->clCert ) {
 		ASN1_OCTET_STRING *subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert);
 		if (subjKeyIDStr) {

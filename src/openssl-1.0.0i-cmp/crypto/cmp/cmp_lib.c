@@ -364,6 +364,8 @@ err:
 /* ############################################################################ *
  * Initialize the given PkiHeader structure with values set in the CMP_CTX structure.
  * if referenceValue is given in ctx, it will be set as senderKID
+ *
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 	/* check existence of mandatory arguments */
@@ -373,28 +375,27 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 	/* set the CMP version */
 	CMP_PKIHEADER_set_version( hdr, CMP_VERSION);
 
-	/* in case there is no OLD client cert and no subject name is set in ctx,
-	 * the subject name is not set */
-	/* TODO: can we set our subject name differently than through clCert? */
+	/* in case there is no OLD client cert the sender name is not set (e.g. for IR) */
 	if( ctx->clCert) {
 		if( !CMP_PKIHEADER_set1_sender( hdr, X509_get_subject_name( (X509*) ctx->clCert))) goto err;
 	} else {
 		if( !CMP_PKIHEADER_set1_sender( hdr, NULL)) goto err;
 	}
 
+	/* set recipient name either from known server certificate or recipient name in ctx, leave empty if not set in ctx */
 	if( ctx->srvCert) {
 		if( !CMP_PKIHEADER_set1_recipient( hdr, X509_get_subject_name( (X509*) ctx->srvCert))) goto err;
 	} else if( ctx->recipient) {
 		if( !CMP_PKIHEADER_set1_recipient( hdr, ctx->recipient)) goto err;
-	}else {
+	} else {
 		if( !CMP_PKIHEADER_set1_recipient( hdr, NULL)) goto err;
 	}
 
+	/* set current time as message time */
 	if( !CMP_PKIHEADER_set_messageTime(hdr)) goto err;
 
-	/* the protectionAlg is set when creating the message protection in
-	 * CMP_PKIMESSAGE_protect() */
-
+	/* TODO: should that be shifted to the function doing the protection with
+	 * the pbm? */
 	if( ctx->referenceValue) {
 		if( !CMP_PKIHEADER_set1_senderKID(hdr, ctx->referenceValue)) goto err;
 	}
