@@ -103,7 +103,7 @@ static int   opt_serverPort=0;
 static char* opt_serverName=NULL;
 static char* opt_serverPath=NULL;
 static char* opt_httpProxy=NULL;
-static char* opt_caCertFile=NULL;
+static char* opt_srvCertFile=NULL;
 static char* opt_caPubsDir=NULL;
 static char* opt_clCertFile=NULL;
 static char* opt_newClCertFile=NULL;
@@ -138,7 +138,7 @@ static int opt_nExtraCerts=0;
 static unsigned char *idString=NULL;
 static unsigned char *password=NULL;
 static size_t idStringLen=0, passwordLen=0;
-static X509 *caCert=NULL;
+static X509 *srvCert=NULL;
 static ENGINE *engine=NULL;
 
 static STACK_OF(X509) *extraCerts = NULL;
@@ -156,7 +156,7 @@ void printUsage( const char* cmdName) {
   printf(" --port PORT        the port of the CMP server\n");
   printf(" --path PATH        the path location inside the HTTP CMP server\n");
   printf("                    as in e.g. SERVER:PORT/PATH\n");
-  printf(" --cacert           location of the CA's certificate\n");
+  printf(" --srvCert          location of the CMP server's certificate (e.g. CA or RA)\n");
   printf(" --pem              Use PEM format when saving certificates (default is DER).\n");
   printf("\n");
   printf("The OPTIONAL COMMON OPTIONS may to be set:\n");
@@ -325,8 +325,8 @@ void doIr(CMP_CTX *cmp_ctx) {
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
-  if (caCert)
-    CMP_CTX_set1_caCert( cmp_ctx, caCert);
+  if (srvCert)
+    CMP_CTX_set1_srvCert( cmp_ctx, srvCert);
   CMP_CTX_set1_timeOut( cmp_ctx, 60);
   if (opt_subjectName) {
     X509_NAME *subject = HELP_create_X509_NAME(opt_subjectName);
@@ -452,7 +452,7 @@ void doRr(CMP_CTX *cmp_ctx) {
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
   CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
-  CMP_CTX_set1_caCert( cmp_ctx, caCert);
+  CMP_CTX_set1_srvCert( cmp_ctx, srvCert);
   CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
   CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
   CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
@@ -509,7 +509,7 @@ void doCr(CMP_CTX *cmp_ctx) {
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
   CMP_CTX_set0_pkey( cmp_ctx, pkey);
-  CMP_CTX_set1_caCert( cmp_ctx, caCert);
+  CMP_CTX_set1_srvCert( cmp_ctx, srvCert);
   CMP_CTX_set1_clCert( cmp_ctx, clCert);
 
   if (opt_nExtraCerts > 0)
@@ -579,7 +579,7 @@ void doKur(CMP_CTX *cmp_ctx) {
   CMP_CTX_set0_pkey( cmp_ctx, pkey);
   CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
   CMP_CTX_set1_clCert( cmp_ctx, clCert);
-  CMP_CTX_set1_caCert( cmp_ctx, caCert);
+  CMP_CTX_set1_srvCert( cmp_ctx, srvCert);
 
   if (opt_nExtraCerts > 0)
     CMP_CTX_set1_extraCertsOut( cmp_ctx, extraCerts);
@@ -621,7 +621,7 @@ void doInfo(CMP_CTX *cmp_ctx) {
   /* TODO XXX: can't we sign with the clCert also? XXX TODO */
   CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
   CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
-  CMP_CTX_set1_caCert( cmp_ctx, caCert);
+  CMP_CTX_set1_srvCert( cmp_ctx, srvCert);
 
   if (!CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort)) {
     printf( "ERROR: setting up connection to server");
@@ -654,7 +654,7 @@ void doGenM(CMP_CTX *cmp_ctx, int genm_type, void *value) {
   CMP_CTX_set1_serverPort( cmp_ctx, opt_serverPort);
   CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
   CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
-  CMP_CTX_set1_caCert( cmp_ctx, caCert);
+  CMP_CTX_set1_srvCert( cmp_ctx, srvCert);
 
   if (!CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort)) {
     printf( "ERROR: setting up connection to server");
@@ -742,7 +742,7 @@ void parseCLA( int argc, char **argv) {
     {"user",     required_argument,    0, 'e'},
     {"password", required_argument,    0, 'f'},
     {"pem",      no_argument,          0, 'E'},
-    {"cacert",   required_argument,    0, 'g'},
+    {"srvcert",   required_argument,   0, 'g'},
     {"clcert",   required_argument,    0, 'h'},
     {"subject",  required_argument,    0, 'S'},
     {"recipient",required_argument,    0, 'R'},
@@ -755,7 +755,7 @@ void parseCLA( int argc, char **argv) {
     {"newclcert",required_argument,    0, 'l'},
     {"hex",      no_argument,          0, 'm'},
     {"info",     no_argument,          0, 'n'},
-    {"validate_path",no_argument,     0, 'V'},
+    {"validate_path",no_argument,      0, 'V'},
     {"path",     required_argument,    0, 'o'},
     {"proxy",    optional_argument,    0, 'p'},
     {"cr",	     no_argument,          0, 't'},
@@ -763,7 +763,7 @@ void parseCLA( int argc, char **argv) {
     {"engine",   required_argument,    0, 'u'},
     {"extracert",required_argument,    0, 'X'},
     {"extcertsout",required_argument,  0, 'O'},
-    {"rootcerts",required_argument,  0, 'T'},
+    {"rootcerts",required_argument,    0, 'T'},
     {"extcertsin ",required_argument,  0, 'N'},
     {0, 0, 0, 0}
   };
@@ -896,7 +896,7 @@ void parseCLA( int argc, char **argv) {
         opt_pem= 1;
         break;
       case 'g':
-        createOptStr( &opt_caCertFile);
+        createOptStr( &opt_srvCertFile);
         break;
       case 'h':
         createOptStr( &opt_clCertFile);
@@ -963,15 +963,15 @@ void parseCLA( int argc, char **argv) {
   }
 
   if (!(opt_serverName && opt_serverPort)) {
-    // printf("ERROR: setting server, port and cacert is mandatory for all sequences\n\n");
+    // printf("ERROR: setting server, port and srvCert is mandatory for all sequences\n\n");
     printf("ERROR: setting server and port is mandatory for all sequences\n\n");
     printUsage( argv[0]);
   }
 
-  if (!(opt_caCertFile || opt_rootCerts) && !opt_doIr) {
+  if (!(opt_srvCertFile || opt_rootCerts) && !opt_doIr) {
     /* TODO: actually that could be done with --recipient when protection is
      * done with preshared keys for all (?) messages */
-    printf("ERROR: setting cacert or rootCerts is necessary for all sequences except IR\n\n");
+    printf("ERROR: setting srvcert or rootCerts is necessary for all sequences except IR\n\n");
     printUsage( argv[0]);
   }
 
@@ -982,7 +982,7 @@ void parseCLA( int argc, char **argv) {
 
   if( opt_doKur) {
     if (!(opt_clCertFile && opt_clKeyFile)) {
-      printf("ERROR: setting cacert, clcert, and key is mandatory for KUP\n\n");
+      printf("ERROR: setting srvcert, clcert, and key is mandatory for KUP\n\n");
       printUsage( argv[0]);
     }
   }
@@ -994,8 +994,8 @@ void parseCLA( int argc, char **argv) {
       printf("ERROR: giving user/password or clcert/key/keypass CLI option is mandatory for IR\n\n");
       printUsage( argv[0]);
     }
-    if (!opt_caCertFile && !opt_recipient) {
-      printf("ERROR: setting cacert or recipient is mandatory for IR\n\n");
+    if (!opt_srvCertFile && !opt_recipient) {
+      printf("ERROR: setting srvcert or recipient is mandatory for IR\n\n");
       printUsage( argv[0]);
     }
   }
@@ -1008,8 +1008,8 @@ void parseCLA( int argc, char **argv) {
   }
 
   if( opt_doRr) {
-    if (!opt_caCertFile && !opt_recipient) {
-      printf("ERROR: setting cacert or recipient is mandatory for RR\n\n");
+    if (!opt_srvCertFile && !opt_recipient) {
+      printf("ERROR: setting srvcert or recipient is mandatory for RR\n\n");
       printUsage( argv[0]);
     }
     if (!(opt_clCertFile && opt_clKeyFile)) {
@@ -1147,7 +1147,7 @@ int main(int argc, char **argv) {
   }
 
   /* read CA certificate */
-  if(opt_caCertFile && !(caCert = HELP_read_cert(opt_caCertFile))) {
+  if(opt_srvCertFile && !(srvCert = HELP_read_cert(opt_srvCertFile))) {
     printf("FATAL: could not read CA certificate!\n");
     exit(1);
   }
