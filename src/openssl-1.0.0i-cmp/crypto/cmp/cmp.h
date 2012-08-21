@@ -1426,7 +1426,9 @@ int CMP_CTX_set_certConf_callback( CMP_CTX *ctx, cmp_certConfFn_t cb);
 int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t len);
 int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len);
 int CMP_CTX_set1_regToken( CMP_CTX *ctx, const char *regtoken, const size_t len);
-int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert);
+/* for backwards compatibility, TODO: remove asap */
+#define CMP_CTX_set1_caCert CMP_CTX_set1_srvCert
+int CMP_CTX_set1_srvCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name);
 int CMP_CTX_set1_recipient( CMP_CTX *ctx, const X509_NAME *name);
