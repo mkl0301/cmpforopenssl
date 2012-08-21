@@ -18,8 +18,6 @@
   CMP_PKIHEADER_new_senderNonce,
   CMP_PKIHEADER_push0_freeText,
   CMP_PKIHEADER_push1_freeText,
-  CMP_PKIHEADER_set0_recipient,
-  CMP_PKIHEADER_set0_sender,
   CMP_PKIHEADER_set1,
   CMP_PKIHEADER_set1_recipNonce,
   CMP_PKIHEADER_set1_recipient,
@@ -63,8 +61,6 @@
   int CMP_PKIHEADER_new_senderNonce(CMP_PKIHEADER *hdr);
   int CMP_PKIHEADER_push0_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text);
   int CMP_PKIHEADER_push1_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text);
-  int CMP_PKIHEADER_set0_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
-  int CMP_PKIHEADER_set0_sender(CMP_PKIHEADER *hdr, const X509_NAME *nm);
   int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx);
   int CMP_PKIHEADER_set1_recipNonce(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *recipNonce);
   int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
@@ -145,12 +141,6 @@ hdr->freeText and consume the given pointer.
 
 CMP_PKIHEADER_push1_freeText() does the same as above, but does not
 consume the pointer.
-
-CMP_PKIHEADER_set0_recipient() sets the recipient field in the given
-PKIHeader to the given X509 name.
-
-CMP_PKIHEADER_set0_sender() sets the sender field in the given PKIHeader
-structure.
 
 CMP_PKIHEADER_set1() initializes a PKIHeader structure based on the
 values in the given CMP_CTX structure.
