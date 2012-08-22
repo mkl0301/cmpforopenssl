@@ -321,14 +321,6 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	/* validate message protection */
-	if (CMP_validate_msg(ctx, ip)) {
-		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
-
 	/* make sure the PKIStatus for the *first* CERTrepmessage indicates a certificate was granted */
 	/* TODO - there could be two CERTrepmessages */
 
@@ -341,6 +333,14 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, ip->body->value.ip);
 	if (ctx->newClCert == NULL) goto err;
+
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, ip)) {
+		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
 
 	/* if the CA returned certificates in the caPubs field, copy them
 	 * to the context so that they can be retrieved if necessary */
@@ -439,14 +439,6 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	/* validate message protection */
-	if (CMP_validate_msg(ctx, rp)) {
-		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
-
 	/* evaluate PKIStatus field */
 	switch (CMP_REVREPCONTENT_PKIStatus_get( rp->body->value.rp, 0)) 
 	{
@@ -467,6 +459,14 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
 			goto err;
 			break;
+	}
+
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, rp)) {
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
 	}
 
 	return 1;
@@ -514,14 +514,6 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	/* validate message protection */
-	if (CMP_validate_msg(ctx, cp)) {
-		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
-
 	/* evaluate PKIStatus field */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0) == CMP_PKISTATUS_waiting)
 		if (!pollForResponse(ctx, cbio, cp->body->value.cp, &cp)) {
@@ -532,6 +524,14 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, cp->body->value.cp);
 	if (ctx->newClCert == NULL) goto err;
+
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, cp)) {
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
 
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (cp->extraCerts)
@@ -640,6 +640,9 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		}
 	}
 
+	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, kup->body->value.kup);
+	if (ctx->newClCert == NULL) goto err;
+
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, kup)) {
 		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
@@ -647,9 +650,6 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
-
-	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, kup->body->value.kup);
-	if (ctx->newClCert == NULL) goto err;
 
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (kup->extraCerts)

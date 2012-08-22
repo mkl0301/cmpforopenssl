@@ -365,6 +365,10 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 	int nid = 0;
 	ASN1_OBJECT *algorOID=NULL;
 
+	if (!msg->header->protectionAlg)
+		/* unprotected message */
+		return 0;
+
 	/* determine the nid for the used protection algorithm */
 	X509_ALGOR_get0( &algorOID, NULL, NULL, msg->header->protectionAlg);
 	nid = OBJ_obj2nid(algorOID);

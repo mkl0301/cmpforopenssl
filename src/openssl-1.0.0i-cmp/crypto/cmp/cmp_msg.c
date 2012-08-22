@@ -657,7 +657,7 @@ CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, 
 	if (!(oldCaName = X509_get_subject_name( (X509*) oldCaCert))) goto err;
 	if (!(newCaName = X509_get_subject_name( (X509*) newCaCert))) goto err;
 	/* the subjects of old and new CaCerts have to be equal */
-	if (! X509_NAME_cmp( oldCaName, newCaName)) goto err;
+	if (X509_NAME_cmp( oldCaName, newCaName) != 0) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 

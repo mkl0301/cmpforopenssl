@@ -1292,10 +1292,17 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
  * ############################################################################ */
 X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep) {
 	X509 *newClCert = NULL;
-	
-	CMP_CTX_set_failInfoCode(ctx, CMP_CERTREPMESSAGE_PKIFailureInfo_get0(certrep, 0));
+	int repNum = 0;
 
-	ctx->lastStatus = CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0);
+	/* Get the certReqId of the first certresponse. Need to do it this way instead
+	 * of just using certReqId==0, because in error cases Insta replies with a certReqId
+	 * of -1... */
+	if (sk_CMP_CERTRESPONSE_num(certrep->response) > 0)
+		repNum = ASN1_INTEGER_get(sk_CMP_CERTRESPONSE_value(certrep->response, 0)->certReqId);
+	
+	CMP_CTX_set_failInfoCode(ctx, CMP_CERTREPMESSAGE_PKIFailureInfo_get0(certrep, repNum));
+
+	ctx->lastStatus = CMP_CERTREPMESSAGE_PKIStatus_get( certrep, repNum);
 	switch (ctx->lastStatus) {
 
 		case CMP_PKISTATUS_waiting:
@@ -1308,15 +1315,15 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 		case CMP_PKISTATUS_accepted:
 			/* if we received a certificate then place it to ctx->newClCert and return,
 			 * if the cert is encrypted then we first decrypt it. */
-			switch (CMP_CERTREPMESSAGE_certType_get(certrep, 0)) {
+			switch (CMP_CERTREPMESSAGE_certType_get(certrep, repNum)) {
 				case CMP_CERTORENCCERT_CERTIFICATE:
-					if( !(newClCert = CMP_CERTREPMESSAGE_cert_get1(certrep,0))) {
+					if( !(newClCert = CMP_CERTREPMESSAGE_cert_get1(certrep,repNum))) {
 						CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
 						goto err;
 					}					
 					break;
 				case CMP_CERTORENCCERT_ENCRYPTEDCERT:
-					if( !(newClCert = CMP_CERTREPMESSAGE_encCert_get1(certrep,0,ctx->newPkey))) {
+					if( !(newClCert = CMP_CERTREPMESSAGE_encCert_get1(certrep,repNum,ctx->newPkey))) {
 						CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
 						goto err;
 					}					
@@ -1328,11 +1335,11 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 			char *statusString = NULL;
 			int statusLen = 0;
 			ASN1_UTF8STRING *status = NULL;
-			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(certrep, 0);
+			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(certrep, repNum);
 
 			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_REQUEST_REJECTED_BY_CA);
 
-			statusString = CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(certrep, 0);
+			statusString = CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(certrep, repNum);
 			if (!statusString) goto err;
 			statusString = OPENSSL_strdup(statusString);
 			if (!statusString) goto err;
@@ -1371,7 +1378,7 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 
-			CMP_printf( ctx, "ERROR: unknown pkistatus %ld", CMP_CERTREPMESSAGE_PKIStatus_get( certrep, 0));
+			CMP_printf( ctx, "ERROR: unknown pkistatus %ld", CMP_CERTREPMESSAGE_PKIStatus_get( certrep, repNum));
 			goto err;
 			break;
 		}
