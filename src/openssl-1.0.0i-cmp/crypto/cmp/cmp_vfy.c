@@ -410,6 +410,7 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 						/* For IP: when the ctxOption is set, extract the Trust Anchor from
 						 * ExtraCerts, provided that there is a self-signed certificate
 						 * which can be used to validate the issued certificate - refer to 3GPP TS 33.310 */
+
 						if (ctx->permitTAInExtraCertsForIR && CMP_PKIMESSAGE_get_bodytype(msg) == V_CMP_PKIBODY_IP) {
 							X509_STORE *tempStore = createTempTrustedStore(msg->extraCerts);
 							/* TODO: check that issued certificates can validate against
@@ -417,15 +418,11 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 							srvCert_valid = CMP_validate_cert_path(tempStore, ctx->untrusted_store, srvCert);
 
 							if (srvCert_valid) {
-								/* verify that our received certificate is issued and signed by srvCert */
+								/* verify that our received certificate can also be validated with the same
+								 * trusted store as srvCert */
 								X509 *newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, msg->body->value.ip);
-								if (newClCert) {
-									EVP_PKEY *srvKey = X509_get_pubkey((X509*) srvCert);
-									if (X509_NAME_cmp(newClCert->cert_info->issuer, srvCert->cert_info->subject) != 0
-										|| !srvKey || !X509_verify(newClCert, srvKey))
-										/* received cert cannot be validated using this srvCert */
-										srvCert_valid = 0;
-								}
+								if (newClCert)
+									srvCert_valid = CMP_validate_cert_path(tempStore, ctx->untrusted_store, newClCert);
 							}
 							
 							X509_STORE_free(tempStore);
