@@ -267,7 +267,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->lastStatus = -1;
 	ctx->failInfoCode = 0;
 
-	ctx->permitTAInExtraCertsForIR = 1;
+	ctx->permitTAInExtraCertsForIR = 0;
 	ctx->validatedSrvCert = NULL;
 
 #if 0
