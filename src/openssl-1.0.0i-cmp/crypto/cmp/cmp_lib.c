@@ -863,8 +863,11 @@ static char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusIn
 }
 
 /* ############################################################################ * 
- * returns the PKIFailureInfo
- * returns 0 on error
+ *
+ * convert PKIstatus to human readable string
+ *
+ * returns pointer to string containing the the PKIFailureInfo
+ * returns NULL on error
  * ############################################################################ */
 char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo) {
 	int i;
@@ -933,16 +936,6 @@ char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo
 	return 0;
 }
 
-/* ############################################################################ * 
- * returns the PKIFailureInfo # of the given ErrorMessage
- * returns 1 on success
- * returns 0 on error
- * ############################################################################ */
-char *CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string( CMP_ERRORMSGCONTENT *error) {
-	if (!error) return 0;
-	return CMP_PKISTATUSINFO_PKIFailureInfo_get_string(error->pKIStatusInfo);
-}
-
 /* ############################################################################ *
  * returns the PKIStatus of the given certReqId inside a Rev
  * returns -1 on error
@@ -968,7 +961,7 @@ long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReq
 	if (!certRep) return -1;
 
 	if ( (certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) ) {
-		return certResponse->resp->status;
+		return CMP_PKISTATUSINFO_PKIstatus_get(certResponse->status);
 	}
 
 	/* did not find a CertResponse with the right certRep */
@@ -1020,7 +1013,7 @@ STACK_OF(ASN1_UTF8STRING)* CMP_CERTREPMESSAGE_PKIStatusString_get0( CMP_CERTREPM
 	if (!certRep) return NULL;
 
 	if ( (certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) ) {
-		return certResponse->resp->status->statusString;
+		return certResponse->status->statusString;
 	}
 
 	/* did not find a CertResponse with the right certRep */
@@ -1249,7 +1242,7 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
 	}
 
 	/* PKIFailureInfo is optional */
-	failureinfo = CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string(msg->body->value.error);
+	failureinfo = CMP_PKISTATUSINFO_PKIFailureInfo_get_string(msg->body->value.error->pKIStatusInfo);
 
 	if (failureinfo)
 		BIO_snprintf(errormsg, bufsize, "Status: %s, Failureinfo: %s", status, failureinfo);

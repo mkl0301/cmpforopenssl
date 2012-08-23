@@ -9,7 +9,6 @@
   CMP_CERTREPMESSAGE_cert_get1,
   CMP_CERTREPMESSAGE_encCert_get1,
   CMP_CERTSTATUS_set_certHash,
-  CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string,
   CMP_ERRORMSGCONTENT_PKIStatus_get_string,
   CMP_PKIFAILUREINFO_check,
   CMP_PKIHEADER_generalInfo_item_push0,
@@ -48,7 +47,6 @@
   X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId);
   X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId, EVP_PKEY *pkey);
   int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert);
-  char *CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string( CMP_ERRORMSGCONTENT *error);
   char *CMP_ERRORMSGCONTENT_PKIStatus_get_string( CMP_ERRORMSGCONTENT *error);
   int CMP_PKIFAILUREINFO_check( ASN1_BIT_STRING *failInfo, int codeBit);
   int CMP_PKIHEADER_generalInfo_item_push0(CMP_PKIHEADER *hdr, const CMP_INFOTYPEANDVALUE *itav);
