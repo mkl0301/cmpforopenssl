@@ -5,9 +5,6 @@
   CMP_CERTREPMESSAGE_PKIStatus_get,
   CMP_CERTREPMESSAGE_certResponse_get0,
   CMP_CERTREPMESSAGE_certType_get,
-  CMP_CERTREPMESSAGE_cert_get0,
-  CMP_CERTREPMESSAGE_cert_get1,
-  CMP_CERTREPMESSAGE_encCert_get1,
   CMP_CERTSTATUS_set_certHash,
   CMP_ERRORMSGCONTENT_PKIStatus_get_string,
   CMP_PKIFAILUREINFO_check,
@@ -42,9 +39,6 @@
   long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReqId);
   CMP_CERTRESPONSE *CMP_CERTREPMESSAGE_certResponse_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
   int CMP_CERTREPMESSAGE_certType_get( CMP_CERTREPMESSAGE *certRep, long certReqId);
-  X509 *CMP_CERTREPMESSAGE_cert_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
-  X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId);
-  X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId, EVP_PKEY *pkey);
   int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert);
   char *CMP_ERRORMSGCONTENT_PKIStatus_get_string( CMP_ERRORMSGCONTENT *error);
   int CMP_PKIFAILUREINFO_check( ASN1_BIT_STRING *failInfo, int codeBit);
@@ -83,18 +77,6 @@ NULL.
 
 CMP_CERTREPMESSAGE_certType_get() returns the type of the certificate
 contained in the certificate response, or -1 on error.
-
-CMP_CERTREPMESSAGE_cert_get0() returns a pointer to the Certificate with
-the given certReqId inside a CertRepMessage. If no certificate is
-available or if there is an error, the function returns NULL.
-
-CMP_CERTREPMESSAGE_cert_get1() does the same as above, except it returns
-a pointer to a copy of the certificate instead of the original.
-
-CMP_CERTREPMESSAGE_encCert_get1() decrypts the certificate with the
-given certReqId inside a CertRepMessage and returns a pointer to the
-decrypted certificate. Returns NULL on error or if no Certificate
-available.
 
 CMP_CERTSTATUS_set_certHash() calculates a hash of the certificate,
 using the same hash algorithm as is used to create and verify the

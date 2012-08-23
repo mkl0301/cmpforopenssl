@@ -1060,45 +1060,34 @@ CMP_CERTRESPONSE *CMP_CERTREPMESSAGE_certResponse_get0( CMP_CERTREPMESSAGE *cert
 }
 
 /* ############################################################################ *
- * returns a pointer to the Certificate with the given certReqId inside a CertRepMessage
+ * internal function
+ *
+ * returns a pointer to a copy of the Certificate with the given certReqId inside a CertRepMessage
  * returns NULL on error or if no Certificate available
  * ############################################################################ */
-X509 *CMP_CERTREPMESSAGE_cert_get0( CMP_CERTREPMESSAGE *certRep, long certReqId) {
-	X509 *cert=NULL;
+static X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId) {
+	X509 *certCopy=NULL;
 	CMP_CERTRESPONSE *certResponse=NULL;
 
 	if( !certRep) return NULL;
 
 	if ( (certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) ) {
-		cert = certResponse->certifiedKeyPair->certOrEncCert->value.certificate;
+		certCopy = X509_dup(certResponse->certifiedKeyPair->certOrEncCert->value.certificate);
 	}
 
-	return cert;
-}
-
-/* ############################################################################ *
- * returns a pointer to a copy of the Certificate with the given certReqId inside a CertRepMessage
- * returns NULL on error or if no Certificate available
- * ############################################################################ */
-X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId) {
-	X509 *cert=NULL;
-	X509 *certCopy=NULL;
-
-	if( !certRep) return NULL;
-
-	if( (cert = CMP_CERTREPMESSAGE_cert_get0(certRep, certReqId)))
-		certCopy = X509_dup(cert);
 	return certCopy;
 }
 
 /* ############################################################################# *
+ * internal function
+ *
  * Decrypts the certificate with the given certReqId inside a CertRepMessage and
  * this is needed for the indirect PoP method as in section 5.2.8.2
  *
  * returns a pointer to the decrypted certificate
  * returns NULL on error or if no Certificate available
  * ############################################################################# */
-X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId, EVP_PKEY *pkey) {
+static X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId, EVP_PKEY *pkey) {
 	CRMF_ENCRYPTEDVALUE *encCert   = NULL;
 	X509				*cert	   = NULL; /* decrypted certificate					  */
 	EVP_CIPHER_CTX		*evp_ctx   = NULL; /* context for symmetric encryption		  */
