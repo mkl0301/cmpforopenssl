@@ -171,6 +171,7 @@
 #include <openssl/x509v3.h>
 #include <openssl/err.h>
 
+extern int opt_pem;
 
 /* ############################################################################ *
  * Creates an X509_STORE structure for looking up certs within a directory,
@@ -189,9 +190,10 @@ X509_STORE *HELP_create_cert_store(char *dir) {
     lookup = X509_STORE_add_lookup(cert_ctx, X509_LOOKUP_hash_dir());
     if (lookup == NULL) goto err;
 
-    // XXX PEM or DER format?
-    // X509_LOOKUP_add_dir(lookup, ctx.trusted_dir, X509_FILETYPE_PEM);
-    X509_LOOKUP_add_dir(lookup, dir, X509_FILETYPE_ASN1);
+    if (opt_pem)
+		X509_LOOKUP_add_dir(lookup, dir, X509_FILETYPE_PEM);
+	else
+		X509_LOOKUP_add_dir(lookup, dir, X509_FILETYPE_ASN1);
 
     return cert_ctx;
 
@@ -331,7 +333,6 @@ printf("INFO: Saving Certificate to File %s\n", filename);
 }
 
 int HELP_write_cert( X509 *cert, const char *filename) {
-	extern int opt_pem;
 	BIO  *bio;
 
 	if(!cert) return 0;     /* mandatory parameter */
