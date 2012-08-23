@@ -363,7 +363,6 @@ err:
 
 /* ############################################################################ *
  * Initialize the given PkiHeader structure with values set in the CMP_CTX structure.
- * if referenceValue is given in ctx, it will be set as senderKID
  *
  * returns 1 on success, 0 on error
  * ############################################################################ */
@@ -393,12 +392,6 @@ int CMP_PKIHEADER_set1(CMP_PKIHEADER *hdr, CMP_CTX *ctx) {
 
 	/* set current time as message time */
 	if( !CMP_PKIHEADER_set_messageTime(hdr)) goto err;
-
-	/* TODO: should that be shifted to the function doing the protection with
-	 * the pbm? */
-	if( ctx->referenceValue) {
-		if( !CMP_PKIHEADER_set1_senderKID(hdr, ctx->referenceValue)) goto err;
-	}
 
 	/* XXX not setting transactionID test for PKI INFO */
 	if( ctx->setTransactionID == 1) {
@@ -630,14 +623,45 @@ int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 	/* use PasswordBasedMac according to 5.1.3.1 if secretValue is given */
 	if (ctx->secretValue) {
 		if(!(msg->header->protectionAlg = CMP_create_pbmac_algor())) goto err;
+		CMP_PKIHEADER_set1_senderKID(msg->header, ctx->referenceValue);
 		if(!(msg->protection = CMP_calc_protection_pbmac( msg, ctx->secretValue))) 
 			goto err;
 	} else {
 		/* use MSG_SIG_ALG according to 5.1.3.3 if client Certificate and private key is given */
 		if (ctx->clCert && ctx->pkey) {
-			if(!ctx->clCert->sig_alg) goto err;
-			if(!(msg->header->protectionAlg = X509_ALGOR_dup(ctx->clCert->sig_alg))) goto err;
-			if(!(msg->protection = CMP_calc_protection_sig( msg, ctx->pkey))) 
+			ASN1_OCTET_STRING *subjKeyIDStr = NULL;
+			int algNID = 0;
+			
+#if 0
+			if (!ctx->clCert->sig_alg) goto err;
+			if (!(msg->header->protectionAlg = X509_ALGOR_dup(ctx->clCert->sig_alg))) goto err;
+#else
+			/* TODO SHA1 is hardcoded here */
+			if (msg->header->protectionAlg)
+				X509_ALGOR_free(msg->header->protectionAlg);
+			msg->header->protectionAlg = X509_ALGOR_new();
+			
+			switch (EVP_PKEY_type(ctx->pkey->type)) {
+				case EVP_PKEY_DSA: 
+					algNID = NID_dsaWithSHA1;
+					break;
+				case EVP_PKEY_RSA:
+					algNID = NID_sha1WithRSAEncryption;
+					break;
+				default:
+					CMPerr(CMP_F_CMP_PKIMESSAGE_PROTECT, CMP_R_UNSUPPORTED_KEY_TYPE);
+					goto err;
+			}
+			X509_ALGOR_set0(msg->header->protectionAlg, OBJ_nid2obj(algNID), V_ASN1_NULL, NULL);
+#endif
+
+			subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert);
+			if (subjKeyIDStr) {
+				CMP_PKIHEADER_set1_senderKID(msg->header, subjKeyIDStr);
+				ASN1_OCTET_STRING_free(subjKeyIDStr);
+			}
+			
+			if (!(msg->protection = CMP_calc_protection_sig( msg, ctx->pkey))) 
 				goto err;
 		} else {
 			CMPerr(CMP_F_CMP_PKIMESSAGE_PROTECT, CMP_R_MISSING_KEY_INPUT_FOR_CREATING_PROTECTION);

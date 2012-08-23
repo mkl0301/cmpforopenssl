@@ -188,6 +188,7 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_NO_CERTIFICATE_RECEIVED),"no certificate received"},
 {ERR_REASON(CMP_R_NO_SECRET_VALUE_GIVEN_FOR_PBMAC),"no secret value given for pbmac"},
 {ERR_REASON(CMP_R_NO_TRUSTED_CERTIFICATES_SET),"no trusted certificates set"},
+{ERR_REASON(CMP_R_NO_VALID_SRVCERT_FOUND),"no valid srvcert found"},
 {ERR_REASON(CMP_R_NULL_ARGUMENT)         ,"null argument"},
 {ERR_REASON(CMP_R_PKIBODY_ERROR)         ,"pkibody error"},
 {ERR_REASON(CMP_R_PKICONF_NOT_RECEIVED)  ,"pkiconf not received"},

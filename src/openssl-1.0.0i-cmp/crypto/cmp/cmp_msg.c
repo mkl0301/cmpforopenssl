@@ -151,7 +151,7 @@ static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 				X509 *cert = sk_X509_value(chain, i);
 				sk_X509_push(msg->extraCerts, cert);
 			}
-			sk_X509_pop_free(chain, X509_free);
+			sk_X509_free(chain);
 		}
 		if (sk_X509_num(msg->extraCerts) == 0)
 			/* Make sure that at least our own cert gets sent */
@@ -217,20 +217,6 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	/* E.7: get the subject_key_id from the external identity certificate to set it later as senderKID */
-	/* this actually seems to be explicity required not to be done by RFC 4210 (E.7, end of page 81)
-	 * HOWEVER, it seems as if the RFC is wrong here and it confuses the different
-	 * use cases of the senderKID field (referenceNUM vs. Key Identifier) */
-	/* TODO: make this generic and bring it close together with CMP_protection_new() */
-	if(ctx->clCert)
-	{
-		ASN1_OCTET_STRING *subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert);
-		if (subjKeyIDStr) {
-			CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
-			ASN1_OCTET_STRING_free(subjKeyIDStr);
-		}
-	}
-
 	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
 
 	if (ctx->implicitConfirm)
@@ -281,7 +267,6 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	CRMF_CERTTEMPLATE *certTpl=NULL;
 	X509_NAME *subject=NULL;
 	CMP_REVDETAILS *rd=NULL;
-	ASN1_OCTET_STRING *subjKeyIDStr=NULL;
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
@@ -293,11 +278,6 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_RR);
-
-	if ((subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert)) != NULL) {
-		CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
-		ASN1_OCTET_STRING_free(subjKeyIDStr);
-	}
 		
 	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
 
@@ -338,7 +318,6 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	CRMF_CERTREQMSG *certReq0=NULL;
 
 	X509_NAME *subject=NULL;
-	ASN1_OCTET_STRING *subjKeyIDStr=NULL;
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
@@ -347,12 +326,6 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	if (!ctx->pkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-
-	subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert);
-	if (subjKeyIDStr) {
-		CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
-		ASN1_OCTET_STRING_free(subjKeyIDStr);
-	}
 
 	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
 
@@ -405,19 +378,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		ctx->recipient = X509_get_issuer_name(ctx->clCert);
 		
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-
-	/* get the subject_key_id from the certificate to set it later as senderKID */
-	/* this is not needed in case protection is done with MSG_MAC_ALG (what is not
-	 * implemented so far) */
-	/* TODO: should that be shifted to the function doing the protection with
-	 * the signature? This is done in multiple places... */
-	if( ctx->clCert ) {
-		ASN1_OCTET_STRING *subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert);
-		if (subjKeyIDStr) {
-			CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
-			ASN1_OCTET_STRING_free(subjKeyIDStr);
-		}
-	}
 
 	if( !CMP_PKIHEADER_set1(msg->header, ctx)) goto err;
 

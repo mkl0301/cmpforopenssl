@@ -431,7 +431,10 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 				}
 				
 				/* verification failed if no valid server cert was found */
-				if (!srvCert_valid) return 0; 
+				if (!srvCert_valid) {
+					CMPerr(CMP_F_CMP_VALIDATE_MSG, CMP_R_NO_VALID_SRVCERT_FOUND);
+					return 0; 
+				}
 
 				/* store trusted server cert for future messages in this interaction */
 				ctx->validatedSrvCert = srvCert;
