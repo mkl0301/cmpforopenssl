@@ -747,17 +747,16 @@ int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg) {
 			return 1;
 	}
 
-	/* not found */
 	return 0;
 }
 
 /* ############################################################################ * 
+ * push given itav to message header
  *
  * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIHEADER_generalInfo_item_push0(CMP_PKIHEADER *hdr, const CMP_INFOTYPEANDVALUE *itav) {
-	if( !hdr)
-		return 0;
+	if( !hdr) goto err;
 
 	if( !CMP_ITAV_stack_item_push0(&hdr->generalInfo, itav))
 		goto err;
@@ -767,12 +766,14 @@ err:
 }
 
 /* ############################################################################ * 
+ * push itav to general message
  *
  * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIMESSAGE_genm_item_push0(CMP_PKIMESSAGE *msg, const CMP_INFOTYPEANDVALUE *itav) {
-	if (!msg)
-		return 0;
+	if (!msg) goto err;
+
+	if (CMP_PKIMESSAGE_get_bodytype(msg) != V_CMP_PKIBODY_GENM) goto err;
 
 	if (!CMP_ITAV_stack_item_push0( &msg->body->value.genm, itav))
 		goto err;
@@ -782,16 +783,18 @@ err:
 }
 
 /* ############################################################################ * 
+ * push given itav to given stack
+ *
  * @itav: a pointer to the infoTypeAndValue item to push on the stack.
- *		  If NULL it will be only made sure the stack exists
+ *		  If NULL it will only made sure the stack exists, that might be
+ *		  needed for creating an empty general message
  *
  * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_ITAV_stack_item_push0(STACK_OF(CMP_INFOTYPEANDVALUE) **itav_sk_p, const CMP_INFOTYPEANDVALUE *itav) {
 	int created = 0;
 
-	if (!itav_sk_p)
-		return 0;
+	if (!itav_sk_p) goto err;
 
 	if (!*itav_sk_p) {
 		/* not yet created */
@@ -817,16 +820,8 @@ err:
  * ############################################################################ */
 long CMP_PKISTATUSINFO_PKIstatus_get( CMP_PKISTATUSINFO *statusInfo) {
 	if (!statusInfo) return -1;
+	if (!statusInfo->status) return -1;
 	return ASN1_INTEGER_get(statusInfo->status);
-}
-
-/* ############################################################################ * 
- * returns the PKIStatus of the given ErrorMessage
- * returns -1 on error
- * ############################################################################ */
-long CMP_ERRORMSGCONTENT_PKIStatus_get( CMP_ERRORMSGCONTENT *error) {
-	if (!error) return -1;
-	return CMP_PKISTATUSINFO_PKIstatus_get(error->pKIStatusInfo);
 }
 
 /* ############################################################################ * 

@@ -120,9 +120,6 @@ example, to confirm that the certificate was received successfully.
 CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string() returns the failure info
 from the given error message.
 
-CMP_ERRORMSGCONTENT_PKIStatus_get() returns the PKIStatus value of the
-given error message.
-
 CMP_ERRORMSGCONTENT_PKIStatus_get_string() returns the PKIStatus info of
 the given error message.
 
