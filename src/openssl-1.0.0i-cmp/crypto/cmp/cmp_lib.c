@@ -949,7 +949,7 @@ long CMP_REVREPCONTENT_PKIStatus_get( CMP_REVREPCONTENT *revRep, long reqId) {
 		return CMP_PKISTATUSINFO_PKIstatus_get(status);
 	}
 
-	/* did not find a CertResponse with the right certRep */
+	CMPerr(CMP_F_CMP_REVREPCONTENT_PKISTATUS_GET, CMP_R_ERROR_REQID_NOT_FOUND);
 	return -1;
 }
 
@@ -965,7 +965,7 @@ long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReq
 		return CMP_PKISTATUSINFO_PKIstatus_get(certResponse->status);
 	}
 
-	/* did not find a CertResponse with the right certRep */
+	CMPerr(CMP_F_CMP_CERTREPMESSAGE_PKISTATUS_GET, CMP_R_ERROR_REQID_NOT_FOUND);
 	return -1;
 }
 
@@ -983,7 +983,7 @@ CMP_PKIFAILUREINFO *CMP_CERTREPMESSAGE_PKIFailureInfo_get0(CMP_CERTREPMESSAGE *c
 			return certResponse->status->failInfo;
 	}
 
-	/* did not find a CertResponse with the right certRep */
+	CMPerr(CMP_F_CMP_CERTREPMESSAGE_PKIFAILUREINFO_GET0, CMP_R_ERROR_REQID_NOT_FOUND);
 	return NULL;
 }
 
@@ -1001,7 +1001,7 @@ char *CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(CMP_CERTREPMESSAGE *certRep, 
 			return CMP_PKISTATUSINFO_PKIFailureInfo_get_string(certResponse->status);
 	}
 
-	/* did not find a CertResponse with the right certRep */
+	CMPerr(CMP_F_CMP_CERTREPMESSAGE_PKIFAILUREINFOSTRING_GET0, CMP_R_ERROR_REQID_NOT_FOUND);
 	return NULL;
 }
 
@@ -1017,11 +1017,12 @@ STACK_OF(ASN1_UTF8STRING)* CMP_CERTREPMESSAGE_PKIStatusString_get0( CMP_CERTREPM
 		return certResponse->status->statusString;
 	}
 
-	/* did not find a CertResponse with the right certRep */
+	CMPerr(CMP_F_CMP_CERTREPMESSAGE_PKISTATUSSTRING_GET0, CMP_R_ERROR_REQID_NOT_FOUND);
 	return NULL;
 }
 
 /* ############################################################################ *
+ * checks bits in given PKIFailureInfo
  * returns 1 if a given bit is set in a PKIFailureInfo
  *				0 if			not set
  *			   -1 on error
@@ -1033,7 +1034,6 @@ int CMP_PKIFAILUREINFO_check( ASN1_BIT_STRING *failInfo, int codeBit) {
 
 	return ASN1_BIT_STRING_get_bit( failInfo, codeBit);
 }
-
 
 /* ############################################################################ *
  * returns a pointer to the CertResponse with the given certReqId inside a CertRepMessage
@@ -1093,6 +1093,8 @@ X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId)
 
 /* ############################################################################# *
  * Decrypts the certificate with the given certReqId inside a CertRepMessage and
+ * this is needed for the indirect PoP method as in section 5.2.8.2
+ *
  * returns a pointer to the decrypted certificate
  * returns NULL on error or if no Certificate available
  * ############################################################################# */
@@ -1107,9 +1109,7 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	const unsigned char *p		   = NULL; /* needed for decoding ASN1				  */
 	int					 symmAlg;  /* NIDs for key and symmetric algorithm	  */
 	int					 n, outlen = 0;
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L 
 	EVP_PKEY_CTX		*pkctx	   = NULL;	 /* private key context */
-#endif
 
 	CMP_CERTRESPONSE *certResponse = NULL;
 	if ( !(certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) )
@@ -1121,8 +1121,6 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	symmAlg = OBJ_obj2nid(encCert->symmAlg->algorithm);
 
 	/* first the symmetric key needs to be decrypted */
-
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L 
 	if ((pkctx = EVP_PKEY_CTX_new(pkey, NULL)) && EVP_PKEY_decrypt_init(pkctx)) {
 		ASN1_BIT_STRING *encKey = encCert->encSymmKey;
 
@@ -1140,14 +1138,6 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_KEY);
 		goto err;
 	}
-#else
-	ASN1_BIT_STRING *encKey = encCert->encSymmKey;
-	ek = OPENSSL_malloc(encKey->length);
-	if (EVP_PKEY_decrypt(ek, encKey->data, encKey->length, pkey) == -1) {
-		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_KEY);
-		goto err;
-	}
-#endif
 
 	/* select cipher based on algorithm given in message */
 	if (!(cipher = EVP_get_cipherbynid(symmAlg))) {
