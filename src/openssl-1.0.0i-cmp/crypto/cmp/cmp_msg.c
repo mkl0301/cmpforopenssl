@@ -109,6 +109,10 @@ static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL
 	return 1;
 }
 
+/* ############################################################################ 
+ * Returns the subject key identifier of the given certificate, or
+ * NULL on error.
+ * ############################################################################ */
 ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert) {
 	const unsigned char *subjKeyIDStrDer = NULL;
 	ASN1_OCTET_STRING *subjKeyIDStr = NULL;
@@ -127,9 +131,17 @@ ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert) {
 	return subjKeyIDStr;
 }
 
+/* ############################################################################
+ * This tries to build the certificate chain of our client cert by using
+ * certificates in untrusted_store. If no untrusted store is set, it will
+ * at least place the client certificate into extraCerts.
+ *
+ * Additionally all the certificates explicitly specified to be sent out
+ * (i.e. ctx->extraCertsOut) are added to the stack.
+ * ############################################################################ */
 static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 	if (ctx->clCert) {
-		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+		if (!msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
 
 		/* if we have untrusted store, try to add all the intermediate certs and our own */
 		if (ctx->untrusted_store) {
@@ -139,7 +151,7 @@ static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 				X509 *cert = sk_X509_value(chain, i);
 				sk_X509_push(msg->extraCerts, cert);
 			}
-			sk_X509_free(chain);
+			sk_X509_pop_free(chain, X509_free);
 		}
 		if (sk_X509_num(msg->extraCerts) == 0)
 			/* Make sure that at least our own cert gets sent */

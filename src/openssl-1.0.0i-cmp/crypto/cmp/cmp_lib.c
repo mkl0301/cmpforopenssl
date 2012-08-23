@@ -668,12 +668,11 @@ int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 	if (!cert) goto err;
 
 	sigAlgID = OBJ_obj2nid(cert->sig_alg->algorithm);
-	// printf("INFO: certificate signature algorithm used: \"%s\"\n", OBJ_nid2sn(sigAlgID));
 
 	/* select algorithm based on the one used in the cert signature */
 	if ((md = EVP_get_digestbynid(sigAlgID))) {
 		if (!X509_digest(cert, md, hash, &hashLen)) goto err;
-		certHash=ASN1_OCTET_STRING_new();
+		if (!(certHash=ASN1_OCTET_STRING_new())) goto err;
 		if (!ASN1_OCTET_STRING_set(certHash, hash, hashLen)) goto err;
 
 		if (certStatus->certHash)
@@ -693,7 +692,7 @@ err:
 }
 
 /* ############################################################################ *
- * sets implicitConfirm in the generalInfo field of the header
+ * sets implicitConfirm in the generalInfo field of the PKIMessage header
  *
  * returns 1 on success, 0 on error
  * ############################################################################ */
@@ -702,11 +701,10 @@ int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg) {
 
 	if (!msg) goto err;
 
-	itav = CMP_INFOTYPEANDVALUE_new();
+	if (!(itav = CMP_INFOTYPEANDVALUE_new())) goto err;
 	itav->infoType = OBJ_nid2obj(NID_id_it_implicitConfirm);
 	itav->infoValue.implicitConfirm = ASN1_NULL_new();
-	// if (! CMP_INFOTYPEANDVALUE_set0( itav, OBJ_nid2obj(NID_id_it_implicitConfirm), V_ASN1_NULL, NULL)) goto err;
-	if (! CMP_PKIHEADER_generalInfo_item_push0( msg->header, itav)) goto err;
+	if (!CMP_PKIHEADER_generalInfo_item_push0( msg->header, itav)) goto err;
 	return 1;
 err:
 	if (itav) CMP_INFOTYPEANDVALUE_free(itav);
@@ -744,11 +742,6 @@ int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg) {
 int CMP_PKIHEADER_generalInfo_item_push0(CMP_PKIHEADER *hdr, const CMP_INFOTYPEANDVALUE *itav) {
 	if( !hdr)
 		return 0;
-#if 0
-	/* this is allowed and will just make sure the stack is created */
-	if( !itav)
-		return 0;
-#endif
 
 	if( !CMP_ITAV_stack_item_push0(&hdr->generalInfo, itav))
 		goto err;
@@ -762,15 +755,10 @@ err:
  * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIMESSAGE_genm_item_push0(CMP_PKIMESSAGE *msg, const CMP_INFOTYPEANDVALUE *itav) {
-	if( !msg)
+	if (!msg)
 		return 0;
-#if 0
-	/* this is allowed and will just make sure the stack is created */
-	if( !itav)
-		return 0;
-#endif
 
-	if( !CMP_ITAV_stack_item_push0( &msg->body->value.genm, itav))
+	if (!CMP_ITAV_stack_item_push0( &msg->body->value.genm, itav))
 		goto err;
 	return 1;
 err:
@@ -786,26 +774,21 @@ err:
 int CMP_ITAV_stack_item_push0(STACK_OF(CMP_INFOTYPEANDVALUE) **itav_sk_p, const CMP_INFOTYPEANDVALUE *itav) {
 	int created = 0;
 
-	if( !itav_sk_p)
+	if (!itav_sk_p)
 		return 0;
-#if 0
-	/* this is allowed and will just make sure the stack is created */
-	if( !itav)
-		return 0;
-#endif
 
-	if( !*itav_sk_p) {
+	if (!*itav_sk_p) {
 		/* not yet created */
 		if (!(*itav_sk_p = sk_CMP_INFOTYPEANDVALUE_new_null()))
 			goto err;
-		created= 1;
+		created = 1;
 	}
-	if( itav) {
-		if( !sk_CMP_INFOTYPEANDVALUE_push(*itav_sk_p, itav)) goto err;
+	if (itav) {
+		if (!sk_CMP_INFOTYPEANDVALUE_push(*itav_sk_p, itav)) goto err;
 	}
 	return 1;
 err:
-	if( created) {
+	if (created) {
 		sk_CMP_INFOTYPEANDVALUE_pop_free(*itav_sk_p, CMP_INFOTYPEANDVALUE_free);
 		*itav_sk_p = NULL;
 	}
@@ -896,8 +879,8 @@ char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo
 	int i;
 
 	if (!statusInfo) return 0;
-	for ( i=0; i <= CMP_PKIFAILUREINFO_MAX; i++) {
-		if( ASN1_BIT_STRING_get_bit(statusInfo->failInfo, i)) {
+	for (i=0; i <= CMP_PKIFAILUREINFO_MAX; i++) {
+		if (ASN1_BIT_STRING_get_bit(statusInfo->failInfo, i)) {
 			switch (i) {
 				case CMP_PKIFAILUREINFO_badAlg:
 					return "PKIFailureInfo: badAlg";
@@ -1196,8 +1179,8 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 	EVP_CIPHER_CTX_set_padding(ctx, 0);
 
 	if (!EVP_DecryptInit(ctx, cipher, ek, iv)
-			|| !EVP_DecryptUpdate(ctx, outbuf, &outlen, encCert->encValue->data, encCert->encValue->length)
-			|| !EVP_DecryptFinal(ctx, outbuf+outlen, &n)) {
+		|| !EVP_DecryptUpdate(ctx, outbuf, &outlen, encCert->encValue->data, encCert->encValue->length)
+		|| !EVP_DecryptFinal(ctx, outbuf+outlen, &n)) {
 		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_CERTIFICATE);
 		goto err;
 	}
@@ -1320,7 +1303,7 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 					if( !(newClCert = CMP_CERTREPMESSAGE_cert_get1(certrep,repNum))) {
 						CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
 						goto err;
-					}					
+					}
 					break;
 				case CMP_CERTORENCCERT_ENCRYPTEDCERT:
 					if( !(newClCert = CMP_CERTREPMESSAGE_encCert_get1(certrep,repNum,ctx->newPkey))) {
@@ -1328,6 +1311,9 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 						goto err;
 					}					
 					break;
+				default:
+					CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_UNKNOWN_CERTTYPE);
+					goto err;
 			}
 			break;
 
