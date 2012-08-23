@@ -1101,30 +1101,31 @@ X509 *CMP_CERTREPMESSAGE_cert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId)
 X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReqId, EVP_PKEY *pkey) {
 	CRMF_ENCRYPTEDVALUE *encCert   = NULL;
 	X509				*cert	   = NULL; /* decrypted certificate					  */
-	EVP_CIPHER_CTX		*ctx	   = NULL; /* context for symmetric encryption		  */
+	EVP_CIPHER_CTX		*evp_ctx   = NULL; /* context for symmetric encryption		  */
 	unsigned char		*ek		   = NULL; /* decrypted symmetric encryption key	  */
 	const EVP_CIPHER	*cipher    = NULL; /* used cipher							  */
 	unsigned char		*iv		   = NULL; /* initial vector for symmetric encryption */
 	unsigned char		*outbuf    = NULL; /* decryption output buffer				  */
 	const unsigned char *p		   = NULL; /* needed for decoding ASN1				  */
-	int					 symmAlg;  /* NIDs for key and symmetric algorithm	  */
+	int					 symmAlg   = 0;    /* NIDs for symmetric algorithm            */
 	int					 n, outlen = 0;
-	EVP_PKEY_CTX		*pkctx	   = NULL;	 /* private key context */
-
+	EVP_PKEY_CTX		*pkctx	   = NULL; /* private key context */
 	CMP_CERTRESPONSE *certResponse = NULL;
+
 	if ( !(certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) )
 		goto err;
 
-	encCert = certResponse->certifiedKeyPair->certOrEncCert->value.encryptedCert;
+	if ( !(encCert = certResponse->certifiedKeyPair->certOrEncCert->value.encryptedCert)) 
+		goto err;
 
-	/* keyAlg  = OBJ_obj2nid(encCert->keyAlg->algorithm); */
-	symmAlg = OBJ_obj2nid(encCert->symmAlg->algorithm);
+	if ( !(symmAlg = OBJ_obj2nid(encCert->symmAlg->algorithm)))
+		goto err;
 
 	/* first the symmetric key needs to be decrypted */
 	if ((pkctx = EVP_PKEY_CTX_new(pkey, NULL)) && EVP_PKEY_decrypt_init(pkctx)) {
 		ASN1_BIT_STRING *encKey = encCert->encSymmKey;
-
 		size_t eksize = 0;
+
 		if (EVP_PKEY_decrypt(pkctx, NULL, &eksize, encKey->data, encKey->length) <= 0
 				|| !(ek = OPENSSL_malloc(eksize))
 				|| EVP_PKEY_decrypt(pkctx, ek, &eksize, encKey->data, encKey->length) <= 0) {
@@ -1139,9 +1140,9 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 		goto err;
 	}
 
-	/* select cipher based on algorithm given in message */
+	/* select symmetric cipher based on algorithm given in message */
 	if (!(cipher = EVP_get_cipherbynid(symmAlg))) {
-		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_UNKNOWN_CIPHER);
+		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_UNSUPPORTED_CIPHER);
 		goto err;
 	}
 	if (!(iv = OPENSSL_malloc(cipher->iv_len))) goto err;
@@ -1149,33 +1150,33 @@ X509 *CMP_CERTREPMESSAGE_encCert_get1( CMP_CERTREPMESSAGE *certRep, long certReq
 
 	/* d2i_X509 changes the given pointer, so use p for decoding the message and keep the 
 	 * original pointer in outbuf so that the memory can be freed later */
-	if (!(p = outbuf = OPENSSL_malloc(encCert->encValue->length + cipher->block_size - 1))) goto err;
-	ctx = EVP_CIPHER_CTX_new();
-	EVP_CIPHER_CTX_set_padding(ctx, 0);
+	if (!(p = outbuf = OPENSSL_malloc(encCert->encValue->length + cipher->block_size))) goto err;
+	evp_ctx = EVP_CIPHER_CTX_new();
+	EVP_CIPHER_CTX_set_padding(evp_ctx, 0);
 
-	if (!EVP_DecryptInit(ctx, cipher, ek, iv)
-		|| !EVP_DecryptUpdate(ctx, outbuf, &outlen, encCert->encValue->data, encCert->encValue->length)
-		|| !EVP_DecryptFinal(ctx, outbuf+outlen, &n)) {
+	if (!EVP_DecryptInit(evp_ctx, cipher, ek, iv)
+		|| !EVP_DecryptUpdate(evp_ctx, outbuf, &outlen, encCert->encValue->data, encCert->encValue->length)
+		|| !EVP_DecryptFinal(evp_ctx, outbuf+outlen, &n)) {
 		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_CERTIFICATE);
 		goto err;
 	}
 	outlen += n;
 
+	/* convert decrypted certificate from DER to internal ASN.1 structure */
 	if (!(cert = d2i_X509(NULL, &p, outlen))) {
 		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECODING_CERTIFICATE);
 		goto err;
 	}
 
 	OPENSSL_free(outbuf);
-	EVP_CIPHER_CTX_free(ctx);
+	EVP_CIPHER_CTX_free(evp_ctx);
 	OPENSSL_free(ek);
 	OPENSSL_free(iv);
 	return cert;
-
 err:
 	CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_ENCCERT);
 	if (outbuf) OPENSSL_free(outbuf);
-	if (ctx) EVP_CIPHER_CTX_free(ctx);
+	if (evp_ctx) EVP_CIPHER_CTX_free(evp_ctx);
 	if (ek) OPENSSL_free(ek);
 	if (iv) OPENSSL_free(iv);
 	return NULL;
