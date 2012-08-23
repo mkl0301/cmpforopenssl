@@ -863,15 +863,6 @@ static char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusIn
 }
 
 /* ############################################################################ * 
- * returns the PKIStatus of the given Certresponse
- * returns -1 on error
- * ############################################################################ */
-long CMP_CERTRESPONSE_PKIStatus_get( CMP_CERTRESPONSE *resp) {
-	if (!resp) return -1;
-	return CMP_PKISTATUSINFO_PKIstatus_get(resp->status);
-}
-
-/* ############################################################################ * 
  * returns the PKIFailureInfo
  * returns 0 on error
  * ############################################################################ */
@@ -977,7 +968,7 @@ long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReq
 	if (!certRep) return -1;
 
 	if ( (certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) ) {
-		return (CMP_CERTRESPONSE_PKIStatus_get(certResponse));
+		return certResponse->resp->status;
 	}
 
 	/* did not find a CertResponse with the right certRep */
