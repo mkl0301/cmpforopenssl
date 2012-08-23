@@ -673,13 +673,11 @@ err:
 }
 
 /* ############################################################################ * 
-		-- the hash of the certificate, using the same hash algorithm
-		-- as is used to create and verify the certificate signature
+ * set certificate Hash in certStatus of certConf messages according to 5.3.18.
  *
  * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
-	ASN1_OCTET_STRING *certHash=NULL;
 	unsigned int hashLen;
 	unsigned char hash[EVP_MAX_MD_SIZE];
 	int sigAlgID;
@@ -688,17 +686,15 @@ int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 	if (!certStatus) goto err;
 	if (!cert) goto err;
 
+	/*  select hash algorithm, as stated in Appendix F.  Compilable ASN.1 Definitions:
+	 *  -- the hash of the certificate, using the same hash algorithm
+	 *  -- as is used to create and verify the certificate signature */
 	sigAlgID = OBJ_obj2nid(cert->sig_alg->algorithm);
-
-	/* select algorithm based on the one used in the cert signature */
 	if ((md = EVP_get_digestbynid(sigAlgID))) {
 		if (!X509_digest(cert, md, hash, &hashLen)) goto err;
-		if (!(certHash=ASN1_OCTET_STRING_new())) goto err;
-		if (!ASN1_OCTET_STRING_set(certHash, hash, hashLen)) goto err;
-
-		if (certStatus->certHash)
-			ASN1_OCTET_STRING_free(certStatus->certHash);
-		certStatus->certHash = certHash;
+		if (!certStatus->certHash)
+			if (!(certStatus->certHash = ASN1_OCTET_STRING_new())) goto err;
+		if (!ASN1_OCTET_STRING_set(certStatus->certHash, hash, hashLen)) goto err;
 	}
 	else {
 		CMPerr(CMP_F_CMP_CERTSTATUS_SET_CERTHASH, CMP_R_UNSUPPORTED_ALGORITHM);
@@ -708,7 +704,6 @@ int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert) {
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CERTSTATUS_SET_CERTHASH, CMP_R_ERROR_SETTING_CERTHASH);
-	if( certHash) ASN1_OCTET_STRING_free(certHash);
 	return 0;
 }
 
