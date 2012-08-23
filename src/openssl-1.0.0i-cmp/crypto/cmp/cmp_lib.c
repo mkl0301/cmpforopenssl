@@ -863,13 +863,14 @@ static char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusIn
 }
 
 /* ############################################################################ * 
+ * internal function
  *
  * convert PKIstatus to human readable string
  *
  * returns pointer to string containing the the PKIFailureInfo
  * returns NULL on error
  * ############################################################################ */
-char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo) {
+static char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo) {
 	int i;
 
 	if (!statusInfo) return 0;

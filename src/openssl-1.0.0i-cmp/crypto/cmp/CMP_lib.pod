@@ -29,7 +29,6 @@
   CMP_PKIMESSAGE_parse_error_msg,
   CMP_PKIMESSAGE_set_bodytype,
   CMP_PKIMESSAGE_set_implicitConfirm,
-  CMP_PKISTATUSINFO_PKIFailureInfo_get_string,
   CMP_PKISTATUSINFO_PKIstatus_get,
   CMP_get_protectionAlg_pbmac,
   CMP_protection_new,
@@ -66,7 +65,6 @@
   char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int bufsize);
   int CMP_PKIMESSAGE_set_bodytype( CMP_PKIMESSAGE *msg, int type);
   int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg);
-  char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo);
   long CMP_PKISTATUSINFO_PKIstatus_get( CMP_PKISTATUSINFO *statusInfo);
   X509_ALGOR *CMP_get_protectionAlg_pbmac();
   ASN1_BIT_STRING *CMP_protection_new(CMP_PKIMESSAGE *pkimessage, const EVP_PKEY *pkey, const ASN1_OCTET_STRING *secret);
@@ -164,9 +162,6 @@ CMP_PKIMESSAGE_protect() protects the given message deciding on the algorithm
 depending on the available context information:  If there is a secretValue it
 selects PBMAC if not and there is a clCert it selects Signature.  Generates and
 sets the protection to the given pkimessage.
-
-CMP_PKISTATUSINFO_PKIFailureInfo_get_string() returns a string
-representing the failure code in the given PKIFailureInfo structure.
 
 CMP_PKISTATUSINFO_PKIstatus_get() finds the CertResponse with the given
 certReqId inside the given CertRepMessage, and returns the value of
