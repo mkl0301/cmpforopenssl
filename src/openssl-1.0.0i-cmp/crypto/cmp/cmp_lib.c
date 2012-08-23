@@ -1208,27 +1208,29 @@ int CMP_PKIMESSAGE_get_bodytype( CMP_PKIMESSAGE *msg) {
 }
 
 /* ############################################################################ *
- * return error message string or NULL on error
+ * return pointer to human readable error message string created out of the
+ * information extracted from given error message
+ * returns NULL on error
  * ############################################################################ */
 char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int bufsize) {
 	char *status, *failureinfo;
 
-	if( !msg) return 0;
-	if( CMP_PKIMESSAGE_get_bodytype(msg) != V_CMP_PKIBODY_ERROR) return 0;
+	if( !msg) return NULL;
+	if( CMP_PKIMESSAGE_get_bodytype(msg) != V_CMP_PKIBODY_ERROR) return NULL;
 
 	status = CMP_PKISTATUSINFO_PKIstatus_get_string(msg->body->value.error->pKIStatusInfo);
 	if (!status) {
-		BIO_snprintf(errormsg, bufsize, "failed to parse error message");
-		return errormsg;
+		CMPerr(CMP_F_CMP_PKIMESSAGE_PARSE_ERROR_MSG, CMP_R_ERROR_PARSING_ERROR_MESSAGE);
+		return NULL;
 	}
 
 	/* PKIFailureInfo is optional */
 	failureinfo = CMP_PKISTATUSINFO_PKIFailureInfo_get_string(msg->body->value.error->pKIStatusInfo);
 
 	if (failureinfo)
-		BIO_snprintf(errormsg, bufsize, "Status: %s, Failureinfo: %s", status, failureinfo);
+		BIO_snprintf(errormsg, bufsize, "%s, %s", status, failureinfo);
 	else
-		BIO_snprintf(errormsg, bufsize, "Status: %s", status);
+		BIO_snprintf(errormsg, bufsize, "%s", status);
 
 	return errormsg;
 }
@@ -1236,14 +1238,15 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
 /* ############################################################################ *
  * Retrieve the returned certificate from the given certrepmessage.
  * returns NULL if not found
- * TODO: what if there are more than one?
+ * TODO: create another function handing multiple certreps when 2 certificates
+ * had been requested
  * ############################################################################ */
 X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep) {
 	X509 *newClCert = NULL;
 	int repNum = 0;
 
 	/* Get the certReqId of the first certresponse. Need to do it this way instead
-	 * of just using certReqId==0, because in error cases Insta replies with a certReqId
+	 * of just using certReqId==0, because in error cases the server might reply with a certReqId
 	 * of -1... */
 	if (sk_CMP_CERTRESPONSE_num(certrep->response) > 0)
 		repNum = ASN1_INTEGER_get(sk_CMP_CERTRESPONSE_value(certrep->response, 0)->certReqId);
@@ -1270,6 +1273,7 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 						goto err;
 					}
 					break;
+				/* certificate encrypted for PoP using indirect method according to section 5.2.8.2 */
 				case CMP_CERTORENCCERT_ENCRYPTEDCERT:
 					if( !(newClCert = CMP_CERTREPMESSAGE_encCert_get1(certrep,repNum,ctx->newPkey))) {
 						CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
@@ -1282,6 +1286,7 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 			}
 			break;
 
+		/* get all information in case of a rejection before going to error */
 		case CMP_PKISTATUS_rejection: {
 			char *statusString = NULL;
 			int statusLen = 0;
@@ -1339,6 +1344,8 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 err:
 	return NULL;
 }
+
+/* XXX TODO continue review below XXX */
 
 /* ################################################################ *
  * Builds up the certificate chain of cert as high up as possible using
