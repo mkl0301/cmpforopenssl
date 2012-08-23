@@ -117,12 +117,6 @@ certificate signature, and places the has into the certHash field of a
 CMP_CERTSTATUS structure. This is used in the certConf message, for
 example, to confirm that the certificate was received successfully.
 
-CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string() returns the failure info
-from the given error message.
-
-CMP_ERRORMSGCONTENT_PKIStatus_get_string() returns the PKIStatus info of
-the given error message.
-
 CMP_PKIFAILUREINFO_check() checks whether a given bit is set within a
 given PKIFailureInfo.
 

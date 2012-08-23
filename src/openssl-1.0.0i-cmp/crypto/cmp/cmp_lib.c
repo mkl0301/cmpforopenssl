@@ -825,10 +825,15 @@ long CMP_PKISTATUSINFO_PKIstatus_get( CMP_PKISTATUSINFO *statusInfo) {
 }
 
 /* ############################################################################ * 
- * returns the PKIStatus of the given PKIStatusInfo
- * or NULL on error
+ * internal function
+ *
+ * convert PKIstatus to human readable string
+ *
+ * returns pointer to character array containing a sting representing the 
+ * PKIStatus of the given PKIStatusInfo
+ * returns NULL on error
  * ############################################################################ */
-char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusInfo) {
+static char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusInfo) {
 	long PKIstatus;
 
 	if (!statusInfo) return 0;
@@ -855,15 +860,6 @@ char *CMP_PKISTATUSINFO_PKIstatus_get_string( CMP_PKISTATUSINFO *statusInfo) {
 			return 0;
 	}
 	return 0;
-}
-
-/* ############################################################################ * 
- * returns the PKIStatus info of the given error message
- * returns 0 on error
- * ############################################################################ */
-char *CMP_ERRORMSGCONTENT_PKIStatus_get_string( CMP_ERRORMSGCONTENT *error) {
-	if (!error) return 0;
-	return CMP_PKISTATUSINFO_PKIstatus_get_string(error->pKIStatusInfo);
 }
 
 /* ############################################################################ * 
@@ -1262,7 +1258,7 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
 	if( !msg) return 0;
 	if( CMP_PKIMESSAGE_get_bodytype(msg) != V_CMP_PKIBODY_ERROR) return 0;
 
-	status = CMP_ERRORMSGCONTENT_PKIStatus_get_string(msg->body->value.error);
+	status = CMP_PKISTATUSINFO_PKIstatus_get_string(msg->body->value.error->pKIStatusInfo);
 	if (!status) {
 		BIO_snprintf(errormsg, bufsize, "failed to parse error message");
 		return errormsg;

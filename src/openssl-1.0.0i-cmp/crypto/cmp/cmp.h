@@ -1355,8 +1355,6 @@ int CMP_PKIMESSAGE_genm_item_push0(CMP_PKIMESSAGE *msg, const CMP_INFOTYPEANDVAL
 int CMP_ITAV_stack_item_push0(STACK_OF(CMP_INFOTYPEANDVALUE) **itav_sk_p, const CMP_INFOTYPEANDVALUE *itav);
 
 long CMP_PKISTATUSINFO_PKIstatus_get( CMP_PKISTATUSINFO *statusInfo);
-char *CMP_PKISTATUSINFO_PKIStatus_get_string( CMP_PKISTATUSINFO *statusInfo);
-char *CMP_ERRORMSGCONTENT_PKIStatus_get_string( CMP_ERRORMSGCONTENT *error);
 
 char *CMP_PKISTATUSINFO_PKIFailureInfo_get_string( CMP_PKISTATUSINFO *statusInfo);
 char *CMP_ERRORMSGCONTENT_PKIFailureInfo_get_string( CMP_ERRORMSGCONTENT *error);
