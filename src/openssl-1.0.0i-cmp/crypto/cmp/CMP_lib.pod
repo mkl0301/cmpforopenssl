@@ -200,9 +200,6 @@ CMP_CERTREPMESSAGE_PKIStatusString_get0() gets the CertResponse with the
 given certReqId inside the gven CertReqMessage, and returns the
 status->statuString field contained in it.
 
-CMP_CERTRESPONSE_PKIStatusString_get0() returns the status->statuString
-field of the given CertResponse structure.
-
 CMP_ITAV_stack_item_push0() pushes the given InfoTypeAndValue to the
 given stack, creating a new stack if one does not exist yet.
 

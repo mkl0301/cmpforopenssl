@@ -872,13 +872,6 @@ long CMP_CERTRESPONSE_PKIStatus_get( CMP_CERTRESPONSE *resp) {
 }
 
 /* ############################################################################ * 
- * ############################################################################ */
-STACK_OF(ASN1_UTF8STRING)* CMP_CERTRESPONSE_PKIStatusString_get0( CMP_CERTRESPONSE *resp) {
-	if (!resp) return NULL;
-	return resp->status->statusString;
-}
-
-/* ############################################################################ * 
  * returns the PKIFailureInfo
  * returns 0 on error
  * ############################################################################ */
@@ -1036,7 +1029,7 @@ STACK_OF(ASN1_UTF8STRING)* CMP_CERTREPMESSAGE_PKIStatusString_get0( CMP_CERTREPM
 	if (!certRep) return NULL;
 
 	if ( (certResponse = CMP_CERTREPMESSAGE_certResponse_get0( certRep, certReqId)) ) {
-		return (CMP_CERTRESPONSE_PKIStatusString_get0(certResponse));
+		return certResponse->resp->status->statusString;
 	}
 
 	/* did not find a CertResponse with the right certRep */
