@@ -131,10 +131,10 @@ static char *V_CMP_TABLE[] = {
 	(((unsigned int) (type) < sizeof(V_CMP_TABLE)/sizeof(V_CMP_TABLE[0])) \
 	 ? V_CMP_TABLE[(unsigned int)(type)] : "unknown")
 
-/* ############################################################################ */
-/* Prints error data of the given CMP_PKIMESSAGE into a buffer specified by out */
-/* and returns pointer to the buffer.											*/
-/* ############################################################################ */
+/* ############################################################################ * 
+ * Prints error data of the given CMP_PKIMESSAGE into a buffer specified by out
+ * and returns pointer to the buffer.
+ * ############################################################################ */
 static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
 	char tempbuf[256];
 	switch (CMP_PKIMESSAGE_get_bodytype(msg)) {
@@ -193,8 +193,6 @@ static void add_error_data(const char *txt) {
  * to poll for a response message. The maximum number of times to attempt polling
  * is set in ctx->maxPollCount, and between polling it waits the number of seconds
  * specified in pollrep->checkAfter.
- *
- * TODO: need to be able to set a maximum waiting time
  * ############################################################################ */
 static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg) {
 	int i;
@@ -236,6 +234,9 @@ err:
 
 /* ############################################################################ *
  * TODO: the received Nonces should be checked and compared to the sent ones
+ * TODO: another function to request two certificates at once should be created
+ *
+ * returns pointer to received certificate, NULL if non was received
  * ############################################################################ */
 X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *ir=NULL;
@@ -264,51 +265,6 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			add_error_data("unable to send ir");
 		goto err;
 	}
-
-	/* TODO: standard when cert protection: use trusted_store + certs from extra
-	 * certs to validate sender Cert */
-#if 0
-	/* either ctx->srvCert or trusted_store are acceptable */
-	if (ip->header->sender->d.directoryName combined with optional ip->header->senderKID is in trusted_store) {
-		/* TODO: what if there is no senderKID but two certificates with the
-		 * same name? */
-		srvCert = identified trust anchor;
-		--> no need to verify chain
-	} else {
-		/* TODO: what if there is no senderKID but two certificates with the
-		 * same name? */
-		srvCert = find_cert_by_name(ip->extraCerts, ip->header->sender->d.directoryName), check optional senderKID;
-
-		if(verify srvCert chain to trusted store, using extraCerts as intermediate is OK) {
-			SUCCESS
-		} else {
-			if(3GPP-E.7-profile-option) {
-				if(srvCert is self-signed) {
-					if( not validate issued certificate included in IP with srvCert as Trust Anchor) { /* This is the 3GPP requirement for accepting a self-singed trust anchor from extaCerts */
-						FAIL
-					}
-				} 
-				if(srvCert is not self-signed) {
-					while (potialTrustAnchor = search(extraCerts for self-signed Certs)) {
-						if( validate issued certificate included in IP with potentialTrustAnchor as Trust Anchor and extraCerts as intermediate certs) { /* This is the 3GPP requirement for accepting a self-singed trust anchor from extaCerts */
-							if( not validate srvCert with potentialTurustAnchor as Trust Anchor and extraCerts as intermediate certs) {
-								FAIL;
-							}
-						} else NEXT;
-					}
-					if (not SUCCESS before) FAIL;
-				} 
-			} else FAIL;
-		}
-	}
-	if (!srvCert) {
-		FAIL /* as sender cert is not known - do we need to send errMsg? */
-	}
-	if( validate CMP Message Protection with srvCert) {
-		SUCCESS
-	} else FAIL;
-#endif
-
 	
 	/* catch if the received messagetype does not indicate an IP message (e.g. error)*/
 	if (CMP_PKIMESSAGE_get_bodytype(ip) != V_CMP_PKIBODY_IP) {
@@ -321,9 +277,16 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	/* make sure the PKIStatus for the *first* CERTrepmessage indicates a certificate was granted */
-	/* TODO - there could be two CERTrepmessages */
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, ip)) {
+		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
 
+	/* make sure the PKIStatus for the *first* CERTrepmessage indicates a certificate was granted */
+	/* TODO handle second CERTrepmessages if two would have sent */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0) == CMP_PKISTATUS_waiting)
 		if (!pollForResponse(ctx, cbio, ip->body->value.ip, &ip)) {
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
@@ -333,14 +296,6 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, ip->body->value.ip);
 	if (ctx->newClCert == NULL) goto err;
-
-	/* validate message protection */
-	if (CMP_validate_msg(ctx, ip)) {
-		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
 
 	/* if the CA returned certificates in the caPubs field, copy them
 	 * to the context so that they can be retrieved if necessary */
@@ -367,7 +322,6 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-
 	/* make sure the received messagetype indicates an PKIconf message */
 	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
 		char errmsg[256];
@@ -383,7 +337,6 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
-
 
 cleanup:
 	/* clean up */
@@ -514,6 +467,14 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, cp)) {
+		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
+
 	/* evaluate PKIStatus field */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0) == CMP_PKISTATUS_waiting)
 		if (!pollForResponse(ctx, cbio, cp->body->value.cp, &cp)) {
@@ -524,14 +485,6 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, cp->body->value.cp);
 	if (ctx->newClCert == NULL) goto err;
-
-	/* validate message protection */
-	if (CMP_validate_msg(ctx, cp)) {
-		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
 
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (cp->extraCerts)
@@ -631,6 +584,14 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, kup)) {
+		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
+
 	/* make sure the received messagetype indicates an KUP message */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( kup->body->value.kup, 0) == CMP_PKISTATUS_waiting) {
 		if (!pollForResponse(ctx, cbio, kup->body->value.kup, &kup)) {
@@ -642,14 +603,6 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, kup->body->value.kup);
 	if (ctx->newClCert == NULL) goto err;
-
-	/* validate message protection */
-	if (CMP_validate_msg(ctx, kup)) {
-		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
 
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (kup->extraCerts)
