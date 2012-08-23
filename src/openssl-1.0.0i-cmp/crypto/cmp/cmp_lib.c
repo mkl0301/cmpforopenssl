@@ -632,15 +632,11 @@ int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 			ASN1_OCTET_STRING *subjKeyIDStr = NULL;
 			int algNID = 0;
 			
-#if 0
-			if (!ctx->clCert->sig_alg) goto err;
-			if (!(msg->header->protectionAlg = X509_ALGOR_dup(ctx->clCert->sig_alg))) goto err;
-#else
-			/* TODO SHA1 is hardcoded here */
-			if (msg->header->protectionAlg)
-				X509_ALGOR_free(msg->header->protectionAlg);
-			msg->header->protectionAlg = X509_ALGOR_new();
+			if (!msg->header->protectionAlg)
+				msg->header->protectionAlg = X509_ALGOR_new();
 			
+			/* DSA/SHA1 is mandatory for MSG_SIG_ALG (appendix D.2) so SHA-1 is hardcoded here for now */
+			/* This could be made configurable via ctx to include SHA-256 etc */
 			switch (EVP_PKEY_type(ctx->pkey->type)) {
 				case EVP_PKEY_DSA: 
 					algNID = NID_dsaWithSHA1;
@@ -653,8 +649,9 @@ int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 					goto err;
 			}
 			X509_ALGOR_set0(msg->header->protectionAlg, OBJ_nid2obj(algNID), V_ASN1_NULL, NULL);
-#endif
 
+			/* set senderKID to  keyIdentifier of the used certificate according
+			 * to section 5.1.1 */
 			subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert);
 			if (subjKeyIDStr) {
 				CMP_PKIHEADER_set1_senderKID(msg->header, subjKeyIDStr);
