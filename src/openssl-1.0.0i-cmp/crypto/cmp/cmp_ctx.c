@@ -1033,6 +1033,9 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val) {
 		case CMP_CTX_OPT_MAXPOLLCOUNT:
 			ctx->maxPollCount = val;
 			break;
+		case CMP_CTX_PERMIT_TA_IN_EXTRACERTS_FOR_IR:
+			ctx->permitTAInExtraCertsForIR = val;
+			break;
 		default:
 			goto err;
 	}

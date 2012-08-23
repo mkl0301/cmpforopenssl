@@ -1472,6 +1472,7 @@ unsigned long CMP_CTX_failInfoCode_get(CMP_CTX *ctx);
 #define CMP_CTX_OPT_POPMETHOD		2
 #define CMP_CTX_OPT_VALIDATEPATH	3
 #define CMP_CTX_OPT_MAXPOLLCOUNT	4
+#define CMP_CTX_PERMIT_TA_IN_EXTRACERTS_FOR_IR 5
 int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 #if 0
 int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
