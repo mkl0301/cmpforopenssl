@@ -120,39 +120,43 @@ err:
 }
 
 /* ############################################################################
- * This tries to build the certificate chain of our client cert by using
- * certificates in untrusted_store. If no untrusted store is set, it will
- * at least place the client certificate into extraCerts.
- *
+ * Adds the certificates to the extraCerts fields in the given message.  For
+ * this it tries to build the certificate chain of our client cert (ctx->clCert)
+ * by using certificates in ctx->untrusted_store. If no untrusted store is set, 
+ * it will at least place the client certificate into extraCerts.
  * Additionally all the certificates explicitly specified to be sent out
  * (i.e. ctx->extraCertsOut) are added to the stack.
+ *
+ * Note: it will NOT put the trust anchor in the extraCerts - unless it would be
+ * in the untrusted store.
+ *
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
-	if (ctx->clCert) {
-		if (!msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+	int i;
+	if (!ctx) goto err;
+	if (!ctx->clCert) goto err;
+	if (!msg) goto err;
 
-		/* if we have untrusted store, try to add all the intermediate certs and our own */
-		if (ctx->untrusted_store) {
-			STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert);
-			int i;
-			for(i = 0; i < sk_X509_num(chain); i++) {
-				X509 *cert = sk_X509_value(chain, i);
-				sk_X509_push(msg->extraCerts, cert);
-			}
-			sk_X509_free(chain);
+	if (!msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
+
+	/* if we have untrusted store, try to add all the intermediate certs and our own */
+	if (ctx->untrusted_store) {
+		STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert);
+		int i;
+		for(i = 0; i < sk_X509_num(chain); i++) {
+			X509 *cert = sk_X509_value(chain, i);
+			sk_X509_push(msg->extraCerts, cert);
 		}
-		if (sk_X509_num(msg->extraCerts) == 0)
-			/* Make sure that at least our own cert gets sent */
-			sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
+		sk_X509_free(chain); /* only frees the stack, not the content */
+	} else {
+		/* Make sure that at least our own cert gets sent */
+		sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
 	}
 
 	/* add any additional certificates from ctx->extraCertsOut */
-	if (sk_X509_num(ctx->extraCertsOut) > 0) {
-		int i;
-		if( !msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
-		for (i = 0; i < sk_X509_num(ctx->extraCertsOut); i++)
-			sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCertsOut, i)));
-	}
+	for (i = 0; i < sk_X509_num(ctx->extraCertsOut); i++)
+		sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCertsOut, i)));
 
 	return 1;
 err:
@@ -161,6 +165,7 @@ err:
 
 /* ############################################################################ *
  * Creates a new polling request PKIMessage for the given request ID
+ * returns a pointer to the PKIMessage on success, NULL on error
  * ############################################################################ */
 CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 	CMP_PKIMESSAGE *msg = NULL;
@@ -169,11 +174,11 @@ CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
+	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_POLLREQ);
 
-	preq = CMP_POLLREQ_new();
+	if(!(preq = CMP_POLLREQ_new())) goto err;
 	/* TODO support multiple cert request ids to poll */
 	ASN1_INTEGER_set(preq->certReqId, reqId);
 	if (!(msg->body->value.pollReq = sk_CMP_POLLREQ_new_null()))
@@ -205,7 +210,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
+	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
@@ -267,7 +272,7 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_RR);
 		
-	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
+	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
@@ -315,7 +320,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
+	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
@@ -367,7 +372,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 		
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	if( !CMP_PKIHEADER_set1(msg->header, ctx)) goto err;
+	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm( msg)) goto err;
@@ -463,7 +468,7 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	if( !CMP_PKIHEADER_set1(msg->header, ctx)) goto err;
+	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CERTCONF);
 
@@ -523,7 +528,7 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value) {
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	if( !CMP_PKIHEADER_set1(msg->header, ctx)) goto err;
+	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_GENM);
 
