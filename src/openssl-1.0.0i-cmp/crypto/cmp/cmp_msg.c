@@ -332,7 +332,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	else if (ctx->clCert) /* get subject name from existing certificate */
 		subject = X509_get_subject_name(ctx->clCert);
 	else
-		subject = NULL;
+		subject = NULL; /* TODO: should that be possible? */
 
 	if( !(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, NULL))) goto err;
@@ -352,8 +352,10 @@ err:
 
 /* ############################################################################ *
  * Creates a new Key Update Request PKIMessage based on the settings in ctx
- * TODO: KUR can actually also be done with MSG_MAC_ALG, check D.6, 2 *
  * returns a pointer to the PKIMessage on success, NULL on error
+ * TODO: the differentiation between certificate used to sign the CMP messages
+ * and the certificate to update should be improved - so far only the clCert
+ * could be updated
  * ############################################################################ */
 CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *msg=NULL;
@@ -367,80 +369,30 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
 	if (!ctx->newPkey) goto err;
 
-	if (!ctx->srvCert && !ctx->recipient)
-		ctx->recipient = X509_get_issuer_name(ctx->clCert);
-		
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm( msg)) goto err;
 
+	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);
+
 	if (ctx->subjectName)
 		subject = ctx->subjectName;
 	else
-		subject = X509_get_subject_name( (X509*) ctx->clCert);
+		subject = X509_get_subject_name( (X509*) ctx->clCert); /* TODO: from certificate to be renewed */
 
-	/* certReq 0 is not freed on error, but that's because it will become part of kur and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, NULL))) goto err;
-
-	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);
-	if( !(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;
-
-	CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert);
-
-#if 0
-	/* commented out as this is not in the RFC - this would need to replace the
-	 * line above */
-
-	/* identify our cert */
-	/* this is like it is described in the RFC:
-	 * set oldCertId in "controls" of the CRMF cr message
-	 * CL does not like this to be set */
-	if( ctx->compatibility != CMP_COMPAT_CRYPTLIB) {
-		CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert);
-	}
-#endif
-
-#if 0
-	/* commented out as this is not in the RFC */
-
-	/* this is like CL likes it:
-	 * set id-aa-signingCertificate "generalInfo" of the CMP header */
-	if( ctx->compatibility == CMP_COMPAT_CRYPTLIB) {
-		unsigned int hashLen;
-		unsigned char hash[EVP_MAX_MD_SIZE];
-		ESS_CERT_ID *essCertId = NULL;
-		ESS_SIGNING_CERT *signingCert = NULL;
-		CMP_INFOTYPEANDVALUE *itav = NULL;
-		STACK_OF(ESS_SIGNING_CERT) *set = NULL;
-
-		if (!X509_digest(ctx->clCert, EVP_sha1(), hash, &hashLen)) goto err;
-		essCertId = ESS_CERT_ID_new();
-		if (!ASN1_OCTET_STRING_set(essCertId->hash, hash, hashLen)) goto err;
-
-		signingCert = ESS_SIGNING_CERT_new();
-		if( !signingCert->cert_ids) {
-			if( !(signingCert->cert_ids = sk_ESS_CERT_ID_new_null())) goto err;
-		}
-		if(!sk_ESS_CERT_ID_push(signingCert->cert_ids, essCertId)) goto err;
-
-		if (!(set = sk_ESS_SIGNING_CERT_new_null())) goto err;
-		sk_ESS_SIGNING_CERT_push(set, signingCert);
-		itav = CMP_INFOTYPEANDVALUE_new();
-		itav->infoType = OBJ_nid2obj( NID_id_smime_aa_signingCertificate);
-		itav->infoValue.signingCertificate = set;
-		CMP_PKIHEADER_generalInfo_item_push0( msg->header, itav);
-	}
-#endif
-
+	if (!(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;
+	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, NULL))) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.kur, certReq0);
+	/* TODO: here also the optional 2nd certreqmsg could be pushed to the stack */
+
+	/* setting OldCertId according to D.6:
+		7.  regCtrl OldCertId SHOULD be used */
+	CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert); /* TODO: from certificate to be renewed */
 
 	add_extraCerts(ctx, msg);
-
-	/* XXX what about setting the optional 2nd certreqmsg? */
-
 	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
