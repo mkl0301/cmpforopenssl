@@ -190,11 +190,14 @@ CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 
 	return msg;
 err:
+	CMPerr(CMP_F_CMP_POLLREQ_NEW, CMP_R_ERROR_CREATING_POLLREQ);
+	if (msg) CMP_PKIMESSAGE_free(msg);
 	return NULL;
 }
 
 /* ############################################################################ *
  * Create a new Initial Request PKIMessage
+ * returns a pointer to the PKIMessage on success, NULL on error
  * ############################################################################ */
 CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE	*msg=NULL;
@@ -202,15 +205,17 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	X509_EXTENSIONS *extensions = NULL;
 	X509_NAME *subject=NULL;
 
-	/* check if all necessary options are set */
 	if (!ctx) goto err;
-	/* for authentication we need either a reference value/secret or external identity certificate and private key */
+
+	/* for authentication we need either a reference value/secret or external identity certificate (E.7) and private key */
 	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
+
+	/* new Private key for new Certificate */
 	if (!ctx->newPkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
@@ -219,7 +224,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 
 	if (ctx->subjectName)
 		subject = ctx->subjectName;
-	else if (ctx->clCert) /* E.7 */
+	else if (ctx->clCert) /* get subject name from existing certificate (E.7) */
 		subject = X509_get_subject_name(ctx->clCert);
 	else
 		subject = NULL;
@@ -227,28 +232,28 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	if (sk_GENERAL_NAME_num(ctx->subjectAltNames) > 0)
 		add_altname_extensions(&extensions, ctx->subjectAltNames);
 
-	/* certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, extensions))) goto err;
-
-	if (ctx->regToken && !CRMF_CERTREQMSG_set1_regInfo_regToken(certReq0, ctx->regToken)) goto err;
-
-	if (extensions) sk_X509_EXTENSION_pop_free(extensions, X509_EXTENSION_free);
-
-	if( !(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
+	if (!(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
+	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, extensions))) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.ir, certReq0);
+	/* TODO: here also the optional 2nd certreqmsg could be pushed to the stack */
+
+    /* sets the id-regCtrl-regToken to regInfo (not described in RFC, but EJBCA
+	 * in CA mode might insist on that) */
+	if (ctx->regToken)
+	   if (!CRMF_CERTREQMSG_set1_regInfo_regToken(certReq0, ctx->regToken)) goto err;
 
 	add_extraCerts(ctx, msg);
-
-	/* XXX what about setting the optional 2nd certreqmsg? */
-
 	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
+	/* cleanup */
+	if (extensions) sk_X509_EXTENSION_pop_free(extensions, X509_EXTENSION_free);
+	
 	return msg;
 
 err:
 	CMPerr(CMP_F_CMP_IR_NEW, CMP_R_ERROR_CREATING_IR);
+	if (extensions) sk_X509_EXTENSION_pop_free(extensions, X509_EXTENSION_free);
 	if (msg) CMP_PKIMESSAGE_free(msg);
-
 	return NULL;
 }
 
