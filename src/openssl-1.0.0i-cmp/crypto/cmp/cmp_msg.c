@@ -61,7 +61,7 @@
  *
  */
 /* ====================================================================
- * Copyright 2007-2010 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
+ * Copyright 2007-2012 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
  * CMP support in OpenSSL originally developed by 
  * Nokia Siemens Networks for contribution to the OpenSSL project.
  */
@@ -89,46 +89,34 @@
 
 /* ############################################################################ 
  * Takes a stack of GENERAL_NAMEs and adds them to the given extension stack.
+ * this is used to setting subject alternate names to a certTemplate
+ *
+ * returns 1 on success, 0 on error
  * ############################################################################ */
 static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL_NAME) *altnames) {
 	X509_EXTENSION *ext = NULL;
 	unsigned char *der = NULL;
 	int derlen = 0;
-	ASN1_OCTET_STRING *str = ASN1_OCTET_STRING_new();
+	ASN1_OCTET_STRING *str = NULL;;
 
-	ASN1_seq_pack_GENERAL_NAME(altnames, i2d_GENERAL_NAME, &der, &derlen);
+	if(!extensions) goto err;
+	if(!altnames) goto err;
 
-	ASN1_STRING_set(str, der, derlen);
-	X509_EXTENSION_create_by_NID(&ext, NID_subject_alt_name, 0, str);
+	if(!(str = ASN1_OCTET_STRING_new())) goto err;
+
+	if(!(ASN1_seq_pack_GENERAL_NAME(altnames, i2d_GENERAL_NAME, &der, &derlen))) goto err;
+
+	if(!ASN1_STRING_set(str, der, derlen)) goto err;
+	if(!X509_EXTENSION_create_by_NID(&ext, NID_subject_alt_name, 0, str)) goto err;
 
 	ASN1_OCTET_STRING_free(str);
 	OPENSSL_free(der);
 
-	X509v3_add_ext(extensions, ext, 0);
+	if(!X509v3_add_ext(extensions, ext, 0)) goto err;
 
 	return 1;
-}
-
-/* ############################################################################ 
- * Returns the subject key identifier of the given certificate, or
- * NULL on error.
- * ############################################################################ */
-ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert) {
-	const unsigned char *subjKeyIDStrDer = NULL;
-	ASN1_OCTET_STRING *subjKeyIDStr = NULL;
-	X509_EXTENSION *ex = NULL;
-	int subjKeyIDLoc = -1;
-
-	subjKeyIDLoc = X509_get_ext_by_NID( (X509*) cert, NID_subject_key_identifier, -1);
-	if (subjKeyIDLoc == -1) return NULL;
-
-	/* found a subject key ID */
-	ex = sk_X509_EXTENSION_value( cert->cert_info->extensions, subjKeyIDLoc);
-
-	subjKeyIDStrDer = (const unsigned char *) ex->value->data;
-	subjKeyIDStr = d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
-
-	return subjKeyIDStr;
+err:
+	return 0;
 }
 
 /* ############################################################################

@@ -1324,7 +1324,7 @@ CMP_PKIMESSAGE *CMP_ckuann_new( CMP_CTX *ctx);
 #endif
 CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey);
 CMP_PKIMESSAGE *CMP_pollReq_new( CMP_CTX *ctx, int reqId);
-ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert);
+ASN1_OCTET_STRING *CMP_get_cert_subject_key_id(const X509 *cert);
 
 /* cmp_lib.c */
 

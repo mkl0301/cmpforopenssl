@@ -652,7 +652,7 @@ int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 
 			/* set senderKID to  keyIdentifier of the used certificate according
 			 * to section 5.1.1 */
-			subjKeyIDStr = CMP_get_subject_key_id(ctx->clCert);
+			subjKeyIDStr = CMP_get_cert_subject_key_id(ctx->clCert);
 			if (subjKeyIDStr) {
 				CMP_PKIHEADER_set1_senderKID(msg->header, subjKeyIDStr);
 				ASN1_OCTET_STRING_free(subjKeyIDStr);
@@ -1403,3 +1403,28 @@ err:
 	return NULL;
 }
 
+/* ############################################################################ 
+ * this function is inteded to be used only within the CMP library although it is
+ * included in cmp.h
+ *
+ * Returns the subject key identifier of the given certificate
+ * returns NULL on error, respecively when none was found.
+ * ############################################################################ */
+ASN1_OCTET_STRING *CMP_get_cert_subject_key_id(const X509 *cert) {
+	unsigned char *subjKeyIDStrDer = NULL;
+	X509_EXTENSION *ex = NULL;
+	int subjKeyIDLoc = -1;
+
+	if(!cert) goto err;
+
+	subjKeyIDLoc = X509_get_ext_by_NID( (X509*) cert, NID_subject_key_identifier, -1);
+	if (subjKeyIDLoc == -1) goto err;
+
+	/* found a subject key ID */
+	if(!(ex = sk_X509_EXTENSION_value( cert->cert_info->extensions, subjKeyIDLoc))) goto err;
+
+	subjKeyIDStrDer = ex->value->data;
+	return d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
+err:
+	return NULL;
+}

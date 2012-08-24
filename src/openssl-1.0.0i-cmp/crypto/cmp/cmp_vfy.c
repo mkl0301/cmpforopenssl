@@ -294,7 +294,7 @@ static X509 *findSrvCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 			if (msg->header->senderKID) {
 				for (n = 0; n < sk_X509_num(found_certs); n++) {
 					X509 *cert = sk_X509_value(found_certs, n);
-					ASN1_OCTET_STRING *cert_keyid = CMP_get_subject_key_id(cert);
+					ASN1_OCTET_STRING *cert_keyid = CMP_get_cert_subject_key_id(cert);
 
 					if (!ASN1_OCTET_STRING_cmp(cert_keyid, msg->header->senderKID)) {
 						srvCert = cert;
