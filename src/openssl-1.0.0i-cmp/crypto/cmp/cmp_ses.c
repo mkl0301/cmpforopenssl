@@ -440,7 +440,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->serverName
-		|| !ctx->pkey || !ctx->clCert ||
+		|| !ctx->pkey || !ctx->newPkey || !ctx->clCert ||
 		(!ctx->srvCert && !ctx->trusted_store)) {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_INVALID_ARGS);
 		goto err;

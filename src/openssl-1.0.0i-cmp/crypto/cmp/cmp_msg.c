@@ -316,6 +316,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	/* for authentication we need either a reference value/secret for MSG_MAC_ALG 
 	 * or existing certificate and private key for MSG_SIG_ALG */
 	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
+	if (!ctx->newPkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
@@ -334,7 +335,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 		subject = NULL;
 
 	if( !(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->popoMethod, NULL))) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, NULL))) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
 	/* TODO: here also the optional 2nd certreqmsg could be pushed to the stack */
 
@@ -349,10 +350,10 @@ err:
 	return NULL;
 }
 
-
 /* ############################################################################ *
- * Creates a new Key Update Request PKIMessage
+ * Creates a new Key Update Request PKIMessage based on the settings in ctx
  * TODO: KUR can actually also be done with MSG_MAC_ALG, check D.6, 2 *
+ * returns a pointer to the PKIMessage on success, NULL on error
  * ############################################################################ */
 CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *msg=NULL;
@@ -361,8 +362,9 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 
 	/* check if all necessary options are set */
 	if (!ctx) goto err;
-	if (!ctx->clCert) goto err;
-	if (!ctx->pkey) goto err;
+	/* for authentication we need either a reference value/secret for MSG_MAC_ALG 
+	 * or existing certificate and private key for MSG_SIG_ALG */
+	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
 	if (!ctx->newPkey) goto err;
 
 	if (!ctx->srvCert && !ctx->recipient)
