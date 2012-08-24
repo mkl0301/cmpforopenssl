@@ -196,7 +196,7 @@ err:
 }
 
 /* ############################################################################ *
- * Create a new Initial Request PKIMessage
+ * Create a new Initial Request PKIMessage based on the settings in given ctx
  * returns a pointer to the PKIMessage on success, NULL on error
  * ############################################################################ */
 CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
@@ -258,7 +258,8 @@ err:
 }
 
 /* ############################################################################ *
- * Creates a new Revocation Request PKIMessage
+ * Creates a new Revocation Request PKIMessage based on the settings in ctx
+ * returns a pointer to the PKIMessage on success, NULL on error
  * ############################################################################ */
 CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE	*msg=NULL;
@@ -266,35 +267,30 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	X509_NAME *subject=NULL;
 	CMP_REVDETAILS *rd=NULL;
 
-	/* check if all necessary options are set */
 	if (!ctx) goto err;
-#if 0
-	if (!ctx->srvCert) goto err;
-#endif
 	if (!ctx->clCert) goto err;
 	if (!ctx->pkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_RR);
 		
-	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 
-	if (ctx->implicitConfirm)
-		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
+	if (!(msg->body->value.rr = sk_CMP_REVDETAILS_new_null())) goto err;
+	if (!(rd = CMP_REVDETAILS_new())) goto err;
+	sk_CMP_REVDETAILS_push( msg->body->value.rr, rd);
 
-	certTpl = CRMF_CERTTEMPLATE_new();
-	/* Set the subject from the previous certificate */
-	subject = X509_get_subject_name(ctx->clCert);
-	X509_NAME_set(&certTpl->subject, subject);
-	X509_PUBKEY_set(&certTpl->publicKey, (EVP_PKEY*) ctx->pkey);
-	certTpl->serialNumber = ASN1_INTEGER_dup(ctx->clCert->cert_info->serialNumber);
-	X509_NAME_set(&certTpl->issuer, ctx->clCert->cert_info->issuer);
-
-	rd = CMP_REVDETAILS_new();
+	if (!(certTpl = CRMF_CERTTEMPLATE_new())) goto err;
 	rd->certDetails = certTpl;
 
-	if( !(msg->body->value.rr = sk_CMP_REVDETAILS_new_null())) goto err;
-	sk_CMP_REVDETAILS_push( msg->body->value.rr, rd);
+	/* Set the subject from the previous certificate */
+	if (!(subject = X509_get_subject_name(ctx->clCert))) goto err;
+	X509_NAME_set(&certTpl->subject, subject);
+	X509_PUBKEY_set(&certTpl->publicKey, ctx->pkey);
+	if (!(certTpl->serialNumber = ASN1_INTEGER_dup(ctx->clCert->cert_info->serialNumber))) goto err;
+	X509_NAME_set(&certTpl->issuer, ctx->clCert->cert_info->issuer);
+
+	/* TODO: the Revocation Passphrase according to section 5.3.19.9 could be set here if set in ctx */
 
 	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
