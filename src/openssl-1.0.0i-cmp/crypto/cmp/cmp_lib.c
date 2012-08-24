@@ -1345,15 +1345,28 @@ err:
 	return NULL;
 }
 
-/* XXX TODO continue review below XXX */
-
 /* ################################################################ *
  * Builds up the certificate chain of cert as high up as possible using
- * the given X509_STORE.
+ * the given X509_STORE containing all possible intermediate certificates and
+ * optionally the (possible) trust anchor(s).
+ *
+ * Intended use of this function is to find all the certificates below the trust
+ * anchor needed to verify an EE's own certificate.  Those are supposed to be
+ * included in the ExtraCerts field of every first sent message of an tansaction 
+ * when MSG_SIG_ALG is utilized.
  * 
- * NOTE: This creates duplicates of the stack AND of each certificate,
+ * NOTE: This creates duplicates of each certificate,
  * so when the stack is no longer needed it should be freed with
  * sk_X509_pop_free()
+ * NOTE: in case there are more than one possibilities for certificates up the
+ * chain, OpenSSL seems to take the first one, check X509_verify_cert() for
+ * details.
+ *
+ * returns a pointer to a stack of (duplicated) X509 certificates containing:
+ *	- the EE certificate given in the function arguments (cert)
+ *	- all intermediate certificates up the chain towards the trust anchor
+ *	- the trust anchor if it was included in the store
+ *	returns NULL on error
  * ################################################################ */
 STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert) {
 	STACK_OF(X509) *chain = NULL, *chainDup = NULL;
@@ -1365,14 +1378,15 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert) {
 	csc = X509_STORE_CTX_new();
 	if (!csc) goto err;
 
+	/* chainDup to store the duplicated certificates */
 	chainDup = sk_X509_new_null();
 	if (!chainDup) goto err;
 
-	X509_STORE_set_flags(store, 0);
+	X509_STORE_set_flags(store, 0); /* clear all flags, e.g. do not check CRLs */
 	if(!X509_STORE_CTX_init(csc,store,cert,NULL))
 		goto err;
 
-	X509_verify_cert(csc);
+	X509_verify_cert(csc); /* ignore return value as it would fail without trust anchor given in store */
 
 	chain = X509_STORE_CTX_get_chain(csc);
 	for (i = 0; i < sk_X509_num(chain); i++) {
