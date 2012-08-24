@@ -1424,7 +1424,7 @@ ASN1_OCTET_STRING *CMP_get_cert_subject_key_id(const X509 *cert) {
 	if(!(ex = sk_X509_EXTENSION_value( cert->cert_info->extensions, subjKeyIDLoc))) goto err;
 
 	subjKeyIDStrDer = ex->value->data;
-	return d2i_ASN1_OCTET_STRING( NULL, &subjKeyIDStrDer, ex->value->length);
+	return d2i_ASN1_OCTET_STRING( NULL, (const unsigned char **) &subjKeyIDStrDer, ex->value->length);
 err:
 	return NULL;
 }
