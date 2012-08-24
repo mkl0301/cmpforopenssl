@@ -403,6 +403,7 @@ err:
 	return NULL;
 }
 
+/* XXX continue review below that XXX */
 
 /* ############################################################################ *
  * Creates a new Certificate Confirmation PKIMessage
