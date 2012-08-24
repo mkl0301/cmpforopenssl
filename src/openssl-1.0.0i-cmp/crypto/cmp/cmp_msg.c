@@ -303,44 +303,42 @@ err:
 	return NULL;
 }
 
-
 /* ############################################################################ *
- * Creates a new Certificate Request PKIMessage
+ * Creates a new Certificate Request PKIMessage based on the settings in ctx
+ * returns a pointer to the PKIMessage on success, NULL on error
  * ############################################################################ */
 CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE	*msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
-
 	X509_NAME *subject=NULL;
 
-	/* check if all necessary options are set */
 	if (!ctx) goto err;
-	if (!ctx->srvCert) goto err;
-	if (!ctx->clCert) goto err;
-	if (!ctx->pkey) goto err;
+	/* for authentication we need either a reference value/secret for MSG_MAC_ALG 
+	 * or existing certificate and private key for MSG_SIG_ALG */
+	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
 
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CR);
 
-	/* Set the subject from the previous certificate */
-	subject = X509_get_subject_name(ctx->clCert);
-
-	/* certReq 0 is not freed on error, but that's because it will become part of ir and is freed there */
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->popoMethod, NULL))) goto err;
+	if (ctx->subjectName)
+		subject = ctx->subjectName;
+	else if (ctx->clCert) /* get subject name from existing certificate */
+		subject = X509_get_subject_name(ctx->clCert);
+	else
+		subject = NULL;
 
 	if( !(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
+	if( !(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->popoMethod, NULL))) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
+	/* TODO: here also the optional 2nd certreqmsg could be pushed to the stack */
 
 	add_extraCerts(ctx, msg);
-
-	/* XXX what about setting the optional 2nd certreqmsg? */
-
 	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
@@ -348,7 +346,6 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 err:
 	CMPerr(CMP_F_CMP_CR_NEW, CMP_R_ERROR_CREATING_CR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
-
 	return NULL;
 }
 
