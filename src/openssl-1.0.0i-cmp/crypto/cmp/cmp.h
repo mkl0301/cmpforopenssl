@@ -439,7 +439,7 @@ typedef struct cmp_certorenccert_st
 {
 	int type;
 	union{
-		//CMP_CMPCERTIFICATE  *certificate;
+		/* CMP_CMPCERTIFICATE  *certificate; */
 		X509  *certificate;
 		CRMF_ENCRYPTEDVALUE *encryptedCert;
 	} value;
@@ -627,7 +627,7 @@ DECLARE_STACK_OF(CMP_CERTRESPONSE)
 */
 typedef struct cmp_certrepmessage_st
 {
-	// STACK_OF(CMP_CMPCERTIFICATE) *caPubs;
+	/* STACK_OF(CMP_CMPCERTIFICATE) *caPubs; */
 	STACK_OF(X509) *caPubs;
 	STACK_OF(CMP_CERTRESPONSE)	 *response;
 } CMP_CERTREPMESSAGE;

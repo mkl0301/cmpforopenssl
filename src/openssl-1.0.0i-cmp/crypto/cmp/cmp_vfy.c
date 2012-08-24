@@ -209,7 +209,7 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
 		switch(cert_error)
 		{
 			case X509_V_ERR_NO_EXPLICIT_POLICY:
-				// policies_print(NULL, ctx);
+				/* policies_print(NULL, ctx); */
 			case X509_V_ERR_CERT_HAS_EXPIRED:
 
 				/* since we are just checking the certificates, it is
