@@ -164,6 +164,21 @@ CMP_CTX_set_option() sets the given values to the options
 values can be CMP_CTX_OPT_UNSET or CMP_CTX_OPT_SET. Options are always
 set to UNSET when the CMP_CTX structure is initialized.
 
+The following options can be set:
+    CMP_CTX_OPT_POPMETHOD
+	Proof of posession method to use:
+	      CRMF_POPO_SIGNATURE - sign a value with private key
+	      CRMF_POPO_ENCRCERT - decrypt the encrypted certificate
+	      			   ("indirect method")
+
+    CMP_CTX_OPT_MAXPOLLTIME
+	Maximum amount of time, in seconds, to attempt polling for a 
+	response to a message.
+
+    CMP_CTX_PERMIT_TA_IN_EXTRACERTS_FOR_IR
+	Allow retrieving a trust anchor from extraCers and using that
+	to validate the certificate chain of an IP message.
+
 CMP_CTX_caPubs_num() can be used after an Initial Request or Key Update
 request to check the number of CA certificates that were sent from the
 server.
