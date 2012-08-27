@@ -665,41 +665,40 @@ err:
  * ############################################################################ */
 CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
 {
-#if 0
-	itav = sk_CMP_INFOTYPEANDVALUE_value( genp->body->value.genp, 0);
-	cku = itav->infoValue.caKeyUpdateInfo;
-
-	CMP_printf( ctx, "INFO: Attempting to verify received ckuann certificates.");
-	// printf("%08x\n", cku->newWithNew->cert_info->key);
-	// printf("%08x\n", cku->newWithNew->cert_info->key->public_key);
+	STACK_OF(CMP_INFOTYPEANDVALUE) *itavStack = NULL;
 	
-	/*
-	EVP_PKEY *newpk = cku->newWithNew->cert_info->key->pkey;
-	EVP_PKEY *oldpk = cku->oldWithNew->cert_info->key->pkey;
-	printf("oldWithNew: %d\n", X509_verify(cku->oldWithNew, newpk));
-	printf("newWithold: %d\n", X509_verify(cku->newWithOld, oldpk));
-	*/
-#endif
+	itavStack = CMP_doGeneralMessageSeq( cbio, ctx, NID_id_it_caKeyUpdateInfo, NULL);
+	if (!itavStack) goto err;
+	
+	return sk_CMP_INFOTYPEANDVALUE_value( itavStack, 0)->infoValue.caKeyUpdateInfo;
 
-	return (CMP_CAKEYUPDANNCONTENT*) CMP_doGeneralMessageSeq( cbio, ctx, NID_id_it_caKeyUpdateInfo, NULL);
+err:
+	return NULL;
 }
 
 /* ############################################################################ *
  * ############################################################################ */
 X509_CRL *CMP_doCurrentCRLReq( CMPBIO *cbio, CMP_CTX *ctx)
 {
-	return (X509_CRL*) CMP_doGeneralMessageSeq( cbio, ctx, NID_id_it_currentCRL, NULL);
+	STACK_OF(CMP_INFOTYPEANDVALUE) *itavStack = NULL;
+	
+	itavStack = CMP_doGeneralMessageSeq( cbio, ctx, NID_id_it_currentCRL, NULL);
+	if (!itavStack) goto err;
+	
+	return sk_CMP_INFOTYPEANDVALUE_value( itavStack, 0)->infoValue.currentCRL;
+
+err:
+	return NULL;
 }
 
 /* ############################################################################ */
 /* TODO: check return type: STACK of ITAV? */
 /* ############################################################################ */
-char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
+STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 {
 	CMP_PKIMESSAGE *genm=NULL;
 	CMP_PKIMESSAGE *genp=NULL;
 	CMP_INFOTYPEANDVALUE *itav=NULL;
-	CMP_INFOTYPEANDVALUE *itavRet=NULL;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->srvCert || !ctx->referenceValue || !ctx->secretValue) {
@@ -750,10 +749,8 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 		goto err;
 	}
 
-	itavRet = sk_CMP_INFOTYPEANDVALUE_value( genp->body->value.genp, 0);
-	if (!itavRet) goto err;
-
-	return itavRet->infoValue.ptr;
+	return genp->body->value.genp;
+	
 err:
 
 	if (genm) CMP_PKIMESSAGE_free(genm);
