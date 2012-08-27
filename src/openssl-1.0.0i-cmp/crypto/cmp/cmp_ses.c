@@ -65,12 +65,8 @@
  * CMP support in OpenSSL originally developed by 
  * Nokia Siemens Networks for contribution to the OpenSSL project.
  */
-
-/* =========================== CHANGE LOG =============================
- * 2007 - Martin Peylo - Initial Creation
+/* =========================== ACKNOWLEDGEMENTS =======================
  * 2008 - Sami Lehtonen - added CMP_doCertificateRequestSeq()
- * 06/2010 - Miikka Viljanen - Report errors with OpenSSL error codes instead
- *								 of printf statements.
  */
 
 #include <string.h>
@@ -90,8 +86,6 @@
 /* show some warning here? */
 
 #else
-
-// {{{ char V_CMP_TABLE[] 
 
 /* ############################################################################ *
  * table used to translate PKIMessage body type number into a printable string
@@ -126,12 +120,13 @@ static char *V_CMP_TABLE[] = {
 	"POLLREP",
 };
 
-//		}}}
 #define MSG_TYPE_STR(type)	\
 	(((unsigned int) (type) < sizeof(V_CMP_TABLE)/sizeof(V_CMP_TABLE[0])) \
 	 ? V_CMP_TABLE[(unsigned int)(type)] : "unknown")
 
 /* ############################################################################ * 
+ * internal function
+ *
  * Prints error data of the given CMP_PKIMESSAGE into a buffer specified by out
  * and returns pointer to the buffer.
  * ############################################################################ */
@@ -139,8 +134,8 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
 	char tempbuf[256];
 	switch (CMP_PKIMESSAGE_get_bodytype(msg)) {
 		case V_CMP_PKIBODY_ERROR:
-			BIO_snprintf(out, outsize, "message=%d, error=\"%s\"",
-					CMP_PKIMESSAGE_get_bodytype( msg),
+			BIO_snprintf(out, outsize, "bodytype=%d, error=\"%s\"",
+					V_CMP_PKIBODY_ERROR,
 					CMP_PKIMESSAGE_parse_error_msg( msg, tempbuf, sizeof(tempbuf)));
 			break;
 		case -1:
@@ -154,6 +149,8 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
 }
 
 /* ############################################################################ *
+ * internal function
+ *
  * Adds text to the extra error data field of the last error in openssl's error
  * queue. ERR_add_error_data() simply overwrites the previous contents of the error
  * data, while this function can be used to add a string to the end of it.
@@ -189,10 +186,15 @@ static void add_error_data(const char *txt) {
 }
 
 /* ############################################################################ *
+ * internal function
+ *
  * When a 'waiting' PKIStatus has been received, this function is used to attempt
  * to poll for a response message. The maximum number of times to attempt polling
  * is set in ctx->maxPollCount, and between polling it waits the number of seconds
  * specified in pollrep->checkAfter.
+ *
+ * TODO: change maxPollCount to maxPollTime - to have a timout in seconds,
+ * default to unlimited (0)
  * ############################################################################ */
 static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg) {
 	int i;
