@@ -164,33 +164,9 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize) {
  * data, while this function can be used to add a string to the end of it.
  * ############################################################################ */
 static void add_error_data(const char *txt) {
-	ERR_STATE *es;
-	int i, len, newlen;
-	char *err;
-
-	es=ERR_get_state();
-
-	i=es->top;
-	if (i == 0)
-		i=ERR_NUM_ERRORS-1;
-	err=es->err_data[i];
-
-	if (err == NULL) {
-		ERR_add_error_data(1, txt);
-		return;
-	}
-
-	len = strlen(es->err_data[i]);
-	newlen = len + 1 + strlen(txt);
-
-	if (newlen > len) {
-		err=OPENSSL_realloc(err, newlen+20);
-		if (err == NULL)
-			return;
-	}
-
-	BUF_strlcat(err, ":", (size_t)newlen+1);		
-	BUF_strlcat(err, txt, (size_t)newlen+1);		
+	const char *current_error=NULL;
+	ERR_peek_error_line_data(NULL, NULL, &current_error, NULL);
+	ERR_add_error_data(3, current_error, ":", txt);
 }
 
 /* ############################################################################ *
