@@ -175,6 +175,7 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_ERROR_DECRYPTING_ENCCERT),"error decrypting enccert"},
 {ERR_REASON(CMP_R_ERROR_DECRYPTING_KEY)  ,"error decrypting key"},
 {ERR_REASON(CMP_R_ERROR_DECRYPTING_SYMMETRIC_KEY),"error decrypting symmetric key"},
+{ERR_REASON(CMP_R_ERROR_NONCES_DO_NOT_MATCH),"error nonces do not match"},
 {ERR_REASON(CMP_R_ERROR_PARSING_ERROR_MESSAGE),"error parsing error message"},
 {ERR_REASON(CMP_R_ERROR_PARSING_PKISTATUS),"error parsing pkistatus"},
 {ERR_REASON(CMP_R_ERROR_PROTECTING_MESSAGE),"error protecting message"},

@@ -298,7 +298,6 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	
 	/* catch if the received messagetype does not indicate an IP message (e.g. error)*/
 	if (CMP_PKIMESSAGE_get_bodytype(ip) != V_CMP_PKIBODY_IP) {
-		ASN1_UTF8STRING *ftstr = NULL;
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data(ip, errmsg, sizeof(errmsg)));
@@ -312,6 +311,16 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
 	}
+
+	/* compare received nonce with the sent one */
+	if(ASN1_OCTET_STRING_cmp(ir->header->senderNonce, ip->header->recipNonce)) {
+		/* senderNOnce != recipNonce (sic although there is no "!" in the if) */
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
+		goto err;
+	} else {
+		CMP_printf(ctx, "Jippie");
+	}
+	CMP_CTX_set1_recipNonce(ctx, ip->header->senderNonce);
 
 	/* make sure the PKIStatus for the *first* CERTrepmessage indicates a certificate was granted */
 	/* TODO handle second CERTrepmessages if two would have sent */
@@ -583,7 +592,6 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	if (CMP_PKIMESSAGE_get_bodytype( kup) != V_CMP_PKIBODY_KUP) {
-		ASN1_UTF8STRING *ftstr = NULL;
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data( kup, errmsg, sizeof(errmsg)));
@@ -725,7 +733,6 @@ STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *
 
 	/* make sure the received messagetype indicates an GENP message */
 	if (CMP_PKIMESSAGE_get_bodytype(genp) != V_CMP_PKIBODY_GENP) {
-		ASN1_UTF8STRING *status = NULL;
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data( genp, errmsg, sizeof(errmsg)));
@@ -777,7 +784,6 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* make sure the received messagetype indicates an GENP message */
 	if (CMP_PKIMESSAGE_get_bodytype(genp) != V_CMP_PKIBODY_GENP) {
-		ASN1_UTF8STRING *status = NULL;
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data( genp, errmsg, sizeof(errmsg)));
