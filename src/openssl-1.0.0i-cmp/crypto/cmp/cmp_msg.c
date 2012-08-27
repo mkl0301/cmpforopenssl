@@ -173,9 +173,7 @@ CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 	if (!ctx) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-
 	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
-
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_POLLREQ);
 
 	if(!(preq = CMP_POLLREQ_new())) goto err;
@@ -214,12 +212,9 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	if (!ctx->newPkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-
 	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
-
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
-
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);
 
 	if (ctx->subjectName)
@@ -243,7 +238,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	   if (!CRMF_CERTREQMSG_set1_regInfo_regToken(certReq0, ctx->regToken)) goto err;
 
 	add_extraCerts(ctx, msg);
-	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if (!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	/* cleanup */
 	if (extensions) sk_X509_EXTENSION_pop_free(extensions, X509_EXTENSION_free);
@@ -272,9 +267,8 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	if (!ctx->pkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_RR);
-		
 	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_RR);
 
 	if (!(msg->body->value.rr = sk_CMP_REVDETAILS_new_null())) goto err;
 	if (!(rd = CMP_REVDETAILS_new())) goto err;
@@ -319,12 +313,9 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	if (!ctx->newPkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-
 	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
-
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
-
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CR);
 
 	if (ctx->subjectName)
@@ -334,13 +325,13 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	else
 		subject = NULL; /* TODO: should that be possible? */
 
-	if( !(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
-	if( !(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, NULL))) goto err;
+	if (!(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
+	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, NULL))) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
 	/* TODO: here also the optional 2nd certreqmsg could be pushed to the stack */
 
 	add_extraCerts(ctx, msg);
-	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if (!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -362,7 +353,6 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	CRMF_CERTREQMSG *certReq0=NULL;
 	X509_NAME *subject=NULL;
 
-	/* check if all necessary options are set */
 	if (!ctx) goto err;
 	/* for authentication we need either a reference value/secret for MSG_MAC_ALG 
 	 * or existing certificate and private key for MSG_SIG_ALG */
@@ -370,12 +360,9 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	if (!ctx->newPkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-
 	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
-
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm( msg)) goto err;
-
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);
 
 	if (ctx->subjectName)
@@ -393,7 +380,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert); /* TODO: from certificate to be renewed */
 
 	add_extraCerts(ctx, msg);
-	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if (!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -403,51 +390,45 @@ err:
 	return NULL;
 }
 
-/* XXX continue review below that XXX */
-
 /* ############################################################################ *
  * Creates a new Certificate Confirmation PKIMessage
+ * returns a pointer to the PKIMessage on success, NULL on error
+ * TODO: handle both possible certificates when signing and encrypting
+ * certificates have been requested/received
  * ############################################################################ */
 CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 	CMP_PKIMESSAGE *msg=NULL;
 	CMP_CERTSTATUS *certStatus=NULL;
 
-	/* check if all necessary options are set */
 	if (!ctx) goto err;
-	/* if (!ctx->srvCert) goto err; */
-	if (!ctx->newClCert) goto err;
-	if ( (!ctx->pkey) && ((!ctx->referenceValue) && (!ctx->secretValue)) ) goto err;
+	/* for authentication we need either a reference value/secret for MSG_MAC_ALG 
+	 * or existing certificate and private key for MSG_SIG_ALG */
+	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
+	if (!ctx->newClCert) goto err; /* in this case we wouldn't have received a certificate */
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-
-	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
-
+	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CERTCONF);
+	if (!(msg->body->value.certConf = sk_CMP_CERTSTATUS_new_null())) goto err;
 
-	if( !(certStatus = CMP_CERTSTATUS_new())) goto err;
-
+	if (!(certStatus = CMP_CERTSTATUS_new())) goto err;
+	if (!sk_CMP_CERTSTATUS_push( msg->body->value.certConf, certStatus)) goto err;
 	/* set the # of the certReq */
 	ASN1_INTEGER_set(certStatus->certReqId,0L);
-
 	/* -- the hash of the certificate, using the same hash algorithm
-	 * -- as is used to create and verify the certificate signature
-	 */
-	/* TODO: iterate through all the certificates in order to confirm them all */
-
+	 * -- as is used to create and verify the certificate signature */
 	CMP_CERTSTATUS_set_certHash( certStatus, ctx->newClCert);
 
+	/* execute the callback function set in ctx which can be used to examine a
+	 * certificate and reject it */
 	if (ctx->certConf_cb && ctx->newClCert && ctx->certConf_cb(ctx->lastStatus, ctx->newClCert) == 0) {
 		certStatus->statusInfo = CMP_PKISTATUSINFO_new();
 		ASN1_INTEGER_set(certStatus->statusInfo->status, CMP_PKISTATUS_rejection);
 		CMP_printf(ctx, "INFO: rejecting certificate.");
 	}
 
-
-	if( !(msg->body->value.certConf = sk_CMP_CERTSTATUS_new_null())) goto err;
-	if( !sk_CMP_CERTSTATUS_push( msg->body->value.certConf, certStatus)) goto err;
-
-	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if (!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 
@@ -462,6 +443,7 @@ err:
  * itavs */
 /* ############################################################################ *
  * Creates a new General Message with the given nid as type and the given value
+ * returns a pointer to the PKIMessage on success, NULL on error
  * ############################################################################ */
 CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value) {
 	CMP_PKIMESSAGE *msg=NULL;
