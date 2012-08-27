@@ -249,69 +249,85 @@ int CMP_cert_callback(int ok, X509_STORE_CTX *ctx)
  *
  * Find server certificate by:
  * - first see if we can find it in trusted store
- * - TODO: untrusted store
+ * - then try to find it in untrusted store
  * - then search for certs with matching name in extraCerts
  *	 - if only one match found, return that
  *	 - if more than one, try to find a cert with the matching senderKID if available
  *	 - if keyID is not available, return first cert found
+ * returns pointer to found server Certificate on success
+ * returns NULL on error or when no certificate could be found
  * ############################################################################ */
 static X509 *findSrvCert(CMP_CTX *ctx, CMP_PKIMESSAGE *msg)
 {
 	X509 *srvCert = NULL;
-	X509_STORE_CTX *csc = X509_STORE_CTX_new();
+	X509_STORE_CTX *csc = NULL;
+	X509_OBJECT obj;
+	STACK_OF(X509) *found_certs = NULL;
+	int n;
+
+	if(!(csc = X509_STORE_CTX_new())) return NULL;
 
 	/* first attempt lookup in trusted_store */
-	if (csc != NULL && X509_STORE_CTX_init(csc, ctx->trusted_store, NULL, NULL)) {
-		X509_OBJECT obj;
-		if (X509_STORE_get_by_subject(csc, X509_LU_X509, msg->header->sender->d.directoryName, &obj))
+	if (X509_STORE_CTX_init(csc, ctx->trusted_store, NULL, NULL)) {
+		if (X509_STORE_get_by_subject(csc, X509_LU_X509, msg->header->sender->d.directoryName, &obj)) {
 			srvCert = obj.data.x509;
-		X509_STORE_CTX_free(csc);
+			X509_STORE_CTX_free(csc);
+			return srvCert;
+		}
+	}
+	
+	/* attempt lookup in untrusted_store */
+	if (X509_STORE_CTX_init(csc, ctx->untrusted_store, NULL, NULL)) {
+		if (X509_STORE_get_by_subject(csc, X509_LU_X509, msg->header->sender->d.directoryName, &obj)) {
+			srvCert = obj.data.x509;
+			X509_STORE_CTX_free(csc);
+			return srvCert;
+		}
 	}
 
 	/* not found in trusted_store, so look through extraCerts */
-	if (!srvCert) {
-		STACK_OF(X509) *found_certs = sk_X509_new_null();
-		int n;
+	if(!(found_certs = sk_X509_new_null())) return NULL;
 
-		for (n = 0; n < sk_X509_num(msg->extraCerts); n++) {
-			X509 *cert = sk_X509_value(msg->extraCerts, n);
-			X509_NAME *name = NULL;
-			if (!cert) continue;
-			name = X509_get_subject_name(cert);
+	for (n = 0; n < sk_X509_num(msg->extraCerts); n++) {
+		X509 *cert = sk_X509_value(msg->extraCerts, n);
+		X509_NAME *name = NULL;
+		if (!cert) continue;
+		name = X509_get_subject_name(cert);
 
-			if (name && !X509_NAME_cmp(name, msg->header->sender->d.directoryName))
-				sk_X509_push(found_certs, cert);
-		}
+		if (name && !X509_NAME_cmp(name, msg->header->sender->d.directoryName))
+			sk_X509_push(found_certs, cert);
+	}
 
-		/* if found exactly one cert, we'll use that */
-		if (sk_X509_num(found_certs) == 1)
-			srvCert = sk_X509_pop(found_certs);
+	/* if found exactly one cert, we'll use that */
+	if (sk_X509_num(found_certs) == 1)
+		srvCert = sk_X509_pop(found_certs);
 
-		/* found more than one with a matching name, so try to search
-		   through the found certs by key ID if we have it.  if not,
-		   just return first one. */
-		else if (sk_X509_num(found_certs) > 1) {
-			if (msg->header->senderKID) {
-				for (n = 0; n < sk_X509_num(found_certs); n++) {
-					X509 *cert = sk_X509_value(found_certs, n);
-					ASN1_OCTET_STRING *cert_keyid = CMP_get_cert_subject_key_id(cert);
+	/* found more than one with a matching name, so try to search
+	   through the found certs by key ID if we have it.  if not,
+	   just return first one. */
+	else if (sk_X509_num(found_certs) > 1) {
+		if (msg->header->senderKID) {
+			for (n = 0; n < sk_X509_num(found_certs); n++) {
+				X509 *cert = sk_X509_value(found_certs, n);
+				ASN1_OCTET_STRING *cert_keyid = NULL;
 
-					if (!ASN1_OCTET_STRING_cmp(cert_keyid, msg->header->senderKID)) {
-						srvCert = cert;
-						break;
-					}
+				if (!(cert_keyid = CMP_get_cert_subject_key_id(cert))) return NULL;
+
+				if (!ASN1_OCTET_STRING_cmp(cert_keyid, msg->header->senderKID)) {
+					srvCert = cert;
+					break;
 				}
 			}
-
-			if (!srvCert) {
-				/* key id not available or we didn't find a cert with matching keyID.
-				 * -> return the first one with matching name */
-				srvCert = sk_X509_pop(found_certs);
-			}
 		}
 
-		sk_X509_free(found_certs);
+		if (!srvCert) {
+			/* key id not available or we didn't find a cert with matching keyID.
+			 * -> return the first one with matching name */
+			srvCert = sk_X509_pop(found_certs);
+		}
 	}
+
+	sk_X509_free(found_certs);
 
 	return srvCert;
 }
