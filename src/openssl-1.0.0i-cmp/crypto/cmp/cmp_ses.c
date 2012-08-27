@@ -312,15 +312,13 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	/* compare received nonce with the sent one */
+	/* compare received nonce with the one sent in IR */
 	if(ASN1_OCTET_STRING_cmp(ir->header->senderNonce, ip->header->recipNonce)) {
-		/* senderNOnce != recipNonce (sic although there is no "!" in the if) */
+		/* senderNonce != recipNonce (sic although there is no "!" in the if) */
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
 		goto err;
-	} else {
-		CMP_printf(ctx, "Jippie");
 	}
-	CMP_CTX_set1_recipNonce(ctx, ip->header->senderNonce);
+	CMP_CTX_set1_recipNonce(ctx, ip->header->senderNonce); /* store for setting in the next msg */
 
 	/* make sure the PKIStatus for the *first* CERTrepmessage indicates a certificate was granted */
 	/* TODO handle second CERTrepmessages if two would have sent */
@@ -371,6 +369,12 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	/* compare received nonce with the one sent in certConf */
+	if(ASN1_OCTET_STRING_cmp(certConf->header->senderNonce, PKIconf->header->recipNonce)) {
+		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
+		goto err;
+	}
+
 cleanup:
 	/* clean up */
 	CMP_PKIMESSAGE_free(ir);
@@ -393,6 +397,7 @@ err:
 }
 
 /* ############################################################################ *
+ * TODO: check NONCES
  * ############################################################################ */
 int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *rr=NULL;
@@ -500,6 +505,14 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	/* compare received nonce with the one sent in CR */
+	if(ASN1_OCTET_STRING_cmp(cr->header->senderNonce, cp->header->recipNonce)) {
+		/* senderNonce != recipNonce (sic although there is no "!" in the if) */
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
+		goto err;
+	}
+	CMP_CTX_set1_recipNonce(ctx, cp->header->senderNonce); /* store for setting in the next msg */
+
 	/* evaluate PKIStatus field */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0) == CMP_PKISTATUS_waiting)
 		if (!pollForResponse(ctx, cbio, cp->body->value.cp, &cp)) {
@@ -541,6 +554,12 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	} else {
 		/* old: "ERROR: validating protection of incoming message" */
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
+
+	/* compare received nonce with the one sent in certConf */
+	if(ASN1_OCTET_STRING_cmp(certConf->header->senderNonce, PKIconf->header->recipNonce)) {
+		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
 		goto err;
 	}
 
@@ -606,6 +625,14 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	/* compare received nonce with the one sent in KUR */
+	if(ASN1_OCTET_STRING_cmp(kur->header->senderNonce, kup->header->recipNonce)) {
+		/* senderNonce != recipNonce (sic although there is no "!" in the if) */
+		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
+		goto err;
+	}
+	CMP_CTX_set1_recipNonce(ctx, kup->header->senderNonce); /* store for setting in the next msg */
+
 	/* make sure the received messagetype indicates an KUP message */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( kup->body->value.kup, 0) == CMP_PKISTATUS_waiting) {
 		if (!pollForResponse(ctx, cbio, kup->body->value.kup, &kup)) {
@@ -647,6 +674,12 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
+
+	/* compare received nonce with the one sent in certConf */
+	if(ASN1_OCTET_STRING_cmp(certConf->header->senderNonce, PKIconf->header->recipNonce)) {
+		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
 		goto err;
 	}
 
@@ -703,6 +736,7 @@ err:
 
 /* ############################################################################ */
 /* TODO: check return type: STACK of ITAV? */
+/* TODO: check NONCES */
 /* ############################################################################ */
 STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 {
