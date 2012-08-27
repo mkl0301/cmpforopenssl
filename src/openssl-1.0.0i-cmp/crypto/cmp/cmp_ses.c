@@ -288,7 +288,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	/* create Initialization Request - ir */
-	if (! (ir = CMP_ir_new(ctx))) goto err;
+	if (!(ir = CMP_ir_new(ctx))) goto err;
 
 	CMP_printf(ctx, "INFO: Sending Initialization Request");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, ir, &ip))) {
@@ -302,8 +302,6 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data(ip, errmsg, sizeof(errmsg)));
-		while ((ftstr = sk_ASN1_UTF8STRING_pop(ip->header->freeText)))
-			ERR_add_error_data(3, "freeText=\"", ftstr->data, "\"");
 		goto err;
 	}
 
@@ -589,8 +587,6 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data( kup, errmsg, sizeof(errmsg)));
-		while ((ftstr = sk_ASN1_UTF8STRING_pop(kup->header->freeText)))
-			ERR_add_error_data(3, "freeText=\"", ftstr->data, "\"");
 		goto err;
 	}
 
@@ -729,23 +725,16 @@ STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *
 
 	/* make sure the received messagetype indicates an GENP message */
 	if (CMP_PKIMESSAGE_get_bodytype(genp) != V_CMP_PKIBODY_GENP) {
-		STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(genp->body->value.ip, 0);
 		ASN1_UTF8STRING *status = NULL;
-
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data( genp, errmsg, sizeof(errmsg)));
-
-
-		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_UNKNOWN_PKISTATUS);
-		while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
-			ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 		goto err;
 	}
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, genp)) {
-		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
+		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -788,23 +777,16 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* make sure the received messagetype indicates an GENP message */
 	if (CMP_PKIMESSAGE_get_bodytype(genp) != V_CMP_PKIBODY_GENP) {
-		STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(genp->body->value.ip, 0);
 		ASN1_UTF8STRING *status = NULL;
-
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_PKIBODY_ERROR);
 		ERR_add_error_data(1, PKIError_data( genp, errmsg, sizeof(errmsg)));
-
-
-		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_UNKNOWN_PKISTATUS);
-		while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
-			ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 		goto err;
 	}
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, genp)) {
-		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
+		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
