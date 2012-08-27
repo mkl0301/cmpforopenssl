@@ -1284,7 +1284,7 @@ typedef struct cmp_ctx_st
 
 	/* maximum number of times we attempt to poll the server for a response 
 	 * if a 'waiting' PKIStatus is received*/
-	int maxPollCount;
+	int maxPollTime;
 
 	int lastStatus;
 
@@ -1439,7 +1439,7 @@ unsigned long CMP_CTX_failInfoCode_get(CMP_CTX *ctx);
 #define CMP_CTX_OPT_IMPLICITCONFIRM 1
 #define CMP_CTX_OPT_POPMETHOD		2
 #define CMP_CTX_OPT_VALIDATEPATH	3
-#define CMP_CTX_OPT_MAXPOLLCOUNT	4
+#define CMP_CTX_OPT_MAXPOLLTIME 	4
 #define CMP_CTX_PERMIT_TA_IN_EXTRACERTS_FOR_IR 5
 int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 #if 0

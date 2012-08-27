@@ -197,9 +197,9 @@ static void add_error_data(const char *txt) {
  * default to unlimited (0)
  * ############################################################################ */
 static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg) {
-	int i;
+	int timeSpent=0;
 	CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
-	for (i = 0; i < ctx->maxPollCount; i++) {
+	for (;;) {
 		CMP_PKIMESSAGE *preq = CMP_pollReq_new(ctx, 0);
 		CMP_PKIMESSAGE *prep = NULL;
 		CMP_POLLREP *pollRep = NULL;
@@ -219,6 +219,11 @@ static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certr
 			pollRep = sk_CMP_POLLREP_value(prep->body->value.pollRep, 0);
 			checkAfter = ASN1_INTEGER_get(pollRep->checkAfter);
 			CMP_printf(ctx, "INFO: Waiting %ld seconds before sending pollReq...\n", checkAfter);
+
+			if (ctx->maxPollTime != 0 && timeSpent > ctx->maxPollTime)
+				goto err;
+
+			timeSpent += checkAfter;
 			sleep(checkAfter);
 		}
 		else {

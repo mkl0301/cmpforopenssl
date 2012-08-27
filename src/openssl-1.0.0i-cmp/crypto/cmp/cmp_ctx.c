@@ -262,7 +262,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->trusted_store	 = X509_STORE_new();
 	ctx->untrusted_store = X509_STORE_new();
 
-	ctx->maxPollCount = 3;
+	ctx->maxPollTime = 0;
 
 	ctx->lastStatus = -1;
 	ctx->failInfoCode = 0;
@@ -1030,8 +1030,8 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val) {
 		case CMP_CTX_OPT_VALIDATEPATH:
 			ctx->validatePath = val;
 			break;
-		case CMP_CTX_OPT_MAXPOLLCOUNT:
-			ctx->maxPollCount = val;
+		case CMP_CTX_OPT_MAXPOLLTIME:
+			ctx->maxPollTime = val;
 			break;
 		case CMP_CTX_PERMIT_TA_IN_EXTRACERTS_FOR_IR:
 			ctx->permitTAInExtraCertsForIR = val;
