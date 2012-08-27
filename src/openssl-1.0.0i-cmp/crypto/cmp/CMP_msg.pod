@@ -3,7 +3,6 @@
 =head1 NAME
 
  CMP_certConf_new,
- CMP_ckuann_new,
  CMP_cr_new,
  CMP_genm_new,
  CMP_ir_new,
@@ -18,7 +17,6 @@
  CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx);
  CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx);
  CMP_PKIMESSAGE * CMP_genm_new( CMP_CTX *ctx);
- CMP_PKIMESSAGE * CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey);
 
 =head1 DESCRIPTION
 
@@ -35,8 +33,6 @@ CMP_kur_new() creates a Key Update Request message.
 CMP_certConf_new() creates a Certificate Confirmation message.
 
 CMP_genm_new() creates a new General Message.
-
-CMP_ckuann_new() creates a new CA Key Update Announcement message.
 
 =head1 NOTES
 

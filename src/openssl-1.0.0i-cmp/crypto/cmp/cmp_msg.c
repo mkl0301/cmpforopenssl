@@ -66,15 +66,9 @@
  * Nokia Siemens Networks for contribution to the OpenSSL project.
  */
 
-/* =========================== CHANGE LOG =============================
- * 2007 - Martin Peylo - Initial Creation
+/* =========================== ACKNOWLEDGEMENTS =======================
  * 2008 - Sami Lehtonen - added CMP_cr_new()
  *						- bugfix in CMP_certConf_new(): pkey or ref/secret pair is enough
- * 06/2010 - Miikka Viljanen - Report errors with OpenSSL error codes instead
- *							   of printf statements.
- * 06/10/2010 - Martin Peylo - fixed potential NPD in CMP_ir_new(), CMP_cr_new() and 
- *							   CMP_kur_new() and CMP_certConf_new() in case of failing 
- *							   OPENSSL_malloc() and potential MLKS in error cases
  */
 
 #include <openssl/asn1.h>
@@ -312,18 +306,18 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
 	if (!ctx->newPkey) goto err;
 
-	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
-	if (ctx->implicitConfirm)
-		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
-	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CR);
-
 	if (ctx->subjectName)
 		subject = ctx->subjectName;
 	else if (ctx->clCert) /* get subject name from existing certificate */
 		subject = X509_get_subject_name(ctx->clCert);
 	else
-		subject = NULL; /* TODO: should that be possible? */
+		goto err;
+
+	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
+	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if (ctx->implicitConfirm)
+		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
+	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CR);
 
 	if (!(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, NULL))) goto err;
@@ -463,70 +457,3 @@ err:
 	return NULL;
 }
 
-/* ############################################################################ */
-/* XXX this is untested and work in progress */
-/* The sanity of this kind of message is not without controversy */
-	/* CKUANN looks like:
-	 * ckuann message:
-	 *
-	 * Field		Value						 Comment
-	 * --------------------------------------------------------------
-	 * sender		CA name CA name
-	 * body			ckuann(CAKeyUpdAnnContent)
-	 * oldWithNew	present					 see Appendix E.3 above
-	 * newWithOld	present					 see Appendix E.3 above
-	 * newWithNew	present					 see Appendix E.3 above
-	 * extraCerts	optionally present		 can be used to "publish"
-	 *					 certificates (e.g.,
-	 *					 certificates signed using
-	 *					 the new private key)
-	 */
-/* ############################################################################ */
-CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey) {
-	CMP_PKIMESSAGE *msg=NULL;
-	X509_NAME *oldCaName=NULL;
-	X509_NAME *newCaName=NULL;
-	X509 *newWithNew=NULL;
-	X509 *newWithOld=NULL;
-	X509 *oldWithNew=NULL;
-
-#if 0
-	if (!ctx) goto err;
-#endif
-
-	/* get and compare the subject Names of the certificates */
-	if (!(oldCaName = X509_get_subject_name( (X509*) oldCaCert))) goto err;
-	if (!(newCaName = X509_get_subject_name( (X509*) newCaCert))) goto err;
-	/* the subjects of old and new CaCerts have to be equal */
-	if (X509_NAME_cmp( oldCaName, newCaName) != 0) goto err;
-
-	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-
-	CMP_PKIHEADER_set_version(msg->header, CMP_VERSION);
-	if( !CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*) oldCaCert))) goto err;
-
-	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CKUANN);
-	msg->body->value.ckuann = CMP_CAKEYUPDANNCONTENT_new();
-
-	/* as I understand the newWithNew is the same as the newCaCert */
-	newWithNew = X509_dup( (X509*) newCaCert);
-	msg->body->value.ckuann->newWithNew = newWithNew;
-
-	/* create the newWithOld and oldWithNew certificates */
-	newWithOld = X509_dup( (X509*) newCaCert);
-	/* XXX Do I have to check what digest to use? */
-	X509_sign( newWithOld, (EVP_PKEY*) oldPkey, EVP_sha1());
-	msg->body->value.ckuann->newWithOld = newWithOld;
-
-	oldWithNew = X509_dup( (X509*) oldCaCert);
-	/* XXX Do I have to check what digest to use? */
-	X509_sign( oldWithNew, (EVP_PKEY*) newPkey, EVP_sha1());
-	msg->body->value.ckuann->oldWithNew = oldWithNew;
-
-	return msg;
-err:
-	CMPerr(CMP_F_CMP_CKUANN_NEW, CMP_R_ERROR_CREATING_CKUANN);
-
-	if (msg) CMP_PKIMESSAGE_free(msg);
-	return NULL;
-}

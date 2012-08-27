@@ -1308,8 +1308,6 @@ typedef struct cmp_ctx_st
 
 DECLARE_ASN1_FUNCTIONS(CMP_CTX)
 
-
-
 /* DECLARATIONS */
 
 /* cmp_msg.c */
@@ -1319,15 +1317,10 @@ CMP_PKIMESSAGE *CMP_rr_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_certConf_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_kur_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx);
-#if 0
-CMP_PKIMESSAGE *CMP_ckuann_new( CMP_CTX *ctx);
-#endif
-CMP_PKIMESSAGE *CMP_ckuann_new( const X509 *oldCaCert, const EVP_PKEY *oldPkey, const X509 *newCaCert, const EVP_PKEY *newPkey);
 CMP_PKIMESSAGE *CMP_pollReq_new( CMP_CTX *ctx, int reqId);
 ASN1_OCTET_STRING *CMP_get_cert_subject_key_id(const X509 *cert);
 
 /* cmp_lib.c */
-
 long CMP_REVREPCONTENT_PKIStatus_get(CMP_REVREPCONTENT *revRep, long reqId);
 int CMP_PKIHEADER_set_version(CMP_PKIHEADER *hdr, int version);
 int CMP_PKIHEADER_set1_recipient(CMP_PKIHEADER *hdr, const X509_NAME *nm);
@@ -1338,40 +1331,26 @@ int CMP_PKIHEADER_set1_senderKID(CMP_PKIHEADER *hdr, const ASN1_OCTET_STRING *se
 int CMP_PKIHEADER_set_messageTime(CMP_PKIHEADER *hdr);
 int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg);
 int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg);
-
 int CMP_PKIHEADER_push0_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text);
 int CMP_PKIHEADER_push1_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text);
-
 int CMP_PKIHEADER_set1(CMP_CTX *ctx, CMP_PKIHEADER *hdr);
-
 ASN1_BIT_STRING *CMP_calc_protection_pbmac(CMP_PKIMESSAGE *pkimessage, const ASN1_OCTET_STRING *secret);
-
 int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
-
 int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert);
-
 int CMP_PKIHEADER_generalInfo_item_push0(CMP_PKIHEADER *hdr, const CMP_INFOTYPEANDVALUE *itav);
 int CMP_PKIMESSAGE_genm_item_push0(CMP_PKIMESSAGE *msg, const CMP_INFOTYPEANDVALUE *itav);
 int CMP_ITAV_stack_item_push0(STACK_OF(CMP_INFOTYPEANDVALUE) **itav_sk_p, const CMP_INFOTYPEANDVALUE *itav);
-
 long CMP_PKISTATUSINFO_PKIstatus_get( CMP_PKISTATUSINFO *statusInfo);
-
 long CMP_CERTREPMESSAGE_PKIStatus_get( CMP_CERTREPMESSAGE *certRep, long certReqId);
-
 char *CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(CMP_CERTREPMESSAGE *certRep, long certReqId);
 STACK_OF(ASN1_UTF8STRING)* CMP_CERTREPMESSAGE_PKIStatusString_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
 CMP_PKIFAILUREINFO *CMP_CERTREPMESSAGE_PKIFailureInfo_get0(CMP_CERTREPMESSAGE *certRep, long certReqId);
 X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep);
-
 int CMP_PKIFAILUREINFO_check( ASN1_BIT_STRING *failInfo, int codeBit);
-
 CMP_CERTRESPONSE *CMP_CERTREPMESSAGE_certResponse_get0( CMP_CERTREPMESSAGE *certRep, long certReqId);
-
 int CMP_CERTREPMESSAGE_certType_get( CMP_CERTREPMESSAGE *certRep, long certReqId);
-
 int CMP_PKIMESSAGE_set_bodytype( CMP_PKIMESSAGE *msg, int type);
 int CMP_PKIMESSAGE_get_bodytype( CMP_PKIMESSAGE *msg);
-
 char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int bufsize);
 
 STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert);
