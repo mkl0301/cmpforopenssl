@@ -243,7 +243,6 @@ err:
  *
  * All options need to be set in the context.
  *
- * TODO: the received Nonces should be checked and compared to the sent ones
  * TODO: another function to request two certificates at once should be created
  *
  * returns pointer to received certificate, NULL if non was received
@@ -373,7 +372,6 @@ err:
 }
 
 /* ############################################################################ *
- * TODO: check NONCES
  * ############################################################################ */
 int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *rr=NULL;
@@ -429,6 +427,13 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
+
+	/* compare received nonce with the one sent in RR */
+	if(ASN1_OCTET_STRING_cmp(rr->header->senderNonce, rp->header->recipNonce)) {
+		/* senderNonce != recipNonce (sic although there is no "!" in the if) */
+		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
 		goto err;
 	}
 
@@ -712,7 +717,6 @@ err:
 
 /* ############################################################################ */
 /* TODO: check return type: STACK of ITAV? */
-/* TODO: check NONCES */
 /* ############################################################################ */
 STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 {
@@ -754,6 +758,12 @@ STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *
 		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
+
+	/* compare received nonce with the one sent in genm */
+	if(ASN1_OCTET_STRING_cmp(genm->header->senderNonce, genp->header->recipNonce)) {
+		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
 		goto err;
 	}
 
