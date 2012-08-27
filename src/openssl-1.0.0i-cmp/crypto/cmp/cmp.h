@@ -1333,7 +1333,7 @@ int CMP_PKIMESSAGE_set_implicitConfirm(CMP_PKIMESSAGE *msg);
 int CMP_PKIMESSAGE_check_implicitConfirm(CMP_PKIMESSAGE *msg);
 int CMP_PKIHEADER_push0_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text);
 int CMP_PKIHEADER_push1_freeText( CMP_PKIHEADER *hdr, ASN1_UTF8STRING *text);
-int CMP_PKIHEADER_set1(CMP_CTX *ctx, CMP_PKIHEADER *hdr);
+int CMP_PKIHEADER_init(CMP_CTX *ctx, CMP_PKIHEADER *hdr);
 ASN1_BIT_STRING *CMP_calc_protection_pbmac(CMP_PKIMESSAGE *pkimessage, const ASN1_OCTET_STRING *secret);
 int CMP_PKIMESSAGE_protect(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
 int CMP_CERTSTATUS_set_certHash( CMP_CERTSTATUS *certStatus, const X509 *cert);

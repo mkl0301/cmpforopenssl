@@ -366,7 +366,7 @@ err:
  *
  * returns 1 on success, 0 on error
  * ############################################################################ */
-int CMP_PKIHEADER_set1(CMP_CTX *ctx, CMP_PKIHEADER *hdr) {
+int CMP_PKIHEADER_init(CMP_CTX *ctx, CMP_PKIHEADER *hdr) {
 	/* check existence of mandatory arguments */
 	if( !hdr) goto err;
 	if( !ctx) goto err;

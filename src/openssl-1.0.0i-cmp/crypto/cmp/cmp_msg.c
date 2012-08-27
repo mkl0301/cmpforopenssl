@@ -167,7 +167,7 @@ CMP_PKIMESSAGE * CMP_pollReq_new( CMP_CTX *ctx, int reqId) {
 	if (!ctx) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if( !CMP_PKIHEADER_init( ctx, msg->header)) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_POLLREQ);
 
 	if(!(preq = CMP_POLLREQ_new())) goto err;
@@ -206,7 +206,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 	if (!ctx->newPkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if (!CMP_PKIHEADER_init( ctx, msg->header)) goto err;
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);
@@ -261,7 +261,7 @@ CMP_PKIMESSAGE * CMP_rr_new( CMP_CTX *ctx) {
 	if (!ctx->pkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if (!CMP_PKIHEADER_init( ctx, msg->header)) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_RR);
 
 	if (!(msg->body->value.rr = sk_CMP_REVDETAILS_new_null())) goto err;
@@ -314,7 +314,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx) {
 		goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if (!CMP_PKIHEADER_init( ctx, msg->header)) goto err;
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CR);
@@ -354,7 +354,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx) {
 	if (!ctx->newPkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if (!CMP_PKIHEADER_init( ctx, msg->header)) goto err;
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm( msg)) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUR);
@@ -402,7 +402,7 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 	if (!ctx->newClCert) goto err; /* in this case we wouldn't have received a certificate */
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if (!CMP_PKIHEADER_init( ctx, msg->header)) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CERTCONF);
 	if (!(msg->body->value.certConf = sk_CMP_CERTSTATUS_new_null())) goto err;
 
@@ -443,7 +443,7 @@ CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
 	if (!ctx) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
+	if (!CMP_PKIHEADER_init( ctx, msg->header)) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_GENM);
 	if (!(msg->body->value.genm = sk_CMP_INFOTYPEANDVALUE_new_null())) goto err; /* initialize with empty stack */
 
