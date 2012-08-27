@@ -189,53 +189,70 @@ static void add_error_data(const char *txt) {
  * internal function
  *
  * When a 'waiting' PKIStatus has been received, this function is used to attempt
- * to poll for a response message. The maximum number of times to attempt polling
- * is set in ctx->maxPollCount, and between polling it waits the number of seconds
- * specified in pollrep->checkAfter.
+ * to poll for a response message. 
  *
- * TODO: change maxPollCount to maxPollTime - to have a timout in seconds,
- * default to unlimited (0)
+ * A maxPollTime timeout can be set in the context.  The function will continue
+ * to poll until the timeout is reached and then poll a last time even when that
+ * is before the "checkAfter" sent by the server.  If ctx->maxPollTime is 0, the
+ * timeout is disabled.
+ *
+ * returns 1 on success, returns received PKIMESSAGE in *msg argument
+ * returns 0 on error or when timeout is reached without a received messsage
+ *
+ * TODO handle multiple pollreqs for multiple certificates
  * ############################################################################ */
 static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg) {
-	int timeSpent=0;
+	int maxTimeLeft = ctx->maxPollTime;
+	CMP_PKIMESSAGE *preq = NULL;
+	CMP_PKIMESSAGE *prep = NULL;
+	CMP_POLLREP *pollRep = NULL;
+
 	CMP_printf(ctx, "INFO: Received 'waiting' PKIStatus, attempting to poll server for response.");
 	for (;;) {
-		CMP_PKIMESSAGE *preq = CMP_pollReq_new(ctx, 0);
-		CMP_PKIMESSAGE *prep = NULL;
-		CMP_POLLREP *pollRep = NULL;
+		if(!(preq = CMP_pollReq_new(ctx, 0))) goto err; /* TODO: this only handles one certificate request so far */
 
+		/* immediately send the first pollReq */
 		if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep))) {
-			if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT
-				&& ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
+			/* set message to error stack */
+			if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT && ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_SERVER_NOT_REACHABLE)
 				CMPerr(CMP_F_POLLFORRESPONSE, CMP_R_POLLREP_NOT_RECEIVED);
 			else
-				add_error_data("unable to send ir");
+				add_error_data("unable to send pollReq");
 			goto err;
 		}
 
-		/* TODO handle multiple pollreqs */
-		if ( CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_POLLREP) {
+		/* handle potential pollRep */
+		if (CMP_PKIMESSAGE_get_bodytype(prep) == V_CMP_PKIBODY_POLLREP) {
 			int checkAfter;
-			pollRep = sk_CMP_POLLREP_value(prep->body->value.pollRep, 0);
+			if(!(pollRep = sk_CMP_POLLREP_value(prep->body->value.pollRep, 0))) goto err; /* TODO: this only handles one certificate request so far */
 			checkAfter = ASN1_INTEGER_get(pollRep->checkAfter);
+			/* TODO: print OPTIONAL reason (PKIFreeText) from message */
 			CMP_printf(ctx, "INFO: Waiting %ld seconds before sending pollReq...\n", checkAfter);
 
-			if (ctx->maxPollTime != 0 && timeSpent > ctx->maxPollTime)
-				goto err;
+			if (ctx->maxPollTime != 0) {        /* timout is set in context */
+				if (maxTimeLeft == 0) goto err; /* timeout reached */
+				if (maxTimeLeft > checkAfter) {
+					maxTimeLeft -= checkAfter;
+				} else {
+					checkAfter = maxTimeLeft; /* poll a last time just when the set timeout will be reached */
+					maxTimeLeft = 0;
+				}
+			}
 
-			timeSpent += checkAfter;
+			CMP_PKIMESSAGE_free(prep);
+			CMP_PKIMESSAGE_free(preq);
 			sleep(checkAfter);
 		}
-		else {
-			*msg = prep;
-			return 1; /* final success */
-		}
-
-		CMP_PKIMESSAGE_free(preq);
-		CMP_PKIMESSAGE_free(prep);
+		else break; /* final success */
 	}
 
+	CMP_PKIMESSAGE_free(preq);
+	*msg = prep;
+
+	return 1; 
 err:
+	CMP_PKIMESSAGE_free(preq);
+	CMP_PKIMESSAGE_free(prep);
 	return 0;
 }
 
