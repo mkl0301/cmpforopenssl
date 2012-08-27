@@ -439,80 +439,21 @@ err:
 	return NULL;
 }
 
-/* TODO: generalize this, make it possible to have an empty genm and then add
- * itavs */
 /* ############################################################################ *
- * Creates a new General Message with the given nid as type and the given value
+ * Creates a new General Message with an empty itav stack
  * returns a pointer to the PKIMessage on success, NULL on error
  * ############################################################################ */
-CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value) {
+CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *msg=NULL;
-	CMP_INFOTYPEANDVALUE *itav=NULL;
 
-	/* check if all necessary options are set */
 	if (!ctx) goto err;
 
-#if 0
-	/* XXX What were these for and are they still useful??? */
-
-	/* XXX not setting senderNonce test for PKI INFO */
-	ctx->setSenderNonce  = 1;
-	/* XXX not setting transactionID test for PKI INFO */
-	ctx->setTransactionID  = 1;
-#endif
-
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
-
-	if( !CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
-
+	if (!CMP_PKIHEADER_set1( ctx, msg->header)) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_GENM);
+	if (!(msg->body->value.genm = sk_CMP_INFOTYPEANDVALUE_new_null())) goto err; /* initialize with empty stack */
 
-	itav = CMP_INFOTYPEANDVALUE_new();
-	itav->infoType = OBJ_nid2obj(nid);
-	itav->infoValue.ptr = value;
-	CMP_PKIMESSAGE_genm_item_push0( msg, itav);
-
-#if 0
-	/* create an empty message body */
-	if( CMP_PKIMESSAGE_genm_item_push0( msg, NULL)) {
-		CMP_printf("INFO: created message body\n");
-	}
-#endif
-#if 0
-	itav = CMP_INFOTYPEANDVALUE_new();
-	if( CMP_INFOTYPEANDVALUE_set0( itav, OBJ_txt2obj("1.3.6.1.5.5.7.4.4",1), V_ASN1_UNDEF, NULL)) {
-		CMP_printf( "INFO: setting itav\n");
-	} /* Preferred Symmetric Algorithm */
-	if( CMP_PKIMESSAGE_genm_item_push0( msg, itav)) {
-		CMP_printf( "INFO: pushing itav\n");
-	}
-#endif
-#if 0
-	itav = CMP_INFOTYPEANDVALUE_new();
-	if( CMP_INFOTYPEANDVALUE_set0( itav, OBJ_txt2obj("1.3.6.1.5.5.7.4.6",1), V_ASN1_UNDEF, NULL)) {
-		CMP_printf( "INFO: setting itav\n");
-	} /* CRL */
-	if( CMP_PKIMESSAGE_genm_item_push0( msg, itav)) {
-		CMP_printf( "INFO: pushing itav\n");
-	}
-#endif
-#if 0
-	itav = CMP_INFOTYPEANDVALUE_new();
-	if( CMP_INFOTYPEANDVALUE_set0( itav, OBJ_txt2obj("1.3.6.1.4.1.3029.3.1.2",1), V_ASN1_UNDEF, NULL)) {
-		CMP_printf( "INFO: setting itav\n");
-	} /* PKIBoot request */
-	if( CMP_PKIMESSAGE_genm_item_push0( msg, itav)) {
-		CMP_printf( "INFO: pushing itav\n");
-	}
-#endif
-#if 0
-	itav = CMP_INFOTYPEANDVALUE_new_by_def_noVal( CMP_ITAV_CRYPTLIB_PKIBOOT);
-	if( CMP_PKIMESSAGE_genm_item_push0( msg, itav)) {
-		CMP_printf( "INFO: pushing itav\n");
-	}
-#endif
-
-	if(!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
+	if (!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
 	return msg;
 

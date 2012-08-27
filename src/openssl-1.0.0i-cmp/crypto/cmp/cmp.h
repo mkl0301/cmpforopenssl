@@ -1318,7 +1318,7 @@ CMP_PKIMESSAGE *CMP_cr_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_rr_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_certConf_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_kur_new( CMP_CTX *ctx);
-CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx, int nid, char *value);
+CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx);
 #if 0
 CMP_PKIMESSAGE *CMP_ckuann_new( CMP_CTX *ctx);
 #endif

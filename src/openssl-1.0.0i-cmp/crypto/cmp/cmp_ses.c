@@ -692,12 +692,14 @@ X509_CRL *CMP_doCurrentCRLReq( CMPBIO *cbio, CMP_CTX *ctx)
 }
 
 /* ############################################################################ */
+/* TODO: check return type: STACK of ITAV? */
 /* ############################################################################ */
 char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 {
 	CMP_PKIMESSAGE *genm=NULL;
 	CMP_PKIMESSAGE *genp=NULL;
 	CMP_INFOTYPEANDVALUE *itav=NULL;
+	CMP_INFOTYPEANDVALUE *itavRet=NULL;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->srvCert || !ctx->referenceValue || !ctx->secretValue) {
@@ -706,8 +708,13 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 	}
 
 	/* crate GenMsgContent - genm*/
-	// if (! (genm = CMP_genm_new(ctx, NID_id_it_caKeyUpdateInfo))) goto err;
-	if (! (genm = CMP_genm_new(ctx, nid, value))) goto err;
+	if (! (genm = CMP_genm_new(ctx))) goto err;
+
+	/* set itav - TODO: let this function take a STACK of ITAV as arguments */
+	itav = CMP_INFOTYPEANDVALUE_new();
+	itav->infoType = OBJ_nid2obj(nid);
+	itav->infoValue.ptr = value;
+	CMP_PKIMESSAGE_genm_item_push0( genm, itav);
 
 	CMP_printf( ctx, "INFO: Sending General Message");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
@@ -743,10 +750,10 @@ char *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 		goto err;
 	}
 
-	itav = sk_CMP_INFOTYPEANDVALUE_value( genp->body->value.genp, 0);
-	if (!itav) goto err;
+	itavRet = sk_CMP_INFOTYPEANDVALUE_value( genp->body->value.genp, 0);
+	if (!itavRet) goto err;
 
-	return itav->infoValue.ptr;
+	return itavRet->infoValue.ptr;
 err:
 
 	if (genm) CMP_PKIMESSAGE_free(genm);
@@ -772,7 +779,7 @@ int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	/* crate GenMsgContent - genm*/
-	if (! (genm = CMP_genm_new(ctx, 0, NULL))) goto err;
+	if (! (genm = CMP_genm_new(ctx))) goto err;
 
 	CMP_printf( ctx, "INFO: Sending General Message");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
