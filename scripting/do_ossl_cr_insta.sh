@@ -9,7 +9,7 @@ ${CMPCLIENT} \
 	--server ${INSTA_SERVER} \
 	--port   ${INSTA_PORT}   \
 	--path   ${INSTA_SERVERPATH} \
-	--cacert ${INSTA_CACERT} \
+	--srvcert ${INSTA_CACERT} \
 	--key    ${CLKEY}  \
 	--clcert ${CLCERT} \
 	--newclcert ${NEWCLCERT} \

@@ -7,14 +7,14 @@ if [ -z $1 ] || [ -z $2 ] || [ "$1" == "-help" ] || [ "$1" == "--help" ] || [ "$
 	exit 1
 fi
 
-echo "${CMPCLIENT} --info --server ${SERVER} --port ${PORT} --cacert ${CACERT} --hex --user $1 --password $2"
+echo "${CMPCLIENT} --info --server ${SERVER} --port ${PORT} --srvcert ${CACERT} --hex --user $1 --password $2"
 
 #${CMPCLIENT} --info --server ${SERVER} --port ${PORT} \
-#             --cacert ${CACERT} \
+#             --srvcert ${CACERT} \
 #	     --hex --user $1 --password $2
 
 ${CMPCLIENT} --info --server ${SERVER} --port ${PORT} \
-        --cacert ${CACERT} \
+        --srvcert ${CACERT} \
 	    --key ${CLKEY} --clcert ${CLCERT} \
 	    --hex --user "$1" --password "$2" 
 	    

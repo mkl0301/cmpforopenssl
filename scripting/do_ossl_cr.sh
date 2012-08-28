@@ -2,14 +2,14 @@
 myDir=`dirname $0`
 . $myDir/settings.sh
 
-echo "${CMPCLIENT} --cr --cryptlib --server ${SERVER} --port ${PORT} --cacert ${CACERT} --key ${CLKEY} --clcert ${CLCERT} --hex --user $1 --password $2"
+echo "${CMPCLIENT} --cr --cryptlib --server ${SERVER} --port ${PORT} --srvcert ${CACERT} --key ${CLKEY} --clcert ${CLCERT} --hex --user $1 --password $2"
 set -x
 ${CMPCLIENT} \
 	--cr \
 	--cryptlib \
 	--server ${SERVER} \
 	--port ${PORT} \
-	--cacert ${CACERT} \
+	--srvcert ${CACERT} \
 	--key ${CLKEY} \
 	--clcert ${CLCERT} \
 	--hex \

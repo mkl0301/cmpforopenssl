@@ -13,7 +13,7 @@ ${CMPCLIENT} --cr \
 	--insta3.3 \
 	--server ${SERVER} \
 	--port ${PORT} \
-	--cacert ${CACERT} \
+	--srvcert ${CACERT} \
 	--path "ejbca/publicweb/cmp" \
 	--key ${CLKEY} \
 	--newkey ${NEWCLKEY} \

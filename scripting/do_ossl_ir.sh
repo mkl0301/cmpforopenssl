@@ -8,13 +8,12 @@ if [ -z $1 ] || [ -z $2 ] || [ "$1" == "-help" ] || [ "$1" == "--help" ] || [ "$
 fi
 
 set -x
-${CMPCLIENT} --ir --server ${SERVER} 
+${CMPCLIENT} --ir --server ${SERVER} \
                   --port ${PORT} \
-                  --cacert ${CACERT} \
+                  --srvcert ${CACERT} \
                   --newkey ${CLKEY} \
                   --newkeypass "password" \
                   --newclcert ${CLCERT} \
-                  --hex \
                   --user "$1" \
                   --password "$2"
 set +x
