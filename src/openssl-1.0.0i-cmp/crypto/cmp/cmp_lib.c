@@ -367,7 +367,6 @@ err:
  * returns 1 on success, 0 on error
  * ############################################################################ */
 int CMP_PKIHEADER_init(CMP_CTX *ctx, CMP_PKIHEADER *hdr) {
-	/* check existence of mandatory arguments */
 	if( !hdr) goto err;
 	if( !ctx) goto err;
 
@@ -393,22 +392,6 @@ int CMP_PKIHEADER_init(CMP_CTX *ctx, CMP_PKIHEADER *hdr) {
 	/* set current time as message time */
 	if( !CMP_PKIHEADER_set_messageTime(hdr)) goto err;
 
-	/* XXX not setting transactionID test for PKI INFO */
-	if( ctx->setTransactionID == 1) {
-		if( ctx->transactionID) {
-			if( !CMP_PKIHEADER_set1_transactionID(hdr, ctx->transactionID)) goto err;
-		} else {
-			/* create new transaction ID */
-			if( !CMP_PKIHEADER_set1_transactionID(hdr, NULL)) goto err;
-			/* XXX this is not nice, it should be done somehow through the function */
-			CMP_CTX_set1_transactionID( ctx, hdr->transactionID);
-		}
-	}
-
-	/* XXX not setting senderNonce test for PKI INFO */
-	if( ctx->setSenderNonce == 1) {
-		if( !CMP_PKIHEADER_new_senderNonce(hdr)) goto err;
-	}
 	if( ctx->recipNonce)
 		if( !CMP_PKIHEADER_set1_recipNonce(hdr, ctx->recipNonce)) goto err;
 
@@ -418,7 +401,6 @@ int CMP_PKIHEADER_init(CMP_CTX *ctx, CMP_PKIHEADER *hdr) {
 		 -- this may be used to indicate context-specific instructions
 		 -- (this field is intended for human consumption)
 	 */
-
 	if( ctx->freeText)
 		if( !CMP_PKIHEADER_push1_freeText(hdr, ctx->freeText)) goto err;
 #endif
