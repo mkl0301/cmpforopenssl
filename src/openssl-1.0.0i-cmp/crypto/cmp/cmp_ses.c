@@ -272,9 +272,11 @@ static int sendCertConf( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	/* compare received nonce with the one sent in certConf */
-	if(ASN1_OCTET_STRING_cmp(certConf->header->senderNonce, PKIconf->header->recipNonce)) {
-		CMPerr(CMP_F_SENDCERTCONF, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
-		goto err;
+	if (PKIconf->header->recipNonce) {
+		if(ASN1_OCTET_STRING_cmp(certConf->header->senderNonce, PKIconf->header->recipNonce)) {
+			CMPerr(CMP_F_SENDCERTCONF, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
+			goto err;
+		}
 	}
 
 	CMP_PKIMESSAGE_free(certConf);
@@ -337,10 +339,12 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	/* compare received nonce with the one sent in IR */
-	if(ASN1_OCTET_STRING_cmp(ir->header->senderNonce, ip->header->recipNonce)) {
-		/* senderNonce != recipNonce (sic although there is no "!" in the if) */
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
-		goto err;
+	if (ip->header->recipNonce) {
+		if(ASN1_OCTET_STRING_cmp(ir->header->senderNonce, ip->header->recipNonce)) {
+			/* senderNonce != recipNonce (sic although there is no "!" in the if) */
+			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
+			goto err;
+		}
 	}
 	CMP_CTX_set1_recipNonce(ctx, ip->header->senderNonce); /* store for setting in the next msg */
 
@@ -445,10 +449,12 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	/* compare received nonce with the one sent in RR */
-	if(ASN1_OCTET_STRING_cmp(rr->header->senderNonce, rp->header->recipNonce)) {
-		/* senderNonce != recipNonce (sic although there is no "!" in the if) */
-		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
-		goto err;
+	if (rp->header->recipNonce) {
+		if(ASN1_OCTET_STRING_cmp(rr->header->senderNonce, rp->header->recipNonce)) {
+			/* senderNonce != recipNonce (sic although there is no "!" in the if) */
+			CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
+			goto err;
+		}
 	}
 
 	/* evaluate PKIStatus field */
@@ -538,10 +544,12 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	/* compare received nonce with the one sent in CR */
-	if(ASN1_OCTET_STRING_cmp(cr->header->senderNonce, cp->header->recipNonce)) {
-		/* senderNonce != recipNonce (sic although there is no "!" in the if) */
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
-		goto err;
+	if (cp->header->recipNonce) {
+		if(ASN1_OCTET_STRING_cmp(cr->header->senderNonce, cp->header->recipNonce)) {
+			/* senderNonce != recipNonce (sic although there is no "!" in the if) */
+			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
+			goto err;
+		}
 	}
 	CMP_CTX_set1_recipNonce(ctx, cp->header->senderNonce); /* store for setting in the next msg */
 
@@ -632,10 +640,12 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 	/* compare received nonce with the one sent in KUR */
-	if(ASN1_OCTET_STRING_cmp(kur->header->senderNonce, kup->header->recipNonce)) {
-		/* senderNonce != recipNonce (sic although there is no "!" in the if) */
-		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
-		goto err;
+	if (kup->header->recipNonce) {
+		if(ASN1_OCTET_STRING_cmp(kur->header->senderNonce, kup->header->recipNonce)) {
+			/* senderNonce != recipNonce (sic although there is no "!" in the if) */
+			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
+			goto err;
+		}
 	}
 	CMP_CTX_set1_recipNonce(ctx, kup->header->senderNonce); /* store for setting in the next msg */
 
@@ -730,9 +740,11 @@ STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *
 	}
 
 	/* compare received nonce with the one sent in genm */
-	if(ASN1_OCTET_STRING_cmp(genm->header->senderNonce, genp->header->recipNonce)) {
-		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
-		goto err;
+	if (genp->header->recipNonce) {
+		if(ASN1_OCTET_STRING_cmp(genm->header->senderNonce, genp->header->recipNonce)) {
+			CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
+			goto err;
+		}
 	}
 
 	/* the received stack of itavs shouldn't be freed with the message */
