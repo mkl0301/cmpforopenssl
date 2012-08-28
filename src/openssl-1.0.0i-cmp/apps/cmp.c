@@ -142,7 +142,6 @@ static char *opt_certfmt_s="PEM";
 static int   opt_keyfmt=FORMAT_PEM;
 static int   opt_certfmt=FORMAT_PEM;
 static char *opt_engine=NULL;
-static long  opt_validate_path=0;
 
 static char *opt_extcerts=NULL;
 static char *opt_subject=NULL;
@@ -178,8 +177,6 @@ static opt_t cmp_opts[]={
     { "certfmt", "Format to use for certificate files. Default PEM.", OPT_TXT, {&opt_certfmt_s} },
     { "engine", "OpenSSL engine to use", OPT_TXT, {&opt_engine} },
 
-    /* XXX should this be on by default? */
-    { "validate_path", "Validate the trust path of the CA certificate", OPT_NUM, {.num=&opt_validate_path} },
     { "extcerts", "List of certificate files to include in outgoing messages", OPT_TXT, {&opt_extcerts} },
     { "subject", "X509 subject name to be used in the requested certificate template", OPT_TXT, {&opt_subject} },
     { "recipient", "X509 name of the recipient", OPT_TXT, {&opt_recipient} },
@@ -327,12 +324,6 @@ static int check_options(void)
             }
         }
 
-    if (opt_validate_path && !opt_trusted)
-        {
-        BIO_puts(bio_err, "error: trust path validation enabled but no trust store is set\n");
-        goto err;
-        }
-
     if (opt_keyfmt_s)
         opt_keyfmt=str2fmt(opt_keyfmt_s);
 
@@ -451,9 +442,6 @@ static int setup_ctx(CMP_CTX *ctx)
 
     /* TODO add extcerts !! */
     
-    if (opt_validate_path)
-        CMP_CTX_set_option(ctx, CMP_CTX_OPT_VALIDATEPATH, 1);
-
     CMP_CTX_set1_timeOut(ctx, 5*60);
 
     return 1;
