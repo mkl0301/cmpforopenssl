@@ -126,12 +126,13 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *data)
  * ################################################################ */
 static int set_http_path(CURL *curl, const char *path) {
 	char *current_url = NULL, *url = NULL;
-	int pathlen = strlen(path), current_len;
+	int pathlen = 0, current_len = 0;
 
 	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &current_url);
-	if (!current_url)
+	if (!current_url || !path)
 		return 0;
 
+	pathlen = strlen(path);
 	current_len = strlen(current_url);
 	if (!strcmp(&current_url[current_len - pathlen], path))
 		/* path is already set, let's not do it again... */
@@ -245,28 +246,25 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, (void*) 0);
 	free(derMsg);
 
-	if (   res == CURLE_COULDNT_CONNECT
-		|| res == CURLE_COULDNT_RESOLVE_PROXY
-		|| res == CURLE_COULDNT_RESOLVE_HOST
-		|| res == CURLE_SEND_ERROR
-		|| res == CURLE_RECV_ERROR
-		|| res == CURLE_OPERATION_TIMEDOUT
-		|| res == CURLE_INTERFACE_FAILED)
-	{
-		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_SERVER_NOT_REACHABLE);
+	if (res != CURLE_OK) {
 		char num[64];
-		snprintf(num, sizeof(num)-1, "%d:", res);
-		ERR_add_error_data(2, num, curl_easy_strerror(res));
-		goto err;
-	}
-	else if (res != CURLE_OK) {
-		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_CURL_ERROR);
-		char num[64];
-		snprintf(num, sizeof(num)-1, "%d:", res);
-		ERR_add_error_data(2, num, curl_easy_strerror(res));
-		goto err;
-	}
 
+		if (res == CURLE_COULDNT_CONNECT
+			|| res == CURLE_COULDNT_RESOLVE_PROXY
+			|| res == CURLE_COULDNT_RESOLVE_HOST
+			|| res == CURLE_SEND_ERROR
+			|| res == CURLE_RECV_ERROR
+			|| res == CURLE_OPERATION_TIMEDOUT
+			|| res == CURLE_INTERFACE_FAILED)
+			CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_SERVER_NOT_REACHABLE);
+		else if (res != CURLE_OK)
+			CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_CURL_ERROR);
+
+		snprintf(num, sizeof(num)-1, "%d:", res);
+		ERR_add_error_data(2, num, curl_easy_strerror(res));
+		goto err;
+	}
+	
 	/* verify that Content-type is application/pkixcmp */
 	curl_easy_getinfo(curl, CURLINFO_CONTENT_TYPE, &content_type);
 	if (content_type == NULL || strcmp(content_type, "application/pkixcmp") != 0) {
