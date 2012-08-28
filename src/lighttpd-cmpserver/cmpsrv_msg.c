@@ -18,7 +18,7 @@ CMP_PKIMESSAGE * CMP_pollRep_new( CMP_CTX *ctx) {
 
     if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-    if( !CMP_PKIHEADER_set1( msg->header, ctx)) goto err;
+    if( !CMP_PKIHEADER_init(ctx, msg->header)) goto err;
 
     CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_POLLREP);
 
@@ -55,7 +55,7 @@ CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx, X509 *cert)
 		ASN1_OCTET_STRING_free(subjKeyIDStr);
 	}
 
-	CMP_PKIHEADER_set1(msg->header, ctx);
+	CMP_PKIHEADER_init(ctx, msg->header);
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IP);
 
 	CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*)ctx->srvCert));
@@ -127,7 +127,7 @@ CMP_PKIMESSAGE * CMP_kup_new( CMP_CTX *ctx, X509 *cert)
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	CMP_PKIHEADER_set1(msg->header, ctx);
+	CMP_PKIHEADER_init(ctx, msg->header);
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_KUP);
 
 	CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*)ctx->srvCert));

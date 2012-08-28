@@ -51,8 +51,8 @@ cmpsrv_ctx *cmpsrv_ctx_new(plugin_data *p)
 
   X509 *caCert = HELP_read_der_cert(p->caCert->ptr);
   if (!caCert) goto err;
-  CMP_CTX_set1_caCert( cmp_ctx, caCert);
-  X509_free(caCert);
+  CMP_CTX_set1_srvCert( cmp_ctx, caCert);
+  cmp_ctx->clCert = caCert;
 
   EVP_PKEY *caKey = HELP_readPrivKey(p->caKey->ptr, "");
   if (!caKey) goto err;

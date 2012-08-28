@@ -60,7 +60,7 @@ CMPHANDLER_FUNC(handlemsg_ir)
 
   {
     CMP_PKIMESSAGE *msg = CMP_PKIMESSAGE_new();
-    CMP_PKIHEADER_set1(msg->header, ctx);
+    CMP_PKIHEADER_init(ctx, msg->header);
     CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IP);
     CMP_PKIHEADER_set1_sender( msg->header, X509_get_subject_name( (X509*)ctx->srvCert));
 
@@ -85,6 +85,7 @@ CMPHANDLER_FUNC(handlemsg_ir)
 #else
 
   *out = CMP_ip_new(ctx, cert);
+
   if (!*out) return -1;
   (*out)->extraCerts = X509_stack_dup(srv_ctx->extraCerts);
   (*out)->body->value.ip->caPubs = X509_stack_dup(srv_ctx->caPubs);
@@ -114,7 +115,7 @@ CMPHANDLER_FUNC(handlemsg_rr)
 
   CMP_PKIMESSAGE *resp = CMP_PKIMESSAGE_new();
   CMP_PKIMESSAGE_set_bodytype( resp, V_CMP_PKIBODY_RP);
-  CMP_PKIHEADER_set1(resp->header, ctx);
+  CMP_PKIHEADER_init(ctx, resp->header);
 
   CMP_REVREPCONTENT *rp = CMP_REVREPCONTENT_new();
   rp->status = sk_CMP_PKISTATUSINFO_new_null();
@@ -183,7 +184,7 @@ CMPHANDLER_FUNC(handlemsg_certConf)
 
   CMP_CTX *ctx = srv_ctx->cmp_ctx;
   CMP_PKIMESSAGE *resp = CMP_PKIMESSAGE_new();
-  CMP_PKIHEADER_set1(resp->header, ctx);
+  CMP_PKIHEADER_init(ctx, resp->header);
   CMP_PKIMESSAGE_set_bodytype(resp, V_CMP_PKIBODY_PKICONF);
   ASN1_TYPE *t = ASN1_TYPE_new();
   ASN1_TYPE_set(t, V_ASN1_NULL, NULL);
@@ -235,7 +236,7 @@ CMPHANDLER_FUNC(handlemsg_genm)
   CMP_CTX *ctx = srv_ctx->cmp_ctx;
 
   resp = CMP_PKIMESSAGE_new();
-  CMP_PKIHEADER_set1(resp->header, ctx);
+  CMP_PKIHEADER_init(ctx, resp->header);
   CMP_PKIMESSAGE_set_bodytype(resp, V_CMP_PKIBODY_GENP);
 
   int infoType = OBJ_obj2nid(msg_itav->infoType);
@@ -330,6 +331,66 @@ void init_handler_table(void)
   msg_handlers[V_CMP_PKIBODY_CERTCONF] = handlemsg_certConf;
   msg_handlers[V_CMP_PKIBODY_GENM]     = handlemsg_genm;
   msg_handlers[V_CMP_PKIBODY_POLLREQ]  = handlemsg_pollReq;
+}
+
+int CMPSRV_PKIMESSAGE_protect(cmpsrv_ctx *ctx, CMP_PKIMESSAGE *msg) {
+  if(!ctx) goto err;
+  if(!msg) goto err;
+
+  ASN1_OBJECT *algorOID=NULL;
+  X509_ALGOR_get0(&algorOID, NULL, NULL, msg->header->protectionAlg);
+
+  /* use PasswordBasedMac according to 5.1.3.1 if secretValue is given */
+  if (OBJ_obj2nid(algorOID) == NID_id_PasswordBasedMAC && ctx->cmp_ctx->secretValue) {
+    if (!msg->header->protectionAlg)
+      if(!(msg->header->protectionAlg = CMP_create_pbmac_algor())) goto err;
+    CMP_PKIHEADER_set1_senderKID(msg->header, ctx->cmp_ctx->referenceValue);
+    if(!(msg->protection = CMP_calc_protection_pbmac( msg, ctx->cmp_ctx->secretValue))) 
+      goto err;
+  } else {
+    /* use MSG_SIG_ALG according to 5.1.3.3 if client Certificate and private key is given */
+    if (ctx->cmp_ctx->srvCert && ctx->caKey) {
+      ASN1_OCTET_STRING *subjKeyIDStr = NULL;
+      int algNID = 0;
+
+      if (!msg->header->protectionAlg)
+        msg->header->protectionAlg = X509_ALGOR_new();
+
+      /* DSA/SHA1 is mandatory for MSG_SIG_ALG (appendix D.2) so SHA-1 is hardcoded here for now */
+      /* This could be made configurable via ctx to include SHA-256 etc */
+      switch (EVP_PKEY_type(ctx->caKey->type)) {
+        case EVP_PKEY_DSA: 
+          algNID = NID_dsaWithSHA1;
+          break;
+        case EVP_PKEY_RSA:
+          algNID = NID_sha1WithRSAEncryption;
+          break;
+        default:
+          CMPerr(CMP_F_CMP_PKIMESSAGE_PROTECT, CMP_R_UNSUPPORTED_KEY_TYPE);
+          goto err;
+      }
+      X509_ALGOR_set0(msg->header->protectionAlg, OBJ_nid2obj(algNID), V_ASN1_NULL, NULL);
+
+      /* set senderKID to  keyIdentifier of the used certificate according
+       * to section 5.1.1 */
+      subjKeyIDStr = CMP_get_cert_subject_key_id(ctx->cmp_ctx->srvCert);
+      if (subjKeyIDStr) {
+        CMP_PKIHEADER_set1_senderKID(msg->header, subjKeyIDStr);
+        ASN1_OCTET_STRING_free(subjKeyIDStr);
+      }
+
+      if (!(msg->protection = CMP_calc_protection_sig( msg, ctx->caKey))) 
+        goto err;
+    } else {
+      CMPerr(CMP_F_CMP_PKIMESSAGE_PROTECT, CMP_R_MISSING_KEY_INPUT_FOR_CREATING_PROTECTION);
+      goto err;
+    }
+  }
+
+  return 1;
+err:
+  CMPerr(CMP_F_CMP_PKIMESSAGE_PROTECT, CMP_R_ERROR_PROTECTING_MESSAGE);
+  return 0;
 }
 
 
@@ -464,9 +525,12 @@ int handleMessage(server *srv, connection *con, cmpsrv_ctx *ctx, CMP_PKIMESSAGE 
 
       resp->header->protectionAlg = X509_ALGOR_dup(msg->header->protectionAlg);
       dbgmsg("s", "protecting message ...");
-      resp->protection = CMP_protection_new(resp, ctx->caKey, ctx->cmp_ctx->secretValue);
-      dbgmsg("s", "done.");
-      result = 1;
+      if (CMPSRV_PKIMESSAGE_protect(ctx, resp)) {
+        dbgmsg("s", "done.");
+        result = 1;
+      }
+      else
+        dbgmsg("s", "error creating protection");
     }
     else
       dbgmsg("ss", "error handling message: ", MSG_TYPE_STR(bodyType));
