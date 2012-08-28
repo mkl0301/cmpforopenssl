@@ -556,6 +556,11 @@ void doKur(CMP_CTX *cmp_ctx) {
     CMP_CTX_set1_subjectName( cmp_ctx, subject);
     X509_NAME_free(subject);
   }
+  if (opt_recipient) {
+    X509_NAME *recipient = HELP_create_X509_NAME(opt_recipient);
+    CMP_CTX_set1_recipient( cmp_ctx, recipient);
+    X509_NAME_free(recipient);
+  }
   if(!(pkey = HELP_readPrivKey(opt_clKeyFile, opt_clKeyPass))) {
     printf("FATAL: could not read private client key!\n");
     exit(1);
