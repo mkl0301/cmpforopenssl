@@ -48,8 +48,8 @@ CMP_PKIMESSAGE * CMP_ip_new( CMP_CTX *ctx, X509 *cert)
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 
-	ASN1_OCTET_STRING *CMP_get_subject_key_id(const X509 *cert);
-	ASN1_OCTET_STRING *subjKeyIDStr = CMP_get_subject_key_id(ctx->srvCert);
+	ASN1_OCTET_STRING *CMP_get_cert_subject_key_id(const X509 *cert);
+	ASN1_OCTET_STRING *subjKeyIDStr = CMP_get_cert_subject_key_id(ctx->srvCert);
 	if (subjKeyIDStr) {
 		CMP_CTX_set1_referenceValue( ctx, subjKeyIDStr->data, subjKeyIDStr->length);
 		ASN1_OCTET_STRING_free(subjKeyIDStr);
