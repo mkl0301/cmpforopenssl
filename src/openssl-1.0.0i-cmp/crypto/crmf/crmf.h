@@ -58,16 +58,11 @@
  * This product includes cryptographic software written by Eric Young
  * (eay@cryptsoft.com).  This product includes software written by Tim
  * Hudson (tjh@cryptsoft.com).
- *
  */
 /* ====================================================================
- * Copyright 2007-2010 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
+ * Copyright 2007-2012 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
  * CMP support in OpenSSL originally developed by 
  * Nokia Siemens Networks for contribution to the OpenSSL project.
- */
-
-/* =========================== CHANGE LOG =============================
- * 2007 - Martin Peylo - Initial Creation
  */
 
 #ifndef HEADER_CRMF_H
@@ -94,7 +89,6 @@ PrivateKeyInfo ::= SEQUENCE {
    attributes				 [0] IMPLICIT Attributes OPTIONAL
 }
 */
-
 typedef struct crmf_privatekeyinfo_st
 {
 	ASN1_INTEGER			 *version;
@@ -104,7 +98,9 @@ typedef struct crmf_privatekeyinfo_st
 } CRMF_PRIVATEKEYINFO;
 DECLARE_ASN1_FUNCTIONS(CRMF_PRIVATEKEYINFO)
 
-/*
+/* section 4.2.1 Private Key Info Content Type
+   id-ct-encKeyWithID OBJECT IDENTIFIER ::= {id-ct 21}
+
 EncKeyWithID ::= SEQUENCE {
   privateKey		   PrivateKeyInfo,
   identifier CHOICE {
@@ -127,7 +123,6 @@ typedef struct crmf_enckeywithid_st
 {
 	CRMF_PRIVATEKEYINFO			 *privateKey;
 	CRMF_ENCKEYWITHID_IDENTIFIER *identifier; /* [0] */
-
 } CRMF_ENCKEYWITHID;
 DECLARE_ASN1_FUNCTIONS(CRMF_ENCKEYWITHID)
 
@@ -136,7 +131,6 @@ CertId ::= SEQUENCE {
  issuer			  GeneralName,
  serialNumber	  INTEGER }
  */
-
 typedef struct crmf_certid_st
 {
 	GENERAL_NAME *issuer;
@@ -163,7 +157,6 @@ EncryptedValue ::= SEQUENCE {
  encValue		BIT STRING }
  -- the encrypted value itself
 */
-
 typedef struct crmf_encrypetedvalue_st
 {
 	X509_ALGOR				 *intendedAlg; /* 0 */
@@ -175,13 +168,10 @@ typedef struct crmf_encrypetedvalue_st
 } CRMF_ENCRYPTEDVALUE;
 DECLARE_ASN1_FUNCTIONS(CRMF_ENCRYPTEDVALUE)
 
-
 /*
 EncryptedKey ::= CHOICE {
  encryptedValue		   EncryptedValue,	 -- Deprecated
  envelopedData	   [0] EnvelopedData }
-
-
  */
 typedef struct crmf_encryptedkey_st
 {
@@ -226,14 +216,12 @@ SinglePubInfo ::= SEQUENCE {
 	 ldap		 (3) },
  pubLocation  GeneralName OPTIONAL }
  */
-
 typedef struct crmf_singlepubinfo_st
 {
 	ASN1_INTEGER *pubMethod;
 	GENERAL_NAME *pubLocation;
 } CRMF_SINGLEPUBINFO;
 DECLARE_ASN1_FUNCTIONS(CRMF_SINGLEPUBINFO)
-
 
 /*
 PKIPublicationInfo ::= SEQUENCE {
@@ -245,17 +233,15 @@ pubInfos  SEQUENCE SIZE (1..MAX) OF SinglePubInfo OPTIONAL }
   -- (if action is "pleasePublish" and pubInfos is omitted,
   -- "dontCare" is assumed)
 */
-
 typedef struct crmf_pkipublicationinfo_st
 {
 	ASN1_INTEGER *action;
-	CRMF_SINGLEPUBINFO *pubinfos; /* XXX what to do with the SEQUENCE SIZE... ? */
+	CRMF_SINGLEPUBINFO *pubinfos;
 } CRMF_PKIPUBLICATIONINFO;
 DECLARE_ASN1_FUNCTIONS(CRMF_PKIPUBLICATIONINFO)
 CRMF_PKIPUBLICATIONINFO *CRMF_PKIPUBLICATIONINFO_dup( CRMF_PKIPUBLICATIONINFO *pkiPubInfo);
 
 /*
-TODO
 PKMACValue ::= SEQUENCE {
 algId  AlgorithmIdentifier,
 -- algorithm value shall be PasswordBasedMac {1 2 840 113533 7 66 13}
@@ -268,7 +254,6 @@ typedef struct crmf_pkmacvalue_st
 	ASN1_BIT_STRING *value;
 } CRMF_PKMACVALUE;
 DECLARE_ASN1_FUNCTIONS(CRMF_PKMACVALUE)
-
 
 /*
 SubsequentMessage ::= INTEGER {
@@ -304,7 +289,7 @@ typedef struct crmf_popoprivkey_st
 	int type;
 	union	{
 		ASN1_BIT_STRING   *thisMessage; /* Deprecated */ /* 0 */
-		ASN1_INTEGER	  *subsequentMessage; /* XXX what to do with the SEQUENCE SIZE... ? */ /* 1 */
+		ASN1_INTEGER	  *subsequentMessage; /* 1 */
 		ASN1_BIT_STRING   *dhMAC; /* 2 */
 		CRMF_PKMACVALUE   *agreeMAC; /* 3 */
 	/* TODO: This is not ASN1_NULL but CMS_ENVELOPEDDATA which should be somehow taken from crypto/cms which exists now - this is not used anywhere so far */
@@ -351,7 +336,7 @@ typedef struct crmf_poposigningkeyinput_authinfo_st
 	int type;
 	union	{
 		GENERAL_NAME	*sender; /* 0 */
-		CRMF_PKMACVALUE *publicKeyMAC; /* XXX imp/exp? */ /* 1 */
+		CRMF_PKMACVALUE *publicKeyMAC; /* 1 */
 	} value;
 } CRMF_POPOSIGNINGKEYINPUT_AUTHINFO;
 DECLARE_ASN1_FUNCTIONS(CRMF_POPOSIGNINGKEYINPUT_AUTHINFO)
@@ -369,7 +354,6 @@ POPOSigningKey ::= SEQUENCE {
  algorithmIdentifier   AlgorithmIdentifier,
  signature			   BIT STRING }
  */
-
 typedef struct crmf_poposigningkey_st
 {
 	CRMF_POPOSIGNINGKEYINPUT *poposkInput;
@@ -449,9 +433,11 @@ typedef struct crmf_certtemplate_st
 	ASN1_BIT_STRING *issuerUID;  /* 7 */
 	/* subjectUID is deprecated in version 2 */
 	ASN1_BIT_STRING *subjectUID; /* 8 */
+#if 0
+	/* TODO: That should be - but that's only cosmetical */
+	X509_EXTENSIONS	*extensions; /* 9 */
+#endif
 	STACK_OF(X509_EXTENSION)  *extensions; /* 9 */
-	// X509_EXTENSIONS	*extensions; /* 9 */
-
 } CRMF_CERTTEMPLATE;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTTEMPLATE)
 
@@ -465,11 +451,13 @@ typedef struct crmf_certrequest_st
 {
 	ASN1_INTEGER	  *certReqId;
 	CRMF_CERTTEMPLATE *certTemplate;
+	/* TODO: make CRMF_CONTROLS out of that - but only cosmetical */
 	STACK_OF(CRMF_ATTRIBUTETYPEANDVALUE) *controls;
 } CRMF_CERTREQUEST;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTREQUEST)
 CRMF_CERTREQUEST *CRMF_CERTREQUEST_dup( CRMF_CERTREQUEST *atav);
 
+/* TODO: isn't there a better way to have this for ANY type? */
 typedef struct crmf_attributetypeandvalue_st
 {
 	ASN1_OBJECT *type;
@@ -529,7 +517,9 @@ DECLARE_STACK_OF(CRMF_CERTREQMSG) /* CertReqMessages */
 DECLARE_ASN1_SET_OF(CRMF_CERTREQMSG) /* CertReqMessages */
 
 
-/* DECLARATIONS */
+/* ########################################################################## *
+ * function DECLARATIONS
+ * ########################################################################## */
 /* crmf_msg.c */
 CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const X509_NAME *subject, int popoMethod, X509_EXTENSIONS *extensions);
 
@@ -539,7 +529,6 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 						   const unsigned char* msg, size_t msgLen,
 						   const unsigned char* secret, size_t secretLen,
 						   unsigned char** mac, unsigned int* macLen);
-
 
 /* crmf_lib.c */
 int CRMF_CERTREQMSG_push0_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *control);
