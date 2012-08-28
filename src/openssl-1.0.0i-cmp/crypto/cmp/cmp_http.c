@@ -58,18 +58,11 @@
  * This product includes cryptographic software written by Eric Young
  * (eay@cryptsoft.com).  This product includes software written by Tim
  * Hudson (tjh@cryptsoft.com).
- *
  */
 /* ====================================================================
- * Copyright 2007-2010 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
+ * Copyright 2007-2012 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
  * CMP support in OpenSSL originally developed by 
  * Nokia Siemens Networks for contribution to the OpenSSL project.
- */
-
-/* =========================== CHANGE LOG =============================
- * 2007 - Martin Peylo - Initial Creation
- * 6/10/2010 - Martin Peylo - fixed potential harmful sscanf conversion in CMP_PKIMESSAGE_hhtp_bio_recv()
- * 6/20/2011 - Miikka Viljanen - implemented HTTP transport using libcurl
  */
 
 #include <openssl/asn1.h>
@@ -93,16 +86,28 @@ typedef struct rdata_s {
 	size_t size;
 } rdata_t;
 
+/* ############################################################################ *
+ * internal function
+ *
+ * realloc which doesn't fail when trying to reallocate NULL pointers
+ *
+ * returns pointer to (re-)allocate space or NULL on error
+ * ############################################################################ */
 static void *myrealloc(void *ptr, size_t size)
 {
-	/* There might be a realloc() out there that doesn't like reallocing
-	 *		NULL pointers, so we take care of it here */ 
 	if(ptr)
 		return realloc(ptr, size);
 	else
 		return calloc(1,size);
 }
 
+/* ############################################################################ *
+ * internal function
+ *
+ * used for CURLOPT_WRITEFUNCTION
+ *
+ * returns size of written data in bytes
+ * ############################################################################ */
 static size_t write_data(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	size_t realsize = size * nmemb;
@@ -118,11 +123,17 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *data)
 }
 
 /* ################################################################ *
+ * internal function
+ *
  * In CMP_CTX we have separate variables for server address and path,
  * but libcurl doesn't have a separate function for just setting the
  * path. This function simply checks the end of the effective url to
  * make sure that the correct path is there, and if it's not set yet
  * it will be added.
+ *
+ * TODO: check if that can be rewritten to be nicer
+ *
+ * returns 1 on success, 0 on error
  * ################################################################ */
 static int set_http_path(CURL *curl, const char *path) {
 	char *current_url = NULL, *url = NULL;
@@ -148,9 +159,11 @@ static int set_http_path(CURL *curl, const char *path) {
 	return 1;
 }
 
-/* ################################################################ *
+/* ########################################################################## *
  * Create a new http connection, with a specified source ip/interface
- * ################################################################ */
+ * returns 1 on success, null on error, returns the created bio inside the *bio
+ * argument
+ * ########################################################################## */
 int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port, const char *srcip) {
 	struct curl_slist *slist=NULL;
 	CURL *curl;
@@ -178,8 +191,7 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 
 	/* curl will automatically try to get proxy from environment if we don't set this.
 	 * if proxy use is enabled, it will be set in CMP_PKIMESSAGE_http_perform. */
-	/* XXX what's the correct thing to do, should we take proxy from env or not? */
-	curl_easy_setopt(curl, CURLOPT_PROXY, "");
+	curl_easy_setopt(curl, CURLOPT_PROXY, ""); /* TODO: that needs to be explicitly documented */
 
 	*bio = curl;
 	return 1;
@@ -189,10 +201,14 @@ err:
 	return 0;
 }
 
+/* ################################################################ *
+ * ################################################################ */
 int CMP_new_http_bio( CMPBIO **cbio, const char* serverName, const int port) {
 	return CMP_new_http_bio_ex(cbio, serverName, port, NULL);
 }
 
+/* ################################################################ *
+ * ################################################################ */
 int CMP_delete_http_bio( CMPBIO *cbio) {
 	curl_easy_cleanup(cbio);
 	return 1;
@@ -288,12 +304,16 @@ err:
 	return 0;
 }
 
+/* ################################################################ *
+ * ################################################################ */
 int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio, CMP_CTX *ctx,
 								 const CMP_PKIMESSAGE *msg) {
 	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_BIO_SEND, CMP_R_DEPRECATED_FUNCTION);
 	return 0;
 }
 
+/* ################################################################ *
+ * ################################################################ */
 int CMP_PKIMESSAGE_http_bio_recv( CMPBIO *cbio, CMP_CTX *ctx,
 				  CMP_PKIMESSAGE **ip) {
 	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_BIO_RECV, CMP_R_DEPRECATED_FUNCTION);
