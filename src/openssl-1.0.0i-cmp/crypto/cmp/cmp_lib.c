@@ -392,8 +392,18 @@ int CMP_PKIHEADER_init(CMP_CTX *ctx, CMP_PKIHEADER *hdr) {
 	/* set current time as message time */
 	if( !CMP_PKIHEADER_set_messageTime(hdr)) goto err;
 
-	if( ctx->recipNonce)
+	if (ctx->recipNonce) 
 		if( !CMP_PKIHEADER_set1_recipNonce(hdr, ctx->recipNonce)) goto err;
+
+	if (ctx->transactionID) {
+		if (!CMP_PKIHEADER_set1_transactionID(hdr, ctx->transactionID)) goto err;
+	} else {
+		/* create new transaction ID */
+		if (!CMP_PKIHEADER_set1_transactionID(hdr, NULL)) goto err; 
+		CMP_CTX_set1_transactionID(ctx, hdr->transactionID);
+	}
+
+	if (!CMP_PKIHEADER_new_senderNonce(hdr)) goto err; 
 
 #if 0
 	/*
