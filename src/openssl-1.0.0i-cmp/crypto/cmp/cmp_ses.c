@@ -299,8 +299,6 @@ err:
 X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *ir=NULL;
 	CMP_PKIMESSAGE *ip=NULL;
-	CMP_PKIMESSAGE *certConf=NULL;
-	CMP_PKIMESSAGE *PKIconf=NULL;
 
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->newPkey ||
@@ -373,58 +371,20 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (ip->extraCerts)
 		CMP_CTX_set1_extraCertsIn(ctx, ip->extraCerts);
 
-	/* check if implicit confirm is set in generalInfo */
-	if (CMP_PKIMESSAGE_check_implicitConfirm(ip)) goto cleanup;
+	/* check if implicit confirm is set in generalInfo and send certConf if not */
+	if (!CMP_PKIMESSAGE_check_implicitConfirm(ip)) 
+		if (!sendCertConf(cbio, ctx)) goto err;
 
-	/* create Certificate Confirmation - certConf */
-	if (!(certConf = CMP_certConf_new(ctx))) goto err;
-
-	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
-	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
-		ADD_HTTP_ERROR_INFO(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED, "certConf");
-		goto err;
-	}
-
-	/* make sure the received messagetype indicates an PKIconf message */
-	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
-		char errmsg[256];
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data( PKIconf, errmsg, sizeof(errmsg)));
-		goto err;
-	}
-
-	/* validate message protection */
-	if (CMP_validate_msg(ctx, PKIconf)) {
-		CMP_printf(ctx, "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
-
-	/* compare received nonce with the one sent in certConf */
-	if(ASN1_OCTET_STRING_cmp(certConf->header->senderNonce, PKIconf->header->recipNonce)) {
-		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
-		goto err;
-	}
-
-cleanup:
-	/* clean up */
 	CMP_PKIMESSAGE_free(ir);
 	CMP_PKIMESSAGE_free(ip);
-	/* those are not set in case of implicitConfirm */
-	if (certConf) CMP_PKIMESSAGE_free(certConf);
-	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 	return ctx->newClCert;
 
 err:
 	if (ir) CMP_PKIMESSAGE_free(ir);
 	if (ip) CMP_PKIMESSAGE_free(ip);
-	if (certConf) CMP_PKIMESSAGE_free(certConf);
-	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
 	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
-
 	return NULL;
 }
 
