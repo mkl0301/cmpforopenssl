@@ -304,15 +304,14 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			goto err;
 		}
 
-	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, ip->body->value.ip);
-	if (ctx->newClCert == NULL) goto err;
+	if (!(ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, ip->body->value.ip))) goto err;
 
 	/* if the CA returned certificates in the caPubs field, copy them
 	 * to the context so that they can be retrieved if necessary */
 	if (ip->body->value.ip->caPubs)
 		CMP_CTX_set1_caPubs(ctx, ip->body->value.ip->caPubs);
 
-	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
+	/* copy any received extraCerts to ctx->extraCertsIn so they can be retrieved */
 	if (ip->extraCerts)
 		CMP_CTX_set1_extraCertsIn(ctx, ip->extraCerts);
 
@@ -320,7 +319,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (CMP_PKIMESSAGE_check_implicitConfirm(ip)) goto cleanup;
 
 	/* create Certificate Confirmation - certConf */
-	if (! (certConf = CMP_certConf_new(ctx))) goto err;
+	if (!(certConf = CMP_certConf_new(ctx))) goto err;
 
 	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
 	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
@@ -338,7 +337,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, PKIconf)) {
-		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
+		CMP_printf(ctx, "SUCCESS: validating protection of incoming message");
 	} else {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
 		goto err;
@@ -372,11 +371,30 @@ err:
 }
 
 /* ############################################################################ *
+ * do the full sequence for RR, including RR, RP and potential polling
+ *
+ * All options need to be set in the context.
+ *
+ * TODO: this function can only revoke one certifcate so far, should be possible
+ * for several according to 5.3.9
+ *
+ * The RFC is vague in which PKIStatus should be returned by the server, so we
+ * take "accepted, grantedWithMods, revocationWaring, revocationNotification"
+ * as information that the certifcate was revoked, "rejection" as information
+ * that the revocation was rejected and don't expect "waiting, keyUpdateWarning"
+ * (which are handled as error)
+ *
+ * returns according to PKIStatus received, 0 on error
+ *          accepted               (1)
+ *          grantedWithMods        (2)
+ *          rejection              (3) (this is not an error!)
+ *          revocationWarning      (5)
+ *          revocationNotification (6)
  * ############################################################################ */
 int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *rr=NULL;
 	CMP_PKIMESSAGE *rp=NULL;
-	// X509 *srvCert=NULL;
+	int pkiStatus = 0;
 
 	if (!cbio || !ctx || !ctx->serverName || !ctx->pkey ||
 		!ctx->clCert || !ctx->srvCert) {
@@ -400,28 +418,6 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	/* evaluate PKIStatus field */
-	switch (CMP_REVREPCONTENT_PKIStatus_get( rp->body->value.rp, 0)) 
-	{
-		case CMP_PKISTATUS_grantedWithMods:
-			CMP_printf( ctx, "WARNING: got \"grantedWithMods\"");
-		case CMP_PKISTATUS_accepted:
-			CMP_printf( ctx, "INFO: revocation accepted");
-			break;
-		case CMP_PKISTATUS_rejection:
-			goto err;
-			break;
-		case CMP_PKISTATUS_waiting:
-		case CMP_PKISTATUS_revocationWarning:
-		case CMP_PKISTATUS_revocationNotification:
-		case CMP_PKISTATUS_keyUpdateWarning:
-			break;
-		default:
-			CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
-			goto err;
-			break;
-	}
-
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, rp)) {
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
@@ -437,10 +433,40 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	return 1;
+	/* evaluate PKIStatus field */
+	switch (pkiStatus = CMP_REVREPCONTENT_PKIStatus_get( rp->body->value.rp, 0)) 
+	{
+		case CMP_PKISTATUS_accepted:
+			CMP_printf( ctx, "INFO: revocation accepted (PKIStatus=accepted)");
+			break;
+		case CMP_PKISTATUS_grantedWithMods:
+			CMP_printf( ctx, "INFO: revocation accepted (PKIStatus=grantedWithMods)");
+			break;
+		case CMP_PKISTATUS_rejection:
+			CMP_printf( ctx, "INFO: revocation rejected (PKIStatus=rejection)");
+			break;
+		case CMP_PKISTATUS_revocationWarning:
+			CMP_printf( ctx, "INFO: revocation accepted (PKIStatus=revocationWarning)");
+			break;
+		case CMP_PKISTATUS_revocationNotification:
+			CMP_printf( ctx, "INFO: revocation accepted (PKIStatus=revocationNotification)");
+			break;
+		case CMP_PKISTATUS_waiting:
+		case CMP_PKISTATUS_keyUpdateWarning:
+			CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_UNEXPECTED_PKISTATUS);
+			goto err;
+		default:
+			CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_UNKNOWN_PKISTATUS);
+			goto err;
+	}
 
+	CMP_PKIMESSAGE_free(rr);
+	CMP_PKIMESSAGE_free(rp);
+	return (pkiStatus+1);
 err:
 	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
+	if (rr) CMP_PKIMESSAGE_free(rr);
+	if (rp) CMP_PKIMESSAGE_free(rp);
 	return 0;
 }
 
@@ -545,10 +571,9 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 
 cleanup:
-	/* clean up */
 	CMP_PKIMESSAGE_free(cr);
 	CMP_PKIMESSAGE_free(cp);
-	/* those are not set in case of implicitConfirm */
+	/* those were not created in case of implicitConfirm */
 	if (certConf) CMP_PKIMESSAGE_free(certConf);
 	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 	return ctx->newClCert;

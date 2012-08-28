@@ -211,6 +211,7 @@ static ERR_STRING_DATA CMP_str_reasons[]=
 {ERR_REASON(CMP_R_SERVER_NOT_REACHABLE)  ,"server not reachable"},
 {ERR_REASON(CMP_R_SUBJECT_NAME_NOT_SET)  ,"subject name not set"},
 {ERR_REASON(CMP_R_UNABLE_TO_CREATE_CONTEXT),"unable to create context"},
+{ERR_REASON(CMP_R_UNEXPECTED_PKISTATUS)  ,"unexpected pkistatus"},
 {ERR_REASON(CMP_R_UNKNOWN_ALGORITHM_ID)  ,"unknown algorithm id"},
 {ERR_REASON(CMP_R_UNKNOWN_CERTTYPE)      ,"unknown certtype"},
 {ERR_REASON(CMP_R_UNKNOWN_CIPHER)        ,"unknown cipher"},
