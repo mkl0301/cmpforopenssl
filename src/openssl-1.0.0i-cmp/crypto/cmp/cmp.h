@@ -1377,10 +1377,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
-int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx);
 STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value);
-CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx);
-X509_CRL *CMP_doCurrentCRLReq( CMPBIO *cbio, CMP_CTX *ctx);
 
 /* from cmp_ctx.c */
 int CMP_CTX_init( CMP_CTX *ctx);

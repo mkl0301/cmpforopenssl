@@ -576,17 +576,32 @@ err:
 	return NULL;
 }
 
-
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * do the full sequence for KUR, including KUR, KUP, certConf, PKIconf and
+ * potential polling
+ *
+ * All options need to be set in the context.
+ *
+ * NB: the ctx->newKey can be set *by the user* as the same as the current key 
+ * as per section 5.3.5:
+ * An update is a replacement
+ * certificate containing either a new subject public key or the current
+ * subject public key (although the latter practice may not be
+ * appropriate for some environments).
+ *
+ * TODO: another function to request two certificates at once should be created
+ *
+ * returns pointer to received certificate, NULL if non was received
+ * ############################################################################ */
 X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *kur=NULL;
 	CMP_PKIMESSAGE *kup=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio || !ctx || !ctx->serverName
-		|| !ctx->pkey || !ctx->newPkey || !ctx->clCert
-		|| (!ctx->srvCert && !ctx->trusted_store)) {
+	if (!cbio || !ctx ||  !ctx->newPkey ||
+		(!(ctx->referenceValue && ctx->secretValue) && /* MSG_MAC_ALG */
+		 !(ctx->pkey && ctx->clCert && (ctx->srvCert || ctx->trusted_store))) /* MSG_SIG_ALG */
+		) {
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_INVALID_ARGS);
 		goto err;
 	}
@@ -600,6 +615,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	/* make sure the received messagetype indicates an KUP message */
 	if (CMP_PKIMESSAGE_get_bodytype( kup) != V_CMP_PKIBODY_KUP) {
 		char errmsg[256];
 		CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
@@ -623,7 +639,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	}
 	CMP_CTX_set1_recipNonce(ctx, kup->header->senderNonce); /* store for setting in the next msg */
 
-	/* make sure the received messagetype indicates an KUP message */
+	/* evaluate PKIStatus field */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( kup->body->value.kup, 0) == CMP_PKISTATUS_waiting) {
 		if (!pollForResponse(ctx, cbio, kup->body->value.kup, &kup)) {
 			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
@@ -632,8 +648,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		}
 	}
 
-	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, kup->body->value.kup);
-	if (ctx->newClCert == NULL) goto err;
+	if (!(ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, kup->body->value.kup))) goto err;
 
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (kup->extraCerts)
@@ -657,46 +672,28 @@ err:
 }
 
 /* ############################################################################ *
+ * Sends a general message to the server to request information specified in the
+ * InfoType and Value (itav) given in the nid (section 5.3.19 and E.5).
+ *
+ * all obtions besides the single ITAV and it's value to be sent need to be set
+ * in the context.
+ *
+ * TODO: this could take multiple nids to have several ITAVs in the Genm
+ *
+ * returns pointer to stack of ITAVs received in the answer or NULL on error
  * ############################################################################ */
-CMP_CAKEYUPDANNCONTENT *CMP_doCAKeyUpdateReq( CMPBIO *cbio, CMP_CTX *ctx)
-{
-	STACK_OF(CMP_INFOTYPEANDVALUE) *itavStack = NULL;
-	
-	itavStack = CMP_doGeneralMessageSeq( cbio, ctx, NID_id_it_caKeyUpdateInfo, NULL);
-	if (!itavStack) goto err;
-	
-	return sk_CMP_INFOTYPEANDVALUE_value( itavStack, 0)->infoValue.caKeyUpdateInfo;
-
-err:
-	return NULL;
-}
-
-/* ############################################################################ *
- * ############################################################################ */
-X509_CRL *CMP_doCurrentCRLReq( CMPBIO *cbio, CMP_CTX *ctx)
-{
-	STACK_OF(CMP_INFOTYPEANDVALUE) *itavStack = NULL;
-	
-	itavStack = CMP_doGeneralMessageSeq( cbio, ctx, NID_id_it_currentCRL, NULL);
-	if (!itavStack) goto err;
-	
-	return sk_CMP_INFOTYPEANDVALUE_value( itavStack, 0)->infoValue.currentCRL;
-
-err:
-	return NULL;
-}
-
-/* ############################################################################ */
-/* TODO: check return type: STACK of ITAV? */
-/* ############################################################################ */
 STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
 {
 	CMP_PKIMESSAGE *genm=NULL;
 	CMP_PKIMESSAGE *genp=NULL;
 	CMP_INFOTYPEANDVALUE *itav=NULL;
+	STACK_OF(CMP_INFOTYPEANDVALUE) *rcvdItavs=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio || !ctx || !ctx->srvCert || !ctx->referenceValue || !ctx->secretValue) {
+	if (!cbio || !ctx ||
+		(!(ctx->referenceValue && ctx->secretValue) && /* MSG_MAC_ALG */
+		 !(ctx->pkey && ctx->clCert && (ctx->srvCert || ctx->trusted_store))) /* MSG_SIG_ALG */
+	   ) {
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_INVALID_ARGS);
 		goto err;
 	}
@@ -738,67 +735,22 @@ STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *
 		goto err;
 	}
 
-	return genp->body->value.genp;
-	
-err:
+	/* the received stack of itavs shouldn't be freed with the message */
+	rcvdItavs = genp->body->value.genp;
+	genp->body->value.genp = NULL;
 
+	CMP_PKIMESSAGE_free(genm);
+	CMP_PKIMESSAGE_free(genp);
+
+	return rcvdItavs;
+
+err:
 	if (genm) CMP_PKIMESSAGE_free(genm);
 	if (genp) CMP_PKIMESSAGE_free(genp);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
 	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
-
 	return NULL;
-}
-
-
-/* ############################################################################ */
-/* ############################################################################ */
-int CMP_doPKIInfoReqSeq( CMPBIO *cbio, CMP_CTX *ctx) {
-	CMP_PKIMESSAGE *genm=NULL;
-	CMP_PKIMESSAGE *genp=NULL;
-
-	/* check if all necessary options are set */
-	if (!cbio || !ctx || !ctx->srvCert || !ctx->referenceValue || !ctx->secretValue) {
-		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_INVALID_ARGS);
-		goto err;
-	}
-
-	/* crate GenMsgContent - genm*/
-	if (! (genm = CMP_genm_new(ctx))) goto err;
-
-	CMP_printf( ctx, "INFO: Sending General Message");
-	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp))) {
-		ADD_HTTP_ERROR_INFO(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_GENP_NOT_RECEIVED, "genm");
-		goto err;
-	}
-
-	/* make sure the received messagetype indicates an GENP message */
-	if (CMP_PKIMESSAGE_get_bodytype(genp) != V_CMP_PKIBODY_GENP) {
-		char errmsg[256];
-		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data( genp, errmsg, sizeof(errmsg)));
-		goto err;
-	}
-
-	/* validate message protection */
-	if (CMP_validate_msg(ctx, genp)) {
-		CMP_printf( ctx, "SUCCESS: validating protection of incoming message");
-	} else {
-		CMPerr(CMP_F_CMP_DOPKIINFOREQSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
-
-	return 1;
-
-err:
-	if (genm) CMP_PKIMESSAGE_free(genm);
-	if (genp) CMP_PKIMESSAGE_free(genp);
-
-	/* print out openssl and cmp errors to error_cb if it's set */
-	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
-
-	return 0;
 }
 
 #endif

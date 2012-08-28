@@ -13,6 +13,8 @@
  X509 *CMP_doKeyUpdateRequestSeq( BIO *cbio, CMP_CTX *ctx);
  X509 *CMP_doCertificateRequestSeq( BIO *cbio, CMP_CTX *ctx);
  int CMP_doPKIInfoReqSeq( BIO *cbio, CMP_CTX *ctx);
+ STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value);
+ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 
 =head1 DESCRIPTION
 
@@ -35,12 +37,16 @@ structure have to be given as arguments.
 CMP_doPKIInfoReqSeq() requests information about the current status of a
 CA.
 
+CMP_doGeneralMessageSeq() sends a general message and returns the Infotype and
+value structures returned by the server.  This can e.g. be used to poll for the
+CRL or CA Key Updates.
+
+CMP_doRevocationRequestSeq() requests the revocation of given certificates via
+an revocation request sent to the server.
+
 =head1 NOTES
 
 CMP is defined in RFC 4210 (and CRMF in RFC 4211).
-
-The implementation of CMP for OpenSSL is still work in progress. The API
-might change every release!
 
 =head1 RETURN VALUES
 
