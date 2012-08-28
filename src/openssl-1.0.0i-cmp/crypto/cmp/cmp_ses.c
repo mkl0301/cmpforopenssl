@@ -237,6 +237,55 @@ err:
 	return 0;
 }
 
+
+/* ############################################################################ *
+ * send certConf for IR, CR or KUR sequences
+ * returns 1 on success, 0 on error
+ * ############################################################################ */
+static int sendCertConf( CMPBIO *cbio, CMP_CTX *ctx) {
+	CMP_PKIMESSAGE *certConf=NULL;
+	CMP_PKIMESSAGE *PKIconf=NULL;
+
+	/* crate Certificate Confirmation - certConf */
+	if (!(certConf = CMP_certConf_new(ctx))) goto err;
+
+	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
+	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
+		ADD_HTTP_ERROR_INFO(CMP_F_SENDCERTCONF, CMP_R_PKICONF_NOT_RECEIVED, "certConf");
+		goto err;
+	}
+
+	/* make sure the received messagetype indicates an PKIconf message */
+	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
+		char errmsg[256];
+		CMPerr(CMP_F_SENDCERTCONF, CMP_R_PKIBODY_ERROR);
+		ERR_add_error_data(1, PKIError_data( PKIconf, errmsg, sizeof(errmsg)));
+		goto err;
+	}
+
+	/* validate message protection */
+	if (CMP_validate_msg(ctx, PKIconf)) {
+		CMP_printf( ctx,"SUCCESS: validating protection of incoming message");
+	} else {
+		CMPerr(CMP_F_SENDCERTCONF, CMP_R_ERROR_VALIDATING_PROTECTION);
+		goto err;
+	}
+
+	/* compare received nonce with the one sent in certConf */
+	if(ASN1_OCTET_STRING_cmp(certConf->header->senderNonce, PKIconf->header->recipNonce)) {
+		CMPerr(CMP_F_SENDCERTCONF, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
+		goto err;
+	}
+
+	CMP_PKIMESSAGE_free(certConf);
+	CMP_PKIMESSAGE_free(PKIconf);
+	return 1;
+err:
+	if (certConf) CMP_PKIMESSAGE_free(certConf);
+	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
+	return 0;
+}
+
 /* ############################################################################ *
  * do the full sequence for IR, including IR, IP, certConf, PKIconf and
  * potential polling
@@ -245,7 +294,7 @@ err:
  *
  * TODO: another function to request two certificates at once should be created
  *
- * returns pointer to received certificate, NULL if non was received
+ * returns pointer to received certificate, NULL if none was received
  * ############################################################################ */
 X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *ir=NULL;
@@ -256,8 +305,10 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	/* check if all necessary options are set */
 	if (!cbio || !ctx || !ctx->newPkey ||
 		 /* for authentication we need either reference/secret or external 
-			* identity certificate and private key */
-		 (!(ctx->referenceValue && ctx->secretValue) && !(ctx->pkey && ctx->clCert)) ) {
+			* identity certificate and private key, the server name/cert might not be
+			* known here yet especiallaly in case of E.7 */
+		 (!(ctx->referenceValue && ctx->secretValue) &&  /* MSG_MAC_ALG */
+		  !(ctx->pkey && ctx->clCert)) ) { /* MSG_SIG_ALG for E.7 */
 		CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_INVALID_ARGS);
 		goto err;
 	}
@@ -307,7 +358,14 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	if (!(ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, ip->body->value.ip))) goto err;
 
 	/* if the CA returned certificates in the caPubs field, copy them
-	 * to the context so that they can be retrieved if necessary */
+	 * to the context so that they can be retrieved if necessary 
+	 *
+	 * section 5.3.2:
+	 * Note that if the PKI
+	 * Message Protection is "shared secret information" (see Section
+	 * 5.1.3), then any certificate transported in the caPubs field may be
+	 * directly trusted as a root CA certificate by the initiator. */
+
 	if (ip->body->value.ip->caPubs)
 		CMP_CTX_set1_caPubs(ctx, ip->body->value.ip->caPubs);
 
@@ -471,18 +529,25 @@ err:
 }
 
 
-/* ############################################################################ */
-/* ############################################################################ */
+/* ############################################################################ *
+ * do the full sequence for CR, including CR, CP, certConf, PKIconf and
+ * potential polling
+ *
+ * All options need to be set in the context.
+ *
+ * TODO: another function to request two certificates at once should be created
+ *
+ * returns pointer to received certificate, NULL if non was received
+ * ############################################################################ */
 X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 	CMP_PKIMESSAGE *cr=NULL;
 	CMP_PKIMESSAGE *cp=NULL;
-	CMP_PKIMESSAGE *certConf=NULL;
-	CMP_PKIMESSAGE *PKIconf=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio || !ctx || !ctx->serverName
-		|| !ctx->pkey || !ctx->newPkey || !ctx->clCert ||
-		(!ctx->srvCert && !ctx->trusted_store)) {
+	if (!cbio || !ctx ||  !ctx->newPkey ||
+		(!(ctx->referenceValue && ctx->secretValue) && /* MSG_MAC_ALG */
+		 !(ctx->pkey && ctx->clCert && (ctx->srvCert || ctx->trusted_store))) /* MSG_SIG_ALG */
+		) {
 		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_INVALID_ARGS);
 		goto err;
 	}
@@ -528,65 +593,26 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			goto err;
 		}
 
-	ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, cp->body->value.cp);
-	if (ctx->newClCert == NULL) goto err;
+	if (!(ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, cp->body->value.cp))) goto err;
 
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (cp->extraCerts)
 		CMP_CTX_set1_extraCertsIn(ctx, cp->extraCerts);
 
-	/* check if implicit confirm is set in generalInfo */
-	if (CMP_PKIMESSAGE_check_implicitConfirm(cp)) goto cleanup;
+	/* check if implicit confirm is set in generalInfo and send certConf if not */
+	if (!CMP_PKIMESSAGE_check_implicitConfirm(cp)) 
+		if (!sendCertConf(cbio, ctx)) goto err;
 
-	/* crate Certificate Confirmation - certConf */
-	if (! (certConf = CMP_certConf_new(ctx))) goto err;
-
-	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
-	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf))) {
-		ADD_HTTP_ERROR_INFO(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKICONF_NOT_RECEIVED, "certConf");
-		goto err;
-	}
-
-	/* make sure the received messagetype indicates an PKIconf message */
-	if (CMP_PKIMESSAGE_get_bodytype(PKIconf) != V_CMP_PKIBODY_PKICONF) {
-		char errmsg[256];
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_PKIBODY_ERROR);
-		ERR_add_error_data(1, PKIError_data( PKIconf, errmsg, sizeof(errmsg)));
-		goto err;
-	}
-
-	/* validate message protection */
-	if (CMP_validate_msg(ctx, PKIconf)) {
-		CMP_printf( ctx,	"SUCCESS: validating protection of incoming message");
-	} else {
-		/* old: "ERROR: validating protection of incoming message" */
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_VALIDATING_PROTECTION);
-		goto err;
-	}
-
-	/* compare received nonce with the one sent in certConf */
-	if(ASN1_OCTET_STRING_cmp(certConf->header->senderNonce, PKIconf->header->recipNonce)) {
-		CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
-		goto err;
-	}
-
-cleanup:
 	CMP_PKIMESSAGE_free(cr);
 	CMP_PKIMESSAGE_free(cp);
-	/* those were not created in case of implicitConfirm */
-	if (certConf) CMP_PKIMESSAGE_free(certConf);
-	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 	return ctx->newClCert;
 
 err:
 	if (cr) CMP_PKIMESSAGE_free(cr);
 	if (cp) CMP_PKIMESSAGE_free(cp);
-	if (certConf) CMP_PKIMESSAGE_free(certConf);
-	if (PKIconf) CMP_PKIMESSAGE_free(PKIconf);
 
 	/* print out openssl and cmp errors to error_cb if it's set */
 	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
-
 	return NULL;
 }
 
