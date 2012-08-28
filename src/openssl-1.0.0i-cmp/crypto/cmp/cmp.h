@@ -1286,7 +1286,7 @@ typedef struct cmp_ctx_st
 	 * if a 'waiting' PKIStatus is received*/
 	int maxPollTime;
 
-	int lastStatus;
+	int lastPKIStatus;
 
 	unsigned long failInfoCode;
 

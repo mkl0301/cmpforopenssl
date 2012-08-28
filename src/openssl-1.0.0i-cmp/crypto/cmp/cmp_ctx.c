@@ -264,7 +264,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 
 	ctx->maxPollTime = 0;
 
-	ctx->lastStatus = -1;
+	ctx->lastPKIStatus = -1;
 	ctx->failInfoCode = 0;
 
 	ctx->permitTAInExtraCertsForIR = 0;

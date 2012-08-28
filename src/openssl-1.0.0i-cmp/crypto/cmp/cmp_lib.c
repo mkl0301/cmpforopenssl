@@ -1253,8 +1253,8 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 	
 	CMP_CTX_set_failInfoCode(ctx, CMP_CERTREPMESSAGE_PKIFailureInfo_get0(certrep, repNum));
 
-	ctx->lastStatus = CMP_CERTREPMESSAGE_PKIStatus_get( certrep, repNum);
-	switch (ctx->lastStatus) {
+	ctx->lastPKIStatus = CMP_CERTREPMESSAGE_PKIStatus_get( certrep, repNum);
+	switch (ctx->lastPKIStatus) {
 
 		case CMP_PKISTATUS_waiting:
 			goto err;

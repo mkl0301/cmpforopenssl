@@ -416,7 +416,7 @@ CMP_PKIMESSAGE * CMP_certConf_new( CMP_CTX *ctx) {
 
 	/* execute the callback function set in ctx which can be used to examine a
 	 * certificate and reject it */
-	if (ctx->certConf_cb && ctx->newClCert && ctx->certConf_cb(ctx->lastStatus, ctx->newClCert) == 0) {
+	if (ctx->certConf_cb && ctx->newClCert && ctx->certConf_cb(ctx->lastPKIStatus, ctx->newClCert) == 0) {
 		certStatus->statusInfo = CMP_PKISTATUSINFO_new();
 		ASN1_INTEGER_set(certStatus->statusInfo->status, CMP_PKISTATUS_rejection);
 		CMP_printf(ctx, "INFO: rejecting certificate.");
