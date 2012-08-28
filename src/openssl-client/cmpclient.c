@@ -618,7 +618,7 @@ void doKur(CMP_CTX *cmp_ctx) {
 /* ############################################################################ */
 void doInfo(CMP_CTX *cmp_ctx) {
   CMPBIO *cbio=NULL;
-  int res=0;
+  STACK_OF(CMP_INFOTYPEANDVALUE) *res=NULL;
 
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
@@ -633,7 +633,7 @@ void doInfo(CMP_CTX *cmp_ctx) {
     exit(1);
   }
 
-  res = CMP_doPKIInfoReqSeq( cbio, cmp_ctx);
+  res = CMP_doGeneralMessageSeq( cbio, cmp_ctx, 0, NULL);
   CMP_delete_http_bio(cbio);
 
   if( res) {
@@ -652,7 +652,7 @@ void doInfo(CMP_CTX *cmp_ctx) {
 /* ############################################################################ */
 void doGenM(CMP_CTX *cmp_ctx, int genm_type, void *value) {
   CMPBIO *cbio=NULL;
-  char *resp = NULL;
+  STACK_OF(CMP_INFOTYPEANDVALUE) *resp = NULL;
 
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
   CMP_CTX_set1_serverPath( cmp_ctx, opt_serverPath);
@@ -1199,9 +1199,6 @@ int main(int argc, char **argv) {
     X509_STORE *untrusted_store = HELP_create_cert_store(opt_extraCertsIn);
     CMP_CTX_set0_untrustedStore(cmp_ctx, untrusted_store);
   }
-
-  if (opt_doPathValidation)
-    CMP_CTX_set_option(cmp_ctx, CMP_CTX_OPT_VALIDATEPATH, 1);
 
   if (opt_user && opt_password) {
     if (opt_hex) {
