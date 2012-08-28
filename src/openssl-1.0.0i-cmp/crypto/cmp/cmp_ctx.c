@@ -115,10 +115,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	/* the following are not ASN1 types and present in the declaration in cmp.h
 	 * char *serverName
 	 * int serverPort
-	 * int transport
 	 * int implicitConfirm
-	 * int setSenderNonce
-	 * int setTransactionID
 	 * int popoMethod
 	 * int timeOut
 	 */
@@ -247,13 +244,9 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->serverPort		 = 0;
 	ctx->proxyName		 = NULL;
 	ctx->proxyPort		 = 0;
-	ctx->transport		 = CMP_TRANSPORT_HTTP;
 	ctx->implicitConfirm = 0;
-	ctx->setSenderNonce  = 1;
-	ctx->setTransactionID= 1;
 	ctx->popoMethod		 = CRMF_POPO_SIGNATURE;
 	ctx->timeOut		 = 2*60;
-	ctx->validatePath	 = 0;
 
 	ctx->error_cb = NULL;
 	ctx->debug_cb = (cmp_logfn_t) puts;
@@ -1026,9 +1019,6 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val) {
 			break;
 		case CMP_CTX_OPT_POPMETHOD:
 			ctx->popoMethod = val;
-			break;
-		case CMP_CTX_OPT_VALIDATEPATH:
-			ctx->validatePath = val;
 			break;
 		case CMP_CTX_OPT_MAXPOLLTIME:
 			ctx->maxPollTime = val;
