@@ -58,7 +58,6 @@
  * This product includes cryptographic software written by Eric Young
  * (eay@cryptsoft.com).  This product includes software written by Tim
  * Hudson (tjh@cryptsoft.com).
- *
  */
 /* ====================================================================
  * Copyright 2007-2012 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
@@ -78,7 +77,6 @@
 #include <openssl/x509.h>
 #include <string.h>
 
-
 /* ############################################################################ * 
  * creates a new CRMF certifcate request message
  * TODO there are some optional settings which are not cared for yet
@@ -94,8 +92,10 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId,
 
 	if( !(certReqMsg = CRMF_CERTREQMSG_new())) goto err;
 
+#if 0
 	/* version MUST be 2 if supplied.  It SHOULD be omitted. */
-	/* CRMF_CERTREQMSG_set_version2( certReqMsg); */
+	CRMF_CERTREQMSG_set_version2( certReqMsg);
+#endif 
 
 	CRMF_CERTREQMSG_set_certReqId( certReqMsg, certReqId);
 	if (!CRMF_CERTREQMSG_set1_publicKey( certReqMsg, pkey)) {
@@ -105,13 +105,13 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId,
 
 	CRMF_CERTREQMSG_set1_subject( certReqMsg, subject);
 
-	/* XXX: set validity time here? */
+	/* validity time could be set here */
 
 	for (i = 0; i < sk_X509_EXTENSION_num(extensions); i++)
 		/* X509v3_add_ext will allocate new stack if there isn't one already */
 		X509v3_add_ext(&certReqMsg->certReq->certTemplate->extensions, sk_X509_EXTENSION_value(extensions, i), i);
 	
-		CRMF_CERTREQMSG_calc_and_set_popo( certReqMsg, pkey, popoMethod);
+	CRMF_CERTREQMSG_calc_and_set_popo( certReqMsg, pkey, popoMethod);
 
 	return certReqMsg;
 err:
