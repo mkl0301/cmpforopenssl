@@ -1117,6 +1117,7 @@ int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
 #ifdef HAVE_CURL
 typedef CURL CMPBIO;
 #else
+/* for applications not directly utilizing libcurl (and thus not defining HAVE_CURL) */
 typedef void CMPBIO;
 #endif
 int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx, const CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out);
