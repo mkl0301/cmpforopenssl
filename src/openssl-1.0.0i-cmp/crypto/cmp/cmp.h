@@ -1203,7 +1203,7 @@ int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
 int CMP_CTX_error_callback(const char *str, size_t len, void *u);
 
 #ifdef HAVE_CURL
-long CMP_get_http_code(const CMPBIO *bio);
+long CMP_get_http_response_code(const CMPBIO *bio);
 #endif
 
 /* BIO definitions */
