@@ -442,7 +442,7 @@ static int setup_ctx(CMP_CTX *ctx)
 
     /* TODO add extcerts !! */
     
-    CMP_CTX_set1_timeOut(ctx, 5*60);
+    CMP_CTX_set_HttpTimeOut(ctx, 5*60);
 
     return 1;
 
