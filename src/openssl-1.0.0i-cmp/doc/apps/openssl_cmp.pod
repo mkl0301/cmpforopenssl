@@ -10,7 +10,7 @@ cmp - client for the Certificate Management Protocol (RFC4210)
 B<openssl> B<cmp>
 [B<-server ADDRESS:PORT>]
 [B<-path remote_path>]
-[B<-cmd ir|kur|cr|rr|ckuann>]
+[B<-cmd ir|kur|cr|rr>]
 [B<-user username>]
 [B<-pass password>]
 [B<-cert filename>]
@@ -19,7 +19,7 @@ B<openssl> B<cmp>
 [B<-certout filename>]
 [B<-newkey filename>]
 [B<-newkeypass password>]
-[B<-cacert filename>]
+[B<-srvcert filename>]
 [B<-trusted filename>]
 [B<-untrusted filename>]
 [B<-keyfmt DER|PEM>]
@@ -39,8 +39,6 @@ Management Protocol as defined in RFC4210. It can be used to request
 certificates from a CA server, update their keys and request the
 certificates to be revoked and perform other CMP requests.
 
-=back
-
 =head1 OPTIONS
 
 =over 4
@@ -53,7 +51,7 @@ The IP address or hostname and port of the CMP server to connect to.
 
 HTTP path location to use for the CMP server.
 
-=item B<-cmd ir|kur|cr|rr|ckuann>
+=item B<-cmd ir|kur|cr|rr>
 
 CMP command to execute. Currently implemented commands are:
     ir  - Initial Request
@@ -99,7 +97,7 @@ issued for, for example in IR or KUR.
 
 Password of the new key file.
 
-=item B<-cacert filename>
+=item B<-srvcert filename>
 
 Certificate of the CA server.
 
@@ -170,13 +168,38 @@ name with -recipient and save any CA certificates that we may receive
 under the ./cacerts directory.
 
   openssl genrsa -out cl_key.pem
-  openssl cmp -cmd ir -server 127.0.0.1:8080 -path pkix/ -user 1234 -pass password -recipient "/CN=CMPserver" -newkey cl_key.pem -subject "/CN=MyName" -cacertsout capubs.pem -certout cl_cert.pem
+  openssl cmp -cmd ir -server 127.0.0.1:8080 -path pkix/ -user 1234 -pass password \
+    -recipient "/CN=CMPserver" -newkey cl_key.pem -subject "/CN=MyName" \
+    -cacertsout capubs.pem -certout cl_cert.pem
 
 Then, when the keys for this certificate need to be updated, the client
 can send a key update request. 
 
   openssl genrsa -out cl_key_new.pem
-  openssl cmp -cmd kur -server 127.0.0.1:8080 -path pkix/ -cert cl_cert.pem -key cl_key.pem -cacert capubs.peml -newkey cl_key_new.pem -certout cl_cert_new.pem
+  openssl cmp -cmd kur -server 127.0.0.1:8080 -path pkix/ -cert cl_cert.pem \
+    -key cl_key.pem -srvcert capubs.pem -newkey cl_key_new.pem -certout cl_cert_new.pem
+
+=back
+
+=head1 TODO
+
+=over 4
+
+=item * Receiving a CKUANN using a CMP general message.  Generally: Sending CMP
+general messages for requesting certain information.
+
+=item * Multiple certificate/revocation requests in one session (functionality not yet
+available in the library).
+
+=item * Revocation of other certificates than the one used for signing
+certificates (functionality not yet available in the library).
+
+=item * Message sequences other than IR/CR/KUR/RR (functionality not yet
+available in the library).
+
+=item * Many optionally available settings from the RFC which are not yet
+available in the library and are probably not supported by any available CMP
+server.
 
 =back
 
