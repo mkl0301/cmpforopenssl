@@ -320,11 +320,16 @@ err:
 /* ################################################################ *
  * Returns the HTTP response code of the last response we got from
  * the server.
+ * returns 0 on error
  * ################################################################ */
 long CMP_get_http_response_code(const CMPBIO *bio) {
 	long code = 0;
-	curl_easy_getinfo((CMPBIO*)bio, CURLINFO_RESPONSE_CODE, &code);
+
+	if (!bio) goto err;
+	if (CURLE_OK != curl_easy_getinfo((CMPBIO*)bio, CURLINFO_RESPONSE_CODE, &code)) goto err;
 	return code;
+err:
+	return 0;
 }
 
 #endif
