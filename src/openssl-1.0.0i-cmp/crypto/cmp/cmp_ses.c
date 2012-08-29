@@ -277,7 +277,7 @@ static int sendCertConf( CMPBIO *cbio, CMP_CTX *ctx) {
 			CMPerr(CMP_F_SENDCERTCONF, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
 			goto err;
 		}
-	}
+	} /* it's not clear from the RFC whether recipNonce MUST be set or not */
 
 	CMP_PKIMESSAGE_free(certConf);
 	CMP_PKIMESSAGE_free(PKIconf);
@@ -362,7 +362,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
 			goto err;
 		}
-	}
+	} /* it's not clear from the RFC whether recipNonce MUST be set or not */
 	CMP_CTX_set1_recipNonce(ctx, ip->header->senderNonce); /* store for setting in the next msg */
 
 	/* make sure the PKIStatus for the *first* CERTrepmessage indicates a certificate was granted */
@@ -474,7 +474,8 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
 			goto err;
 		}
-	}
+	} /* it's not clear from the RFC whether recipNonce MUST be set or not */
+	
 
 	/* evaluate PKIStatus field */
 	switch (pkiStatus = CMP_REVREPCONTENT_PKIStatus_get( rp->body->value.rp, 0)) 
@@ -571,7 +572,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
 			goto err;
 		}
-	}
+	} /* it's not clear from the RFC whether recipNonce MUST be set or not */
 	CMP_CTX_set1_recipNonce(ctx, cp->header->senderNonce); /* store for setting in the next msg */
 
 	/* evaluate PKIStatus field */
@@ -669,7 +670,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
 			goto err;
 		}
-	}
+	} /* it's not clear from the RFC whether recipNonce MUST be set or not */
 	CMP_CTX_set1_recipNonce(ctx, kup->header->senderNonce); /* store for setting in the next msg */
 
 	/* evaluate PKIStatus field */
@@ -768,8 +769,8 @@ STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *
 			CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_ERROR_NONCES_DO_NOT_MATCH);
 			goto err;
 		}
-	}
-
+	} /* it's not clear from the RFC whether recipNonce MUST be set or not */
+	
 	/* the received stack of itavs shouldn't be freed with the message */
 	rcvdItavs = genp->body->value.genp;
 	genp->body->value.genp = NULL;
