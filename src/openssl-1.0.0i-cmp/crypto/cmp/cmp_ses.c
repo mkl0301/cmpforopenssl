@@ -291,16 +291,15 @@ err:
 /* ############################################################################ *
  * saves the data from PKIFailureInfo field of a certrepmessage into the ctx
  * ############################################################################ */
-void set_certrep_failinfo_data(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep)
+static void set_certrep_failinfo_data(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep)
 {
-	int repNum = 0;
-	/* Get the certReqId of the first certresponse. Need to do it this way instead
-	 * of just using certReqId==0, because in error cases the server might reply with a certReqId
-	 * of -1... */
-	if (sk_CMP_CERTRESPONSE_num(certrep->response) > 0)
-		repNum = ASN1_INTEGER_get(sk_CMP_CERTRESPONSE_value(certrep->response, 0)->certReqId);
-	CMP_CTX_set_failInfoCode(ctx, CMP_CERTREPMESSAGE_PKIFailureInfo_get0(certrep, repNum));
-	ctx->lastPKIStatus = CMP_CERTREPMESSAGE_PKIStatus_get( certrep, repNum);
+	CMP_CERTRESPONSE *resp=NULL;
+	if (sk_CMP_CERTRESPONSE_num(certrep->response) > 0 &&
+		(resp = sk_CMP_CERTRESPONSE_value(certrep->response, 0))) {
+		if (resp->status)
+			CMP_CTX_set_failInfoCode(ctx, resp->status->failInfo);
+		ctx->lastPKIStatus = CMP_PKISTATUSINFO_PKIstatus_get(resp);
+	}
 }
 
 /* ############################################################################ *
