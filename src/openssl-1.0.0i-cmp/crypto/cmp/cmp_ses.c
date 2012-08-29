@@ -289,6 +289,21 @@ err:
 }
 
 /* ############################################################################ *
+ * saves the data from PKIFailureInfo field of a certrepmessage into the ctx
+ * ############################################################################ */
+void set_certrep_failinfo_data(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep)
+{
+	int repNum = 0;
+	/* Get the certReqId of the first certresponse. Need to do it this way instead
+	 * of just using certReqId==0, because in error cases the server might reply with a certReqId
+	 * of -1... */
+	if (sk_CMP_CERTRESPONSE_num(certrep->response) > 0)
+		repNum = ASN1_INTEGER_get(sk_CMP_CERTRESPONSE_value(certrep->response, 0)->certReqId);
+	CMP_CTX_set_failInfoCode(ctx, CMP_CERTREPMESSAGE_PKIFailureInfo_get0(certrep, repNum));
+	ctx->lastPKIStatus = CMP_CERTREPMESSAGE_PKIStatus_get( certrep, repNum);
+}
+
+/* ############################################################################ *
  * do the full sequence for IR, including IR, IP, certConf, PKIconf and
  * potential polling
  *
@@ -329,6 +344,8 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		ERR_add_error_data(1, PKIError_data(ip, errmsg, sizeof(errmsg)));
 		goto err;
 	}
+
+	set_certrep_failinfo_data(ctx, ip->body->value.ip);
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, ip)) {
@@ -535,6 +552,8 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
+	set_certrep_failinfo_data(ctx, cp->body->value.cp);
+
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, cp)) {
 		CMP_printf(  ctx, "SUCCESS: validating protection of incoming message");
@@ -630,6 +649,8 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		ERR_add_error_data(1, PKIError_data( kup, errmsg, sizeof(errmsg)));
 		goto err;
 	}
+
+	set_certrep_failinfo_data(ctx, kup->body->value.kup);
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, kup)) {
