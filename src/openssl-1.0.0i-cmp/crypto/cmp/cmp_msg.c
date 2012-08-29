@@ -128,31 +128,34 @@ err:
  * ############################################################################ */
 static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 	int i;
+
 	if (!ctx) goto err;
-	if (!ctx->clCert) goto err;
 	if (!msg) goto err;
-
 	if (!msg->extraCerts && !(msg->extraCerts = sk_X509_new_null())) goto err;
-
-	/* if we have untrusted store, try to add all the intermediate certs and our own */
-	if (ctx->untrusted_store) {
-		STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert);
-		int i;
-		for(i = 0; i < sk_X509_num(chain); i++) {
-			X509 *cert = sk_X509_value(chain, i);
-			sk_X509_push(msg->extraCerts, cert);
-		}
-		sk_X509_free(chain); /* only frees the stack, not the content */
-	} else {
-		/* Make sure that at least our own cert gets sent */
-		sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
-	}
 
 	/* add any additional certificates from ctx->extraCertsOut */
 	for (i = 0; i < sk_X509_num(ctx->extraCertsOut); i++)
 		sk_X509_push(msg->extraCerts, X509_dup(sk_X509_value(ctx->extraCertsOut, i)));
 
+	if (ctx->clCert) {
+		/* if we have untrusted store, try to add all the intermediate certs and our own */
+		if (ctx->untrusted_store) {
+			STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert);
+			printf("\n\nnum=%d\n\n", sk_X509_num(chain));
+			int i;
+			for(i = 0; i < sk_X509_num(chain); i++) {
+				X509 *cert = sk_X509_value(chain, i);
+				sk_X509_push(msg->extraCerts, cert);
+			}
+			sk_X509_free(chain); /* only frees the stack, not the content */
+		} else {
+			/* Make sure that at least our own cert gets sent */
+			sk_X509_push(msg->extraCerts, X509_dup(ctx->clCert));
+		}
+	}
+
 	return 1;
+
 err:
 	return 0;
 }
