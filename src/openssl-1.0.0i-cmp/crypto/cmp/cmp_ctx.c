@@ -1065,9 +1065,10 @@ void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...)
 
 #ifdef HAVE_CURL
 /* ################################################################ *
- * TODO: what does this do?
+ * Returns the HTTP response code of the last response we got from
+ * the server.
  * ################################################################ */
-long CMP_get_http_code(const CMPBIO *bio) {
+long CMP_get_http_response_code(const CMPBIO *bio) {
 	long code = 0;
 	curl_easy_getinfo((CMPBIO*)bio, CURLINFO_RESPONSE_CODE, &code);
 	return code;
