@@ -266,8 +266,8 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, derLen);
 
 	/* set timeout for the entire HTTP operation */
-	if (ctx->timeOut != 0)
-		curl_easy_setopt(curl, CURLOPT_TIMEOUT, ctx->timeOut);
+	if (ctx->HttpTimeOut != 0)
+		curl_easy_setopt(curl, CURLOPT_TIMEOUT, ctx->HttpTimeOut);
 
 	res = curl_easy_perform(curl);
 

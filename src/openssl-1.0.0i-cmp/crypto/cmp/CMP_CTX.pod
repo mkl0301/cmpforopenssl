@@ -40,7 +40,7 @@
  CMP_CTX_set1_recipient
  CMP_CTX_set1_serverPath
  CMP_CTX_set1_serverPort
- CMP_CTX_set1_timeOut
+ CMP_CTX_set_HttpTimeOut
  CMP_CTX_set_certConf_callback
  CMP_CTX_subjectAltName_push1
 
@@ -95,7 +95,7 @@
  int CMP_CTX_set1_recipient( CMP_CTX *ctx, const X509_NAME *name);
  int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path);
  int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
- int CMP_CTX_set1_timeOut( CMP_CTX *ctx, int time);
+ int CMP_CTX_set_HttpTimeOut( CMP_CTX *ctx, int time);
  int CMP_CTX_set_certConf_callback( CMP_CTX *ctx, cmp_certConfFn_t cb);
  int CMP_CTX_subjectAltName_push1( CMP_CTX *ctx, const GENERAL_NAME *name);
 
@@ -252,8 +252,8 @@ CMP_CTX_set1_serverPath() HTTP path of the CMP server on the host.
 
 CMP_CTX_set1_serverPort() server port to connect to.
 
-CMP_CTX_set1_timeOut() sets the maximum amount of time an operation is
-allowed to take before a timeout error is returned.
+CMP_CTX_set_HttpTimeOut() sets the maximum amount of time an the HTTP 
+operation is allowed to take before a timeout error is returned.
 
 CMP_CTX_set_certConf_callback() sets a callback that can be used to
 check the certificate received from the server. If the certificate

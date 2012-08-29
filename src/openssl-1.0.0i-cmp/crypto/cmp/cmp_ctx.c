@@ -216,7 +216,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->proxyPort		 = 0;
 	ctx->implicitConfirm = 0;
 	ctx->popoMethod		 = CRMF_POPO_SIGNATURE;
-	ctx->timeOut		 = 2*60;
+	ctx->HttpTimeOut	 = 2*60;
 
 	ctx->error_cb = NULL;
 	ctx->debug_cb = (cmp_logfn_t) puts;
@@ -894,13 +894,13 @@ err:
  * sets the timeout for the (HTTP) transport mechanism
  * returns 1 on success, 0 on error
  * ################################################################ */
-int CMP_CTX_set1_timeOut( CMP_CTX *ctx, int time) {
+int CMP_CTX_set_HttpTimeOut( CMP_CTX *ctx, int time) {
 	if (!ctx) goto err;
 
-	ctx->timeOut = time;
+	ctx->HttpTimeOut = time;
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_TIMEOUT, CMP_R_NULL_ARGUMENT);
+	CMPerr(CMP_F_CMP_CTX_SET_HTTPTIMEOUT, CMP_R_NULL_ARGUMENT);
 	return 0;
 }
 

@@ -81,13 +81,18 @@
 #include <curl/curl.h>
 #endif
 
-
 #include <openssl/crmf.h>
+
+#define CMP_VERSION 2L
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
+
+/* ########################################################################## *
+ * ASN.1 DECLARATIONS
+ * ########################################################################## */
 
 /*
 	 RevAnnContent ::= SEQUENCE {
@@ -108,7 +113,6 @@ typedef struct cmp_revanncontent_st
 	X509_EXTENSIONS			 *crlDetails;
 } CMP_REVANNCONTENT;
 DECLARE_ASN1_FUNCTIONS(CMP_REVANNCONTENT)
-
 
 /*
 	 Challenge ::= SEQUENCE {
@@ -201,7 +205,6 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKIMESSAGES)
 DECLARE_ASN1_ITEM(ESS_SIGNING_CERT)
 DECLARE_STACK_OF(ESS_SIGNING_CERT)
 
-/* TODO: isn't there a better way to have this for ANY type? */
 /*
 	 InfoTypeAndValue ::= SEQUENCE {
 		 infoType				OBJECT IDENTIFIER,
@@ -213,7 +216,6 @@ typedef struct cmp_infotypeandvalue_st
 	ASN1_OBJECT *infoType;
 	union {
 		char *ptr;
-
 		/* NID_id_it_caProtEncCert - CA Protocol Encryption Certificate  */
 		X509 *caProtEncCert;
 		/* NID_id_it_signKeyPairTypes - Signing Key Pair Types	*/
@@ -234,31 +236,23 @@ typedef struct cmp_infotypeandvalue_st
 		X509_ALGOR *keyPairParamRep;
 		/* NID_id_it_revPassphrase - Revocation Passphrase	*/
 		CRMF_ENCRYPTEDVALUE *revPassphrase;
-
 		/* NID_id_it_implicitConfirm - ImplicitConfirm	*/
 		ASN1_NULL *implicitConfirm;
 		/* NID_id_it_confirmWaitTime - ConfirmWaitTime	*/
 		ASN1_GENERALIZEDTIME *confirmWaitTime;
-
 		/* NID_id_it_origPKIMessage - origPKIMessage  */
 		CMP_PKIMESSAGES *origPKIMessage;
-
+		/* NID_id_it_suppLangTags - Supported Language Tags */
 		STACK_OF(ASN1_UTF8STRING) *suppLangTagsValue;
-
-#if 0
-	/* this is what CL likes for KUR - not in the RFC */
-		/* NID_id_smime_aa_signingCertificate */
-		STACK_OF(ESS_SIGNING_CERT) *signingCertificate; 
-#endif 
-
+		/* this is to be used for so far undeclared objects */
 		ASN1_TYPE *other;
 	} infoValue;
 } CMP_INFOTYPEANDVALUE;
 DECLARE_ASN1_FUNCTIONS(CMP_INFOTYPEANDVALUE)
 DECLARE_STACK_OF(CMP_INFOTYPEANDVALUE)
 
-/* TODO: should that be changed to be a real CMP_PKIFREETEXT type? */
 #if 0
+/* TODO: that should be changed to be a real CMP_PKIFREETEXT type? */
 /*
  PKIFreeText ::= SEQUENCE SIZE (1..MAX) OF UTF8String
 	 -- text encoded as UTF-8 String [RFC3629] (note: each
@@ -875,7 +869,7 @@ typedef struct cmp_pkibody_st
 		/* pkiconf	[19] PKIConfirmContent,		 --Confirmation */
 	/* CMP_PKICONFIRMCONTENT would be only a typedef of ASN1_NULL */
 	/* CMP_CONFIRMCONTENT *pkiconf; */
-		/* TODO: this should ASN1_NULL according to the RFC but there might be a struct in it? XXX Check! */
+		/* NOTE: this should ASN1_NULL according to the RFC but there might be a struct in it when sent from faulty servers... */
 		ASN1_TYPE						*pkiconf; /* 19 */
 		/* nested	[20] NestedMessageContent,	 --Nested Message */
 		/* NestedMessageContent ::= PKIMessages */
@@ -935,8 +929,7 @@ typedef struct cmp_protectedpart_st
 } CMP_PROTECTEDPART;
 DECLARE_ASN1_FUNCTIONS(CMP_PROTECTEDPART)
 
-/* those are not defined here. TODO: check whether they are in CRMF
-
+/* this is not defined here as it is already in CRMF:
 	 id-PasswordBasedMac OBJECT IDENTIFIER ::= {1 2 840 113533 7 66 13}
 	 PBMParameter ::= SEQUENCE {
 		 salt				 OCTET STRING,
@@ -953,6 +946,10 @@ DECLARE_ASN1_FUNCTIONS(CMP_PROTECTEDPART)
 		 mac				 AlgorithmIdentifier
 		 -- the MAC AlgId (e.g., DES-MAC, Triple-DES-MAC [PKCS11],
 	 }	 -- or HMAC [RFC2104, RFC2202])
+ */
+
+/*
+	TODO: this is not yet defined here - but DH is anyway not used yet
 
 	 id-DHBasedMac OBJECT IDENTIFIER ::= {1 2 840 113533 7 66 30}
 	 DHBMParameter ::= SEQUENCE {
@@ -1029,13 +1026,14 @@ typedef struct cmp_ctx_st
 	int	popoMethod;
 	/* maximum time in secods to wait for an http transfer to complete
 	 * Note: only usable with libcurl! */
-	/* TODO: rename this to HTTPtimeOut (or TransferTimeOut) */
-	int	timeOut;
+	int	HttpTimeOut;
 	/* maximum time to poll the server for a response if a 'waiting' PKIStatus is received */
 	int maxPollTime;
-	/* TODO: comment */
+	/* PKIStatus of last received IP/CP/KUP */
+	/* TODO: this should be a stack since there could be more than one */
 	int lastPKIStatus;
-	/* TODO: comment */
+	/* failInfoCode of last received IP/CP/KUP */
+	/* TODO: this should be a stack since there could be more than one */
 	unsigned long failInfoCode;
 
 	/* log callback functions for error and debug messages */
@@ -1076,7 +1074,6 @@ CMP_PKIMESSAGE *CMP_certConf_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_kur_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_genm_new( CMP_CTX *ctx);
 CMP_PKIMESSAGE *CMP_pollReq_new( CMP_CTX *ctx, int reqId);
-ASN1_OCTET_STRING *CMP_get_cert_subject_key_id(const X509 *cert);
 
 /* cmp_lib.c */
 long CMP_REVREPCONTENT_PKIStatus_get(CMP_REVREPCONTENT *revRep, long reqId);
@@ -1110,18 +1107,15 @@ int CMP_CERTREPMESSAGE_certType_get( CMP_CERTREPMESSAGE *certRep, long certReqId
 int CMP_PKIMESSAGE_set_bodytype( CMP_PKIMESSAGE *msg, int type);
 int CMP_PKIMESSAGE_get_bodytype( CMP_PKIMESSAGE *msg);
 char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int bufsize);
-
+ASN1_OCTET_STRING *CMP_get_cert_subject_key_id(const X509 *cert);
 STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert);
 
 /* cmp_vfy.c */
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
 
-typedef CURL CMPBIO;
-
 /* from cmp_http.c */
-int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx, 
-								const CMP_PKIMESSAGE *msg,
-								CMP_PKIMESSAGE **out);
+typedef CURL CMPBIO;
+int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx, const CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out);
 int CMP_new_http_bio_ex(CMPBIO **cbio, const char* serverName, const int port, const char *srcip);
 int CMP_new_http_bio(CMPBIO **cbio, const char* serverName, const int port);
 int CMP_delete_http_bio( CMPBIO *cbio);
@@ -1135,11 +1129,11 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value);
 
 /* from cmp_ctx.c */
+CMP_CTX *CMP_CTX_create(void);
 int CMP_CTX_init( CMP_CTX *ctx);
 int CMP_CTX_set0_trustedStore( CMP_CTX *ctx, X509_STORE *store);
 int CMP_CTX_set0_untrustedStore( CMP_CTX *ctx, X509_STORE *store);
 void CMP_CTX_delete(CMP_CTX *ctx);
-CMP_CTX *CMP_CTX_create(void);
 int CMP_CTX_set_error_callback( CMP_CTX *ctx, cmp_logfn_t cb);
 int CMP_CTX_set_debug_callback( CMP_CTX *ctx, cmp_logfn_t cb);
 int CMP_CTX_set_certConf_callback( CMP_CTX *ctx, cmp_certConfFn_t cb);
@@ -1181,6 +1175,8 @@ int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
 int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
 int CMP_CTX_set1_proxyName( CMP_CTX *ctx, const char *name);
 int CMP_CTX_set1_proxyPort( CMP_CTX *ctx, int port);
+/* for backwards compatibility, TODO: remove asap */
+#define CMP_CTX_set1_timeOut CMP_CTX_set_HttpTimeOut 
 int CMP_CTX_set1_timeOut( CMP_CTX *ctx, int time);
 int CMP_CTX_set1_popoMethod( CMP_CTX *ctx, int method);
 int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path);
@@ -1205,8 +1201,6 @@ void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...);
 #define i2d_CMP_PKIMESSAGE_bio(bp,o) ASN1_i2d_bio_of(CMP_PKIMESSAGE,i2d_CMP_PKIMESSAGE,bp,o)
 #define d2i_CMP_PROTECTEDPART_bio(bp,p) ASN1_d2i_bio_of(CMP_PROTECTEDPART,CMP_PROTECTEDPART_new,d2i_CMP_PROTECTEDPART,bp,p)
 #define i2d_CMP_PROTECTEDPART_bio(bp,o) ASN1_i2d_bio_of(CMP_PROTECTEDPART,i2d_CMP_PROTECTEDPART,bp,o)
-
-#define CMP_VERSION 2L
 
 /* BEGIN ERROR CODES */
 /* The following lines are auto generated by the script mkerr.pl. Any changes
@@ -1267,6 +1261,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_SUBJECTNAME			 137
 #define CMP_F_CMP_CTX_SET1_TIMEOUT			 138
 #define CMP_F_CMP_CTX_SET1_TRANSACTIONID		 139
+#define CMP_F_CMP_CTX_SET_HTTPTIMEOUT			 182
 #define CMP_F_CMP_CTX_SET_PROTECTIONALG			 141
 #define CMP_F_CMP_CTX_SUBJECTALTNAME_PUSH1		 142
 #define CMP_F_CMP_DOCERTIFICATEREQUESTSEQ		 143
