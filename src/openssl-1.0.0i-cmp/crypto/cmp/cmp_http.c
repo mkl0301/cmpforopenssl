@@ -132,6 +132,7 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *data)
  * it will be added.
  *
  * TODO: check if that can be rewritten to be nicer
+ * DEPRECATED: only for legacy TODO remove
  *
  * returns 1 on success, 0 on error
  * ################################################################ */
@@ -161,8 +162,12 @@ static int set_http_path(CURL *curl, const char *path) {
 
 /* ########################################################################## *
  * Create a new http connection, with a specified source ip/interface
- * returns 1 on success, null on error, returns the created bio inside the *bio
+ * returns 1 on success, 0 on error, returns the created bio inside the *bio
  * argument
+ * TODO: srcip --> ctx
+ * TODO: new function with arguments (bio, ctx)
+ * TODO: mark existing functions as DEPRECATED and add "TODO: remove to break
+ * backwards compatiblity"
  * ########################################################################## */
 int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port, const char *srcip) {
 	struct curl_slist *slist=NULL;
@@ -202,12 +207,14 @@ err:
 }
 
 /* ################################################################ *
+ * DEPRECATED: only for legacy TODO remove
  * ################################################################ */
 int CMP_new_http_bio( CMPBIO **cbio, const char* serverName, const int port) {
 	return CMP_new_http_bio_ex(cbio, serverName, port, NULL);
 }
 
 /* ################################################################ *
+ * DEPRECATED: only for legacy TODO remove
  * ################################################################ */
 int CMP_delete_http_bio( CMPBIO *cbio) {
 	curl_easy_cleanup(cbio);
@@ -216,6 +223,10 @@ int CMP_delete_http_bio( CMPBIO *cbio) {
 
 /* ################################################################ *
  * Send the given PKIMessage msg and place the response in *out.
+ * returns 1 on success, 0 on error
+ * on success, returns pointer to received PKIMessage in *out
+ * TODO: add some comments
+ * TODO: set 
  * ################################################################ */
 int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx, 
 								const CMP_PKIMESSAGE *msg,
@@ -253,6 +264,8 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, (void*) derMsg);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, derLen);
+
+	/* set timeout for the entire HTTP operation */
 	if (ctx->timeOut != 0)
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, ctx->timeOut);
 
@@ -305,19 +318,13 @@ err:
 }
 
 /* ################################################################ *
+ * Returns the HTTP response code of the last response we got from
+ * the server.
  * ################################################################ */
-int CMP_PKIMESSAGE_http_bio_send(CMPBIO *cbio, CMP_CTX *ctx,
-								 const CMP_PKIMESSAGE *msg) {
-	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_BIO_SEND, CMP_R_DEPRECATED_FUNCTION);
-	return 0;
-}
-
-/* ################################################################ *
- * ################################################################ */
-int CMP_PKIMESSAGE_http_bio_recv( CMPBIO *cbio, CMP_CTX *ctx,
-				  CMP_PKIMESSAGE **ip) {
-	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_BIO_RECV, CMP_R_DEPRECATED_FUNCTION);
-	return 0;
+long CMP_get_http_response_code(const CMPBIO *bio) {
+	long code = 0;
+	curl_easy_getinfo((CMPBIO*)bio, CURLINFO_RESPONSE_CODE, &code);
+	return code;
 }
 
 #endif

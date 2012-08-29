@@ -1063,18 +1063,6 @@ void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...)
 	va_end(arg_ptr);
 }
 
-#ifdef HAVE_CURL
-/* ################################################################ *
- * Returns the HTTP response code of the last response we got from
- * the server.
- * ################################################################ */
-long CMP_get_http_response_code(const CMPBIO *bio) {
-	long code = 0;
-	curl_easy_getinfo((CMPBIO*)bio, CURLINFO_RESPONSE_CODE, &code);
-	return code;
-}
-#endif
-
 /* ############################################################################ *
  * This callback is used to print out the OpenSSL error queue via'
  * ERR_print_errors_cb() to the ctx->error_cb() function set by the user
