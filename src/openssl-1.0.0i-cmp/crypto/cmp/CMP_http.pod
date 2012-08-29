@@ -72,7 +72,10 @@ The following code does an Key Update Request:
 
 =head1 TODO
 
-Replace the HTTP impelementation with a library such as libcurl.
+  Break backwards compatibility by replacing
+	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
+  with
+	CMP_new_http_bio( &cbio, ctx);
 
 =head1 SEE ALSO
 
