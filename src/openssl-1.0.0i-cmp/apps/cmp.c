@@ -140,7 +140,7 @@ static char *opt_certout=NULL;
 static char *opt_newkey=NULL;
 static char *opt_newkeypass=NULL;
 
-static char *opt_svcert=NULL;
+static char *opt_srvcert=NULL;
 static char *opt_trusted=NULL;
 static char *opt_untrusted=NULL;
 static char *opt_keyfmt_s="PEM";
@@ -174,7 +174,7 @@ static opt_t cmp_opts[]={
     { "newkey", "Key file to use for the new certificate", OPT_TXT, {&opt_newkey} },
     { "newkeypass", "Password for the new keyfile", OPT_TXT, {&opt_newkeypass} },
 
-    { "svcert", "Certificate of the CMP server", OPT_TXT, {&opt_svcert} },
+    { "srvcert", "Certificate of the CMP server", OPT_TXT, {&opt_srvcert} },
     { "trusted", "A file of trusted certificates", OPT_TXT, {&opt_trusted} },
     { "untrusted", "A file of untrusted certificates", OPT_TXT, {&opt_untrusted} },
 
@@ -300,7 +300,7 @@ static int check_options(void)
                 goto err;
                 }
 
-            if (opt_cert && !(opt_svcert || opt_trusted))
+            if (opt_cert && !(opt_srvcert || opt_trusted))
                 {
                 BIO_puts(bio_err, "error: using client certificate but no server certificate or trusted store set\n");
                 goto err;
@@ -315,7 +315,7 @@ static int check_options(void)
                 goto err;
                 }
 
-            if (!opt_svcert && !opt_trusted)
+            if (!opt_srvcert && !opt_trusted)
                 {
                 BIO_puts(bio_err, "error: no server certificate or trusted store set\n");
                 goto err;
@@ -386,7 +386,7 @@ static int setup_ctx(CMP_CTX *ctx)
     EVP_PKEY *pkey=NULL;
     EVP_PKEY *newPkey=NULL;
     X509 *clcert=NULL;
-    X509 *svcert=NULL;
+    X509 *srvcert=NULL;
 
     CMP_CTX_set1_serverName(ctx, server_address);
     CMP_CTX_set1_serverPath(ctx, opt_path);
@@ -422,13 +422,13 @@ static int setup_ctx(CMP_CTX *ctx)
         }
     if (clcert) CMP_CTX_set1_clCert(ctx, clcert);
 
-    if (opt_svcert &&
-        !(svcert=load_cert(bio_err, opt_svcert, opt_certfmt, NULL, NULL, "cacert")))
+    if (opt_srvcert &&
+        !(srvcert=load_cert(bio_err, opt_srvcert, opt_certfmt, NULL, NULL, "cacert")))
         {
-        BIO_printf(bio_err, "error: unable to load server certificate '%s'\n", opt_svcert);
+        BIO_printf(bio_err, "error: unable to load server certificate '%s'\n", opt_srvcert);
         goto err;
         }
-    if (svcert) CMP_CTX_set1_caCert(ctx, svcert);
+    if (srvcert) CMP_CTX_set1_caCert(ctx, srvcert);
 
     if (opt_trusted && !CMP_CTX_set0_trustedStore(ctx, create_cert_store(opt_trusted)))
         {
