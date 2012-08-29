@@ -652,8 +652,6 @@ int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PK
 		CRMF_PROOFOFPOSSESION_free(certReqMsg->popo);
 	certReqMsg->popo = newPopo;
 
-	CMP_printf("INFO: proof-of-posession set\n");
-
 	return 1;
 err:
 	/* TODO: error msg */

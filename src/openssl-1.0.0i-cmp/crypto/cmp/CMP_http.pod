@@ -18,7 +18,12 @@
 =head1 DESCRIPTION
 
 This is the API for creating a BIO for CMP (Certificate Management
-Protocol) over HTTP with OpenSSL.
+Protocol) over HTTP with OpenSSL utilizing cURL.
+
+The compiler need to have HAVE_CURL defined while building OpenSSL to 
+have any of the exported functions available!  When building applications 
+using the library the linker will fail if any of the exported funcitons 
+are used but OpenSSL was built without HAVE_CURL defined.
 
 CMP_new_http_bio() opens a OpenSSL BIO to communicate with the server.
 

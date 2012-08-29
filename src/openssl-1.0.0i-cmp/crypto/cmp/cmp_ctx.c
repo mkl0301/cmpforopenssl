@@ -1050,6 +1050,7 @@ err:
  * ################################################################ */
 void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...)
 {
+#ifdef CMP_DEBUG
 	va_list arg_ptr;
 	char buf[1024];
 
@@ -1061,6 +1062,7 @@ void CMP_printf(const CMP_CTX *ctx, const char *fmt, ...)
 	ctx->debug_cb(buf);
 
 	va_end(arg_ptr);
+#endif
 }
 
 /* ############################################################################ *
