@@ -55,12 +55,15 @@
  * This product includes cryptographic software written by Eric Young
  * (eay@cryptsoft.com).  This product includes software written by Tim
  * Hudson (tjh@cryptsoft.com).
- *
  */
 /* ====================================================================
  * Copyright 2012 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
  * CMP support in OpenSSL originally developed by 
  * Nokia Siemens Networks for contribution to the OpenSSL project.
+ */
+
+/* ============================== TODO List ============================== 
+ * TODO: actually send the genm for requesting the CKUANN message
  */
 
 #include <openssl/opensslconf.h>
@@ -89,6 +92,9 @@ int MAIN(int argc, char **argv)
 #include <openssl/cmp.h>
 #include <openssl/crmf.h>
 #include <openssl/pem.h>
+
+static CONF *conf=NULL; /* OpenSSL config file context structure */
+static BIO *bio_c_out=NULL; /* OpenSSL BIO for printing to STDOUT */ 
 
 /* the type of cmp command we want to send */
 typedef enum { CMP_IR,
@@ -169,7 +175,6 @@ static opt_t cmp_opts[]={
     { "newkeypass", "Password for the new keyfile", OPT_TXT, {&opt_newkeypass} },
 
     { "svcert", "Certificate of the CMP server", OPT_TXT, {&opt_svcert} },
-    /* { "CApath", "A directory of trusted certificates", OPT_TXT, {&} }, */
     { "trusted", "A file of trusted certificates", OPT_TXT, {&opt_trusted} },
     { "untrusted", "A file of untrusted certificates", OPT_TXT, {&opt_untrusted} },
 
@@ -185,7 +190,9 @@ static opt_t cmp_opts[]={
     { "cacertsout", "File where to save received CA certificates (from IR)", OPT_TXT, {&opt_cacertsout} },
 };
 
-/* print out the help text for each commandline option */
+/* ########################################################################## *
+ * print out the help text for each commandline option
+ * ########################################################################## */
 static void show_help(void)
     {
     const int ALIGN_COL=15;
@@ -203,11 +210,16 @@ static void show_help(void)
     BIO_puts(bio_err, "\n");
     }
 
-/* use the commandline option table to read values from openssl.cnf */
-static int read_config(CONF *conf)
+/* ########################################################################## *
+ * use the commandline option table to read values from the [ cmp ] section of 
+ * openssl.cnf.  Defaults are taken from the config file, they can be 
+ * overwritten on the command line
+ * ########################################################################## */
+static void read_config(CONF *conf)
     {
     opt_t *opt=cmp_opts;
     int i=0;
+
     for (i=0; i < sizeof(cmp_opts)/sizeof(cmp_opts[0]); i++,opt++)
         {
         switch(opt->type)
@@ -227,7 +239,11 @@ static int read_config(CONF *conf)
     ERR_clear_error();
     }
 
-/* verify that all the necessary options have been set */
+/* ########################################################################## *
+ * verify that all the necessary options have been set
+ * prints reason for error to bio_err
+ * returns 1 on success, 0 on error
+ * ########################################################################## */
 static int check_options(void)
     {
     if (opt_server)
@@ -306,7 +322,7 @@ static int check_options(void)
                 }
             break;
         case CMP_CKUANN:
-            /* TODO */
+            /* TODO: sending the empty GENM to request the CKUANN */
             break;
         }
 
@@ -336,6 +352,10 @@ static int check_options(void)
     return 0;
     }
 
+/* ########################################################################## *
+ * create cert store structure with certificates read from givenfile
+ * returns pointer to created X509_STORE on success, NULL on error
+ * ########################################################################## */
 static X509_STORE *create_cert_store(char *file)
     {
     X509_STORE *cert_ctx=NULL;
@@ -356,7 +376,11 @@ err:
     return NULL;
     }
 
-/* set up the CMP_CTX structure based on our given options */
+/* ########################################################################## *
+ * set up the CMP_CTX structure based on options from config file/CLI
+ * prints reason for error to bio_err
+ * returns 1 on success, 0 on error
+ * ########################################################################## */
 static int setup_ctx(CMP_CTX *ctx)
     {
     EVP_PKEY *pkey=NULL;
@@ -440,8 +464,6 @@ static int setup_ctx(CMP_CTX *ctx)
         CMP_CTX_set1_recipient(ctx, n);
         }
 
-    /* TODO add extcerts !! */
-    
     CMP_CTX_set_HttpTimeOut(ctx, 5*60);
 
     return 1;
@@ -450,22 +472,25 @@ static int setup_ctx(CMP_CTX *ctx)
     return 0;
     }
 
-static CONF *conf=NULL;
-/* static CONF *extconf=NULL; */
-static BIO *bio_c_out=NULL;
 
-/* write out the given certificate to the output specified by bio.
- * depending on options use either PEM or DER format */
+/* ########################################################################## *
+ * write out the given certificate to the output specified by bio.
+ * depending on options use either PEM or DER format
+ * returns 1 on success, 0 on error
+ * ########################################################################## */
 static int write_cert(BIO *bio, X509 *cert)
     {
         if ( (opt_certfmt == FORMAT_PEM && PEM_write_bio_X509(bio, cert))
              || (opt_certfmt == FORMAT_ASN1 && i2d_X509_bio(bio, cert)) )
-            return 1;           /* success */
-        return 0;               /* failed */
+            return 1;
+        return 0;
     }
 
-/* writes out the received ca certs to the given file */
-static int save_capubs(CMP_CTX *cmp_ctx,  char *destFile)
+/* ########################################################################## *
+ * writes out the received CA certs to the given file
+ * returns number of written certificates on success, 0 on error
+ * ########################################################################## */
+static int save_capubs(CMP_CTX *cmp_ctx, char *destFile)
     {
     X509 *cert = NULL;
     BIO *bio=NULL;
@@ -478,8 +503,10 @@ static int save_capubs(CMP_CTX *cmp_ctx,  char *destFile)
     BIO_printf(bio_c_out, "Received %d CA certificates, saving to %s\n", CMP_CTX_caPubs_num(cmp_ctx), destFile);
     while ( (cert=CMP_CTX_caPubs_pop(cmp_ctx)) != NULL)
         {
-        if (!write_cert(bio, cert))
-            BIO_printf(bio_err,"ERROR writing to %s!\n", destFile);
+        if (write_cert(bio, cert))
+            n++;
+        else
+            BIO_printf(bio_err,"ERROR writing certificate to %s!\n", destFile);
         }
     return n;
 
@@ -488,8 +515,11 @@ err:
     return 0;
     }
 
-/* writes out the received extraCerts to the given file */
-static int save_extracerts(CMP_CTX *cmp_ctx,  char *destFile)
+/* ########################################################################## *
+ * writes out the received extraCerts to the given file
+ * returns number of written certificates on success, 0 on error
+ * ########################################################################## */
+static int save_extracerts(CMP_CTX *cmp_ctx, char *destFile)
     {
     X509 *cert = NULL;
     BIO *bio=NULL;
@@ -502,8 +532,10 @@ static int save_extracerts(CMP_CTX *cmp_ctx,  char *destFile)
     BIO_printf(bio_c_out, "Received %d extra certificates, saving to %s\n", CMP_CTX_extraCertsIn_num(cmp_ctx), destFile);
     while ( (cert=CMP_CTX_extraCertsIn_pop(cmp_ctx)) != NULL)
         {
-        if (!write_cert(bio, cert))
-            BIO_printf(bio_err,"ERROR writing to %s!\n", destFile);
+        if (write_cert(bio, cert))
+            n++;
+        else
+            BIO_printf(bio_err,"ERROR writing certificate to %s!\n", destFile);
         }
     return n;
 
@@ -513,11 +545,13 @@ err:
     }
 
 
+/* ########################################################################## *
+ * ########################################################################## */
 int MAIN(int argc, char **argv)
     {
     char *configfile=NULL;
     long errorline=-1;
-    char *tofree=NULL;
+    char *tofree=NULL; /* used as getenv returns a direct pointer to the environment setting */
     int badops=0;
     int ret=1;
     CMP_CTX *cmp_ctx;
@@ -564,7 +598,7 @@ int MAIN(int argc, char **argv)
             goto err;
             }
 
-        read_config(conf); /*XXX check result*/
+        read_config(conf);
         }
 
     if(tofree)
@@ -672,6 +706,9 @@ bad_ops:
         case CMP_RR:
             CMP_doRevocationRequestSeq(cmp_bio, cmp_ctx);
             break;
+        case CMP_CKUANN:
+            /* TODO: sending the empty GENM to request the CKUANN */
+            break;
         default: break;
         }
 
@@ -699,10 +736,8 @@ bad_ops:
     ret=0;
 err:
     ERR_print_errors_fp(stderr);
-    /*
     if(tofree)
         OPENSSL_free(tofree);
-    */
 
     OPENSSL_EXIT(ret);
     }
