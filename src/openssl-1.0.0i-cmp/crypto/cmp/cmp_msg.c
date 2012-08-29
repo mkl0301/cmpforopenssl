@@ -141,7 +141,6 @@ static int add_extraCerts(CMP_CTX *ctx, CMP_PKIMESSAGE *msg) {
 		/* if we have untrusted store, try to add all the intermediate certs and our own */
 		if (ctx->untrusted_store) {
 			STACK_OF(X509) *chain = CMP_build_cert_chain(ctx->untrusted_store, ctx->clCert);
-			printf("\n\nnum=%d\n\n", sk_X509_num(chain));
 			int i;
 			for(i = 0; i < sk_X509_num(chain); i++) {
 				X509 *cert = sk_X509_value(chain, i);
