@@ -291,14 +291,14 @@ err:
 /* ############################################################################ *
  * saves the data from PKIFailureInfo field of a certrepmessage into the ctx
  * ############################################################################ */
-static void set_certrep_failinfo_data(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep)
+static void save_certrep_failinfo_data(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep)
 {
 	CMP_CERTRESPONSE *resp=NULL;
 	if (sk_CMP_CERTRESPONSE_num(certrep->response) > 0 &&
 		(resp = sk_CMP_CERTRESPONSE_value(certrep->response, 0))) {
 		if (resp->status)
 			CMP_CTX_set_failInfoCode(ctx, resp->status->failInfo);
-		ctx->lastPKIStatus = CMP_PKISTATUSINFO_PKIstatus_get(resp);
+		ctx->lastPKIStatus = CMP_PKISTATUSINFO_PKIstatus_get(resp->status);
 	}
 }
 
@@ -344,7 +344,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	set_certrep_failinfo_data(ctx, ip->body->value.ip);
+	save_certrep_failinfo_data(ctx, ip->body->value.ip);
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, ip)) {
@@ -554,7 +554,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	set_certrep_failinfo_data(ctx, cp->body->value.cp);
+	save_certrep_failinfo_data(ctx, cp->body->value.cp);
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, cp)) {
@@ -652,7 +652,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	set_certrep_failinfo_data(ctx, kup->body->value.kup);
+	save_certrep_failinfo_data(ctx, kup->body->value.kup);
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, kup)) {
