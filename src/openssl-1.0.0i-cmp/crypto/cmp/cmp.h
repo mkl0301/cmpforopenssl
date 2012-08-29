@@ -1114,7 +1114,11 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert);
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
 
 /* from cmp_http.c */
+#ifdef HAVE_CURL
 typedef CURL CMPBIO;
+#else
+typedef void CMPBIO;
+#endif
 int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx, const CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out);
 int CMP_new_http_bio_ex(CMPBIO **cbio, const char* serverName, const int port, const char *srcip);
 int CMP_new_http_bio(CMPBIO **cbio, const char* serverName, const int port);
