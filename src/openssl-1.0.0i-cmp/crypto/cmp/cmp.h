@@ -1035,6 +1035,8 @@ typedef struct cmp_ctx_st
 	/* failInfoCode of last received IP/CP/KUP */
 	/* TODO: this should be a stack since there could be more than one */
 	unsigned long failInfoCode;
+	/* TODO: this should be a stack since there could be more than one */
+	STACK_OF(ASN1_UTF8STRING) *lastStatusString;
 
 	/* log callback functions for error and debug messages */
 	cmp_logfn_t error_cb, debug_cb;
@@ -1187,6 +1189,7 @@ int CMP_CTX_set1_popoMethod( CMP_CTX *ctx, int method);
 int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path);
 int CMP_CTX_set_failInfoCode(CMP_CTX *ctx, CMP_PKIFAILUREINFO *failInfo);
 unsigned long CMP_CTX_failInfoCode_get(CMP_CTX *ctx);
+STACK_OF(ASN1_UTF8STRING) *CMP_CTX_statusString_get( CMP_CTX *ctx);
 #define CMP_CTX_OPT_UNSET						0
 #define CMP_CTX_OPT_SET							1
 #define CMP_CTX_OPT_IMPLICITCONFIRM				1

@@ -289,16 +289,32 @@ err:
 }
 
 /* ############################################################################ *
- * saves the data from PKIFailureInfo field of a certrepmessage into the ctx
+ * internal function
+ *
+ * saves error information from PKIStatus field of a certrepmessage into the ctx
+ * TODO: in case we would get multiple certreps, this function would need to be 
+ *       extended to save the status from each one
  * ############################################################################ */
-static void save_certrep_failinfo_data(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep)
+static void save_certrep_statusInfo(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep)
 {
 	CMP_CERTRESPONSE *resp=NULL;
+	int i = 0;
+
 	if (sk_CMP_CERTRESPONSE_num(certrep->response) > 0 &&
 		(resp = sk_CMP_CERTRESPONSE_value(certrep->response, 0))) {
 		if (resp->status)
 			CMP_CTX_set_failInfoCode(ctx, resp->status->failInfo);
 		ctx->lastPKIStatus = CMP_PKISTATUSINFO_PKIstatus_get(resp->status);
+
+		if (!ctx->lastStatusString)
+			ctx->lastStatusString = sk_ASN1_UTF8STRING_new_null();
+
+		if (ctx->lastStatusString) {
+			for (i = 0; i < sk_ASN1_UTF8STRING_num(resp->status->statusString); i++) {
+				ASN1_UTF8STRING *str = sk_ASN1_UTF8STRING_value(resp->status->statusString, i);
+				sk_ASN1_UTF8STRING_push(ctx->lastStatusString, ASN1_STRING_dup(str));
+			}
+		}
 	}
 }
 
@@ -344,7 +360,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	save_certrep_failinfo_data(ctx, ip->body->value.ip);
+	save_certrep_statusInfo(ctx, ip->body->value.ip);
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, ip)) {
@@ -554,7 +570,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	save_certrep_failinfo_data(ctx, cp->body->value.cp);
+	save_certrep_statusInfo(ctx, cp->body->value.cp);
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, cp)) {
@@ -652,7 +668,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx) {
 		goto err;
 	}
 
-	save_certrep_failinfo_data(ctx, kup->body->value.kup);
+	save_certrep_statusInfo(ctx, kup->body->value.kup);
 
 	/* validate message protection */
 	if (CMP_validate_msg(ctx, kup)) {

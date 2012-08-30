@@ -102,6 +102,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, transactionID, ASN1_OCTET_STRING),
 	ASN1_OPT(CMP_CTX, recipNonce, ASN1_OCTET_STRING),
 	ASN1_OPT(CMP_CTX, validatedSrvCert, X509),
+	ASN1_SEQUENCE_OF_OPT(CMP_CTX, lastStatusString, ASN1_UTF8STRING),
 } ASN1_SEQUENCE_END(CMP_CTX)
 IMPLEMENT_ASN1_FUNCTIONS(CMP_CTX)
 
@@ -282,6 +283,17 @@ unsigned long CMP_CTX_get_failInfoCode( CMP_CTX *ctx)
 	return ctx->failInfoCode;
 err:
 	return 0;
+}
+
+/* ################################################################ *
+ * returns the statusString from the last CertRepMessage, NULL on error
+ * ################################################################ */
+STACK_OF(ASN1_UTF8STRING) *CMP_CTX_statusString_get( CMP_CTX *ctx)
+{
+	if (!ctx) goto err;
+	return ctx->lastStatusString;
+err:
+	return NULL;
 }
 
 /* ################################################################ *
