@@ -218,6 +218,7 @@ int CMP_CTX_init( CMP_CTX *ctx) {
 	ctx->implicitConfirm = 0;
 	ctx->popoMethod		 = CRMF_POPO_SIGNATURE;
 	ctx->HttpTimeOut	 = 2*60;
+	ctx->setSubjectAltNameCritical = 0;
 
 	ctx->error_cb = NULL;
 	ctx->debug_cb = (cmp_logfn_t) puts;
@@ -1046,6 +1047,9 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val) {
 			break;
 		case CMP_CTX_PERMIT_TA_IN_EXTRACERTS_FOR_IR:
 			ctx->permitTAInExtraCertsForIR = val;
+			break;
+		case CMP_CTX_SET_SUBJECTALTNAME_CRITICAL:
+			ctx->setSubjectAltNameCritical = val;
 			break;
 		default:
 			goto err;

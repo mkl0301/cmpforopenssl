@@ -1001,6 +1001,8 @@ typedef struct cmp_ctx_st
 	X509_NAME			 *recipient;
 	/* names to be added to the cert template as the subjectAltName extension */
 	STACK_OF(GENERAL_NAME) *subjectAltNames;
+	/* whether or not the subjectAltName extension should be set critical */
+	int                   setSubjectAltNameCritical;
 	/* Stack of CA certificates sent by the CA in a IP message */ 
 	STACK_OF(X509)		 *caPubs;
 	/* stack of extraCerts to be included when sending a PKI message */
@@ -1196,6 +1198,7 @@ STACK_OF(ASN1_UTF8STRING) *CMP_CTX_statusString_get( CMP_CTX *ctx);
 #define CMP_CTX_OPT_POPMETHOD					2
 #define CMP_CTX_OPT_MAXPOLLTIME				 	4
 #define CMP_CTX_PERMIT_TA_IN_EXTRACERTS_FOR_IR	5
+#define CMP_CTX_SET_SUBJECTALTNAME_CRITICAL     6
 int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 #if 0
 int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);

@@ -87,7 +87,7 @@
  *
  * returns 1 on success, 0 on error
  * ############################################################################ */
-static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL_NAME) *altnames) {
+static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL_NAME) *altnames, int critical) {
 	X509_EXTENSION *ext = NULL;
 	unsigned char *der = NULL;
 	int derlen = 0;
@@ -101,7 +101,7 @@ static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL
 	if(!(ASN1_seq_pack_GENERAL_NAME(altnames, i2d_GENERAL_NAME, &der, &derlen))) goto err;
 
 	if(!ASN1_STRING_set(str, der, derlen)) goto err;
-	if(!X509_EXTENSION_create_by_NID(&ext, NID_subject_alt_name, 0, str)) goto err;
+	if(!X509_EXTENSION_create_by_NID(&ext, NID_subject_alt_name, critical, str)) goto err;
 
 	ASN1_OCTET_STRING_free(str);
 	OPENSSL_free(der);
@@ -221,7 +221,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx) {
 		subject = NULL;
 
 	if (sk_GENERAL_NAME_num(ctx->subjectAltNames) > 0)
-		add_altname_extensions(&extensions, ctx->subjectAltNames);
+		add_altname_extensions(&extensions, ctx->subjectAltNames, ctx->setSubjectAltNameCritical);
 
 	if (!(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, extensions))) goto err;
