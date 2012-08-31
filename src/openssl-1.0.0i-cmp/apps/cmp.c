@@ -712,7 +712,7 @@ bad_ops:
         default: break;
         }
 
-    if (opt_extracertsout && CMP_CTX_extraCertsOut_num(cmp_ctx) > 0)
+    if (opt_extracertsout && CMP_CTX_extraCertsIn_num(cmp_ctx) > 0)
         save_extracerts(cmp_ctx, opt_extracertsout);
 
     if (newcert && opt_certout)
