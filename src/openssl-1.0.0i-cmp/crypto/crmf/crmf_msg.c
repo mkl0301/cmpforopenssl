@@ -1,4 +1,4 @@
-/* vim: set noet ts=4 sts=4 sw=4: */
+/* vim: set cino={1s noet ts=4 sts=4 sw=4: */
 /* crypto/crmf/crmf_msg.c
  * Functions for creating CRMF (RFC 4211) messages for OpenSSL
  */
@@ -86,7 +86,8 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId,
 							   const EVP_PKEY *pkey, 
 							   const X509_NAME *subject, 
 							   int popoMethod, 
-							   X509_EXTENSIONS *extensions) {
+							   X509_EXTENSIONS *extensions)
+	{
 	CRMF_CERTREQMSG *certReqMsg;
 	int i;
 
@@ -98,10 +99,11 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId,
 #endif 
 
 	CRMF_CERTREQMSG_set_certReqId( certReqMsg, certReqId);
-	if (!CRMF_CERTREQMSG_set1_publicKey( certReqMsg, pkey)) {
+	if (!CRMF_CERTREQMSG_set1_publicKey( certReqMsg, pkey))
+		{
 		CRMFerr(CRMF_F_CRMF_CR_NEW, CRMF_R_ERROR_SETTING_PUBLIC_KEY);
 		goto err;
-	}
+		}
 
 	CRMF_CERTREQMSG_set1_subject( certReqMsg, subject);
 
@@ -119,5 +121,5 @@ err:
 	if( certReqMsg)
 		CRMF_CERTREQMSG_free( certReqMsg);
 	return NULL;
-}
+	}
 

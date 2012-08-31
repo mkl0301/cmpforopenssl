@@ -105,13 +105,13 @@ extern "C" {
 	 }
  */
 typedef struct cmp_revanncontent_st
-{
+	{
 	ASN1_INTEGER			 *status;
 	CRMF_CERTID				 *certId;
 	ASN1_GENERALIZEDTIME	 *willBeRevokedAt;
 	ASN1_GENERALIZEDTIME	 *badSinceDate;
 	X509_EXTENSIONS			 *crlDetails;
-} CMP_REVANNCONTENT;
+	} CMP_REVANNCONTENT;
 DECLARE_ASN1_FUNCTIONS(CMP_REVANNCONTENT)
 
 /*
@@ -139,11 +139,11 @@ DECLARE_ASN1_FUNCTIONS(CMP_REVANNCONTENT)
 	 }
  */
 typedef struct cmp_challenge_st
-{
+	{
 	X509_ALGOR		  *owf;
 	ASN1_OCTET_STRING *whitness;
 	ASN1_OCTET_STRING *challenge;
-} CMP_CHALLENGE;
+	} CMP_CHALLENGE;
 DECLARE_ASN1_FUNCTIONS(CMP_CHALLENGE)
 DECLARE_STACK_OF(CMP_CHALLENGE)
 
@@ -170,12 +170,13 @@ DECLARE_STACK_OF(CMP_CHALLENGE)
  */
 #define CMP_CMPCERTIFICATE_X509V3PKCERT   0
 typedef struct cmp_cmpcertificate_st
-{
+	{
 	int type;
-	union{
+	union
+		{
 		X509 *x509v3PKCert;
-	} value;
-} CMP_CMPCERTIFICATE;
+		} value;
+	} CMP_CMPCERTIFICATE;
 DECLARE_ASN1_FUNCTIONS(CMP_CMPCERTIFICATE)
 DECLARE_STACK_OF(CMP_CMPCERTIFICATE)
 #endif 
@@ -189,12 +190,12 @@ DECLARE_STACK_OF(CMP_CMPCERTIFICATE)
 	 }
  */
 typedef struct cmp_cakeyupdanncontent_st
-{
+	{
 	/* the RFC explicitly allows substituting CMPCertificate with X509 */
 	X509 *oldWithNew;
 	X509 *newWithOld;
 	X509 *newWithNew;
-} CMP_CAKEYUPDANNCONTENT;
+	} CMP_CAKEYUPDANNCONTENT;
 DECLARE_ASN1_FUNCTIONS(CMP_CAKEYUPDANNCONTENT)
 
 /* declared already here as it will be used in CMP_PKIMESSAGE (nested) and infotype and * value*/
@@ -212,9 +213,10 @@ DECLARE_STACK_OF(ESS_SIGNING_CERT)
 	 }
  */
 typedef struct cmp_infotypeandvalue_st
-{
+	{
 	ASN1_OBJECT *infoType;
-	union {
+	union
+		{
 		char *ptr;
 		/* NID_id_it_caProtEncCert - CA Protocol Encryption Certificate  */
 		X509 *caProtEncCert;
@@ -246,8 +248,8 @@ typedef struct cmp_infotypeandvalue_st
 		STACK_OF(ASN1_UTF8STRING) *suppLangTagsValue;
 		/* this is to be used for so far undeclared objects */
 		ASN1_TYPE *other;
-	} infoValue;
-} CMP_INFOTYPEANDVALUE;
+		} infoValue;
+	} CMP_INFOTYPEANDVALUE;
 DECLARE_ASN1_FUNCTIONS(CMP_INFOTYPEANDVALUE)
 DECLARE_STACK_OF(CMP_INFOTYPEANDVALUE)
 
@@ -435,14 +437,15 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKISTATUS)
 #define CMP_CERTORENCCERT_CERTIFICATE	0
 #define CMP_CERTORENCCERT_ENCRYPTEDCERT 1
 typedef struct cmp_certorenccert_st
-{
+	{
 	int type;
-	union{
+	union
+		{
 		/* the RFC explicitly allows substituting CMPCertificate with X509 */
 		X509  *certificate;
 		CRMF_ENCRYPTEDVALUE *encryptedCert;
-	} value;
-} CMP_CERTORENCCERT;
+		} value;
+	} CMP_CERTORENCCERT;
 DECLARE_ASN1_FUNCTIONS(CMP_CERTORENCCERT)
 
 /*
@@ -454,11 +457,11 @@ DECLARE_ASN1_FUNCTIONS(CMP_CERTORENCCERT)
 	 }
  */
 typedef struct cmp_certifiedkeypair_st
-{
+	{
 	CMP_CERTORENCCERT		*certOrEncCert;
 	CRMF_ENCRYPTEDVALUE		*privateKey;
 	CRMF_PKIPUBLICATIONINFO *failInfo;
-} CMP_CERTIFIEDKEYPAIR;
+	} CMP_CERTIFIEDKEYPAIR;
 DECLARE_ASN1_FUNCTIONS(CMP_CERTIFIEDKEYPAIR)
 
 /*
@@ -469,14 +472,14 @@ DECLARE_ASN1_FUNCTIONS(CMP_CERTIFIEDKEYPAIR)
 	 }
  */
 typedef struct cmp_pkistatusinfo_st
-{
+	{
 	CMP_PKISTATUS	   *status;
 #if 0
 	CMP_PKIFREETEXT    *statusString;
 #endif
 	STACK_OF(ASN1_UTF8STRING)	 *statusString;
 	CMP_PKIFAILUREINFO *failInfo;
-} CMP_PKISTATUSINFO;
+	} CMP_PKISTATUSINFO;
 DECLARE_ASN1_FUNCTIONS(CMP_PKISTATUSINFO)
 DECLARE_STACK_OF(CMP_PKISTATUSINFO)
 
@@ -493,10 +496,10 @@ DECLARE_STACK_OF(CMP_PKISTATUSINFO)
 	 }
 */
 typedef struct cmp_revdetails_st
-{
+	{
 	CRMF_CERTTEMPLATE		 *certDetails;
 	X509_EXTENSIONS			 *crlEntryDetails;
-} CMP_REVDETAILS;
+	} CMP_REVDETAILS;
 DECLARE_ASN1_FUNCTIONS(CMP_REVDETAILS)
 DECLARE_STACK_OF(CMP_REVDETAILS)
 
@@ -514,11 +517,11 @@ DECLARE_STACK_OF(CMP_REVDETAILS)
 	 }
  */
 typedef struct cmp_revrep_st
-{
+	{
 	STACK_OF(CMP_PKISTATUSINFO) *status;
 	STACK_OF(CRMF_CERTID)		*certId;
 	STACK_OF(X509)				*crls;
-} CMP_REVREPCONTENT;
+	} CMP_REVREPCONTENT;
 DECLARE_ASN1_FUNCTIONS(CMP_REVREPCONTENT)
 
 /*
@@ -530,13 +533,13 @@ DECLARE_ASN1_FUNCTIONS(CMP_REVREPCONTENT)
 	 }
 */
 typedef struct cmp_keyrecrepcontent_st
-{
+	{
 	CMP_PKISTATUSINFO		*status;
 	/* the RFC explicitly allows substituting CMPCertificate with X509 */
 	X509					*newSigCert;
 	STACK_OF(X509)			*caCerts;
 	STACK_OF(CMP_CERTIFIEDKEYPAIR) *keyPairHist;
-} CMP_KEYRECREPCONTENT;
+	} CMP_KEYRECREPCONTENT;
 DECLARE_ASN1_FUNCTIONS(CMP_KEYRECREPCONTENT)
 
 /*
@@ -549,14 +552,14 @@ DECLARE_ASN1_FUNCTIONS(CMP_KEYRECREPCONTENT)
 	 }
  */
 typedef struct cmp_errormsgcontent_st
-{
+	{
 	CMP_PKISTATUSINFO *pKIStatusInfo;
 	ASN1_INTEGER	  *errorCode;
 	STACK_OF(ASN1_UTF8STRING)	*errorDetails;
 #if 0
 	CMP_PKIFREETEXT   *errorDetails;
 #endif
-} CMP_ERRORMSGCONTENT;
+	} CMP_ERRORMSGCONTENT;
 DECLARE_ASN1_FUNCTIONS(CMP_ERRORMSGCONTENT)
 
 /*
@@ -572,11 +575,11 @@ DECLARE_ASN1_FUNCTIONS(CMP_ERRORMSGCONTENT)
 	 }
  */
 typedef struct cmp_certstatus_st
-{
+	{
 	ASN1_OCTET_STRING	*certHash;
 	ASN1_INTEGER		*certReqId;
 	CMP_PKISTATUSINFO	*statusInfo;
-} CMP_CERTSTATUS;
+	} CMP_CERTSTATUS;
 DECLARE_STACK_OF(CMP_CERTSTATUS)
 DECLARE_ASN1_SET_OF(CMP_CERTSTATUS)
 DECLARE_ASN1_FUNCTIONS(CMP_CERTSTATUS)
@@ -598,12 +601,12 @@ DECLARE_ASN1_FUNCTIONS(CMP_CERTCONFIRMCONTENT)
 	 }
  */
 typedef struct cmp_certresponse_st
-{
+	{
 	ASN1_INTEGER		 *certReqId;
 	CMP_PKISTATUSINFO	 *status;
 	CMP_CERTIFIEDKEYPAIR *certifiedKeyPair;
 	ASN1_OCTET_STRING	 *rspInfo;
-} CMP_CERTRESPONSE;
+	} CMP_CERTRESPONSE;
 DECLARE_ASN1_FUNCTIONS(CMP_CERTRESPONSE)
 DECLARE_STACK_OF(CMP_CERTRESPONSE)
 
@@ -615,11 +618,11 @@ DECLARE_STACK_OF(CMP_CERTRESPONSE)
 	 }
  */
 typedef struct cmp_certrepmessage_st
-{
+	{
 	/* the RFC explicitly allows substituting CMPCertificate with X509 */
 	STACK_OF(X509) *caPubs;
 	STACK_OF(CMP_CERTRESPONSE)	 *response;
-} CMP_CERTREPMESSAGE;
+	} CMP_CERTREPMESSAGE;
 DECLARE_ASN1_FUNCTIONS(CMP_CERTREPMESSAGE)
 
 /* the following is from RFC 2986 - PKCS #10
@@ -643,28 +646,28 @@ CertificationRequest ::= SEQUENCE {
 }
 */
 typedef struct pkcs10_attribute_st
-{
+	{
 	ASN1_OBJECT			*id;
 	STACK_OF(ASN1_TYPE) *values;
-} PKCS10_ATTRIBUTE;
+	} PKCS10_ATTRIBUTE;
 DECLARE_ASN1_FUNCTIONS(PKCS10_ATTRIBUTE)
 DECLARE_STACK_OF(PKCS10_ATTRIBUTE)
 
 typedef struct pkcs10_certificationrequestinfo_st
-{
+	{
 	ASN1_INTEGER			   *version;
 	X509_NAME				   *subject;
 	X509_PUBKEY				   *subjectPKInfo;
 	STACK_OF(PKCS10_ATTRIBUTE) attributes;
-} PKCS10_CERTIFICATIONREQUESTINFO;
+	} PKCS10_CERTIFICATIONREQUESTINFO;
 DECLARE_ASN1_FUNCTIONS(PKCS10_CERTIFICATIONREQUESTINFO)
 
 typedef struct pkcs10_certificationrequest_st
-{
+	{
 	PKCS10_CERTIFICATIONREQUESTINFO *certificationRequestInfo;
 	X509_ALGOR						*signatureAlgorithm;
 	ASN1_BIT_STRING					*signature;
-} PKCS10_CERTIFICATIONREQUEST;
+	} PKCS10_CERTIFICATIONREQUEST;
 DECLARE_ASN1_FUNCTIONS(PKCS10_CERTIFICATIONREQUEST)
 
 /*
@@ -672,9 +675,10 @@ DECLARE_ASN1_FUNCTIONS(PKCS10_CERTIFICATIONREQUEST)
 		 certReqId				INTEGER
 	 }
  */
-typedef struct cmp_pollreq_st {
+typedef struct cmp_pollreq_st
+	{
 	ASN1_INTEGER *certReqId;
-} CMP_POLLREQ;
+	} CMP_POLLREQ;
 DECLARE_ASN1_FUNCTIONS(CMP_POLLREQ)
 DECLARE_STACK_OF(CMP_POLLREQ)
 typedef STACK_OF(CMP_POLLREQ) CMP_POLLREQCONTENT;
@@ -687,11 +691,12 @@ DECLARE_ASN1_FUNCTIONS(CMP_POLLREQCONTENT)
 		 reason					PKIFreeText OPTIONAL
 	 }
  */
-typedef struct cmp_pollrep_st {
+typedef struct cmp_pollrep_st
+	{
 	ASN1_INTEGER *certReqId;
 	ASN1_INTEGER *checkAfter;
 	STACK_OF(ASN1_UTF8STRING) *reason;
-} CMP_POLLREP;
+	} CMP_POLLREP;
 DECLARE_ASN1_FUNCTIONS(CMP_POLLREP)
 DECLARE_STACK_OF(CMP_POLLREP)
 typedef STACK_OF(CMP_POLLREP) CMP_POLLREPCONTENT;
@@ -733,7 +738,7 @@ DECLARE_ASN1_FUNCTIONS(CMP_POLLREPCONTENT)
 	 }
 */
 typedef struct cmp_pkiheader_st
-{
+	{
 	ASN1_INTEGER				  *pvno;
 	GENERAL_NAME				  *sender;
 	GENERAL_NAME				  *recipient;
@@ -746,7 +751,7 @@ typedef struct cmp_pkiheader_st
 	ASN1_OCTET_STRING			  *recipNonce;	   /* 6 */
 	STACK_OF(ASN1_UTF8STRING)	  *freeText;	   /* 7 */
 	STACK_OF(CMP_INFOTYPEANDVALUE) *generalInfo;	/* 8 */
-} CMP_PKIHEADER;
+	} CMP_PKIHEADER;
 DECLARE_ASN1_FUNCTIONS(CMP_PKIHEADER)
 
 #define V_CMP_PKIBODY_IR	0
@@ -826,9 +831,10 @@ DECLARE_ASN1_FUNCTIONS(CMP_GENREPCONTENT)
 		 pollRep  [26] PollRepContent		   --Polling response
 */
 typedef struct cmp_pkibody_st
-{
+	{
 	int type;
-	union{
+	union
+		{
 		CRMF_CERTREQMESSAGES   *ir;   /* 0 */
 		CMP_CERTREPMESSAGE			*ip;   /* 1 */
 		CRMF_CERTREQMESSAGES   *cr;   /* 2 */
@@ -836,16 +842,16 @@ typedef struct cmp_pkibody_st
 		/* p10cr	[4]  CertificationRequest,	 --imported from [PKCS10] */
 		PKCS10_CERTIFICATIONREQUEST *p10cr;   /* 4 */
 		/* popdecc	[5]  POPODecKeyChallContent, --pop Challenge */
-	/* POPODecKeyChallContent ::= SEQUENCE OF Challenge */
+		/* POPODecKeyChallContent ::= SEQUENCE OF Challenge */
 		CMP_POPODECKEYCHALLCONTENT *popdecc; /* 5 */
-	/* popdecr	[6]  POPODecKeyRespContent,  --pop Response */
-	/* POPODecKeyRespContent ::= SEQUENCE OF INTEGER */
+		/* popdecr	[6]  POPODecKeyRespContent,  --pop Response */
+		/* POPODecKeyRespContent ::= SEQUENCE OF INTEGER */
 		CMP_POPODECKEYRESPCONTENT  *popdecr; /* 6 */
 		CRMF_CERTREQMESSAGES   *kur;   /* 7 */
 		CMP_CERTREPMESSAGE			*kup;	/* 8 */
 		CRMF_CERTREQMESSAGES   *krr;   /* 9 */
 
-	/* krp		[10] KeyRecRepContent,		 --Key Recovery Response */
+		/* krp		[10] KeyRecRepContent,		 --Key Recovery Response */
 		CMP_KEYRECREPCONTENT		*krp;	/* 10 */
 		/* rr		[11] RevReqContent,			 --Revocation Request */
 		CMP_REVREQCONTENT	 *rr; /* 11 */
@@ -857,8 +863,8 @@ typedef struct cmp_pkibody_st
 		CMP_CERTREPMESSAGE			*ccp; /* 14 */
 		/* ckuann	[15] CAKeyUpdAnnContent,	 --CA Key Update Ann. */
 		CMP_CAKEYUPDANNCONTENT	 *ckuann; /* 15 */
-	/* cann		[16] CertAnnContent,		 --Certificate Ann. */
-	/* CMP_CMPCERTIFICATE is effectively X509 so it is used directly */
+		/* cann		[16] CertAnnContent,		 --Certificate Ann. */
+		/* CMP_CMPCERTIFICATE is effectively X509 so it is used directly */
 		X509					   *cann; /* 16 */
 		/* rann		[17] RevAnnContent,			 --Revocation Ann. */
 		CMP_REVANNCONTENT		   *rann; /* 17 */
@@ -867,8 +873,8 @@ typedef struct cmp_pkibody_st
 		CMP_CRLANNCONTENT		  *crlann;
 		/* PKIConfirmContent ::= NULL */
 		/* pkiconf	[19] PKIConfirmContent,		 --Confirmation */
-	/* CMP_PKICONFIRMCONTENT would be only a typedef of ASN1_NULL */
-	/* CMP_CONFIRMCONTENT *pkiconf; */
+		/* CMP_PKICONFIRMCONTENT would be only a typedef of ASN1_NULL */
+		/* CMP_CONFIRMCONTENT *pkiconf; */
 		/* NOTE: this should ASN1_NULL according to the RFC but there might be a struct in it when sent from faulty servers... */
 		ASN1_TYPE						*pkiconf; /* 19 */
 		/* nested	[20] NestedMessageContent,	 --Nested Message */
@@ -878,7 +884,7 @@ typedef struct cmp_pkibody_st
 		/* GenMsgContent ::= SEQUENCE OF InfoTypeAndValue */
 		CMP_GENMSGCONTENT *genm; /* 21 */
 		/* genp		[22] GenRepContent,			 --General Response */
-	/* GenRepContent ::= SEQUENCE OF InfoTypeAndValue */
+		/* GenRepContent ::= SEQUENCE OF InfoTypeAndValue */
 		CMP_GENREPCONTENT *genp; /* 22 */
 		/* error	[23] ErrorMsgContent,		 --Error Message */
 		CMP_ERRORMSGCONTENT			   *error;	  /* 23 */
@@ -888,8 +894,8 @@ typedef struct cmp_pkibody_st
 		CMP_POLLREQCONTENT			*pollReq;
 		/* pollRep	[26] PollRepContent			 --Polling response */
 		CMP_POLLREPCONTENT			 *pollRep;
-	} value;
-} CMP_PKIBODY;
+		} value;
+	} CMP_PKIBODY;
 DECLARE_ASN1_FUNCTIONS(CMP_PKIBODY)
 
 /*
@@ -906,13 +912,13 @@ DECLARE_ASN1_FUNCTIONS(CMP_PKIBODY)
 	 }
  */
 typedef struct cmp_pkimessage_st
-{
+	{
 	CMP_PKIHEADER				 *header;
 	CMP_PKIBODY					 *body;
 	ASN1_BIT_STRING				 *protection; /* 0 */
 	/* CMP_CMPCERTIFICATE is effectively X509 so it is used directly */
 	STACK_OF(X509) *extraCerts; /* 1 */
-} CMP_PKIMESSAGE;
+	} CMP_PKIMESSAGE;
 DECLARE_ASN1_FUNCTIONS(CMP_PKIMESSAGE)
 DECLARE_STACK_OF(CMP_PKIMESSAGE) /* PKIMessages */
 
@@ -923,10 +929,10 @@ DECLARE_STACK_OF(CMP_PKIMESSAGE) /* PKIMessages */
 	 }
 	 */
 typedef struct cmp_protectedpart_st
-{
+	{
 	CMP_PKIHEADER				 *header;
 	CMP_PKIBODY					 *body;
-} CMP_PROTECTEDPART;
+	} CMP_PROTECTEDPART;
 DECLARE_ASN1_FUNCTIONS(CMP_PROTECTEDPART)
 
 /* this is not defined here as it is already in CRMF:
@@ -984,7 +990,7 @@ typedef int (*cmp_certConfFn_t)(int status, const X509 *cert);
 /* this structure is used to store the context for CMP sessions 
  * partly using OpenSSL ASN.1 types in order to ease handling it */
 typedef struct cmp_ctx_st
-{
+	{
 	/* "reference and secret" for MSG_MAC_ALG */
 	ASN1_OCTET_STRING	 *referenceValue;
 	ASN1_OCTET_STRING	 *secretValue;
@@ -1062,7 +1068,7 @@ typedef struct cmp_ctx_st
 	char	  *serverPath;
 	char	  *proxyName;
 	int		  proxyPort;
-} CMP_CTX;
+	} CMP_CTX;
 
 DECLARE_ASN1_FUNCTIONS(CMP_CTX)
 

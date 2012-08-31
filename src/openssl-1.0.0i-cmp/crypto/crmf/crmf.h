@@ -1,4 +1,4 @@
-/* vim: set noet ts=4 sts=4 sw=4: */
+/* vim: set cino={1s noet ts=4 sts=4 sw=4: */
 /* crypto/crmf/crmf.h
  * Header file for CRMF (RFC 4211) for OpenSSL
  */
@@ -90,13 +90,14 @@ PrivateKeyInfo ::= SEQUENCE {
 }
 */
 typedef struct crmf_privatekeyinfo_st
-{
+	{
 	ASN1_INTEGER			 *version;
 	X509_ALGOR				 *AlgorithmIdentifier;
 	ASN1_OCTET_STRING		 *privateKey;
 	STACK_OF(X509_ATTRIBUTE) *attributes; /* [ 0 ] */
-} CRMF_PRIVATEKEYINFO;
+	} CRMF_PRIVATEKEYINFO;
 DECLARE_ASN1_FUNCTIONS(CRMF_PRIVATEKEYINFO)
+	
 
 /* section 4.2.1 Private Key Info Content Type
    id-ct-encKeyWithID OBJECT IDENTIFIER ::= {id-ct 21}
@@ -110,20 +111,21 @@ EncKeyWithID ::= SEQUENCE {
 }
 */
 typedef struct crmf_enckeywithid_identifier_st
-{
+	{
 	int type;
-	union	{
+	union
+		{
 		ASN1_UTF8STRING *string;
 		GENERAL_NAME	*generalName;
-	} value;
-} CRMF_ENCKEYWITHID_IDENTIFIER;
-DECLARE_ASN1_FUNCTIONS(CRMF_ENCKEYWITHID_IDENTIFIER)
+		} value;
+	} CRMF_ENCKEYWITHID_IDENTIFIER;
+	DECLARE_ASN1_FUNCTIONS(CRMF_ENCKEYWITHID_IDENTIFIER)
 
 typedef struct crmf_enckeywithid_st
-{
+	{
 	CRMF_PRIVATEKEYINFO			 *privateKey;
 	CRMF_ENCKEYWITHID_IDENTIFIER *identifier; /* [0] */
-} CRMF_ENCKEYWITHID;
+	} CRMF_ENCKEYWITHID;
 DECLARE_ASN1_FUNCTIONS(CRMF_ENCKEYWITHID)
 
 /*
@@ -132,10 +134,10 @@ CertId ::= SEQUENCE {
  serialNumber	  INTEGER }
  */
 typedef struct crmf_certid_st
-{
+	{
 	GENERAL_NAME *issuer;
 	ASN1_INTEGER *serialNumber;
-} CRMF_CERTID;
+	} CRMF_CERTID;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTID)
 DECLARE_STACK_OF(CRMF_CERTID)
 
@@ -158,14 +160,14 @@ EncryptedValue ::= SEQUENCE {
  -- the encrypted value itself
 */
 typedef struct crmf_encrypetedvalue_st
-{
+	{
 	X509_ALGOR				 *intendedAlg; /* 0 */
 	X509_ALGOR				 *symmAlg; /* 1 */
 	ASN1_BIT_STRING			 *encSymmKey; /* 2 */
 	X509_ALGOR				 *keyAlg; /* 3 */
 	ASN1_OCTET_STRING		 *valueHint; /* 4 */
 	ASN1_BIT_STRING			 *encValue;
-} CRMF_ENCRYPTEDVALUE;
+	} CRMF_ENCRYPTEDVALUE;
 DECLARE_ASN1_FUNCTIONS(CRMF_ENCRYPTEDVALUE)
 
 /*
@@ -174,14 +176,15 @@ EncryptedKey ::= CHOICE {
  envelopedData	   [0] EnvelopedData }
  */
 typedef struct crmf_encryptedkey_st
-{
+	{
 	int type;
-	union	{
+	union
+		{
 		CRMF_ENCRYPTEDVALUE *encryptedValue; /* Deprecated */
-	/* TODO: This is not ASN1_NULL but CMS_ENVELOPEDDATA which should be somehow taken from crypto/cms which exists now - this is not used anywhere so far */
+		/* TODO: This is not ASN1_NULL but CMS_ENVELOPEDDATA which should be somehow taken from crypto/cms which exists now - this is not used anywhere so far */
 		ASN1_NULL *envelopedData;
-	} value;
-} CRMF_ENCRYPTEDKEY;
+		} value;
+	} CRMF_ENCRYPTEDKEY;
 DECLARE_ASN1_FUNCTIONS(CRMF_ENCRYPTEDKEY)
 
 /*
@@ -196,14 +199,15 @@ PKIArchiveOptions ::= CHOICE {
  -- this request; set to FALSE if no archival is desired.
 */
 typedef struct crmf_pkiarchiveoptions_st
-{
+	{
 	int type;
-	union	{
+	union
+		{
 		CRMF_ENCRYPTEDKEY *encryptedPrivKey; /* 0 */
 		ASN1_OCTET_STRING *keyGenParameters; /* KeyGenParameters ::= OCTET STRING */ /* 1 */
 		ASN1_BOOLEAN	  *archiveRemGenPrivKey; /* 2 */
-	} value;
-} CRMF_PKIARCHIVEOPTIONS;
+		} value;
+	} CRMF_PKIARCHIVEOPTIONS;
 DECLARE_ASN1_FUNCTIONS(CRMF_PKIARCHIVEOPTIONS)
 CRMF_PKIARCHIVEOPTIONS *CRMF_PKIARCHIVEOPTIONS_dup( CRMF_PKIARCHIVEOPTIONS *pkiPubInfo);
 
@@ -217,10 +221,10 @@ SinglePubInfo ::= SEQUENCE {
  pubLocation  GeneralName OPTIONAL }
  */
 typedef struct crmf_singlepubinfo_st
-{
+	{
 	ASN1_INTEGER *pubMethod;
 	GENERAL_NAME *pubLocation;
-} CRMF_SINGLEPUBINFO;
+	} CRMF_SINGLEPUBINFO;
 DECLARE_ASN1_FUNCTIONS(CRMF_SINGLEPUBINFO)
 
 /*
@@ -234,10 +238,10 @@ pubInfos  SEQUENCE SIZE (1..MAX) OF SinglePubInfo OPTIONAL }
   -- "dontCare" is assumed)
 */
 typedef struct crmf_pkipublicationinfo_st
-{
+	{
 	ASN1_INTEGER *action;
 	CRMF_SINGLEPUBINFO *pubinfos;
-} CRMF_PKIPUBLICATIONINFO;
+	} CRMF_PKIPUBLICATIONINFO;
 DECLARE_ASN1_FUNCTIONS(CRMF_PKIPUBLICATIONINFO)
 CRMF_PKIPUBLICATIONINFO *CRMF_PKIPUBLICATIONINFO_dup( CRMF_PKIPUBLICATIONINFO *pkiPubInfo);
 
@@ -249,10 +253,10 @@ algId  AlgorithmIdentifier,
 value  BIT STRING }
 */
 typedef struct crmf_pkmacvalue_st
-{
+	{
 	X509_ALGOR		*algId;
 	ASN1_BIT_STRING *value;
-} CRMF_PKMACVALUE;
+	} CRMF_PKMACVALUE;
 DECLARE_ASN1_FUNCTIONS(CRMF_PKMACVALUE)
 
 /*
@@ -285,17 +289,18 @@ POPOPrivKey ::= CHOICE {
 #define CRMF_SUBSEQUENTMESSAGE_CHALLENGERESP 1
 
 typedef struct crmf_popoprivkey_st
-{
+	{
 	int type;
-	union	{
+	union
+		{
 		ASN1_BIT_STRING   *thisMessage; /* Deprecated */ /* 0 */
 		ASN1_INTEGER	  *subsequentMessage; /* 1 */
 		ASN1_BIT_STRING   *dhMAC; /* 2 */
 		CRMF_PKMACVALUE   *agreeMAC; /* 3 */
-	/* TODO: This is not ASN1_NULL but CMS_ENVELOPEDDATA which should be somehow taken from crypto/cms which exists now - this is not used anywhere so far */
+		/* TODO: This is not ASN1_NULL but CMS_ENVELOPEDDATA which should be somehow taken from crypto/cms which exists now - this is not used anywhere so far */
 		ASN1_NULL		  *encryptedKey; /* 4 */
-	} value;
-} CRMF_POPOPRIVKEY;
+		} value;
+	} CRMF_POPOPRIVKEY;
 DECLARE_ASN1_FUNCTIONS(CRMF_POPOPRIVKEY)
 
 /*
@@ -310,12 +315,12 @@ PBMParameter ::= SEQUENCE {
 }	-- or HMAC [HMAC, RFC2202])
 */
 typedef struct crmf_pbmparameter_st
-{
+	{
 	ASN1_OCTET_STRING *salt;
 	X509_ALGOR		  *owf;
 	ASN1_INTEGER	  *iterationCount;
 	X509_ALGOR		  *mac;
-} CRMF_PBMPARAMETER;
+	} CRMF_PBMPARAMETER;
 DECLARE_ASN1_FUNCTIONS(CRMF_PBMPARAMETER)
 
 /*
@@ -332,20 +337,21 @@ POPOSigningKeyInput ::= SEQUENCE {
  publicKey			 SubjectPublicKeyInfo }  -- from CertTemplate
 */
 typedef struct crmf_poposigningkeyinput_authinfo_st
-{
+	{
 	int type;
-	union	{
+	union
+		{
 		GENERAL_NAME	*sender; /* 0 */
 		CRMF_PKMACVALUE *publicKeyMAC; /* 1 */
-	} value;
-} CRMF_POPOSIGNINGKEYINPUT_AUTHINFO;
+		} value;
+	} CRMF_POPOSIGNINGKEYINPUT_AUTHINFO;
 DECLARE_ASN1_FUNCTIONS(CRMF_POPOSIGNINGKEYINPUT_AUTHINFO)
 
 typedef struct crmf_poposigningkeyinput_st
-{
+	{
 	CRMF_POPOSIGNINGKEYINPUT_AUTHINFO *authinfo;
 	X509_PUBKEY *publicKey;
-} CRMF_POPOSIGNINGKEYINPUT;
+	} CRMF_POPOSIGNINGKEYINPUT;
 DECLARE_ASN1_FUNCTIONS(CRMF_POPOSIGNINGKEYINPUT)
 
 /*
@@ -355,11 +361,11 @@ POPOSigningKey ::= SEQUENCE {
  signature			   BIT STRING }
  */
 typedef struct crmf_poposigningkey_st
-{
+	{
 	CRMF_POPOSIGNINGKEYINPUT *poposkInput;
 	X509_ALGOR				 *algorithmIdentifier;
 	ASN1_BIT_STRING			 *signature;
-} CRMF_POPOSIGNINGKEY;
+	} CRMF_POPOSIGNINGKEY;
 DECLARE_ASN1_FUNCTIONS(CRMF_POPOSIGNINGKEY)
 
 /*
@@ -376,15 +382,16 @@ ProofOfPossession ::= CHOICE {
 #define CRMF_PROOFOFPOSESSION_KEYENCIPHERMENT 2
 #define CRMF_PROOFOFPOSESSION_KEYAGREEMENT	  3
 typedef struct crmf_proofofpossesion_st
-{
+	{
 	int type;
-	union	{
+	union
+		{
 		ASN1_NULL			*raVerified; /* 0 */
 		CRMF_POPOSIGNINGKEY *signature;  /* 1 */
 		CRMF_POPOPRIVKEY	*keyEncipherment; /* 2 */
 		CRMF_POPOPRIVKEY	*keyAgreement; /* 3 */
-	} value;
-} CRMF_PROOFOFPOSSESION;
+		} value;
+	} CRMF_PROOFOFPOSSESION;
 DECLARE_ASN1_FUNCTIONS(CRMF_PROOFOFPOSSESION)
 
 /*
@@ -393,10 +400,10 @@ OptionalValidity ::= SEQUENCE {
  notAfter	[1] Time OPTIONAL } -- at least one MUST be present
  */
 typedef struct crmf_optionalvalidity_st
-{
+	{
 	ASN1_TIME *notBefore; /* 0 */
 	ASN1_TIME *notAfter;  /* 1 */
-} CRMF_OPTIONALVALIDITY;
+	} CRMF_OPTIONALVALIDITY;
 DECLARE_ASN1_FUNCTIONS(CRMF_OPTIONALVALIDITY)
 
 /*
@@ -414,7 +421,7 @@ CertTemplate ::= SEQUENCE {
  */
 
 typedef struct crmf_certtemplate_st
-{
+	{
 	ASN1_INTEGER *version;		 /* 0 */
 	/* serialNumber MUST be omitted.  This field is assigned by the CA
 	 * during certificate creation. */
@@ -428,7 +435,7 @@ typedef struct crmf_certtemplate_st
 	X509_PUBKEY  *publicKey;	 /* 6 */
 	/* According to rfc 3280:
 	   UniqueIdentifier  ::=  BIT STRING
-	   */
+	*/
 	/* issuerUID is deprecated in version 2 */
 	ASN1_BIT_STRING *issuerUID;  /* 7 */
 	/* subjectUID is deprecated in version 2 */
@@ -438,7 +445,7 @@ typedef struct crmf_certtemplate_st
 	X509_EXTENSIONS	*extensions; /* 9 */
 #endif
 	STACK_OF(X509_EXTENSION)  *extensions; /* 9 */
-} CRMF_CERTTEMPLATE;
+	} CRMF_CERTTEMPLATE;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTTEMPLATE)
 
 /*
@@ -448,39 +455,48 @@ CertRequest ::= SEQUENCE {
  controls	   Controls OPTIONAL }	 -- Attributes affecting issuance
  */
 typedef struct crmf_certrequest_st
-{
+	{
 	ASN1_INTEGER	  *certReqId;
 	CRMF_CERTTEMPLATE *certTemplate;
 	/* TODO: make CRMF_CONTROLS out of that - but only cosmetical */
 	STACK_OF(CRMF_ATTRIBUTETYPEANDVALUE) *controls;
-} CRMF_CERTREQUEST;
+	} CRMF_CERTREQUEST;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTREQUEST)
 CRMF_CERTREQUEST *CRMF_CERTREQUEST_dup( CRMF_CERTREQUEST *atav);
 
+/* TODO: isn't there a better way to have this for ANY type? */
 typedef struct crmf_attributetypeandvalue_st
-{
+	{
 	ASN1_OBJECT *type;
-	union {
+	union
+		{
 		/* NID_id_regCtrl_regToken */ 
 		ASN1_UTF8STRING *regToken;
+
 		/* NID_id_regCtrl_authenticator */ 
 		ASN1_UTF8STRING *authenticator;
+
 		/* NID_id_regCtrl_pkiPublicationInfo */
 		CRMF_PKIPUBLICATIONINFO *pkiPublicationInfo;
+
 		/* NID_id_regCtrl_pkiArchiveOptions */ 
 		CRMF_PKIARCHIVEOPTIONS *pkiArchiveOptions;
+
 		/* NID_id_regCtrl_oldCertID */
 		CRMF_CERTID		*oldCertId;
+
 		/* NID_id_regCtrl_protocolEncrKey */
 		X509_PUBKEY		*protocolEncrKey;
+
 		/* NID_id_regInfo_utf8Pairs */ 
 		ASN1_UTF8STRING *utf8pairs;
+
 		/* NID_id_regInfo_certReq */ 
 		CRMF_CERTREQUEST *certReq;
-		/* this is to be used for so far undeclared objects */
+
 		ASN1_TYPE *other;
-	} value;
-} CRMF_ATTRIBUTETYPEANDVALUE;
+		} value;
+	} CRMF_ATTRIBUTETYPEANDVALUE;
 DECLARE_ASN1_FUNCTIONS(CRMF_ATTRIBUTETYPEANDVALUE)
 DECLARE_STACK_OF(CRMF_ATTRIBUTETYPEANDVALUE)
 CRMF_ATTRIBUTETYPEANDVALUE *CRMF_ATTRIBUTETYPEANDVALUE_dup( CRMF_ATTRIBUTETYPEANDVALUE *atav);
@@ -495,11 +511,11 @@ CertReqMsg ::= SEQUENCE {
  regInfo   SEQUENCE SIZE(1..MAX) OF AttributeTypeAndValue OPTIONAL }
  */
 typedef struct crmf_certreqmsg_st
-{
+	{
 	CRMF_CERTREQUEST		   *certReq;
 	CRMF_PROOFOFPOSSESION	   *popo;	 /* 0 */
 	STACK_OF(CRMF_ATTRIBUTETYPEANDVALUE) *regInfo; /* 1 */
-} CRMF_CERTREQMSG;
+	} CRMF_CERTREQMSG;
 DECLARE_ASN1_FUNCTIONS(CRMF_CERTREQMSG)
 
 typedef STACK_OF(CRMF_CERTREQMSG) CRMF_CERTREQMESSAGES;
@@ -517,10 +533,7 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, const EVP_PKEY *pkey, const
 
 /* crmf_pbm.c */
 CRMF_PBMPARAMETER * CRMF_pbm_new(void);
-int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
-						   const unsigned char* msg, size_t msgLen,
-						   const unsigned char* secret, size_t secretLen,
-						   unsigned char** mac, unsigned int* macLen);
+int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm, const unsigned char* msg, size_t msgLen, const unsigned char* secret, size_t secretLen, unsigned char** mac, unsigned int* macLen);
 
 /* crmf_lib.c */
 int CRMF_CERTREQMSG_push0_control( CRMF_CERTREQMSG *certReqMsg, CRMF_ATTRIBUTETYPEANDVALUE *control);

@@ -1,4 +1,4 @@
-/* vim: set noet ts=4 sts=4 sw=4: */
+/* vim: set cino={1s noet ts=4 sts=4 sw=4: */
 /* crypto/crmf/crmf_pbm.c
  * CRMF (RFC 4211) "Password Based Mac" functions for OpenSSL
  */
@@ -82,7 +82,8 @@
  * returns pointer to CRMF_PBMPARAMETER on success, NULL on error
  * TODO: this should take the parameters to be set via the arguments
  * ############################################################################ */
-CRMF_PBMPARAMETER * CRMF_pbm_new(void) {
+CRMF_PBMPARAMETER * CRMF_pbm_new(void)
+	{
 	CRMF_PBMPARAMETER *pbm=NULL;
 	unsigned char salt[SALT_LEN];
 
@@ -127,7 +128,7 @@ CRMF_PBMPARAMETER * CRMF_pbm_new(void) {
 err:
 	if(pbm) CRMF_PBMPARAMETER_free(pbm);
 	return NULL;
-}
+	}
 
 
 /* ############################################################################
@@ -147,8 +148,8 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 			   const unsigned char* msg, size_t msgLen, 
 			   const unsigned char* secret, size_t secretLen,
 			   unsigned char** mac, unsigned int* macLen
-			   ) {
-
+			   )
+	{
 	const EVP_MD *m=NULL;
 	EVP_MD_CTX *ctx=NULL;
 	unsigned char basekey[EVP_MAX_MD_SIZE];
@@ -185,11 +186,12 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 
 	/* the first iteration is already done above -> -1 */
 	iterations = ASN1_INTEGER_get(pbm->iterationCount)-1;
-	while( iterations--) {
+	while( iterations--)
+		{
 		if (!(EVP_DigestInit_ex(ctx, m, NULL))) goto err;
 		EVP_DigestUpdate(ctx, basekey, basekeyLen);
 		if (!(EVP_DigestFinal_ex(ctx, basekey, &basekeyLen))) goto err;
-	}
+		}
 
 	/*
 	 * mac identifies the algorithm and associated parameters of the MAC
@@ -197,7 +199,8 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 	 * [HMAC].	All implementations SHOULD support DES-MAC and Triple-
 	 * DES-MAC [PKCS11].
 	 */
-	switch (OBJ_obj2nid(pbm->mac->algorithm)) {
+	switch (OBJ_obj2nid(pbm->mac->algorithm))
+		{
 		case NID_hmac_sha1:
 			HMAC(EVP_sha1(), basekey, basekeyLen, msg, msgLen, *mac, macLen);
 			break;
@@ -206,7 +209,7 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 		default:
 			CRMFerr(CRMF_F_CRMF_PASSWORDBASEDMAC_NEW, CRMF_R_UNSUPPORTED_ALGORITHM);
 			exit(1);
-	}
+		}
 
 	/* cleanup */
 	EVP_MD_CTX_destroy(ctx);
@@ -216,4 +219,4 @@ err:
 	if( mac && *mac) OPENSSL_free(*mac);
 	CRMFerr(CRMF_F_CRMF_PASSWORDBASEDMAC_NEW, CRMF_R_CRMFERROR);
 	return 0;
-}
+	}

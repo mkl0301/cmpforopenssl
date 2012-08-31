@@ -81,10 +81,11 @@
 
 #ifdef HAVE_CURL
 
-typedef struct rdata_s {
+typedef struct rdata_s
+	{
 	char *memory;
 	size_t size;
-} rdata_t;
+	} rdata_t;
 
 /* ############################################################################ *
  * internal function
@@ -94,12 +95,12 @@ typedef struct rdata_s {
  * returns pointer to (re-)allocate space or NULL on error
  * ############################################################################ */
 static void *myrealloc(void *ptr, size_t size)
-{
+	{
 	if(ptr)
 		return realloc(ptr, size);
 	else
 		return calloc(1,size);
-}
+	}
 
 /* ############################################################################ *
  * internal function
@@ -109,18 +110,19 @@ static void *myrealloc(void *ptr, size_t size)
  * returns size of written data in bytes
  * ############################################################################ */
 static size_t write_data(void *ptr, size_t size, size_t nmemb, void *data)
-{
+	{
 	size_t realsize = size * nmemb;
 	struct rdata_s *mem = (struct rdata_s *) data;
 
 	mem->memory = myrealloc(mem->memory, mem->size + realsize + 1);
-	if (mem->memory) {
+	if (mem->memory)
+		{
 		memcpy(&(mem->memory[mem->size]), ptr, realsize);
 		mem->size += realsize;
 		mem->memory[mem->size] = 0;
-	}
+		}
 	return realsize;
-}
+	}
 
 /* ################################################################ *
  * internal function
@@ -136,7 +138,8 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *data)
  *
  * returns 1 on success, 0 on error
  * ################################################################ */
-static int set_http_path(CURL *curl, const char *path) {
+static int set_http_path(CURL *curl, const char *path)
+	{
 	char *current_url = NULL, *url = NULL;
 	int pathlen = 0, current_len = 0;
 
@@ -158,7 +161,7 @@ static int set_http_path(CURL *curl, const char *path) {
 	free(url);
 
 	return 1;
-}
+	}
 
 /* ########################################################################## *
  * Create a new http connection, with a specified source ip/interface
@@ -169,15 +172,17 @@ static int set_http_path(CURL *curl, const char *path) {
  * TODO: mark existing functions as DEPRECATED and add "TODO: remove to break
  * backwards compatiblity"
  * ########################################################################## */
-int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port, const char *srcip) {
+int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port, const char *srcip)
+	{
 	struct curl_slist *slist=NULL;
 	CURL *curl;
 	
 	static int curl_initialized = 0;
-	if (curl_initialized == 0) {
+	if (curl_initialized == 0)
+		{
 		curl_initialized =	1;
 		curl_global_init(CURL_GLOBAL_ALL);
-	}
+		}
 
 	if (!(curl=curl_easy_init())) goto err;
 
@@ -201,25 +206,27 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 	*bio = curl;
 	return 1;
 
-err:
+	err:
 	CMPerr(CMP_F_CMP_NEW_HTTP_BIO_EX, CMP_R_CURL_ERROR);
 	return 0;
-}
+	}
 
 /* ################################################################ *
  * DEPRECATED: only for legacy TODO remove
  * ################################################################ */
-int CMP_new_http_bio( CMPBIO **cbio, const char* serverName, const int port) {
+int CMP_new_http_bio( CMPBIO **cbio, const char* serverName, const int port)
+	{
 	return CMP_new_http_bio_ex(cbio, serverName, port, NULL);
-}
+	}
 
 /* ################################################################ *
  * DEPRECATED: only for legacy TODO remove
  * ################################################################ */
-int CMP_delete_http_bio( CMPBIO *cbio) {
+int CMP_delete_http_bio( CMPBIO *cbio)
+	{
 	curl_easy_cleanup(cbio);
 	return 1;
-}
+	}
 
 /* ################################################################ *
  * Send the given PKIMessage msg and place the response in *out.
@@ -228,32 +235,33 @@ int CMP_delete_http_bio( CMPBIO *cbio) {
  * TODO: add some comments
  * TODO: set 
  * ################################################################ */
-int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx, 
-								const CMP_PKIMESSAGE *msg,
-								CMP_PKIMESSAGE **out)
-{
+int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx, const CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out)
+	{
 	unsigned char *derMsg = NULL, *pder = NULL;
 	char *content_type = NULL;
 	int derLen = 0;
 	CURLcode res;
 	rdata_t rdata = {0,0};
 
-	if (!curl || !ctx || !msg || !out) {
+	if (!curl || !ctx || !msg || !out)
+		{
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_NULL_ARGUMENT);
 		goto err;
-	}
+		}
 
-	if (!ctx->serverName || !ctx->serverPath || ctx->serverPort == 0) {
+	if (!ctx->serverName || !ctx->serverPath || ctx->serverPort == 0)
+		{
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_NULL_ARGUMENT);
 		goto err;
-	}
+		}
 
 	derLen = i2d_CMP_PKIMESSAGE( (CMP_PKIMESSAGE*) msg, &derMsg);
 
-	if (ctx->proxyName && ctx->proxyPort) {
+	if (ctx->proxyName && ctx->proxyPort)
+		{
 		curl_easy_setopt(curl, CURLOPT_PROXY, ctx->proxyName);
 		curl_easy_setopt(curl, CURLOPT_PROXYPORT, ctx->proxyPort);
-	}
+		}
 
 	set_http_path(curl, ctx->serverPath);
 
@@ -275,7 +283,8 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, (void*) 0);
 	free(derMsg);
 
-	if (res != CURLE_OK) {
+	if (res != CURLE_OK)
+		{
 		char num[64];
 
 		if (res == CURLE_COULDNT_CONNECT
@@ -292,37 +301,40 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx,
 		snprintf(num, sizeof(num)-1, "%d:", res);
 		ERR_add_error_data(2, num, curl_easy_strerror(res));
 		goto err;
-	}
+		}
 	
 	/* verify that Content-type is application/pkixcmp */
 	curl_easy_getinfo(curl, CURLINFO_CONTENT_TYPE, &content_type);
-	if (content_type == NULL || strcmp(content_type, "application/pkixcmp") != 0) {
+	if (content_type == NULL || strcmp(content_type, "application/pkixcmp") != 0)
+		{
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_INVALID_CONTENT_TYPE);
 		goto err;
-	}
+		}
 
 	pder = (unsigned char*) rdata.memory;
 	*out = d2i_CMP_PKIMESSAGE( NULL, (const unsigned char**) &pder, rdata.size);
-	if (*out == 0) {
+	if (*out == 0)
+		{
 		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_FAILED_TO_DECODE_PKIMESSAGE);
 		goto err;
-	}
+		}
 
 	free(rdata.memory);
 	return 1;
 
-err:
+	err:
 	if (rdata.memory)
 		free(rdata.memory);
 	return 0;
-}
+	}
 
 /* ################################################################ *
  * Returns the HTTP response code of the last response we got from
  * the server.
  * returns 0 on error
  * ################################################################ */
-long CMP_get_http_response_code(const CMPBIO *bio) {
+long CMP_get_http_response_code(const CMPBIO *bio)
+	{
 	long code = 0;
 
 	if (!bio) goto err;
@@ -330,7 +342,7 @@ long CMP_get_http_response_code(const CMPBIO *bio) {
 	return code;
 err:
 	return 0;
-}
+	}
 
 #endif
 

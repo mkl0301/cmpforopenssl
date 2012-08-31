@@ -1,4 +1,4 @@
-/* vim: set noet ts=4 sts=4 sw=4: */
+/* vim: set cino={1s noet ts=4 sts=4 sw=4: */
 /* crmf_asn.c
  * OpenSSL ASN.1 definitions for CRMF (RFC 4211)
  */
