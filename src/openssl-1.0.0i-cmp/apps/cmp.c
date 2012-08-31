@@ -497,7 +497,7 @@ static int save_capubs(CMP_CTX *cmp_ctx, char *destFile)
     int n = 0;
 
     if (!destFile || (bio=BIO_new(BIO_s_file())) == NULL ||
-            !BIO_write_filename(bio,(char *)destFile))
+            !BIO_append_filename(bio,(char *)destFile))
         goto err;
 
     BIO_printf(bio_c_out, "Received %d CA certificates, saving to %s\n", CMP_CTX_caPubs_num(cmp_ctx), destFile);
@@ -526,7 +526,7 @@ static int save_extracerts(CMP_CTX *cmp_ctx, char *destFile)
     int n = 0;
 
     if (!destFile || (bio=BIO_new(BIO_s_file())) == NULL ||
-            !BIO_write_filename(bio,(char *)destFile))
+            !BIO_append_filename(bio,(char *)destFile))
         goto err;
 
     BIO_printf(bio_c_out, "Received %d extra certificates, saving to %s\n", CMP_CTX_extraCertsIn_num(cmp_ctx), destFile);
