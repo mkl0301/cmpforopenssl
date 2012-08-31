@@ -735,7 +735,8 @@ bad_ops:
     
     ret=0;
 err:
-    ERR_print_errors_fp(stderr);
+    if (ret != 0)
+        ERR_print_errors_fp(stderr);
     if(tofree)
         OPENSSL_free(tofree);
 
