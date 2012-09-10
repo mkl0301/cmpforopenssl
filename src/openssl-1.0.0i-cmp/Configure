@@ -1297,18 +1297,20 @@ if ($zlib)
 if ($curl)
 	{
 	$cflags = "-DHAVE_CURL $cflags";
-	
-	if (defined($withargs{"curl-lib"}))
-		{
-		$lflags  = "$lflags -L" . $withargs{"curl-lib"} . " -lcurl -lrt";
-		}
-	else
-		{
-		my $lcurl = `pkg-config --libs libcurl`;
-		$lcurl =~ s/\n//;
-		if ($? != 0) { $lcurl = "-lcurl"; }
-		$lflags = "$lflags $lcurl";
-		}
+
+    if (!($cflags =~ m/-DOPENSSL_NO_CMP_CLIENT/)) {
+	    if (defined($withargs{"curl-lib"}))
+	    	{
+	    	$lflags  = "$lflags -L" . $withargs{"curl-lib"} . " -lcurl -lrt";
+	    	}
+	    else
+	    	{
+	    	my $lcurl = `pkg-config --libs libcurl`;
+	    	$lcurl =~ s/\n//;
+	    	if ($? != 0) { $lcurl = "-lcurl"; }
+	    	$lflags = "$lflags $lcurl";
+	    	}
+    }
 
 	if (defined($withargs{"curl-include"}))
 		{
