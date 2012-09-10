@@ -78,7 +78,7 @@
 #undef PROG
 #define PROG	cmp_main
 
-#if !defined(HAVE_CURL) || defined(OPENSSL_NO_CMP)
+#if !defined(HAVE_CURL) || defined(OPENSSL_NO_CMP) || defined(OPENSSL_NO_CMP_CLIENT)
 
 /* can't use the client without cmp and curl... */
 int MAIN(int argc, char **argv)
