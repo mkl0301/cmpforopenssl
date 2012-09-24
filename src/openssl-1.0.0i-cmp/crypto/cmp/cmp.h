@@ -1015,13 +1015,13 @@ typedef struct cmp_ctx_st
 	STACK_OF(X509)		 *extraCertsOut;
 	/* stack of extraCerts received from remote */ 
 	STACK_OF(X509)		 *extraCertsIn;
-	/* EVP_PKEY holding the *current* keys
+	/* EVP_PKEY holding the *current* key pair
 	 * Note: this is not an ASN.1 type */
 	EVP_PKEY			 *pkey;
 	/* *new* CLIENT certificate received from the CA
 	 * TODO: this should be a stack since there could be more than one */
 	X509				 *newClCert;
-	/* EVP_PKEY holding the *new* keys
+	/* EVP_PKEY holding the *new* key pair
 	 * Note: this is not an ASN.1 type */
 	EVP_PKEY			 *newPkey;
 	/* the current transaction ID */

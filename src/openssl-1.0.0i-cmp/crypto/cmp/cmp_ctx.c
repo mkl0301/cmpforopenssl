@@ -798,7 +798,7 @@ err:
 	}
 
 /* ################################################################ *
- * Set new private key. Used for example when doing Key Update.
+ * Set new key pa8r. Used for example when doing Key Update.
  * The key is duplicated so the original pointer is not directly used.
  * returns TODO on success, 0 on error
  * ################################################################ */
@@ -818,7 +818,7 @@ err:
 	}
 
 /* ################################################################ *
- * Set new private key. Used e.g. when doing Key Update.
+ * Set new key pair. Used e.g. when doing Key Update.
  * NOTE: uses the pointer directly!
  * returns 1 on success, 0 on error
  * ################################################################ */

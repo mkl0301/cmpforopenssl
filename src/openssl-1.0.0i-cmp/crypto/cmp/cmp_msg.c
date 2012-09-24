@@ -211,7 +211,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx)
 	/* for authentication we need either a reference value/secret or external identity certificate (E.7) and private key */
 	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
 
-	/* new Private key for new Certificate */
+	/* new key pair for new Certificate must be set */
 	if (!ctx->newPkey) goto err;
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
