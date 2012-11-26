@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Creates directroy structure, private key and certificate for
 # CMP Test Root CA
@@ -8,7 +8,7 @@
 
 ENTITY=rootCA
 
-. functions.sh
+. ./functions.sh
 
 # configuration file for the used CA
 OPENSSL_CONF=openssl.rootCA.cnf

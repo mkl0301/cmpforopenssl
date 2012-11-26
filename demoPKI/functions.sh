@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 OSSL=../src/openssl/apps/openssl
 

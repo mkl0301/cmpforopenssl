@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Creates directroy structure, private key and certificate for
 # CMP Test Sub 1.1 EE
