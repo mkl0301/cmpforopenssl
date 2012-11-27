@@ -24,12 +24,10 @@ B<openssl> B<cmp>
 [B<-untrusted filename>]
 [B<-keyfmt DER|PEM>]
 [B<-certfmt DER|PEM>]
-[B<-engine id>]
-[B<-validate_path>]
 [B<-extcerts filenames>]
 [B<-subject name>]
 [B<-recipient name>]
-[B<-extracertsoutn directory>]
+[B<-extracertsout directory>]
 [B<-cacertsout directory>]
 
 =head1 DESCRIPTION
@@ -78,11 +76,13 @@ appendix E.7 of the RFC).
 
 =item B<-key filename>
 
-The corresponding private key file for the client's current certificate.
+The corresponding private key file for the client's current certificate given in
+the -cert option.
 
 =item B<-keypass password>
 
-Password for the private key.
+Password for the private key given with the -key option.  If not given here, the
+password will be prompted for if needed.
 
 =item B<-certout filename>
 
@@ -90,26 +90,28 @@ The file where the newly received certificate should be saved.
 
 =item B<-newkey filename>
 
-The private key that we will be requesting the new certificate to be
-issued for, for example in IR or KUR.
+The file containing the key that we will be requesting the new certificate to be
+issued for.  For example in IR, CR or KUR.
 
 =item B<-newkeypass password>
 
-Password of the new key file.
+Password of the new key file given with the -newkey option.  If not given here, the 
+password will be prompted for if needed.
 
 =item B<-srvcert filename>
 
-Certificate of the CA server.
+Certificate of the CMP server, to be used if the certificate is available and directly
+trusted.
 
 =item B<-trusted filename>
 
-A file of trusted certificates. The file should contain multiple
+A file with trusted certificates. The file could contain multiple
 certificates concatenated together.
 
 =item B<-untrusted filename>
 
-A file of untrusted certificates. The file should contain multiple
-certificates.
+A file of untrusted certificates needed for path validation. The file can contain 
+multiple certificates.
 
 =item B<-keyfmt DER|PEM>
 
@@ -119,14 +121,6 @@ Format the key files are stored in. Default value is PEM.
 
 Format the certificate files are stored in. Default value is PEM.
 
-=item B<-engine id>
-
-currently unused
-
-=item B<-validate_path>
-
-Enables validation of the CA certificates trust chain.
-
 =item B<-extcerts filenames>
 
 List of certificate files to include in the extraCerts field of outgoing
@@ -135,14 +129,18 @@ requests.
 =item B<-subject name>
 
 X509 subject name to be used in the requested certificate template.
+The argument must be formatted as I</type0=value0/type1=value1/type2=...>,
+characters may be escaped by \ (backslash), no spaces are skipped.
 
 =item B<-recipient name>
 
 X509 name of the recipient, i.e. the name of the CA we are sending the
 request to. If no CA certificate is provided, then at least the
 recipient name must be specified in order for the IR to work.
+The argument must be formatted as I</type0=value0/type1=value1/type2=...>,
+characters may be escaped by \ (backslash), no spaces are skipped.
 
-=item B<-extracertsoutn directory>
+=item B<-extracertsout directory>
 
 Directory where to save any extra certificates received in a response
 message.
@@ -184,6 +182,10 @@ can send a key update request.
 =head1 TODO
 
 =over 4
+
+=item * Option for selecting the OpenSSL engine to use.
+
+=item * Option for printing more verbose information.
 
 =item * Receiving a CKUANN using a CMP general message.  Generally: Sending CMP
 general messages for requesting certain information.

@@ -147,7 +147,6 @@ static char *opt_keyfmt_s="PEM";
 static char *opt_certfmt_s="PEM";
 static int   opt_keyfmt=FORMAT_PEM;
 static int   opt_certfmt=FORMAT_PEM;
-static char *opt_engine=NULL;
 
 static char *opt_extcerts=NULL;
 static char *opt_subject=NULL;
@@ -180,7 +179,6 @@ static opt_t cmp_opts[]={
 
     { "keyfmt", "Format to use for key files. Default PEM.", OPT_TXT, {&opt_keyfmt_s} },
     { "certfmt", "Format to use for certificate files. Default PEM.", OPT_TXT, {&opt_certfmt_s} },
-    { "engine", "OpenSSL engine to use", OPT_TXT, {&opt_engine} },
 
     { "extcerts", "List of certificate files to include in outgoing messages", OPT_TXT, {&opt_extcerts} },
     { "subject", "X509 subject name to be used in the requested certificate template", OPT_TXT, {&opt_subject} },
