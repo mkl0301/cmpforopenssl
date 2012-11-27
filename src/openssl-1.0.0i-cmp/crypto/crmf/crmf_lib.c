@@ -139,6 +139,7 @@ int CRMF_CERTREQMSG_set1_control_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING
 	
 	return 1;
 err:
+	CRMFerr(CRMF_F_CRMF_CERTREQMSG_SET1_CONTROL_REGTOKEN, CRMF_R_ERROR_SETTING_REGTOKEN_ATAV);
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
 	return 0;
 	}
@@ -163,6 +164,7 @@ int CRMF_CERTREQMSG_set1_control_authenticator( CRMF_CERTREQMSG *msg, ASN1_UTF8S
 	
 	return 1;
 err:
+	CRMFerr(CRMF_F_CRMF_SET1_CONTROL_AUTHENTICATOR, CRMF_R_ERROR_SETTING_CONTROL_AUTHENTICATOR_ATAV);
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
 	return 0;
 	}
@@ -188,6 +190,7 @@ int CRMF_CERTREQMSG_set1_control_pkiPublicationInfo( CRMF_CERTREQMSG *msg, CRMF_
 	
 	return 1;
 err:
+	CRMFerr(CRMF_F_CRMF_SET1_CONTROL_PKIPUBLICATIONINFO, CRMF_R_ERROR_SETTING_CONTROL_PKIPUBLICATIONINFO_ATAV);
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
 	return 0;
 	}
@@ -212,6 +215,7 @@ int CRMF_CERTREQMSG_set1_control_pkiArchiveOptions( CRMF_CERTREQMSG *msg, CRMF_P
 	
 	return 1;
 err:
+	CRMFerr(CRMF_F_CRMF_SET1_CONTROL_PKIARCHIVEOPTIONS, CRMF_R_ERROR_SETTING_CONTROL_PKIARCHIVEOPTIONS_ATAV);
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
 	return 0;
 	}
@@ -248,6 +252,7 @@ int CRMF_CERTREQMSG_set1_control_oldCertId( CRMF_CERTREQMSG *certReqMsg, X509 *o
 
 	return 1;
 err:
+	CRMFerr(CRMF_F_CRMF_SET1_CONTROL_OLDCERTID, CRMF_R_ERROR_SETTING_CONTROL_OLDCERTID_ATAV);
 	if (gName) GENERAL_NAME_free(gName);
 	if (certId)
 		{
@@ -287,6 +292,7 @@ int CRMF_CERTREQMSG_set1_control_protocolEncrKey( CRMF_CERTREQMSG *msg, X509_PUB
 	
 	return 1;
 err:
+	CRMFerr(CRMF_F_CRMF_SET1_CONTROL_PROTOCOLENCRKEY, CRMF_R_ERROR_SETTING_CONTROL_PROTOCOLENCRKEY_ATAV);
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
 	return 0;
 	}
@@ -344,6 +350,7 @@ int CRMF_CERTREQMSG_set1_regInfo_utf8Pairs( CRMF_CERTREQMSG *msg, ASN1_UTF8STRIN
 	
 	return 1;
 err:
+	CRMFerr(CRMF_F_CRMF_SET1_REGINFO_UTF8PAIRS, CRMF_R_ERROR_SETTING_REGINFO_UTF8PAIRS_ATAV);
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
 	return 0;
 	}
@@ -370,6 +377,7 @@ int CRMF_CERTREQMSG_set1_regInfo_certReq( CRMF_CERTREQMSG *msg, CRMF_CERTREQUEST
 	
 	return 1;
 err:
+	CRMFerr(CRMF_F_CRMF_SET1_REGINFO_CERTREQ, CRMF_R_ERROR_SETTING_REGINFO_CERTREQ_ATAV);
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
 	return 0;
 	}
@@ -395,6 +403,7 @@ int CRMF_CERTREQMSG_set1_regInfo_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING
 	
 	return 1;
 err:
+	CRMFerr(CRMF_F_CRMF_SET1_REGTOKEN_CERTREQ, CRMF_R_ERROR_SETTING_REGTOKEN_CERTREQ_ATAV);
 	if (atav) CRMF_ATTRIBUTETYPEANDVALUE_free( atav);
 	return 0;
 	}
@@ -414,6 +423,7 @@ int CRMF_CERTREQMSG_set_version2( CRMF_CERTREQMSG *certReqMsg)
 	ASN1_INTEGER_set( certReqMsg->certReq->certTemplate->version, 2L);
 	return 1;
 err:
+	CRMFerr(CRMF_F_CRMF_SET_VERSION2, CRMF_R_ERROR_SETTING_VERSION_2);
 	return 0;
 	}
 
@@ -467,6 +477,7 @@ int CRMF_CERTREQMSG_set_certReqId( CRMF_CERTREQMSG *certReqMsg, const long certR
 
 	return ASN1_INTEGER_set(certReqMsg->certReq->certReqId, certReqId);
 err:
+	CRMFerr(CRMF_F_CRMF_SET_CERTREQID, CRMF_R_CRMFERROR);
 	return 0;
 	}
 
@@ -503,6 +514,7 @@ int CRMF_CERTREQMSG_set1_subject( CRMF_CERTREQMSG *certReqMsg, const X509_NAME *
 	/* this function is *not* consuming the pointer */
 	return X509_NAME_set(&(certReqMsg->certReq->certTemplate->subject), (X509_NAME*) subject);
 err:
+	CRMFerr(CRMF_F_CRMF_SET1_SUBJECT, CRMF_R_CRMFERROR);
 	return 0;
 }
 
@@ -594,7 +606,7 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 			break;
 #endif
 		default:
-			/* TODO: error msg - unsupported key */
+			CRMFerr(CRMF_F_CRMF_POPOSIGNINGKEY_NEW, CRMF_R_UNSUPPORTED_ALG_FOR_POPSIGNINGKEY);
 			goto err;
 		}
 
@@ -616,7 +628,7 @@ CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const 
 	OPENSSL_free(signature);
 	return poposig;
 err:
-	/* TODO: error msg */
+	CRMFerr(CRMF_F_CRMF_POPOSIGNINGKEY_NEW, CRMF_R_ERROR_SETTING_POPSIGNINGKEY);
 	if( poposig) CRMF_POPOSIGNINGKEY_free( poposig);
 	if( certReqDer) OPENSSL_free(certReqDer);
 	if( ctx) EVP_MD_CTX_destroy(ctx);
@@ -672,6 +684,7 @@ int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PK
 			break;
 
 		default: 
+			CRMFerr(CRMF_F_CRMF_CERTREQMSG_CALC_AND_SET_POPO, CRMF_R_UNSUPPORTED_METHOD_FOR_CREATING_POPO);
 			goto err;
 		}
 
@@ -682,7 +695,7 @@ int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PK
 
 	return 1;
 err:
-	/* TODO: error msg */
+	CRMFerr(CRMF_F_CRMF_CERTREQMSG_CALC_AND_SET_POPO, CRMF_R_ERROR_CALCULATING_AND_SETTING_POPO);
 	if( newPopo) CRMF_PROOFOFPOSSESION_free( newPopo);
 	return 0;
 	}
