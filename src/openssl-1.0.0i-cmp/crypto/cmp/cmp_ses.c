@@ -753,6 +753,10 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 
 	if (!(ctx->newClCert = CMP_CERTREPMESSAGE_get_certificate(ctx, kup->body->value.kup))) goto err;
 
+	/* copy received capubs to the context */
+	if (kup->body->value.kup->caPubs)
+		CMP_CTX_set1_caPubs(ctx, kup->body->value.kup->caPubs);
+
 	/* copy any received extraCerts to ctx->etraCertsIn so they can be retrieved */
 	if (kup->extraCerts)
 		CMP_CTX_set1_extraCertsIn(ctx, kup->extraCerts);
