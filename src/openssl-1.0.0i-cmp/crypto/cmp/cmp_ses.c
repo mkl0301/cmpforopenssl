@@ -585,7 +585,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 	CMP_PKIMESSAGE *cp=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio || !ctx ||  !ctx->newPkey ||
+	if (!cbio || !ctx ||  !ctx->pkey ||
 			(!(ctx->referenceValue && ctx->secretValue) && /* MSG_MAC_ALG */
 			!(ctx->pkey && ctx->clCert && (ctx->srvCert || ctx->trusted_store))) /* MSG_SIG_ALG */
 		)

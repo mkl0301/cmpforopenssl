@@ -315,7 +315,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx)
 	/* for authentication we need either a reference value/secret for MSG_MAC_ALG 
 	 * or existing certificate and private key for MSG_SIG_ALG */
 	if (!((ctx->referenceValue && ctx->secretValue) || (ctx->pkey && ctx->clCert))) goto err;
-	if (!ctx->newPkey) goto err;
+	if (!ctx->pkey) goto err;
 
 	if (ctx->subjectName)
 		subject = ctx->subjectName;
@@ -331,7 +331,7 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx)
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CR);
 
 	if (!(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
-	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, NULL))) goto err;
+	if (!(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->popoMethod, NULL))) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
 	/* TODO: here also the optional 2nd certreqmsg could be pushed to the stack */
 
