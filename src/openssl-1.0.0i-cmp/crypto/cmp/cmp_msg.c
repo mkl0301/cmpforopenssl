@@ -231,7 +231,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx)
 		add_altname_extensions(&extensions, ctx->subjectAltNames, ctx->setSubjectAltNameCritical);
 
 	if (!(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
-	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, extensions))) goto err;
+	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, extensions))) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.ir, certReq0);
 	/* TODO: here also the optional 2nd certreqmsg could be pushed to the stack */
 
@@ -239,6 +239,8 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx)
 	 * in CA mode might insist on that) */
 	if (ctx->regToken)
 		if (!CRMF_CERTREQMSG_set1_regInfo_regToken(certReq0, ctx->regToken)) goto err;
+
+	CRMF_CERTREQMSG_calc_and_set_popo( certReq0, ctx->newPkey, ctx->popoMethod);
 
 	add_extraCerts(ctx, msg);
 	if (!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
@@ -331,9 +333,11 @@ CMP_PKIMESSAGE * CMP_cr_new( CMP_CTX *ctx)
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_CR);
 
 	if (!(msg->body->value.cr = sk_CRMF_CERTREQMSG_new_null())) goto err;
-	if (!(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, ctx->popoMethod, NULL))) goto err;
+	if (!(certReq0 = CRMF_cr_new(0L, ctx->pkey, subject, NULL))) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.cr, certReq0);
 	/* TODO: here also the optional 2nd certreqmsg could be pushed to the stack */
+
+	CRMF_CERTREQMSG_calc_and_set_popo( certReq0, ctx->pkey, ctx->popoMethod);
 
 	add_extraCerts(ctx, msg);
 	if (!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
@@ -377,13 +381,15 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx)
 		subject = X509_get_subject_name( (X509*) ctx->clCert); /* TODO: from certificate to be renewed */
 
 	if (!(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;
-	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, ctx->popoMethod, NULL))) goto err;
+	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, NULL))) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.kur, certReq0);
 	/* TODO: here also the optional 2nd certreqmsg could be pushed to the stack */
 
 	/* setting OldCertId according to D.6:
 	   7.  regCtrl OldCertId SHOULD be used */
 	CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert); /* TODO: from certificate to be renewed */
+
+	CRMF_CERTREQMSG_calc_and_set_popo( certReq0, ctx->newPkey, ctx->popoMethod);
 
 	add_extraCerts(ctx, msg);
 	if (!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;

@@ -85,7 +85,6 @@
 CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId, 
 							   const EVP_PKEY *pkey, 
 							   const X509_NAME *subject, 
-							   int popoMethod, 
 							   X509_EXTENSIONS *extensions)
 	{
 	CRMF_CERTREQMSG *certReqMsg;
@@ -96,7 +95,7 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId,
 #if 0
 	/* version MUST be 2 if supplied.  It SHOULD be omitted. */
 	CRMF_CERTREQMSG_set_version2( certReqMsg);
-#endif 
+#endif
 
 	CRMF_CERTREQMSG_set_certReqId( certReqMsg, certReqId);
 	if (!CRMF_CERTREQMSG_set1_publicKey( certReqMsg, pkey))
@@ -113,8 +112,6 @@ CRMF_CERTREQMSG * CRMF_cr_new( const long certReqId,
 		/* X509v3_add_ext will allocate new stack if there isn't one already */
 		X509v3_add_ext(&certReqMsg->certReq->certTemplate->extensions, sk_X509_EXTENSION_value(extensions, i), i);
 	
-	CRMF_CERTREQMSG_calc_and_set_popo( certReqMsg, pkey, popoMethod);
-
 	return certReqMsg;
 err:
 	CRMFerr(CRMF_F_CRMF_CR_NEW, CRMF_R_CRMFERROR);
