@@ -1037,11 +1037,11 @@ void parseCLA( int argc, char **argv) {
     }
   }
 
-  if( opt_doIr || opt_doCr || opt_doKur) {
+  if( opt_doIr || opt_doKur) {
     /* for IR,CR,Kur a a place to store the new certificate and the location for the
      * (new) key and its password have to be supplied */
     if (!(opt_newClCertFile && opt_newClKeyFile)) {
-      printf("ERROR: giving newclcert/newkey is mandatory for trying to get a new Certificate through IR/CR/KUR\n\n");
+      printf("ERROR: giving newclcert/newkey is mandatory for trying to get a new Certificate through IR/KUR\n\n");
       printUsage( argv[0]);
     }
   }
