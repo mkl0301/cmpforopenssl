@@ -324,7 +324,7 @@ static int check_options(void)
             break;
         }
 
-    if (opt_cmd == CMP_IR || opt_cmd == CMP_KUR || opt_cmd == CMP_CR)
+    if (opt_cmd == CMP_IR || opt_cmd == CMP_KUR)
         {
         if (!opt_newkey)
             {
