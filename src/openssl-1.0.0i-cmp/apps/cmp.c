@@ -561,6 +561,12 @@ int MAIN(int argc, char **argv)
         badops=1;
         goto bad_ops;
         }
+
+    if (!strcmp(argv[1], "-help"))
+        {
+        show_help();
+        goto err;
+        }
     
     apps_startup();
     ERR_load_crypto_strings();
