@@ -282,15 +282,14 @@ err:
 	}
 
 /* ################################################################ *
- * returns latest failInfoCode, 0 on error
- * TODO: should that return something else on error?
+ * returns latest failInfoCode, -1 on error
  * ################################################################ */
 unsigned long CMP_CTX_get_failInfoCode( CMP_CTX *ctx)
 	{
 	if (!ctx) goto err;
 	return ctx->failInfoCode;
 err:
-	return 0;
+	return -1;
 	}
 
 /* ################################################################ *
@@ -1049,12 +1048,11 @@ int CMP_CTX_set_failInfoCode(CMP_CTX *ctx, CMP_PKIFAILUREINFO *failInfo)
 
 /* ################################################################ *
  * Get the failinfo error code bits in CMP_CTX
- * returns bitsting in ulong on success, 0 on error
- * TODO: should that return something else on error?
+ * returns bitstring in ulong on success, -1 on error
  * ################################################################ */
 unsigned long CMP_CTX_failInfoCode_get(CMP_CTX *ctx)
 	{
-	if (!ctx) return 0;
+	if (!ctx) return -1;
 	return ctx->failInfoCode;
 	}
 
