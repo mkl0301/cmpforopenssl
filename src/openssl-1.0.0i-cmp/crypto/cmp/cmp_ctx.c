@@ -346,7 +346,7 @@ err:
 /* ################################################################ *
  * Set the reference value to be used for identification (i.e. the 
  * username) when using PBMAC.
- * returns TODO on success, 0 on error
+ * returns 1 on success, 0 on error
  * ################################################################ */
 int CMP_CTX_set1_referenceValue( CMP_CTX *ctx, const unsigned char *ref, size_t len)
 	{
@@ -366,7 +366,7 @@ err:
 
 /* ################################################################ *
  * Set the password to be used for protecting messages with PBMAC
- * returns TODO on success, 0 on error
+ * returns 1 on success, 0 on error
  * ################################################################ */
 int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len)
 	{
@@ -384,7 +384,7 @@ err:
 
 /* ################################################################ *
  * Set the registration token value (the password for EJBCA for example)
- * returns TODO on success, 0 on error
+ * returns 1 on success, 0 on error
  * ################################################################ */
 int CMP_CTX_set1_regToken( CMP_CTX *ctx, const char *regtoken, const size_t len)
 	{
