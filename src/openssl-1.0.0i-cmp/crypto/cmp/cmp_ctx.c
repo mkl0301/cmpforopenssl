@@ -471,7 +471,7 @@ err:
 /* ################################################################ *
  * Duplicate and push the given X509 certificate to the stack of 
  * outbound certificates to send in the extraCerts field.
- * returns TODO on success, 0 on error
+ * returns number of pushed certificates on success, 0 on error
  * ################################################################ */
 int CMP_CTX_extraCertsOut_push1( CMP_CTX *ctx, const X509 *val)
 	{
