@@ -228,7 +228,7 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx)
 		subject = NULL;
 
 	if (sk_GENERAL_NAME_num(ctx->subjectAltNames) > 0)
-		add_altname_extensions(&extensions, ctx->subjectAltNames, ctx->setSubjectAltNameCritical);
+		add_altname_extensions(&extensions, ctx->subjectAltNames, ctx->setSubjectAltNameCritical || subject == NULL);
 
 	if (!(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, extensions))) goto err;
@@ -379,6 +379,9 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx)
 		subject = ctx->subjectName;
 	else
 		subject = X509_get_subject_name( (X509*) ctx->clCert); /* TODO: from certificate to be renewed */
+
+	if (sk_GENERAL_NAME_num(ctx->subjectAltNames) > 0)
+		add_altname_extensions(&extensions, ctx->subjectAltNames, ctx->setSubjectAltNameCritical || subject == NULL);
 
 	if (!(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, NULL))) goto err;
