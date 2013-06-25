@@ -361,6 +361,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx)
 	{
 	CMP_PKIMESSAGE *msg=NULL;
 	CRMF_CERTREQMSG *certReq0=NULL;
+	X509_EXTENSIONS *extensions = NULL;
 	X509_NAME *subject=NULL;
 
 	if (!ctx) goto err;
@@ -384,7 +385,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx)
 		add_altname_extensions(&extensions, ctx->subjectAltNames, ctx->setSubjectAltNameCritical || subject == NULL);
 
 	if (!(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;
-	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, NULL))) goto err;
+	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, extensions))) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.kur, certReq0);
 	/* TODO: here also the optional 2nd certreqmsg could be pushed to the stack */
 
@@ -397,11 +398,14 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx)
 	add_extraCerts(ctx, msg);
 	if (!CMP_PKIMESSAGE_protect(ctx, msg)) goto err;
 
+	if (extensions) sk_X509_EXTENSION_pop_free(extensions, X509_EXTENSION_free);
+
 	return msg;
 
 err:
 	CMPerr(CMP_F_CMP_KUR_NEW, CMP_R_ERROR_CREATING_KUR);
 	if (msg) CMP_PKIMESSAGE_free(msg);
+	if (extensions) sk_X509_EXTENSION_pop_free(extensions, X509_EXTENSION_free);
 	return NULL;
 	}
 
