@@ -199,10 +199,6 @@ int CMP_new_http_bio_ex( CMPBIO **bio, const char* serverAddress, const int port
 
 	curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
 
-	/* curl will automatically try to get proxy from environment if we don't set this.
-	 * if proxy use is enabled, it will be set in CMP_PKIMESSAGE_http_perform. */
-	curl_easy_setopt(curl, CURLOPT_PROXY, ""); /* TODO: that needs to be explicitly documented */
-
 	*bio = curl;
 	return 1;
 
@@ -261,7 +257,14 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx, const CMP_PKIM
 		{
 		curl_easy_setopt(curl, CURLOPT_PROXY, ctx->proxyName);
 		curl_easy_setopt(curl, CURLOPT_PROXYPORT, ctx->proxyPort);
+		curl_easy_setopt(curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
 		}
+	else if (!ctx->useProxyFromEnv) {
+		/* curl will automatically try to get proxy from environment if we don't set this.
+		 * if proxy use is enabled, it will be set in CMP_PKIMESSAGE_http_perform. */
+		curl_easy_setopt(curl, CURLOPT_PROXY, ""); /* TODO: that needs to be explicitly documented */
+	}
+
 
 	set_http_path(curl, ctx->serverPath);
 

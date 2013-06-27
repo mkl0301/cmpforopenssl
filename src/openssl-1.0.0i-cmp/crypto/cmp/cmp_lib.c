@@ -1350,7 +1350,7 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 				case CMP_CERTORENCCERT_CERTIFICATE:
 					if( !(newClCert = CMP_CERTREPMESSAGE_cert_get1(certrep,repNum)))
 						{
-						CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
+						CMPerr(CMP_F_CMP_CERTREPMESSAGE_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
 						goto err;
 						}
 					break;
@@ -1358,12 +1358,12 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 				case CMP_CERTORENCCERT_ENCRYPTEDCERT:
 					if( !(newClCert = CMP_CERTREPMESSAGE_encCert_get1(certrep,repNum,ctx->newPkey)))
 						{
-						CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
+						CMPerr(CMP_F_CMP_CERTREPMESSAGE_GET_CERTIFICATE, CMP_R_CERTIFICATE_NOT_FOUND);
 						goto err;
 						}					
 					break;
 				default:
-					CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_UNKNOWN_CERTTYPE);
+					CMPerr(CMP_F_CMP_CERTREPMESSAGE_GET_CERTIFICATE, CMP_R_UNKNOWN_CERTTYPE);
 					goto err;
 				}
 			break;
@@ -1375,7 +1375,7 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 			ASN1_UTF8STRING *status = NULL;
 			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(certrep, repNum);
 
-			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_REQUEST_REJECTED_BY_CA);
+			CMPerr(CMP_F_CMP_CERTREPMESSAGE_GET_CERTIFICATE, CMP_R_REQUEST_REJECTED_BY_CA);
 
 			statusString = CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(certrep, repNum);
 			if (!statusString) goto err;
@@ -1405,7 +1405,7 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 		case CMP_PKISTATUS_revocationWarning:
 		case CMP_PKISTATUS_revocationNotification:
 		case CMP_PKISTATUS_keyUpdateWarning:
-			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_NO_CERTIFICATE_RECEIVED);
+			CMPerr(CMP_F_CMP_CERTREPMESSAGE_GET_CERTIFICATE, CMP_R_NO_CERTIFICATE_RECEIVED);
 			goto err;
 			break;
 
@@ -1413,7 +1413,7 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 			STACK_OF(ASN1_UTF8STRING) *strstack = CMP_CERTREPMESSAGE_PKIStatusString_get0(certrep, 0);
 			ASN1_UTF8STRING *status = NULL;
 
-			CMPerr(CMP_F_CERTREP_GET_CERTIFICATE, CMP_R_UNKNOWN_PKISTATUS);
+			CMPerr(CMP_F_CMP_CERTREPMESSAGE_GET_CERTIFICATE, CMP_R_UNKNOWN_PKISTATUS);
 			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 				ERR_add_error_data(3, "statusString=\"", status->data, "\"");
 

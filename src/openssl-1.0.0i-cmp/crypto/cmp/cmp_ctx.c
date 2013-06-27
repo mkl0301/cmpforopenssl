@@ -220,6 +220,7 @@ int CMP_CTX_init( CMP_CTX *ctx)
 	ctx->serverPort		 = 0;
 	ctx->proxyName		 = NULL;
 	ctx->proxyPort		 = 0;
+	ctx->useProxyFromEnv = 0;
 	ctx->implicitConfirm = 0;
 	ctx->popoMethod		 = CRMF_POPO_SIGNATURE;
 	ctx->HttpTimeOut	 = 2*60;
@@ -479,7 +480,7 @@ int CMP_CTX_extraCertsOut_push1( CMP_CTX *ctx, const X509 *val)
 	if (!ctx->extraCertsOut && !(ctx->extraCertsOut = sk_X509_new_null())) return 0;
 	return sk_X509_push(ctx->extraCertsOut, X509_dup((X509*)val));
 err:
-	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_PUSH1, CMP_R_NULL_ARGUMENT);
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTSOUT_PUSH1, CMP_R_NULL_ARGUMENT);
 	return 0;
 	}
 
@@ -523,7 +524,7 @@ int CMP_CTX_extraCertsOut_num( CMP_CTX *ctx)
 	if (!ctx->extraCertsOut) return 0;
 	return sk_X509_num(ctx->extraCertsOut);
 err:
-	CMPerr(CMP_F_CMP_CTX_EXTRACERTS_NUM, CMP_R_NULL_ARGUMENT);
+	CMPerr(CMP_F_CMP_CTX_EXTRACERTSOUT_NUM, CMP_R_NULL_ARGUMENT);
 	return 0;
 	}
 
@@ -547,7 +548,7 @@ int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOu
 
 	return 1;
 err:
-	CMPerr(CMP_F_CMP_CTX_SET1_EXTRACERTS, CMP_R_NULL_ARGUMENT);
+	CMPerr(CMP_F_CMP_CTX_SET1_EXTRACERTSOUT, CMP_R_NULL_ARGUMENT);
 	return 0;
 	}
 
@@ -756,7 +757,7 @@ err:
 /* ################################################################ *
  * Set the client's private key. This creates a duplicate of the key
  * so the given pointer is not used directly.
- * returns TODO on success, 0 on error
+ * returns 1 on success, 0 on error
  * ################################################################ */
 int CMP_CTX_set1_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey)
 	{
@@ -799,7 +800,7 @@ err:
 /* ################################################################ *
  * Set new key pa8r. Used for example when doing Key Update.
  * The key is duplicated so the original pointer is not directly used.
- * returns TODO on success, 0 on error
+ * returns 1 on success, 0 on error
  * ################################################################ */
 int CMP_CTX_set1_newPkey( CMP_CTX *ctx, const EVP_PKEY *pkey)
 	{
@@ -1107,6 +1108,9 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val)
 			break;
 		case CMP_CTX_SET_SUBJECTALTNAME_CRITICAL:
 			ctx->setSubjectAltNameCritical = val;
+			break;
+		case CMP_CTX_USE_PROXY_FROM_ENV:
+			ctx->useProxyFromEnv = val;
 			break;
 		default:
 			goto err;
