@@ -1,0 +1,96 @@
+=pod
+
+=head1 NAME
+
+ CMP_new_http_bio
+ CMP_PKIMESSAGE_http_perform
+ CMP_get_http_response_code
+
+=head1 SYNOPSIS
+
+ #include <openssl/cmp.h>
+
+ int CMP_new_http_bio(CMBIO **cbio, const char* serverName, const int port);
+ int CMP_new_http_bio_ex(CMBIO **cbio, const char* serverName, const int port, const char *srcip);
+ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx, const CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out);
+ long CMP_get_http_response_code(const CMPBIO *bio);
+
+=head1 DESCRIPTION
+
+This is the API for creating a BIO for CMP (Certificate Management
+Protocol) over HTTP with OpenSSL utilizing cURL.
+
+The compiler need to have HAVE_CURL defined while building OpenSSL to 
+have any of the exported functions available!  When building applications 
+using the library the linker will fail if any of the exported funcitons 
+are used but OpenSSL was built without HAVE_CURL defined.
+
+CMP_new_http_bio() opens a OpenSSL BIO to communicate with the server.
+
+CMP_new_http_bio_ex() opens a OpenSSL BIO to communicate with the
+server, with one additional argument to specify the source interface
+address.
+
+CMP_PKIMESSAGE_http_perform() sends the given pkimessage msg through
+given connection, and returns the servers response in out.
+
+CMP_get_http_response_code() returns last http response code of the 
+given bio
+
+=head1 NOTES
+
+CMP is defined in RFC 4210 (and CRMF in RFC 4211).
+
+The implementation of CMP for OpenSSL is still work in progress. The API
+might change every release!
+
+=head1 RETURN VALUES
+
+CMP_new_http_bio() returns 0 on error, 1 on success.
+
+CMP_new_http_bio_ex() returns 0 on error, 1 on success.
+
+CMP_get_http_response_code(const CMPBIO *bio) returns last http response
+code of the given bio, 0 on error
+
+=head1 EXAMPLE
+
+The following code does an Initial Request:
+
+	cmp_ctx = CMP_CTX_create();
+	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+	CMP_CTX_set1_referenceValue( cmp_ctx, idString, idStringLen);
+	CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
+	CMP_CTX_set0_newPkey( cmp_ctx, initialPkey);
+	CMP_CTX_set1_caCert( cmp_ctx, caCert);
+
+	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
+
+	initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
+	BIO_free(cbio);
+
+
+The following code does an Key Update Request:
+
+	cmp_ctx = CMP_CTX_create();
+	CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
+	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
+	CMP_CTX_set0_newPkey( cmp_ctx, updatedPkey);
+	CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
+	CMP_CTX_set1_caCert( cmp_ctx, caCert);
+
+	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
+
+	updatedClCert = CMP_doKeyUpdateRequestSeq( cbio, cmp_ctx);
+	BIO_free(cbio);
+
+=head1 TODO
+
+  Break backwards compatibility by replacing
+	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
+  with
+	CMP_new_http_bio( &cbio, ctx);
+
+=head1 SEE ALSO
+
+CMP_CTX, CMP_session

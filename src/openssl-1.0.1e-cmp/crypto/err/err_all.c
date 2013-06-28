@@ -108,6 +108,11 @@
 #include <openssl/jpake.h>
 #endif
 
+#ifndef OPENSSL_NO_CMP
+#include <openssl/cmp.h>
+#include <openssl/crmf.h>
+#endif
+
 void ERR_load_crypto_strings(void)
 	{
 #ifndef OPENSSL_NO_ERR
@@ -163,6 +168,10 @@ void ERR_load_crypto_strings(void)
 #endif
 #ifndef OPENSSL_NO_JPAKE
 	ERR_load_JPAKE_strings();
+#endif
+#ifndef OPENSSL_NO_CMP
+	ERR_load_CMP_strings();
+	ERR_load_CRMF_strings();
 #endif
 #endif
 	}

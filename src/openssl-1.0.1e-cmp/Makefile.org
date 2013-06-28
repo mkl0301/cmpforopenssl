@@ -135,6 +135,10 @@ FIPSCANLIB=
 
 BASEADDR=
 
+# Curl stuff
+CURL_INCLUDE=
+LIBCURL=
+
 DIRS=   crypto ssl engines apps test tools
 ENGDIRS= ccgost
 SHLIBDIRS= crypto ssl
@@ -147,7 +151,7 @@ SDIRS=  \
 	bn ec rsa dsa ecdsa dh ecdh dso engine \
 	buffer bio stack lhash rand err \
 	evp asn1 pem x509 x509v3 conf txt_db pkcs7 pkcs12 comp ocsp ui krb5 \
-	cms pqueue ts jpake srp store cmac
+	cms pqueue ts jpake srp store cmac cmp crmf
 # keep in mind that the above list is adjusted by ./Configure
 # according to no-xxx arguments...
 
@@ -218,6 +222,7 @@ BUILDENV=	PLATFORM='$(PLATFORM)' PROCESSOR='$(PROCESSOR)' \
 		SHARED_LDFLAGS='$(SHARED_LDFLAGS)'		\
 		KRB5_INCLUDES='$(KRB5_INCLUDES)' LIBKRB5='$(LIBKRB5)'	\
 		ZLIB_INCLUDE='$(ZLIB_INCLUDE)' LIBZLIB='$(LIBZLIB)'	\
+		CURL_INCLUDE='$(CURL_INCLUDE)' LIBCURL='$(LIBCURL)' \
 		EXE_EXT='$(EXE_EXT)' SHARED_LIBS='$(SHARED_LIBS)'	\
 		SHLIB_EXT='$(SHLIB_EXT)' SHLIB_TARGET='$(SHLIB_TARGET)'	\
 		PEX_LIBS='$(PEX_LIBS)' EX_LIBS='$(EX_LIBS)'	\
