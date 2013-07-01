@@ -33,7 +33,7 @@ OPENSSLCFGOPT = -ggdb curl no-asm no-idea no-fips no-rc5 no-mdc2 no-camellia -fo
 
 #TODO do we have to set LIBDIR or CCFLAGS...?
 CURLCFGOPT = --prefix=$(ROOT) \
-						 --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-proxy \
+						 --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp \
 						 --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smtp \
 						 --disable-shared --disable-manual --without-ca-bundle --without-ca-path \
 						 --disable-threaded-resover --disable-sspi --disable-crypto-auth --disable-cookies \
