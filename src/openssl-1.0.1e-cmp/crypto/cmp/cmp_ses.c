@@ -87,8 +87,11 @@
 
 #else
 
-/* TODO this is here to fool the openssl perl script that checks errors codes strictly */
+/* XXX this is here to fool the openssl perl script that checks errors codes strictly
+ *     without func() the macro below would cause the script to complain */
+#if 0
 static void func() { }
+#endif
 /* adds connection error information to OpenSSL error queue */
 #define ADD_HTTP_ERROR_INFO(cmp_f_func, errcode, msg)\
 		if (ERR_GET_REASON(ERR_peek_last_error()) != CMP_R_NULL_ARGUMENT\
