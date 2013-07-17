@@ -26,8 +26,10 @@ GENERAL=Makefile makeapps.com install.com
 
 DLIBCRYPTO=../libcrypto.a
 DLIBSSL=../libssl.a
+DLIBCMPSEQ=../libcrypto_cmpseq.a
 LIBCRYPTO=-L.. -lcrypto
 LIBSSL=-L.. -lssl
+LIBCMPSEQ=-L.. -lcrypto_cmpseq
 
 PROGRAM= openssl
 
@@ -150,6 +152,9 @@ $(DLIBSSL):
 $(DLIBCRYPTO):
 	(cd ..; $(MAKE) DIRS=crypto all)
 
+$(DLIBCMPSEQ):
+	(cd ..; $(MAKE) build_crypto_cmpseq)
+
 $(EXE): progs.h $(E_OBJ) $(PROGRAM).o $(DLIBCRYPTO) $(DLIBSSL)
 	$(RM) $(EXE)
 	shlib_target=; if [ -n "$(SHARED_LIBS)" ]; then \
@@ -157,7 +162,7 @@ $(EXE): progs.h $(E_OBJ) $(PROGRAM).o $(DLIBCRYPTO) $(DLIBSSL)
 	elif [ -n "$(FIPSCANLIB)" ]; then \
 	  FIPSLD_CC="$(CC)"; CC=$(FIPSDIR)/bin/fipsld; export CC FIPSLD_CC; \
 	fi; \
-	LIBRARIES="$(LIBSSL) $(LIBKRB5) $(LIBCRYPTO)" ; \
+	LIBRARIES="$(LIBSSL) $(LIBKRB5) $(DLIBCMPSEQ) $(LIBCRYPTO)" ; \
 	$(MAKE) -f $(TOP)/Makefile.shared -e \
 		APPNAME=$(EXE) OBJECTS="$(PROGRAM).o $(E_OBJ)" \
 		LIBDEPS="$(PEX_LIBS) $$LIBRARIES $(EX_LIBS)" \
