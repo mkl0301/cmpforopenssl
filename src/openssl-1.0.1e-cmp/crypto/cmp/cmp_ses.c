@@ -325,10 +325,10 @@ static void save_certrep_statusInfo(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep)
 	int i = 0;
 
 	if (sk_CMP_CERTRESPONSE_num(certrep->response) > 0 &&
-		(resp = sk_CMP_CERTRESPONSE_value(certrep->response, 0)))
+		(resp = sk_CMP_CERTRESPONSE_value(certrep->response, 0)) &&
+		resp->status != NULL)
 		{
-		if (resp->status)
-			CMP_CTX_set_failInfoCode(ctx, resp->status->failInfo);
+		CMP_CTX_set_failInfoCode(ctx, resp->status->failInfo);
 		ctx->lastPKIStatus = CMP_PKISTATUSINFO_PKIstatus_get(resp->status);
 
 		if (!ctx->lastStatusString)
