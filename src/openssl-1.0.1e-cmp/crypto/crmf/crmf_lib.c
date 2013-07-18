@@ -135,7 +135,6 @@ int CRMF_CERTREQMSG_set1_control_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING
 	if (!(atav->value.regToken = ASN1_STRING_dup( tok))) goto err;
 
 	if (!CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
-	atav = NULL;
 	
 	return 1;
 err:
@@ -160,7 +159,6 @@ int CRMF_CERTREQMSG_set1_control_authenticator( CRMF_CERTREQMSG *msg, ASN1_UTF8S
 	atav->type = OBJ_nid2obj(NID_id_regCtrl_authenticator);
 	if (!(atav->value.regToken = ASN1_STRING_dup( auth))) goto err;
 	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
-	atav = NULL;
 	
 	return 1;
 err:
@@ -186,7 +184,6 @@ int CRMF_CERTREQMSG_set1_control_pkiPublicationInfo( CRMF_CERTREQMSG *msg, CRMF_
 	atav->type = OBJ_nid2obj(NID_id_regCtrl_pkiPublicationInfo);
 	if (!(atav->value.pkiPublicationInfo = CRMF_PKIPUBLICATIONINFO_dup( pubinfo))) goto err;
 	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
-	atav = NULL;
 	
 	return 1;
 err:
@@ -211,7 +208,6 @@ int CRMF_CERTREQMSG_set1_control_pkiArchiveOptions( CRMF_CERTREQMSG *msg, CRMF_P
 	atav->type = OBJ_nid2obj(NID_id_regCtrl_pkiArchiveOptions);
 	if (!(atav->value.pkiArchiveOptions = CRMF_PKIARCHIVEOPTIONS_dup( archopts))) goto err;
 	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
-	atav = NULL;
 	
 	return 1;
 err:
@@ -288,7 +284,6 @@ int CRMF_CERTREQMSG_set1_control_protocolEncrKey( CRMF_CERTREQMSG *msg, X509_PUB
 	atav->type = OBJ_nid2obj(NID_id_regCtrl_protocolEncrKey);
 	if (!(atav->value.protocolEncrKey = X509_PUBKEY_dup(pubkey))) goto err;
 	if( !CRMF_CERTREQMSG_push0_control( msg, atav)) goto err;
-	atav = NULL;
 	
 	return 1;
 err:
@@ -346,7 +341,6 @@ int CRMF_CERTREQMSG_set1_regInfo_utf8Pairs( CRMF_CERTREQMSG *msg, ASN1_UTF8STRIN
 	if (!(atav->value.utf8pairs = ASN1_STRING_dup( utf8pairs))) goto err;
 
 	if (!CRMF_CERTREQMSG_push0_regInfo( msg, atav)) goto err;
-	atav = NULL;
 	
 	return 1;
 err:
@@ -373,7 +367,6 @@ int CRMF_CERTREQMSG_set1_regInfo_certReq( CRMF_CERTREQMSG *msg, CRMF_CERTREQUEST
 	if (!(atav->value.certReq = CRMF_CERTREQUEST_dup( certReq))) goto err;
 
 	if (!CRMF_CERTREQMSG_push0_regInfo( msg, atav)) goto err;
-	atav = NULL;
 	
 	return 1;
 err:
@@ -399,7 +392,6 @@ int CRMF_CERTREQMSG_set1_regInfo_regToken( CRMF_CERTREQMSG *msg, ASN1_UTF8STRING
 	if (!(atav->value.regToken = ASN1_STRING_dup( tok))) goto err;
 
 	if (!CRMF_CERTREQMSG_push0_regInfo( msg, atav)) goto err;
-	atav = NULL;
 	
 	return 1;
 err:
