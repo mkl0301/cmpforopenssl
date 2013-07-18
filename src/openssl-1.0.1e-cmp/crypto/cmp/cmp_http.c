@@ -142,6 +142,7 @@ static int set_http_path(CURL *curl, const char *path)
 	{
 	char *current_url = NULL, *url = NULL;
 	int pathlen = 0, current_len = 0;
+	int bufsize = 0;
 
 	curl_easy_getinfo(curl, CURLINFO_EFFECTIVE_URL, &current_url);
 	if (!current_url || !path)
@@ -153,10 +154,11 @@ static int set_http_path(CURL *curl, const char *path)
 		/* path is already set, let's not do it again... */
 		return 1;
 
-	url = malloc(strlen(current_url) + strlen(path) + 2);
+	bufsize = strlen(current_url) + strlen(path) + 2;
+	url = malloc(bufsize);
 	if (!url) return 0;
 
-	sprintf(url, "%s/%s", current_url, path);
+	BIO_snprintf(url, bufsize, "%s/%s", current_url, path);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	free(url);
 
@@ -301,7 +303,7 @@ int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx, const CMP_PKIM
 		else if (res != CURLE_OK)
 			CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_CURL_ERROR);
 
-		snprintf(num, sizeof(num)-1, "%d:", res);
+		BIO_snprintf(num, sizeof(num)-1, "%d:", res);
 		ERR_add_error_data(2, num, curl_easy_strerror(res));
 		goto err;
 		}
