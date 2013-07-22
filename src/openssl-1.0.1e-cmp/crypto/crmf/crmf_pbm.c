@@ -208,7 +208,7 @@ int CRMF_passwordBasedMac_new( const CRMF_PBMPARAMETER *pbm,
 			/* which NIDs to use for these algorithms??? */
 		default:
 			CRMFerr(CRMF_F_CRMF_PASSWORDBASEDMAC_NEW, CRMF_R_UNSUPPORTED_ALGORITHM);
-			exit(1);
+			goto err;
 		}
 
 	/* cleanup */
