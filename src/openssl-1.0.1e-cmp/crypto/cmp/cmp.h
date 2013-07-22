@@ -1043,7 +1043,6 @@ typedef struct cmp_ctx_st
 	/* failInfoCode of last received IP/CP/KUP */
 	/* TODO: this should be a stack since there could be more than one */
 	unsigned long failInfoCode;
-	/* TODO: this should be a stack since there could be more than one */
 	STACK_OF(ASN1_UTF8STRING) *lastStatusString;
 
 	/* log callback functions for error and debug messages */

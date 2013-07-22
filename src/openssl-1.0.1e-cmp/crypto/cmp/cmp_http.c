@@ -231,7 +231,6 @@ int CMP_delete_http_bio( CMPBIO *cbio)
  * returns 1 on success, 0 on error
  * on success, returns pointer to received PKIMessage in *out
  * TODO: add some comments
- * TODO: set 
  * ################################################################ */
 int CMP_PKIMESSAGE_http_perform(CMPBIO *curl, const CMP_CTX *ctx, const CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out)
 	{
