@@ -222,7 +222,8 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx)
 
 	if (ctx->subjectName)
 		subject = ctx->subjectName;
-	else if (ctx->clCert) /* get subject name from existing certificate (E.7) */
+	else if (ctx->clCert && sk_GENERAL_NAME_num(ctx->subjectAltNames) <= 0)
+		/* get subject name from existing certificate (E.7) */
 		subject = X509_get_subject_name(ctx->clCert);
 	else
 		subject = NULL;
