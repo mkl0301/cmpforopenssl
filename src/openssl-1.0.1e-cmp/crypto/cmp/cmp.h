@@ -1123,13 +1123,12 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert);
 /* cmp_vfy.c */
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
 
-/* from cmp_http.c */
+/* these functions are separated into the libcrypto_cmpseq library
+ * since they require linking with libcurl */
 #ifdef HAVE_CURL
+/* from cmp_http.c */
 typedef CURL CMPBIO;
-#else
-/* for applications not directly utilizing libcurl (and thus not defining HAVE_CURL) */
-typedef void CMPBIO;
-#endif
+
 int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx, const CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out);
 int CMP_new_http_bio_ex(CMPBIO **cbio, const char* serverName, const int port, const char *srcip);
 int CMP_new_http_bio(CMPBIO **cbio, const char* serverName, const int port);
@@ -1142,6 +1141,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
 STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value);
+#endif
 
 /* from cmp_ctx.c */
 CMP_CTX *CMP_CTX_create(void);
