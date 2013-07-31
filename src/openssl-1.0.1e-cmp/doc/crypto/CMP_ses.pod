@@ -20,21 +20,20 @@
 
 =head1 DESCRIPTION
 
-This is the API for doing client-server sequences using CMP (Certificate
-Management Protocol) with OpenSSL. The conveying protocol is HTTP for
-now.
+This is the API for doing CMP (Certificate Management Protocol)  client-server
+message sequences using with OpenSSL. The conveying protocol is HTTP.
 
-CMP_doInitialRequestSeq() does the sequence which obtains an initial
-certificate from the CA. An initialized BIO and a populated CMP_CTX
-structure have to be given as arguments.
+CMP_doInitialRequestSeq() does the transaction which obtains an initial certificate
+from the CA. An initialized BIO and a populated CMP_CTX structure have to be
+given as arguments.
 
-CMP_doKeyUpdateRequestSeq() does the sequence which obains a certificate
-for an updatded key from the CA. An initialized BIO and a populated
-CMP_CTX structure have to be given as arguments.
+CMP_doKeyUpdateRequestSeq() does the transaction which obains a certificate for an
+updatded key from the CA. An initialized BIO and a populated CMP_CTX structure
+have to be given as arguments.
 
-CMP_doCertificateRequestSeq() requests an additional certificate for an
-existing key from the CA. An initialized BIO and a populated CMP_CTX
-structure have to be given as arguments.
+CMP_doCertificateRequestSeq() requests an additional certificate for an existing
+key from the CA. An initialized BIO and a populated CMP_CTX structure have to be
+given as arguments.
 
 CMP_doGeneralMessageSeq() sends a general message and returns the Infotype and
 value structures returned by the server.  This can e.g. be used to poll for the
@@ -66,7 +65,7 @@ certificates.
 The function for sending GENM does not yet directly support sending multiple
 ITAV structures.
 
-The reason for an IP/KUP/CP returning watingin satus as optionall sent in a
+The reason for an IP/KUP/CP returning waiting status as optional sent in a
 PKIFreetext structure could be printed/returned to the user.
 
 The function to request revocation of certificates only can revoke the current
@@ -74,7 +73,7 @@ certificate which is also used for signing the messages.  It should be changed
 so that the certificate to revoke is explicitly given.  So far only one
 certificate can be revoked although that could be several.
 
-The sequences for other CMP operations are missing so far.
+The message sequences for other CMP operations are missing so far.
 
 =head1 SEE ALSO
 
