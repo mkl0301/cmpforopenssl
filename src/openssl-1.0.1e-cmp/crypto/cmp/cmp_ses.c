@@ -205,6 +205,8 @@ static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certr
 		{
 		if(!(preq = CMP_pollReq_new(ctx, 0))) goto err; /* TODO: this only handles one certificate request so far */
 
+
+		CMP_printf(ctx, "INFO: Sending polling request...");
 		/* immediately send the first pollReq */
 		if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep)))
 			{
@@ -220,7 +222,7 @@ static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certr
 			if(!(pollRep = sk_CMP_POLLREP_value(prep->body->value.pollRep, 0))) goto err; /* TODO: this only handles one certificate request so far */
 			checkAfter = ASN1_INTEGER_get(pollRep->checkAfter);
 			/* TODO: print OPTIONAL reason (PKIFreeText) from message */
-			CMP_printf(ctx, "INFO: Waiting %ld seconds before sending pollReq...\n", checkAfter);
+			CMP_printf(ctx, "INFO: Received polling response, waiting checkAfter = %ld seconds before sending another polling request...", checkAfter);
 
 			if (ctx->maxPollTime != 0)
 				{        /* timout is set in context */
