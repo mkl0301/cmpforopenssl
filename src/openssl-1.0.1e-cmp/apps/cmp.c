@@ -191,7 +191,7 @@ static opt_t cmp_opts[]={
     { "cacertsout", "File where to save received CA certificates (from IR)", OPT_TXT, {&opt_cacertsout} },
 
     { "proxy", "Address of HTTP proxy server to use for the request", OPT_TXT, {&opt_proxy} },
-    { "proxyport", "Port of the proxy server", OPT_TXT, {&opt_proxyPort} },
+    { "proxyport", "Port of the proxy server", OPT_NUM, {&opt_proxyPort} },
 };
 
 /* ########################################################################## *
