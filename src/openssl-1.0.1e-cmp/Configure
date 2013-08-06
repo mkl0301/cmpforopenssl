@@ -673,7 +673,7 @@ my $no_shared=0; # but "no-shared" is default
 my $zlib=1;      # but "no-zlib" is default
 my $no_krb5=0;   # but "no-krb5" is implied unless "--with-krb5-..." is used
 my $no_rfc3779=1; # but "no-rfc3779" is default
-my $curl=1;
+my $curl=1;      # but no-curl is default
 my $no_asm=0;
 my $no_dso=0;
 my $no_gmp=0;
@@ -723,7 +723,8 @@ my %disabled = ( # "what"         => "comment" [or special keyword "experimental
 		 "shared"         => "default",
 		 "store"	  => "experimental",
 		 "zlib"           => "default",
-		 "zlib-dynamic"   => "default"
+		 "zlib-dynamic"   => "default",
+		 "curl"           => "default"
 	       );
 my @experimental = ();
 

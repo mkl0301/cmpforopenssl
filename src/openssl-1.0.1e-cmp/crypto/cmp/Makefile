@@ -17,12 +17,8 @@ TEST=
 APPS=
 
 LIB=$(TOP)/libcrypto.a
-LIBSRC= cmp_asn.c cmp_lib.c cmp_msg.c cmp_vfy.c cmp_ctx.c cmp_err.c
-LIBOBJ= cmp_asn.o cmp_lib.o cmp_msg.o cmp_vfy.o cmp_ctx.o cmp_err.o
-
-LIBCMP=$(TOP)/libcrypto_cmpseq.a
-LIBCMPSRC= cmp_http.c cmp_ses.c
-LIBCMPOBJ= cmp_http.o cmp_ses.o
+LIBSRC= cmp_asn.c cmp_lib.c cmp_msg.c cmp_vfy.c cmp_ctx.c cmp_err.c cmp_http.c cmp_ses.c
+LIBOBJ= cmp_asn.o cmp_lib.o cmp_msg.o cmp_vfy.o cmp_ctx.o cmp_err.o cmp_http.o cmp_ses.o
 
 SRC= $(LIBSRC)
 
@@ -40,11 +36,6 @@ lib:	$(LIBOBJ)
 	$(AR) $(LIB) $(LIBOBJ)
 	$(RANLIB) $(LIB) || echo Never mind.
 	@touch lib
-	
-libcrypto_cmpseq:	$(LIBCMPOBJ)
-	$(AR) $(LIBCMP) $(LIBCMPOBJ)
-	$(RANLIB) $(LIBCMP) || echo Never mind.
-	@touch libcrypto_cmpseq
 
 files:
 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO

@@ -275,12 +275,10 @@ reflect:
 	@[ -n "$(THIS)" ] && $(CLEARENV) && $(MAKE) $(THIS) -e $(BUILDENV)
 
 sub_all: build_all
-build_all: build_libs build_crypto_cmpseq build_apps build_tests build_tools
+build_all: build_libs build_apps build_tests build_tools
 
 build_libs: build_crypto build_ssl build_engines
 
-build_crypto_cmpseq:
-	@(cd crypto/cmp; $(MAKE) libcrypto_cmpseq -e $(BUILDENV))
 build_crypto:
 	@dir=crypto; target=all; $(BUILD_ONE_CMD)
 build_ssl:
