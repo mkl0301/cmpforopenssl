@@ -1067,7 +1067,8 @@ typedef struct cmp_ctx_st
 	char	  *serverPath;
 	char	  *proxyName;
 	int		  proxyPort;
-	int       useProxyFromEnv;
+	int       lastHTTPCode;
+	char	  *sourceAddress;
 	} CMP_CTX;
 
 DECLARE_ASN1_FUNCTIONS(CMP_CTX)
@@ -1123,25 +1124,17 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert);
 /* cmp_vfy.c */
 int CMP_validate_msg(CMP_CTX *ctx, CMP_PKIMESSAGE *msg);
 
-/* these functions are separated into the libcrypto_cmpseq library
- * since they require linking with libcurl */
-#ifdef HAVE_CURL
 /* from cmp_http.c */
-typedef CURL CMPBIO;
-
-int CMP_PKIMESSAGE_http_perform(CMPBIO *cbio, const CMP_CTX *ctx, const CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out);
-int CMP_new_http_bio_ex(CMPBIO **cbio, const char* serverName, const int port, const char *srcip);
-int CMP_new_http_bio(CMPBIO **cbio, const char* serverName, const int port);
-int CMP_delete_http_bio( CMPBIO *cbio);
-long CMP_get_http_response_code(const CMPBIO *bio);
+int CMP_PKIMESSAGE_http_perform(const CMP_CTX *ctx, const CMP_PKIMESSAGE *msg, CMP_PKIMESSAGE **out);
+long CMP_get_http_response_code(const CMP_CTX *ctx);
+	
 
 /* from cmp_ses.c */
-X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
-X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
-int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
-X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx);
-STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value);
-#endif
+X509 *CMP_doInitialRequestSeq(CMP_CTX *ctx);
+X509 *CMP_doCertificateRequestSeq(CMP_CTX *ctx);
+int CMP_doRevocationRequestSeq(CMP_CTX *ctx);
+X509 *CMP_doKeyUpdateRequestSeq(CMP_CTX *ctx);
+STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq(CMP_CTX *ctx, int nid, char *value);
 
 /* from cmp_ctx.c */
 CMP_CTX *CMP_CTX_create(void);
@@ -1190,6 +1183,7 @@ int CMP_CTX_set1_serverName( CMP_CTX *ctx, const char *name);
 int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port);
 int CMP_CTX_set1_proxyName( CMP_CTX *ctx, const char *name);
 int CMP_CTX_set1_proxyPort( CMP_CTX *ctx, int port);
+int CMP_CTX_set1_sourceAddress( CMP_CTX *ctx, const char *ip);
 /* for backwards compatibility, TODO: remove asap */
 #define CMP_CTX_set1_timeOut CMP_CTX_set_HttpTimeOut 
 int CMP_CTX_set1_timeOut( CMP_CTX *ctx, int time);
@@ -1205,7 +1199,6 @@ STACK_OF(ASN1_UTF8STRING) *CMP_CTX_statusString_get( CMP_CTX *ctx);
 #define CMP_CTX_OPT_MAXPOLLTIME				 	4
 #define CMP_CTX_PERMIT_TA_IN_EXTRACERTS_FOR_IR	5
 #define CMP_CTX_SET_SUBJECTALTNAME_CRITICAL     6
-#define CMP_CTX_USE_PROXY_FROM_ENV              7
 int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 #if 0
 int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);
@@ -1279,6 +1272,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_SERVERNAME			 134
 #define CMP_F_CMP_CTX_SET1_SERVERPATH			 135
 #define CMP_F_CMP_CTX_SET1_SERVERPORT			 136
+#define CMP_F_CMP_CTX_SET1_SOURCEADDRESS		 188
 #define CMP_F_CMP_CTX_SET1_SRVCERT			 173
 #define CMP_F_CMP_CTX_SET1_SUBJECTNAME			 137
 #define CMP_F_CMP_CTX_SET1_TIMEOUT			 138
@@ -1295,6 +1289,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_GENM_NEW				 148
 #define CMP_F_CMP_IR_NEW				 149
 #define CMP_F_CMP_KUR_NEW				 150
+#define CMP_F_CMP_NEW_HTTP_BIO				 189
 #define CMP_F_CMP_NEW_HTTP_BIO_EX			 151
 #define CMP_F_CMP_PKIMESSAGE_HTTP_BIO_RECV		 152
 #define CMP_F_CMP_PKIMESSAGE_HTTP_BIO_SEND		 153
@@ -1311,6 +1306,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_VALIDATE_CERT_PATH			 159
 #define CMP_F_CMP_VALIDATE_MSG				 168
 #define CMP_F_CMP_VERIFY_SIGNATURE			 169
+#define CMP_F_PARSE_HTTP_LINE1				 187
 #define CMP_F_PKEY_DUP					 160
 #define CMP_F_POLLFORRESPONSE				 167
 #define CMP_F_SENDCERTCONF				 181
@@ -1371,6 +1367,8 @@ void ERR_load_CMP_strings(void);
 #define CMP_R_REQUEST_REJECTED_BY_CA			 138
 #define CMP_R_RP_NOT_RECEIVED				 139
 #define CMP_R_SERVER_NOT_REACHABLE			 149
+#define CMP_R_SERVER_RESPONSE_ERROR			 166
+#define CMP_R_SERVER_RESPONSE_PARSE_ERROR		 167
 #define CMP_R_SUBJECT_NAME_NOT_SET			 140
 #define CMP_R_UNABLE_TO_CREATE_CONTEXT			 141
 #define CMP_R_UNEXPECTED_PKISTATUS			 165

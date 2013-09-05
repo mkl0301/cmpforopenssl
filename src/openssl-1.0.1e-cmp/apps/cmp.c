@@ -78,17 +78,6 @@
 #undef PROG
 #define PROG	cmp_main
 
-#if !defined(HAVE_CURL) || defined(OPENSSL_NO_CMP) || defined(OPENSSL_NO_CMP_CLIENT)
-
-/* can't use the client without cmp and curl... */
-int MAIN(int argc, char **argv)
-    {
-    BIO_puts(bio_err, "error: openssl was compiled without libcurl or with cmp support disabled\n");
-    OPENSSL_EXIT(0);
-    }
-
-#else
-
 #include <openssl/cmp.h>
 #include <openssl/crmf.h>
 #include <openssl/pem.h>
@@ -573,7 +562,6 @@ int MAIN(int argc, char **argv)
     int badops=0;
     int ret=1;
     CMP_CTX *cmp_ctx;
-    CMPBIO *cmp_bio;
     X509 *newcert=NULL;
 
     if (argc <= 1)
@@ -699,35 +687,28 @@ bad_ops:
         goto err;
         }
 
-	/* set up the connection context but don't connect yet */
-    if (!CMP_new_http_bio(&cmp_bio, server_address, server_port))
-        {
-        BIO_puts(bio_err, "error: setting up connection context\n");
-        goto err;
-        }
-
 	/* everything is ready, now connect and preform the command! */
     switch (opt_cmd)
         {
         case CMP_IR:
-            newcert = CMP_doInitialRequestSeq(cmp_bio, cmp_ctx);
+            newcert = CMP_doInitialRequestSeq(cmp_ctx);
             if (!newcert)
                 goto err;
             if (opt_cacertsout && CMP_CTX_caPubs_num(cmp_ctx) > 0)
                 save_capubs(cmp_ctx, opt_cacertsout);
             break;
         case CMP_KUR:
-            newcert = CMP_doKeyUpdateRequestSeq(cmp_bio, cmp_ctx);
+            newcert = CMP_doKeyUpdateRequestSeq(cmp_ctx);
             if (!newcert)
                 goto err;
             break;
         case CMP_CR:
-            newcert = CMP_doCertificateRequestSeq(cmp_bio, cmp_ctx);
+            newcert = CMP_doCertificateRequestSeq(cmp_ctx);
             if (!newcert)
                 goto err;
             break;
         case CMP_RR:
-            CMP_doRevocationRequestSeq(cmp_bio, cmp_ctx);
+            CMP_doRevocationRequestSeq(cmp_ctx);
             break;
         case CMP_CKUANN:
             /* TODO: sending the empty GENM to request the CKUANN */
@@ -760,11 +741,7 @@ bad_ops:
 err:
     if (ret != 0)
         ERR_print_errors_fp(stderr);
-    if(tofree)
-        OPENSSL_free(tofree);
 
     OPENSSL_EXIT(ret);
     }
-
-#endif
 

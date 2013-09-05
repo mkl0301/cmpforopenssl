@@ -570,6 +570,7 @@ ASN1_BIT_STRING *CMP_calc_protection_sig(CMP_PKIMESSAGE *pkimessage, EVP_PKEY *p
 
 		/* calculate signature */
 		evp_ctx = EVP_MD_CTX_create();
+		if (!evp_ctx) goto err;
 		if (!(EVP_SignInit_ex(evp_ctx, md, NULL))) goto err;
 		if (!(EVP_SignUpdate(evp_ctx, protPartDer, protPartDerLen))) goto err;
 		if (!(EVP_SignFinal(evp_ctx, mac, &macLen, pkey))) goto err;

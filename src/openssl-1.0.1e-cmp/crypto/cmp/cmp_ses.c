@@ -80,13 +80,6 @@
 
 #include <unistd.h>
 
-
-#ifndef HAVE_CURL
-
-/* show some warning here? */
-
-#else
-
 /* XXX this is here to fool the openssl perl script that checks errors codes strictly
  *     without func() the macro below would cause the script to complain */
 #if 0
@@ -193,7 +186,7 @@ static void add_error_data(const char *txt)
  *
  * TODO handle multiple pollreqs for multiple certificates
  * ############################################################################ */
-static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg)
+static int pollForResponse(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep, CMP_PKIMESSAGE **msg)
 	{
 	int maxTimeLeft = ctx->maxPollTime;
 	CMP_PKIMESSAGE *preq = NULL;
@@ -208,7 +201,7 @@ static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certr
 
 		CMP_printf(ctx, "INFO: Sending polling request...");
 		/* immediately send the first pollReq */
-		if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, preq, &prep)))
+		if (! (CMP_PKIMESSAGE_http_perform(ctx, preq, &prep)))
 			{
 			/* set message to error stack */
 			ADD_HTTP_ERROR_INFO(CMP_F_POLLFORRESPONSE, CMP_R_POLLREP_NOT_RECEIVED, "pollReq");
@@ -244,6 +237,7 @@ static int pollForResponse(CMP_CTX *ctx, CMPBIO *cbio, CMP_CERTREPMESSAGE *certr
 			}
 		else break; /* final success */
 		}
+	if (!prep) goto err;
 
 	CMP_PKIMESSAGE_free(preq);
 	*msg = prep;
@@ -260,7 +254,7 @@ err:
  * send certConf for IR, CR or KUR sequences
  * returns 1 on success, 0 on error
  * ############################################################################ */
-static int sendCertConf( CMPBIO *cbio, CMP_CTX *ctx)
+static int sendCertConf( CMP_CTX *ctx)
 	{
 	CMP_PKIMESSAGE *certConf=NULL;
 	CMP_PKIMESSAGE *PKIconf=NULL;
@@ -269,7 +263,7 @@ static int sendCertConf( CMPBIO *cbio, CMP_CTX *ctx)
 	if (!(certConf = CMP_certConf_new(ctx))) goto err;
 
 	CMP_printf( ctx, "INFO: Sending Certificate Confirm");
-	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, certConf, &PKIconf)))
+	if (! (CMP_PKIMESSAGE_http_perform(ctx, certConf, &PKIconf)))
 		{
 		ADD_HTTP_ERROR_INFO(CMP_F_SENDCERTCONF, CMP_R_PKICONF_NOT_RECEIVED, "certConf");
 		goto err;
@@ -357,13 +351,13 @@ static void save_certrep_statusInfo(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certrep)
  *
  * returns pointer to received certificate, NULL if none was received
  * ############################################################################ */
-X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
+X509 *CMP_doInitialRequestSeq( CMP_CTX *ctx)
 	{
 	CMP_PKIMESSAGE *ir=NULL;
 	CMP_PKIMESSAGE *ip=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio || !ctx || !ctx->newPkey ||
+	if (!ctx || !ctx->newPkey ||
 		/* for authentication we need either reference/secret or external 
 		 * identity certificate and private key, the server name/cert might not be
 		 * known here yet especiallaly in case of E.7 */
@@ -378,7 +372,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 	if (!(ir = CMP_ir_new(ctx))) goto err;
 
 	CMP_printf(ctx, "INFO: Sending Initialization Request");
-	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, ir, &ip)))
+	if (! (CMP_PKIMESSAGE_http_perform(ctx, ir, &ip)))
 		{
 		ADD_HTTP_ERROR_INFO(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED, "ir");
 		goto err;
@@ -419,7 +413,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 	/* make sure the PKIStatus for the *first* CERTrepmessage indicates a certificate was granted */
 	/* TODO handle second CERTrepmessages if two would have sent */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( ip->body->value.ip, 0) == CMP_PKISTATUS_waiting)
-		if (!pollForResponse(ctx, cbio, ip->body->value.ip, &ip))
+		if (!pollForResponse(ctx, ip->body->value.ip, &ip))
 			{
 			CMPerr(CMP_F_CMP_DOINITIALREQUESTSEQ, CMP_R_IP_NOT_RECEIVED);
 			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
@@ -446,7 +440,7 @@ X509 *CMP_doInitialRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 
 	/* check if implicit confirm is set in generalInfo and send certConf if not */
 	if (!CMP_PKIMESSAGE_check_implicitConfirm(ip)) 
-		if (!sendCertConf(cbio, ctx)) goto err;
+		if (!sendCertConf(ctx)) goto err;
 
 	CMP_PKIMESSAGE_free(ir);
 	CMP_PKIMESSAGE_free(ip);
@@ -484,13 +478,13 @@ err:
  *          revocationWarning      (5)
  *          revocationNotification (6)
  * ############################################################################ */
-int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
+int CMP_doRevocationRequestSeq( CMP_CTX *ctx)
 	{
 	CMP_PKIMESSAGE *rr=NULL;
 	CMP_PKIMESSAGE *rp=NULL;
 	int pkiStatus = 0;
 
-	if (!cbio || !ctx || !ctx->serverName || !ctx->pkey ||
+	if (!ctx || !ctx->serverName || !ctx->pkey ||
 		!ctx->clCert || !(ctx->srvCert || ctx->trusted_store))
 		{
 		CMPerr(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_INVALID_ARGS);
@@ -500,7 +494,7 @@ int CMP_doRevocationRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 	if (! (rr = CMP_rr_new(ctx))) goto err;
 
 	CMP_printf( ctx, "INFO: Sending Revocation Request");
-	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, rr, &rp)))
+	if (! (CMP_PKIMESSAGE_http_perform(ctx, rr, &rp)))
 		{
 		ADD_HTTP_ERROR_INFO(CMP_F_CMP_DOREVOCATIONREQUESTSEQ, CMP_R_RP_NOT_RECEIVED, "rr");
 		goto err;
@@ -586,13 +580,13 @@ err:
  *
  * returns pointer to received certificate, NULL if non was received
  * ############################################################################ */
-X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
+X509 *CMP_doCertificateRequestSeq( CMP_CTX *ctx)
 	{
 	CMP_PKIMESSAGE *cr=NULL;
 	CMP_PKIMESSAGE *cp=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio || !ctx ||  !ctx->pkey ||
+	if (!ctx ||  !ctx->pkey ||
 			(!(ctx->referenceValue && ctx->secretValue) && /* MSG_MAC_ALG */
 			!(ctx->pkey && ctx->clCert && (ctx->srvCert || ctx->trusted_store))) /* MSG_SIG_ALG */
 		)
@@ -605,7 +599,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 	if (! (cr = CMP_cr_new(ctx))) goto err;
 
 	CMP_printf( ctx, "INFO: Sending Certificate Request");
-	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, cr, &cp)))
+	if (! (CMP_PKIMESSAGE_http_perform(ctx, cr, &cp)))
 		{
 		ADD_HTTP_ERROR_INFO(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CP_NOT_RECEIVED, "cr");
 		goto err;
@@ -645,7 +639,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 
 	/* evaluate PKIStatus field */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( cp->body->value.cp, 0) == CMP_PKISTATUS_waiting)
-		if (!pollForResponse(ctx, cbio, cp->body->value.cp, &cp))
+		if (!pollForResponse(ctx, cp->body->value.cp, &cp))
 			{
 			CMPerr(CMP_F_CMP_DOCERTIFICATEREQUESTSEQ, CMP_R_CP_NOT_RECEIVED);
 			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
@@ -660,7 +654,7 @@ X509 *CMP_doCertificateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 
 	/* check if implicit confirm is set in generalInfo and send certConf if not */
 	if (!CMP_PKIMESSAGE_check_implicitConfirm(cp)) 
-		if (!sendCertConf(cbio, ctx)) goto err;
+		if (!sendCertConf(ctx)) goto err;
 
 	CMP_PKIMESSAGE_free(cr);
 	CMP_PKIMESSAGE_free(cp);
@@ -692,13 +686,13 @@ err:
  *
  * returns pointer to received certificate, NULL if non was received
  * ############################################################################ */
-X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
+X509 *CMP_doKeyUpdateRequestSeq( CMP_CTX *ctx)
 	{
 	CMP_PKIMESSAGE *kur=NULL;
 	CMP_PKIMESSAGE *kup=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio || !ctx ||  !ctx->newPkey ||
+	if (!ctx ||  !ctx->newPkey ||
 			(!(ctx->referenceValue && ctx->secretValue) && /* MSG_MAC_ALG */
 			!(ctx->pkey && ctx->clCert && (ctx->srvCert || ctx->trusted_store)))) /* MSG_SIG_ALG */
 		{
@@ -710,7 +704,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 	if (! (kur = CMP_kur_new(ctx))) goto err;
 
 	CMP_printf( ctx, "INFO: Sending Key Update Request");
-	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, kur, &kup)))
+	if (! (CMP_PKIMESSAGE_http_perform(ctx, kur, &kup)))
 		{
 		ADD_HTTP_ERROR_INFO(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED, "kur");
 		goto err;
@@ -751,7 +745,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 	/* evaluate PKIStatus field */
 	if (CMP_CERTREPMESSAGE_PKIStatus_get( kup->body->value.kup, 0) == CMP_PKISTATUS_waiting)
 		{
-		if (!pollForResponse(ctx, cbio, kup->body->value.kup, &kup)) {
+		if (!pollForResponse(ctx, kup->body->value.kup, &kup)) {
 			CMPerr(CMP_F_CMP_DOKEYUPDATEREQUESTSEQ, CMP_R_KUP_NOT_RECEIVED);
 			ERR_add_error_data(1, "received 'waiting' pkistatus but polling failed");
 			goto err;
@@ -770,7 +764,7 @@ X509 *CMP_doKeyUpdateRequestSeq( CMPBIO *cbio, CMP_CTX *ctx)
 
 	/* check if implicit confirm is set in generalInfo and send certConf if not */
 	if (!CMP_PKIMESSAGE_check_implicitConfirm(kup)) 
-		if (!sendCertConf(cbio, ctx)) goto err;
+		if (!sendCertConf(ctx)) goto err;
 
 	CMP_PKIMESSAGE_free(kur);
 	CMP_PKIMESSAGE_free(kup);
@@ -796,7 +790,7 @@ err:
  *
  * returns pointer to stack of ITAVs received in the answer or NULL on error
  * ############################################################################ */
-STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *ctx, int nid, char *value)
+STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMP_CTX *ctx, int nid, char *value)
 	{
 	CMP_PKIMESSAGE *genm=NULL;
 	CMP_PKIMESSAGE *genp=NULL;
@@ -804,8 +798,7 @@ STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *
 	STACK_OF(CMP_INFOTYPEANDVALUE) *rcvdItavs=NULL;
 
 	/* check if all necessary options are set */
-	if (!cbio || !ctx ||
-			(!(ctx->referenceValue && ctx->secretValue) && /* MSG_MAC_ALG */
+	if (!ctx || (!(ctx->referenceValue && ctx->secretValue) && /* MSG_MAC_ALG */
 			!(ctx->pkey && ctx->clCert && (ctx->srvCert || ctx->trusted_store)))) /* MSG_SIG_ALG */
 		{
 		CMPerr(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_INVALID_ARGS);
@@ -822,7 +815,7 @@ STACK_OF(CMP_INFOTYPEANDVALUE) *CMP_doGeneralMessageSeq( CMPBIO *cbio, CMP_CTX *
 	CMP_PKIMESSAGE_genm_item_push0( genm, itav);
 
 	CMP_printf( ctx, "INFO: Sending General Message");
-	if (! (CMP_PKIMESSAGE_http_perform(cbio, ctx, genm, &genp)))
+	if (! (CMP_PKIMESSAGE_http_perform(ctx, genm, &genp)))
 		{
 		ADD_HTTP_ERROR_INFO(CMP_F_CMP_DOGENERALMESSAGESEQ, CMP_R_GENP_NOT_RECEIVED, "genm");
 		goto err;
@@ -873,6 +866,4 @@ err:
 	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
 	return NULL;
 	}
-
-#endif
 

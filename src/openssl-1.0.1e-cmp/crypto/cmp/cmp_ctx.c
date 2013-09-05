@@ -220,11 +220,12 @@ int CMP_CTX_init( CMP_CTX *ctx)
 	ctx->serverPort		 = 0;
 	ctx->proxyName		 = NULL;
 	ctx->proxyPort		 = 0;
-	ctx->useProxyFromEnv = 0;
 	ctx->implicitConfirm = 0;
 	ctx->popoMethod		 = CRMF_POPO_SIGNATURE;
 	ctx->HttpTimeOut	 = 2*60;
 	ctx->setSubjectAltNameCritical = 0;
+	ctx->sourceAddress   = NULL;
+	ctx->lastHTTPCode    = 0;
 
 	ctx->error_cb = NULL;
 	ctx->debug_cb = (cmp_logfn_t) puts;
@@ -985,6 +986,30 @@ err:
  * sets the (HTTP) server port to be used
  * returns 1 on success, 0 on error
  * ################################################################ */
+int CMP_CTX_set1_sourceAddress( CMP_CTX *ctx, const char *ip)
+	{
+	if (!ctx) goto err;
+	if (!ip) goto err;
+
+	if (ctx->sourceAddress)
+		{
+		OPENSSL_free( ctx->sourceAddress);
+		ctx->sourceAddress = NULL;
+		}
+
+	ctx->sourceAddress = OPENSSL_malloc( strlen(ip)+1);
+	strcpy( ctx->sourceAddress, ip);
+
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_SOURCEADDRESS, CMP_R_NULL_ARGUMENT);
+	return 0;	
+	}
+
+/* ################################################################ *
+ * sets the (HTTP) server port to be used
+ * returns 1 on success, 0 on error
+ * ################################################################ */
 int CMP_CTX_set1_serverPort( CMP_CTX *ctx, int port)
 	{
 	if (!ctx) goto err;
@@ -1108,9 +1133,6 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val)
 			break;
 		case CMP_CTX_SET_SUBJECTALTNAME_CRITICAL:
 			ctx->setSubjectAltNameCritical = val;
-			break;
-		case CMP_CTX_USE_PROXY_FROM_ENV:
-			ctx->useProxyFromEnv = val;
 			break;
 		default:
 			goto err;
