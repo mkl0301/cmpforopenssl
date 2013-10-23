@@ -315,7 +315,6 @@ err:
 void doIr(CMP_CTX *cmp_ctx) {
   /* EVP_PKEY *pkey=NULL; */
   EVP_PKEY *newPkey=NULL;
-  CMPBIO *cbio=NULL;
   X509 *newClCert=NULL;
   X509 *extIdCert=NULL;
 
@@ -387,13 +386,7 @@ void doIr(CMP_CTX *cmp_ctx) {
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
    */
 
-  if (!CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort)) {
-    printf( "ERROR: setting up connection to server");
-    exit(1);
-  }
-
-  newClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
-  CMP_delete_http_bio( cbio);
+  newClCert = CMP_doInitialRequestSeq( cmp_ctx);
 
   if( newClCert) {
     printf( "SUCCESS: received initial Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
@@ -427,7 +420,6 @@ void doIr(CMP_CTX *cmp_ctx) {
 /* ############################################################################ */
 void doRr(CMP_CTX *cmp_ctx) {
   EVP_PKEY *initialPkey=NULL; /* TODO: s/intitialPkey/pkey/ */
-  CMPBIO *cbio=NULL;
   X509 *initialClCert=NULL;   /* TODO: s/initialClCert/clCert/ */
 
   // ENGINE_load_private_key(e, path, NULL, "password"); 
@@ -464,13 +456,7 @@ void doRr(CMP_CTX *cmp_ctx) {
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
    */
 
-  if (!CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort)) {
-    printf( "ERROR: setting up connection to server");
-    exit(1);
-  }
-
-  CMP_doRevocationRequestSeq( cbio, cmp_ctx);
-  CMP_delete_http_bio(cbio);
+  CMP_doRevocationRequestSeq( cmp_ctx);
 
   return;
 }
@@ -480,7 +466,6 @@ void doRr(CMP_CTX *cmp_ctx) {
 /* ############################################################################ */
 void doCr(CMP_CTX *cmp_ctx) {
   EVP_PKEY *pkey=NULL;
-  CMPBIO *cbio=NULL;
   X509 *clCert=NULL;
   X509 *newClCert=NULL;
 
@@ -519,13 +504,7 @@ void doCr(CMP_CTX *cmp_ctx) {
    * CMP_CTX_set_option( cmp_ctx, CMP_CTX_OPT_IMPLICITCONFIRM, CMP_CTX_OPT_SET);
    */
 
-  if (!CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort)) {
-    printf( "ERROR: setting up connection to server");
-    exit(1);
-  }
-
-  newClCert = CMP_doCertificateRequestSeq( cbio, cmp_ctx);
-  CMP_delete_http_bio(cbio);
+  newClCert = CMP_doCertificateRequestSeq( cmp_ctx);
 
   if( newClCert) {
     printf( "SUCCESS: received renewed Client Certificate. FILE %s, LINE %d\n", __FILE__, __LINE__);
@@ -548,7 +527,6 @@ void doKur(CMP_CTX *cmp_ctx) {
   X509 *clCert=NULL;
 
   EVP_PKEY *updatedPkey=NULL;
-  CMPBIO *cbio=NULL;
   X509 *updatedClCert=NULL;
 
   if (opt_subjectName) {
@@ -589,13 +567,7 @@ void doKur(CMP_CTX *cmp_ctx) {
   if (opt_nExtraCerts > 0)
     CMP_CTX_set1_extraCertsOut( cmp_ctx, extraCerts);
 
-  if (!CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort)) {
-    printf( "ERROR: setting up connection to server");
-    exit(1);
-  }
-
-  updatedClCert = CMP_doKeyUpdateRequestSeq( cbio, cmp_ctx);
-  CMP_delete_http_bio(cbio);
+  updatedClCert = CMP_doKeyUpdateRequestSeq( cmp_ctx);
 
   if( updatedClCert) {
     printf( "SUCCESS: received updated Client Certificate, and %d CA certs in caPubs. FILE %s, LINE %d\n", 
@@ -617,7 +589,6 @@ void doKur(CMP_CTX *cmp_ctx) {
 /* ############################################################################ */
 /* ############################################################################ */
 void doInfo(CMP_CTX *cmp_ctx) {
-  CMPBIO *cbio=NULL;
   STACK_OF(CMP_INFOTYPEANDVALUE) *res=NULL;
 
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
@@ -628,13 +599,7 @@ void doInfo(CMP_CTX *cmp_ctx) {
   CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
   CMP_CTX_set1_srvCert( cmp_ctx, srvCert);
 
-  if (!CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort)) {
-    printf( "ERROR: setting up connection to server");
-    exit(1);
-  }
-
-  res = CMP_doGeneralMessageSeq( cbio, cmp_ctx, 0, NULL);
-  CMP_delete_http_bio(cbio);
+  res = CMP_doGeneralMessageSeq( cmp_ctx, 0, NULL);
 
   if( res) {
     printf( "SUCCESS: Doing PKI Information Request/Response. FILE %s, LINE %d\n", __FILE__, __LINE__);
@@ -651,7 +616,6 @@ void doInfo(CMP_CTX *cmp_ctx) {
 /* ############################################################################ */
 /* ############################################################################ */
 void doGenM(CMP_CTX *cmp_ctx, int genm_type, void *value) {
-  CMPBIO *cbio=NULL;
   STACK_OF(CMP_INFOTYPEANDVALUE) *resp = NULL;
 
   CMP_CTX_set1_serverName( cmp_ctx, opt_serverName);
@@ -661,13 +625,7 @@ void doGenM(CMP_CTX *cmp_ctx, int genm_type, void *value) {
   CMP_CTX_set1_secretValue( cmp_ctx, password, passwordLen);
   CMP_CTX_set1_srvCert( cmp_ctx, srvCert);
 
-  if (!CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort)) {
-    printf( "ERROR: setting up connection to server");
-    exit(1);
-  }
-
-  resp = CMP_doGeneralMessageSeq( cbio, cmp_ctx, genm_type, NULL);
-  CMP_delete_http_bio(cbio);
+  resp = CMP_doGeneralMessageSeq( cmp_ctx, genm_type, NULL);
 
   if( resp) {
     printf( "SUCCESS sending General Message. FILE %s, LINE %d\n", __FILE__, __LINE__);
