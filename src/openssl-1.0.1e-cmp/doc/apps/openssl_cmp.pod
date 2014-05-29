@@ -24,7 +24,6 @@ B<openssl> B<cmp>
 [B<-untrusted filename>]
 [B<-keyfmt DER|PEM>]
 [B<-certfmt DER|PEM>]
-[B<-extcerts filenames>]
 [B<-subject name>]
 [B<-recipient name>]
 [B<-extracertsout directory>]
@@ -120,11 +119,6 @@ Format the key files are stored in. Default value is PEM.
 =item B<-certfmt DER|PEM>
 
 Format the certificate files are stored in. Default value is PEM.
-
-=item B<-extcerts filenames>
-
-List of certificate files to include in the extraCerts field of outgoing
-requests.
 
 =item B<-subject name>
 
