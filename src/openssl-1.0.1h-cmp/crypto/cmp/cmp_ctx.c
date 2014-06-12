@@ -92,6 +92,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, regToken, ASN1_UTF8STRING),
 	ASN1_OPT(CMP_CTX, srvCert, X509),
 	ASN1_OPT(CMP_CTX, clCert, X509),
+	ASN1_OPT(CMP_CTX, oldClCert, X509),
 	ASN1_OPT(CMP_CTX, subjectName, X509_NAME),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, subjectAltNames, GENERAL_NAME),
 	ASN1_OPT(CMP_CTX, recipient, X509_NAME),
@@ -729,6 +730,28 @@ int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert)
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_CLCERT, CMP_R_NULL_ARGUMENT);
+	return 0;
+	}
+
+/* ################################################################ *
+ * Set the old certificate that we are updating in KUR
+ * returns 1 on success, 0 on error
+ * ################################################################ */
+int CMP_CTX_set1_oldClCert( CMP_CTX *ctx, const X509 *cert)
+	{
+	if (!ctx) goto err;
+	if (!cert) goto err;
+
+	if (ctx->oldClCert)
+		{
+		X509_free(ctx->oldClCert);
+		ctx->oldClCert = NULL;
+		}
+
+	if (!(ctx->oldClCert = X509_dup( (X509*)cert))) goto err;
+	return 1;
+err:
+	CMPerr(CMP_F_CMP_CTX_SET1_OLDCLCERT, CMP_R_NULL_ARGUMENT);
 	return 0;
 	}
 

@@ -1000,6 +1000,9 @@ typedef struct cmp_ctx_st
 	X509				 *srvCert;
 	/* current client certificate used to identify and sign for MSG_SIG_ALG */
 	X509				 *clCert;
+	/* old certificate to use when doing KUP. this is only needed in case
+	 * we update a different certificate than the one in clCert */
+	X509				 *oldClCert;
 	/* subject name to be used in the cert template. NB: could also be taken
 	 * from clcert */
 	X509_NAME			 *subjectName;
@@ -1152,6 +1155,7 @@ int CMP_CTX_set1_regToken( CMP_CTX *ctx, const char *regtoken, const size_t len)
 #define CMP_CTX_set1_caCert CMP_CTX_set1_srvCert
 int CMP_CTX_set1_srvCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
+int CMP_CTX_set1_oldClCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name);
 int CMP_CTX_set1_recipient( CMP_CTX *ctx, const X509_NAME *name);
 int CMP_CTX_subjectAltName_push1( CMP_CTX *ctx, const GENERAL_NAME *name);
@@ -1258,6 +1262,7 @@ void ERR_load_CMP_strings(void);
 #define CMP_F_CMP_CTX_SET1_EXTRACERTSOUT		 186
 #define CMP_F_CMP_CTX_SET1_NEWCLCERT			 122
 #define CMP_F_CMP_CTX_SET1_NEWPKEY			 123
+#define CMP_F_CMP_CTX_SET1_OLDCLCERT			 190
 #define CMP_F_CMP_CTX_SET1_PKEY				 124
 #define CMP_F_CMP_CTX_SET1_POPOMETHOD			 125
 #define CMP_F_CMP_CTX_SET1_PROTECTIONALG		 126
