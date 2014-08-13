@@ -660,6 +660,11 @@ int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PK
 
 	switch (popoMethod)
 		{
+		case CRMF_POPO_RAVERIFIED:
+			newPopo->type = CRMF_PROOFOFPOSESSION_RAVERIFIED;
+			newPopo->value.raVerified = ASN1_NULL_new();
+			break;
+
 		case CRMF_POPO_SIGNATURE:
 			if( !(newPopo->value.signature = CRMF_poposigningkey_new( certReqMsg->certReq, pkey))) goto err;
 			newPopo->type = CRMF_PROOFOFPOSESSION_SIGNATURE;

@@ -552,6 +552,7 @@ int CRMF_CERTREQMSG_push0_extension( CRMF_CERTREQMSG *certReqMsg, X509_EXTENSION
 #define CRMF_POPO_NONE		0
 #define CRMF_POPO_SIGNATURE 1
 #define CRMF_POPO_ENCRCERT	2
+#define CRMF_POPO_RAVERIFIED	3
 int CRMF_CERTREQMSG_calc_and_set_popo( CRMF_CERTREQMSG *certReqMsg, const EVP_PKEY *pkey, int popoMethod);
 
 CRMF_POPOSIGNINGKEY * CRMF_poposigningkey_new( CRMF_CERTREQUEST *certReq, const EVP_PKEY *pkey);

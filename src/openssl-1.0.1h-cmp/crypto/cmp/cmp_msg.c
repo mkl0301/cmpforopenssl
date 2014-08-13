@@ -114,6 +114,34 @@ err:
 	return 0;
 	}
 
+static int add_policy_extensions(X509_EXTENSIONS **extensions, CERTIFICATEPOLICIES *policies)
+	{
+	X509_EXTENSION *ext = NULL;
+	unsigned char *der = NULL;
+	int derlen = 0;
+	ASN1_OCTET_STRING *str = NULL;
+
+	if(!extensions || !policies) goto err;
+
+	if(!(str = ASN1_OCTET_STRING_new())) goto err;
+
+	derlen = i2d_CERTIFICATEPOLICIES(policies, &der);
+	if(!ASN1_STRING_set(str, der, derlen)) goto err;
+	if(!X509_EXTENSION_create_by_NID(&ext, NID_certificate_policies, 1, str)) goto err;
+
+	ASN1_OCTET_STRING_free(str);
+	OPENSSL_free(der);
+
+	if(!X509v3_add_ext(extensions, ext, 0)) goto err;
+
+	X509_EXTENSION_free(ext);
+
+	return 1;
+err:
+	if (ext) X509_EXTENSION_free(ext);
+	return 0;
+	}
+
 /* ############################################################################
  * Adds the certificates to the extraCerts fields in the given message.  For
  * this it tries to build the certificate chain of our client cert (ctx->clCert)
@@ -216,6 +244,18 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx)
 
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 	if (!CMP_PKIHEADER_init( ctx, msg->header)) goto err;
+
+	/* Add Insta CA profile ID */
+	if (ctx->profileID != 0) {
+		CMP_INFOTYPEANDVALUE *itav = CMP_INFOTYPEANDVALUE_new();
+		itav->infoType = OBJ_txt2obj("1.3.6.1.4.1.36878.3.3.1.1", 1);
+		itav->infoValue.other = ASN1_TYPE_new();
+		itav->infoValue.other->type = V_ASN1_INTEGER;
+		itav->infoValue.other->value.integer = ASN1_INTEGER_new();
+		ASN1_INTEGER_set(itav->infoValue.other->value.integer, ctx->profileID);
+		CMP_PKIHEADER_generalInfo_item_push0(msg->header, itav);
+	}
+
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);
@@ -231,6 +271,9 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx)
 	if (sk_GENERAL_NAME_num(ctx->subjectAltNames) > 0)
 		/* According to RFC5280, subjectAltName MUST be critical if subject is null */
 		add_altname_extensions(&extensions, ctx->subjectAltNames, ctx->setSubjectAltNameCritical || subject == NULL);
+
+	if (ctx->policies)
+		add_policy_extensions(&extensions, ctx->policies);
 
 	if (!(msg->body->value.ir = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, extensions))) goto err;
@@ -387,6 +430,9 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx)
 		/* According to RFC5280, subjectAltName MUST be critical if subject is null */
 		add_altname_extensions(&extensions, ctx->subjectAltNames, ctx->setSubjectAltNameCritical || subject == NULL);
 
+	if (ctx->policies)
+		add_policy_extensions(&extensions, ctx->policies);
+
 	if (!(msg->body->value.kur = sk_CRMF_CERTREQMSG_new_null())) goto err;
 	if (!(certReq0 = CRMF_cr_new(0L, ctx->newPkey, subject, extensions))) goto err;
 	sk_CRMF_CERTREQMSG_push( msg->body->value.kur, certReq0);
@@ -394,10 +440,7 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx)
 
 	/* setting OldCertId according to D.6:
 	   7.  regCtrl OldCertId SHOULD be used */
-	if (ctx->oldClCert)
-		CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->oldClCert);
-	else
-		CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert);
+	CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert); /* TODO: from certificate to be renewed */
 
 	CRMF_CERTREQMSG_calc_and_set_popo( certReq0, ctx->newPkey, ctx->popoMethod);
 

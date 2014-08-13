@@ -92,7 +92,6 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, regToken, ASN1_UTF8STRING),
 	ASN1_OPT(CMP_CTX, srvCert, X509),
 	ASN1_OPT(CMP_CTX, clCert, X509),
-	ASN1_OPT(CMP_CTX, oldClCert, X509),
 	ASN1_OPT(CMP_CTX, subjectName, X509_NAME),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, subjectAltNames, GENERAL_NAME),
 	ASN1_OPT(CMP_CTX, recipient, X509_NAME),
@@ -104,6 +103,7 @@ ASN1_SEQUENCE(CMP_CTX) = {
 	ASN1_OPT(CMP_CTX, recipNonce, ASN1_OCTET_STRING),
 	ASN1_OPT(CMP_CTX, validatedSrvCert, X509),
 	ASN1_SEQUENCE_OF_OPT(CMP_CTX, lastStatusString, ASN1_UTF8STRING),
+	ASN1_SEQUENCE_OF_OPT(CMP_CTX, policies, POLICYINFO),
 } ASN1_SEQUENCE_END(CMP_CTX)
 IMPLEMENT_ASN1_FUNCTIONS(CMP_CTX)
 
@@ -227,13 +227,14 @@ int CMP_CTX_init( CMP_CTX *ctx)
 	ctx->setSubjectAltNameCritical = 0;
 	ctx->sourceAddress   = NULL;
 	ctx->lastHTTPCode    = 0;
+	ctx->useTLS    = 0;
 
 	ctx->error_cb = NULL;
 	ctx->debug_cb = (cmp_logfn_t) puts;
 	ctx->certConf_cb = NULL;
 
-	ctx->trusted_store	 = X509_STORE_new();
-	ctx->untrusted_store = X509_STORE_new();
+	ctx->trusted_store	 = 0;
+	ctx->untrusted_store = 0;
 
 	ctx->maxPollTime = 0;
 
@@ -242,6 +243,8 @@ int CMP_CTX_init( CMP_CTX *ctx)
 
 	ctx->permitTAInExtraCertsForIR = 0;
 	ctx->validatedSrvCert = NULL;
+
+	ctx->profileID = 0;
 
 	/* initialize OpenSSL */
 	OpenSSL_add_all_ciphers();
@@ -260,9 +263,15 @@ err:
 void CMP_CTX_delete(CMP_CTX *ctx)
 	{
 	if (!ctx) return;
-	if (ctx->serverPath) OPENSSL_free(ctx->serverPath);
+	if (ctx->pkey) EVP_PKEY_free(ctx->pkey);
+	if (ctx->newPkey) EVP_PKEY_free(ctx->newPkey);
+
 	if (ctx->serverName) OPENSSL_free(ctx->serverName);
+	if (ctx->serverPath) OPENSSL_free(ctx->serverPath);
 	if (ctx->proxyName) OPENSSL_free(ctx->proxyName);
+	if (ctx->trusted_store) X509_STORE_free(ctx->trusted_store);
+	if (ctx->untrusted_store) X509_STORE_free(ctx->untrusted_store);
+
 	CMP_CTX_free(ctx);
 	}
 
@@ -313,7 +322,7 @@ err:
  * ################################################################ */
 int CMP_CTX_set_certConf_callback( CMP_CTX *ctx, cmp_certConfFn_t cb)
 	{
-	if (!ctx || !cb) goto err;
+	if (!ctx) goto err;
 	ctx->certConf_cb = cb;
 	return 1;
 err:
@@ -326,7 +335,7 @@ err:
  * ################################################################ */
 int CMP_CTX_set_error_callback( CMP_CTX *ctx, cmp_logfn_t cb)
 	{
-	if (!ctx || !cb) goto err;
+	if (!ctx) goto err;
 	ctx->error_cb = cb;
 	return 1;
 err:
@@ -339,7 +348,7 @@ err:
  * ################################################################ */
 int CMP_CTX_set_debug_callback( CMP_CTX *ctx, cmp_logfn_t cb)
 	{
-	if (!ctx || !cb) goto err;
+	if (!ctx) goto err;
 	ctx->debug_cb = cb;
 	return 1; 
 err:
@@ -508,6 +517,7 @@ int CMP_CTX_loadUntrustedStack(CMP_CTX *ctx, STACK_OF(X509) *stack)
 		/* don't add self-signed certs here */
 		if (!X509_verify(cert, pubkey))
 			X509_STORE_add_cert(ctx->untrusted_store, cert);  /* don't fail as adding existing certificate to store would cause error */
+		EVP_PKEY_free(pubkey);
 		}
 
 	return 1;
@@ -553,6 +563,35 @@ err:
 	CMPerr(CMP_F_CMP_CTX_SET1_EXTRACERTSOUT, CMP_R_NULL_ARGUMENT);
 	return 0;
 	}
+
+
+int CMP_CTX_set1_profileID( CMP_CTX *ctx, int profileID)
+{
+	if (!ctx) return 0;
+	ctx->profileID = profileID;
+	return 1;
+}
+
+int CMP_CTX_policyOID_push1( CMP_CTX *ctx, const char *policyOID)
+{
+	if (!ctx || !policyOID) goto err;
+
+	if (!ctx->policies)
+		ctx->policies = CERTIFICATEPOLICIES_new();
+	if (!ctx->policies) goto err;
+
+	POLICYINFO *pol = POLICYINFO_new();
+	if (!pol) goto err;
+
+	pol->policyid = OBJ_txt2obj(policyOID, 1);
+	sk_POLICYINFO_push(ctx->policies, pol);
+
+	return 1;
+
+err:
+	return 0;
+}
+
 
 /* ################################################################ *
  * Returns a duplicate of the stack received X509 certificates that
@@ -730,28 +769,6 @@ int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert)
 	return 1;
 err:
 	CMPerr(CMP_F_CMP_CTX_SET1_CLCERT, CMP_R_NULL_ARGUMENT);
-	return 0;
-	}
-
-/* ################################################################ *
- * Set the old certificate that we are updating in KUR
- * returns 1 on success, 0 on error
- * ################################################################ */
-int CMP_CTX_set1_oldClCert( CMP_CTX *ctx, const X509 *cert)
-	{
-	if (!ctx) goto err;
-	if (!cert) goto err;
-
-	if (ctx->oldClCert)
-		{
-		X509_free(ctx->oldClCert);
-		ctx->oldClCert = NULL;
-		}
-
-	if (!(ctx->oldClCert = X509_dup( (X509*)cert))) goto err;
-	return 1;
-err:
-	CMPerr(CMP_F_CMP_CTX_SET1_OLDCLCERT, CMP_R_NULL_ARGUMENT);
 	return 0;
 	}
 
@@ -1156,6 +1173,9 @@ int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val)
 			break;
 		case CMP_CTX_SET_SUBJECTALTNAME_CRITICAL:
 			ctx->setSubjectAltNameCritical = val;
+			break;
+		case CMP_CTX_USE_TLS:
+			ctx->useTLS = val;
 			break;
 		default:
 			goto err;

@@ -138,7 +138,7 @@ static char *V_CMP_TABLE[] = {
  * ############################################################################ */
 static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize)
 	{
-	char tempbuf[256];
+	char tempbuf[1024];
 	switch (CMP_PKIMESSAGE_get_bodytype(msg))
 		{
 		case V_CMP_PKIBODY_ERROR:
@@ -166,7 +166,7 @@ static char *PKIError_data(CMP_PKIMESSAGE *msg, char *out, int outsize)
 static void add_error_data(const char *txt)
 	{
 	const char *current_error=NULL;
-	ERR_peek_error_line_data(NULL, NULL, &current_error, NULL);
+	ERR_peek_last_error_line_data(NULL, NULL, &current_error, NULL);
 	ERR_add_error_data(3, current_error, ":", txt);
 	}
 
@@ -249,6 +249,7 @@ err:
 	return 0;
 	}
 
+CMP_PKIMESSAGE * pkimessage_nest( CMP_CTX *ctx, CMP_PKIMESSAGE *inner);
 
 /* ############################################################################ *
  * send certConf for IR, CR or KUR sequences
@@ -454,6 +455,7 @@ err:
 	if (ctx&&ctx->error_cb) ERR_print_errors_cb(CMP_CTX_error_callback, (void*) ctx);
 	return NULL;
 	}
+
 
 /* ############################################################################ *
  * do the full sequence for RR, including RR, RP and potential polling

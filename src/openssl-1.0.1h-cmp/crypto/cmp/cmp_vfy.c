@@ -109,6 +109,8 @@ static int CMP_verify_signature( CMP_PKIMESSAGE *msg, X509 *cert)
 
 	/* cleanup */
 	EVP_MD_CTX_destroy(ctx);
+	OPENSSL_free(protPartDer);
+	EVP_PKEY_free(pubkey);
 	return ret;
 notsup:
 	CMPerr(CMP_F_CMP_VERIFY_SIGNATURE, CMP_R_ALGORITHM_NOT_SUPPORTED);
@@ -363,6 +365,8 @@ static X509_STORE *createTempTrustedStore(STACK_OF(X509) *stack)
 
 		if (pubkey && X509_verify(cert, pubkey))
 			X509_STORE_add_cert(store, cert);
+
+		EVP_PKEY_free(pubkey);
 		}
 
 	return store;

@@ -502,6 +502,7 @@ ASN1_BIT_STRING *CMP_calc_protection_pbmac(CMP_PKIMESSAGE *pkimessage, const ASN
 		CMPerr(CMP_F_CMP_CALC_PROTECTION_PBMAC, CMP_R_WRONG_ALGORITHM_OID);
 		goto err;
 		}
+	OPENSSL_free(protPartDer);
 
 	if(!(prot = ASN1_BIT_STRING_new())) goto err;
 	ASN1_BIT_STRING_set(prot, mac, macLen);
@@ -519,6 +520,7 @@ err:
 
 	CMPerr(CMP_F_CMP_CALC_PROTECTION_PBMAC, CMP_R_ERROR_CALCULATING_PROTECTION);
 	if(prot) ASN1_BIT_STRING_free(prot);
+	if(protPartDer) OPENSSL_free(protPartDer);
 	return NULL;
 }
 
@@ -590,11 +592,13 @@ ASN1_BIT_STRING *CMP_calc_protection_sig(CMP_PKIMESSAGE *pkimessage, EVP_PKEY *p
 	/* cleanup */
 	if (evp_ctx) EVP_MD_CTX_destroy(evp_ctx);
 	if (mac) OPENSSL_free(mac);
+	if (protPartDer) OPENSSL_free(protPartDer);
 	return prot;
 
 err:
 	if (evp_ctx) EVP_MD_CTX_destroy(evp_ctx);
 	if (mac) OPENSSL_free(mac);
+	if (protPartDer) OPENSSL_free(protPartDer);
 
 	CMPerr(CMP_F_CMP_CALC_PROTECTION_SIG, CMP_R_ERROR_CALCULATING_PROTECTION);
 	if(prot) ASN1_BIT_STRING_free(prot);
@@ -1306,7 +1310,16 @@ char *CMP_PKIMESSAGE_parse_error_msg( CMP_PKIMESSAGE *msg, char *errormsg, int b
 	/* PKIFailureInfo is optional */
 	failureinfo = CMP_PKISTATUSINFO_PKIFailureInfo_get_string(msg->body->value.error->pKIStatusInfo);
 
-	if (failureinfo)
+	STACK_OF(ASN1_UTF8STRING) *details = msg->body->value.error->pKIStatusInfo->statusString;
+	ASN1_UTF8STRING *str = 0;
+	if (details && sk_ASN1_UTF8STRING_num(details) > 0)
+		str = sk_ASN1_UTF8STRING_value(details, 0);
+
+	if (failureinfo && str && str->data) {
+		BIO_snprintf(errormsg, bufsize, "%s, %s: %s", status, failureinfo,
+					 str->data);
+	}
+	else if (failureinfo)
 		BIO_snprintf(errormsg, bufsize, "%s, %s", status, failureinfo);
 	else
 		BIO_snprintf(errormsg, bufsize, "%s", status);
@@ -1379,10 +1392,14 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 			CMPerr(CMP_F_CMP_CERTREPMESSAGE_GET_CERTIFICATE, CMP_R_REQUEST_REJECTED_BY_CA);
 
 			statusString = CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(certrep, repNum);
-			if (!statusString) goto err;
-			statusString = OPENSSL_strdup(statusString);
-			if (!statusString) goto err;
-			statusLen = strlen(statusString);
+			if (statusString) {
+				statusString = OPENSSL_strdup(statusString);
+				statusLen = strlen(statusString);
+			}
+			else {
+				statusString = OPENSSL_malloc(128);
+				memset(statusString, 0, 128);
+			}
 
 			statusString = OPENSSL_realloc(statusString, statusLen+20);
 			strcat(statusString, ", statusString: \"");
@@ -1479,6 +1496,7 @@ STACK_OF(X509) *CMP_build_cert_chain(X509_STORE *store, X509 *cert)
 		X509 *certDup = X509_dup( sk_X509_value(chain, i) );
 		sk_X509_push(chainDup, certDup);
 		}
+
 	X509_STORE_CTX_free(csc);
 
 	return chainDup;

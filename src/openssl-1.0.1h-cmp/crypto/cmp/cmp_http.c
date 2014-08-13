@@ -79,11 +79,10 @@
 #include <openssl/err.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
+#include <openssl/ssl.h>
 
 #include <ctype.h>
 #include <fcntl.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 
 #ifdef OPENSSL_SYS_SUNOS
@@ -651,7 +650,7 @@ static int CMP_new_http_bio( CMPBIO **bio, const CMP_CTX *ctx)
 
 	if (!ctx) goto err;
 	
-	if (!ctx->proxyName)
+	if (!ctx->proxyName || !ctx->proxyPort)
 		{
 		cbio = BIO_new_connect(ctx->serverName);
 		if (!cbio) goto err;
@@ -664,7 +663,15 @@ static int CMP_new_http_bio( CMPBIO **bio, const CMP_CTX *ctx)
 		BIO_set_conn_int_port(cbio, &ctx->proxyPort);
 		}
 
-	/* TODO https support */
+	if (ctx->useTLS)
+		{
+		OpenSSL_add_ssl_algorithms();
+		// SSL_CTX *ctx = SSL_CTX_new(SSLv23_client_method());
+		SSL_CTX *ctx = SSL_CTX_new(TLSv1_client_method());
+		SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
+		BIO *sbio = BIO_new_ssl(ctx, 1);
+		cbio = BIO_push(sbio, cbio);
+		}
 
 	*bio = cbio;
 	return 1;
@@ -814,12 +821,14 @@ int CMP_PKIMESSAGE_http_perform(const CMP_CTX *ctx, const CMP_PKIMESSAGE *msg, C
 	// BIO_reset(cbio);
 	CMP_delete_http_bio(cbio);
 	
-	if (!*out) goto err;
+	if (!*out) {
+		CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_FAILED_TO_DECODE_PKIMESSAGE);
+		goto err;
+	}
 	
 	return 1;
 
 	err:
-	CMPerr(CMP_F_CMP_PKIMESSAGE_HTTP_PERFORM, CMP_R_FAILED_TO_DECODE_PKIMESSAGE);
 	return 0;
 	}
 
