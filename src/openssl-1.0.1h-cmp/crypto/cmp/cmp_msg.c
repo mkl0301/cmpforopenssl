@@ -440,7 +440,12 @@ CMP_PKIMESSAGE * CMP_kur_new( CMP_CTX *ctx)
 
 	/* setting OldCertId according to D.6:
 	   7.  regCtrl OldCertId SHOULD be used */
-	CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert); /* TODO: from certificate to be renewed */
+
+	if (ctx->oldClCert)
+		CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->oldClCert);
+	else
+		CRMF_CERTREQMSG_set1_control_oldCertId( certReq0, ctx->clCert);
+
 
 	CRMF_CERTREQMSG_calc_and_set_popo( certReq0, ctx->newPkey, ctx->popoMethod);
 
