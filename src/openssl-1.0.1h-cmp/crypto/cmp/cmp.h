@@ -996,6 +996,7 @@ typedef struct cmp_ctx_st
 	X509				 *srvCert;
 	/* current client certificate used to identify and sign for MSG_SIG_ALG */
 	X509				 *clCert;
+	X509				 *oldClCert;
 	/* subject name to be used in the cert template. NB: could also be taken
 	 * from clcert */
 	X509_NAME			 *subjectName;
