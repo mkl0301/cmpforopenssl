@@ -60,13 +60,9 @@
  * Hudson (tjh@cryptsoft.com).
  */
 /* ====================================================================
- * Copyright 2007-2012 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
+ * Copyright 2007-2014 Nokia Oy. ALL RIGHTS RESERVED.
  * CMP support in OpenSSL originally developed by 
- * Nokia Siemens Networks for contribution to the OpenSSL project.
- */
-/* =========================== ACKNOWLEDGEMENTS =======================
- * 2008 - Sami Lehtonen - added CMP_cr_new() and CMP_doCertificateRequestSeq()
- *						  declarations
+ * Nokia for contribution to the OpenSSL project.
  */
 
 #ifndef HEADER_CMP_H

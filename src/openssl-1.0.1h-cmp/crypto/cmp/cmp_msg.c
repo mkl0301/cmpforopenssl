@@ -5,7 +5,7 @@
 /* ====================================================================
  * Originally written by Martin Peylo for the OpenSSL project.
  * <martin dot peylo at nsn dot com>
- * 2010-2012 Miikka Viljanen <mviljane@users.sourceforge.net>
+ * 2010-2014 Miikka Viljanen <mviljane@users.sourceforge.net>
  */
 /* ====================================================================
  * Copyright (c) 2007-2010 The OpenSSL Project.  All rights reserved.
@@ -61,14 +61,9 @@
  *
  */
 /* ====================================================================
- * Copyright 2007-2012 Nokia Siemens Networks Oy. ALL RIGHTS RESERVED.
+ * Copyright 2007-2014 Nokia Oy. ALL RIGHTS RESERVED.
  * CMP support in OpenSSL originally developed by 
- * Nokia Siemens Networks for contribution to the OpenSSL project.
- */
-
-/* =========================== ACKNOWLEDGEMENTS =======================
- * 2008 - Sami Lehtonen - added CMP_cr_new()
- *						- bugfix in CMP_certConf_new(): pkey or ref/secret pair is enough
+ * Nokia for contribution to the OpenSSL project.
  */
 
 #include <openssl/asn1.h>
