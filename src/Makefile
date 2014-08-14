@@ -158,6 +158,10 @@ openssl_patch_1.0.1e:
 	cd $(SRCDIR) && \
 	svn diff -r 723:BASE openssl-1.0.1e-cmp > patches/openssl-1.0.1e_cmp.diff
 
+openssl_patch_1.0.1h:
+	cd $(SRCDIR) && \
+	svn diff -r 750:BASE openssl-1.0.1h-cmp > patches/openssl-1.0.1h_cmp.diff
+
 .PHONY: openssl_patch_1.0.0e
 
 ################################################################################
