@@ -666,7 +666,7 @@ static int CMP_new_http_bio( CMPBIO **bio, const CMP_CTX *ctx)
 	if (ctx->useTLS)
 		{
 		OpenSSL_add_ssl_algorithms();
-		// SSL_CTX *ctx = SSL_CTX_new(SSLv23_client_method());
+		/* TODO support all versions of SSL / TLS properly */
 		SSL_CTX *ctx = SSL_CTX_new(TLSv1_client_method());
 		SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
 		BIO *sbio = BIO_new_ssl(ctx, 1);

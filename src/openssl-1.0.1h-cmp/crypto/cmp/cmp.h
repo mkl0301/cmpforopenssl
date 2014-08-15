@@ -1068,7 +1068,6 @@ typedef struct cmp_ctx_st
 	int       useTLS;
 	char	  *sourceAddress;
 
-	int profileID; /* insta profile id */
 	CERTIFICATEPOLICIES *policies;
 
 	} CMP_CTX;
@@ -1163,7 +1162,6 @@ STACK_OF(X509)* CMP_CTX_caPubs_get1( CMP_CTX *ctx);
 X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
 int CMP_CTX_caPubs_num( CMP_CTX *ctx);
 int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs);
-int CMP_CTX_set1_profileID( CMP_CTX *ctx, int profileID);
 int CMP_CTX_policyOID_push1( CMP_CTX *ctx, const char *policyOID);
 
 int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOut);

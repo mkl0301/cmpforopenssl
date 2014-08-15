@@ -243,17 +243,6 @@ CMP_PKIMESSAGE * CMP_ir_new( CMP_CTX *ctx)
 	if (!(msg = CMP_PKIMESSAGE_new())) goto err;
 	if (!CMP_PKIHEADER_init( ctx, msg->header)) goto err;
 
-	/* Add Insta CA profile ID */
-	if (ctx->profileID != 0) {
-		CMP_INFOTYPEANDVALUE *itav = CMP_INFOTYPEANDVALUE_new();
-		itav->infoType = OBJ_txt2obj("1.3.6.1.4.1.36878.3.3.1.1", 1);
-		itav->infoValue.other = ASN1_TYPE_new();
-		itav->infoValue.other->type = V_ASN1_INTEGER;
-		itav->infoValue.other->value.integer = ASN1_INTEGER_new();
-		ASN1_INTEGER_set(itav->infoValue.other->value.integer, ctx->profileID);
-		CMP_PKIHEADER_generalInfo_item_push0(msg->header, itav);
-	}
-
 	if (ctx->implicitConfirm)
 		if (! CMP_PKIMESSAGE_set_implicitConfirm(msg)) goto err;
 	CMP_PKIMESSAGE_set_bodytype( msg, V_CMP_PKIBODY_IR);

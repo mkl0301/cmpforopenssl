@@ -245,8 +245,6 @@ int CMP_CTX_init( CMP_CTX *ctx)
 	ctx->permitTAInExtraCertsForIR = 0;
 	ctx->validatedSrvCert = NULL;
 
-	ctx->profileID = 0;
-
 	/* initialize OpenSSL */
 	OpenSSL_add_all_ciphers();
 	OpenSSL_add_all_digests();
@@ -564,14 +562,6 @@ err:
 	CMPerr(CMP_F_CMP_CTX_SET1_EXTRACERTSOUT, CMP_R_NULL_ARGUMENT);
 	return 0;
 	}
-
-
-int CMP_CTX_set1_profileID( CMP_CTX *ctx, int profileID)
-{
-	if (!ctx) return 0;
-	ctx->profileID = profileID;
-	return 1;
-}
 
 int CMP_CTX_policyOID_push1( CMP_CTX *ctx, const char *policyOID)
 {
