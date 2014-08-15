@@ -104,8 +104,11 @@ static int add_altname_extensions(X509_EXTENSIONS **extensions, STACK_OF(GENERAL
 
 	if(!X509v3_add_ext(extensions, ext, 0)) goto err;
 
+	X509_EXTENSION_free(ext);
+
 	return 1;
 err:
+	if (ext) X509_EXTENSION_free(ext);
 	return 0;
 	}
 

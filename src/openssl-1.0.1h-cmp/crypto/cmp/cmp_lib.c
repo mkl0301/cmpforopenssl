@@ -1384,6 +1384,7 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 
 			/* get all information in case of a rejection before going to error */
 		case CMP_PKISTATUS_rejection: {
+			char *failInfoString = NULL;
 			char *statusString = NULL;
 			int statusLen = 0;
 			ASN1_UTF8STRING *status = NULL;
@@ -1391,26 +1392,24 @@ X509 *CMP_CERTREPMESSAGE_get_certificate(CMP_CTX *ctx, CMP_CERTREPMESSAGE *certr
 
 			CMPerr(CMP_F_CMP_CERTREPMESSAGE_GET_CERTIFICATE, CMP_R_REQUEST_REJECTED_BY_CA);
 
-			statusString = CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(certrep, repNum);
-			if (statusString) {
-				statusString = OPENSSL_strdup(statusString);
-				statusLen = strlen(statusString);
-			}
-			else {
-				statusString = OPENSSL_malloc(128);
-				memset(statusString, 0, 128);
-			}
+			failInfoString = CMP_CERTREPMESSAGE_PKIFailureInfoString_get0(certrep, repNum);
+			if (failInfoString)
+				/* initialize status string with human readable failure info */
+				statusString = OPENSSL_strdup(failInfoString);
+			else
+				statusString = OPENSSL_strdup("<no failure info received>");
 
-			statusString = OPENSSL_realloc(statusString, statusLen+20);
-			strcat(statusString, ", statusString: \"");
-			statusLen = strlen(statusString);
+			statusLen = strlen(statusString)+18;
+			statusString = OPENSSL_realloc(statusString, statusLen);
+			strcat(statusString, ", statusString: \""); /* length = 17 */
 
 			while ((status = sk_ASN1_UTF8STRING_pop(strstack)))
 				{
-				statusLen += strlen((char*)status->data)+2;
+				statusLen += strlen((char*)status->data)+1;
 				statusString = OPENSSL_realloc(statusString, statusLen);
 				if (!statusString) goto err;
 				strcat(statusString, (char*)status->data);
+				strcat(statusString, " "); 
 				}
 
 			strcat(statusString, "\"");
