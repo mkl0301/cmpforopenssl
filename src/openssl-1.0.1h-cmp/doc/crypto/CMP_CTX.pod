@@ -9,6 +9,7 @@
  CMP_CTX_set1_secretValue,
  CMP_CTX_set1_caCert,
  CMP_CTX_set1_clCert,
+ CMP_CTX_set1_oldClCert,
  CMP_CTX_set1_subjectName,
  CMP_CTX_set1_newClCert,
  CMP_CTX_set0_pkey,
@@ -22,6 +23,7 @@
  CMP_CTX_caPubs_pop,
  CMP_CTX_caPubs_num,
  CMP_CTX_set1_caPubs,
+ CMP_CTX_policyOID_push1,
  CMP_CTX_set1_extraCertsOut,
  CMP_CTX_extraCertsOut_push1, 
  CMP_CTX_extraCertsOut_num,
@@ -56,6 +58,7 @@
  int CMP_CTX_set1_secretValue( CMP_CTX *ctx, const unsigned char *sec, const size_t len);
  int CMP_CTX_set1_caCert( CMP_CTX *ctx, const X509 *cert);
  int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
+ int CMP_CTX_set1_oldClCert( CMP_CTX *ctx, const X509 *cert);
  int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name);
  int CMP_CTX_set1_newClCert( CMP_CTX *ctx, const X509 *cert);
  int CMP_CTX_set0_pkey( CMP_CTX *ctx, const EVP_PKEY *pkey);
@@ -69,6 +72,7 @@
  X509 *CMP_CTX_caPubs_pop( CMP_CTX *ctx);
  int CMP_CTX_caPubs_num( CMP_CTX *ctx);
  int CMP_CTX_set1_caPubs( CMP_CTX *ctx, const STACK_OF(X509) *caPubs);
+ int CMP_CTX_policyOID_push1( CMP_CTX *ctx, const char *policyOID);
 
  int CMP_CTX_set1_extraCertsOut( CMP_CTX *ctx, const STACK_OF(X509) *extraCertsOut);
  int CMP_CTX_extraCertsOut_push1( CMP_CTX *ctx, const X509 *val);
@@ -83,9 +87,14 @@
  int CMP_CTX_set_error_callback( CMP_CTX *ctx, cmp_logfn_t cb)
  int CMP_CTX_set_debug_callback( CMP_CTX *ctx, cmp_logfn_t cb)
 
- #define CMP_CTX_OPT_UNSET           0
- #define CMP_CTX_OPT_SET             1
- #define CMP_CTX_OPT_IMPLICITCONFIRM 1
+ #define CMP_CTX_OPT_UNSET                      0
+ #define CMP_CTX_OPT_SET                        1
+ #define CMP_CTX_OPT_IMPLICITCONFIRM            2
+ #define CMP_CTX_OPT_POPMETHOD                  3
+ #define CMP_CTX_OPT_MAXPOLLTIME                4
+ #define CMP_CTX_PERMIT_TA_IN_EXTRACERTS_FOR_IR 5
+ #define CMP_CTX_SET_SUBJECTALTNAME_CRITICAL    6
+ #define CMP_CTX_USE_TLS                        7
  int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 
  unsigned long CMP_CTX_failInfoCode_get(CMP_CTX *ctx);
@@ -126,6 +135,9 @@ functions to set the "sender" field for messages originating from the
 client. The private key belonging to this certificate is then used
 create the protection in case of MSG_SIG_ALG.
 
+CMP_CTX_set1_oldClCert() sets the old certificate that we are updating
+in KUR. If this is not set, clCert will be the one being updated.
+
 CMP_CTX_set1_subjectName() sets the subject name that will be used in
 the CertTemplate structure when requesting a new certificate. Note that
 if clCert is set, the name will be read from them and this will be
@@ -165,6 +177,12 @@ values can be CMP_CTX_OPT_UNSET or CMP_CTX_OPT_SET. Options are always
 set to UNSET when the CMP_CTX structure is initialized.
 
 The following options can be set:
+    CMP_CTX_OPT_IMPLICITCONFIRM
+        Request server to enable implicit confirm mode, where the client
+        does not need to send confirmation upon receiving the
+        certificate. If the server does not enable implicit confirmation
+        in the return message, then confirmation is sent anyway.
+
     CMP_CTX_OPT_POPMETHOD
 	Proof of posession method to use:
 	      CRMF_POPO_SIGNATURE - sign a value with private key
@@ -179,6 +197,13 @@ The following options can be set:
 	Allow retrieving a trust anchor from extraCers and using that
 	to validate the certificate chain of an IP message.
 
+    CMP_CTX_OPT_POPMETHOD
+        Select the proof of posession method to use. Possible values
+        are:
+            CRMF_POPO_SIGNATURE
+            CRMF_POPO_ENCRCERT
+            CRMF_POPO_RAVERIFIED
+
 CMP_CTX_caPubs_num() can be used after an Initial Request or Key Update
 request to check the number of CA certificates that were sent from the
 server.
@@ -189,6 +214,10 @@ CA certs and returns it
 CMP_CTX_set1_caPubs() copies the given caPubs stack to the context so
 that it may be accessed later by CMP_CTX_caPubs_num() and
 CMP_CTX_caPubs_pop().
+
+CMP_CTX_policyOID_push1() adds the certificate policy OID given by the
+string to the X509_EXTENSIONS of the certificate template we are
+requesting.
 
 CMP_CTX_set1_extraCertsOut() sets the stack of extraCerts that will be
 sent to remote.
@@ -287,10 +316,7 @@ The following code does an Initial Request:
 	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
 
-	CMP_new_http_bio( &cbio, opt_serverName, opt_serverPort);
-
-	initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
-	CMP_delete_http_bio( cbio);
+	initialClCert = CMP_doInitialRequestSeq(cmp_ctx);
 
 The following code does an Initial Request with, using an
 external identity certificate (RFC 4210, Appendix E.7):
@@ -301,10 +327,7 @@ external identity certificate (RFC 4210, Appendix E.7):
 	CMP_CTX_set0_pkey( cmp_ctx, initialPkey);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
 
-	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
-
-	initialClCert = CMP_doInitialRequestSeq( cbio, cmp_ctx);
-	CMP_delete_http_bio( cbio);
+	initialClCert = CMP_doInitialRequestSeq(cmp_ctx);
 
 Here externalCert is an X509 certificate granted to the EE by another CA
 which is trusted by the current CA the code will connect to.
@@ -319,10 +342,7 @@ The following code does a Key Update Request:
 	CMP_CTX_set1_clCert( cmp_ctx, initialClCert);
 	CMP_CTX_set1_caCert( cmp_ctx, caCert);
 
-	CMP_new_bio( &cbio, opt_serverName, opt_serverPort);
-
-	updatedClCert = CMP_doKeyUpdateRequestSeq( cbio, cmp_ctx);
-	CMP_delete_http_bio( cbio);
+	updatedClCert = CMP_doKeyUpdateRequestSeq(cmp_ctx);
 
 
 =head1 TODO
