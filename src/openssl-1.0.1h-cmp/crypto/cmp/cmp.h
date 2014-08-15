@@ -1153,6 +1153,7 @@ int CMP_CTX_set1_regToken( CMP_CTX *ctx, const char *regtoken, const size_t len)
 #define CMP_CTX_set1_caCert CMP_CTX_set1_srvCert
 int CMP_CTX_set1_srvCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_clCert( CMP_CTX *ctx, const X509 *cert);
+int CMP_CTX_set1_oldClCert( CMP_CTX *ctx, const X509 *cert);
 int CMP_CTX_set1_subjectName( CMP_CTX *ctx, const X509_NAME *name);
 int CMP_CTX_set1_recipient( CMP_CTX *ctx, const X509_NAME *name);
 int CMP_CTX_subjectAltName_push1( CMP_CTX *ctx, const GENERAL_NAME *name);
@@ -1194,14 +1195,14 @@ int CMP_CTX_set1_serverPath( CMP_CTX *ctx, const char *path);
 int CMP_CTX_set_failInfoCode(CMP_CTX *ctx, CMP_PKIFAILUREINFO *failInfo);
 unsigned long CMP_CTX_failInfoCode_get(CMP_CTX *ctx);
 STACK_OF(ASN1_UTF8STRING) *CMP_CTX_statusString_get( CMP_CTX *ctx);
-#define CMP_CTX_OPT_UNSET						0
-#define CMP_CTX_OPT_SET							1
-#define CMP_CTX_OPT_IMPLICITCONFIRM				1
-#define CMP_CTX_OPT_POPMETHOD					2
-#define CMP_CTX_OPT_MAXPOLLTIME				 	4
-#define CMP_CTX_PERMIT_TA_IN_EXTRACERTS_FOR_IR	5
-#define CMP_CTX_SET_SUBJECTALTNAME_CRITICAL     6
-#define CMP_CTX_USE_TLS                         7
+#define CMP_CTX_OPT_UNSET                      0
+#define CMP_CTX_OPT_SET                        1
+#define CMP_CTX_OPT_IMPLICITCONFIRM            2
+#define CMP_CTX_OPT_POPMETHOD                  3
+#define CMP_CTX_OPT_MAXPOLLTIME                4
+#define CMP_CTX_PERMIT_TA_IN_EXTRACERTS_FOR_IR 5
+#define CMP_CTX_SET_SUBJECTALTNAME_CRITICAL    6
+#define CMP_CTX_USE_TLS                        7
 int CMP_CTX_set_option( CMP_CTX *ctx, const int opt, const int val);
 #if 0
 int CMP_CTX_push_freeText( CMP_CTX *ctx, const char *text);

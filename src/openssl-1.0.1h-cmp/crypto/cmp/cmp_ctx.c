@@ -563,6 +563,11 @@ err:
 	return 0;
 	}
 
+/* ################################################################ *
+ * CMP_CTX_policyOID_push1() adds the certificate policy OID given by the
+ * string to the X509_EXTENSIONS of the certificate template we are
+ * requesting.
+ * ################################################################ */
 int CMP_CTX_policyOID_push1( CMP_CTX *ctx, const char *policyOID)
 {
 	if (!ctx || !policyOID) goto err;

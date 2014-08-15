@@ -112,6 +112,12 @@ err:
 	return 0;
 	}
 
+/* ############################################################################ 
+ * Takes a CERTIFICATEPOLICIES structure and adds it to the given extension stack.
+ * this is used to setting certificate policy OIDs to a certTemplate
+ *
+ * returns 1 on success, 0 on error
+ * ############################################################################ */
 static int add_policy_extensions(X509_EXTENSIONS **extensions, CERTIFICATEPOLICIES *policies)
 	{
 	X509_EXTENSION *ext = NULL;

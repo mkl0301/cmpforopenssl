@@ -246,8 +246,6 @@ err:
 	return 0;
 	}
 
-CMP_PKIMESSAGE * pkimessage_nest( CMP_CTX *ctx, CMP_PKIMESSAGE *inner);
-
 /* ############################################################################ *
  * send certConf for IR, CR or KUR sequences
  * returns 1 on success, 0 on error
