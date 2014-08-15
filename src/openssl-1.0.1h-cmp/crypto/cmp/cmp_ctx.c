@@ -234,8 +234,8 @@ int CMP_CTX_init( CMP_CTX *ctx)
 	ctx->debug_cb = (cmp_logfn_t) puts;
 	ctx->certConf_cb = NULL;
 
-	ctx->trusted_store	 = 0;
-	ctx->untrusted_store = 0;
+	ctx->trusted_store	 = X509_STORE_new();
+	ctx->untrusted_store = X509_STORE_new();
 
 	ctx->maxPollTime = 0;
 
