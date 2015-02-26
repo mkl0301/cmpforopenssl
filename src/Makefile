@@ -50,7 +50,7 @@ LIGHTTPDCFGOPT = --prefix=$(ROOT) \
 
 LIBCRYPTO = $(CLSRC)/libcrypto.a
 
-all: openssl_patch_$(OPENSSL_VERSION) openssl cmpclient cryptlib cmpserver curl lighttpd
+all:  openssl cmpclient cryptlib cmpserver curl lighttpd
 
 .PHONY: all
 
