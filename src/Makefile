@@ -14,6 +14,7 @@ CURLSRC   = $(SRCDIR)/curl
 LIGHTTPDSRC    = $(SRCDIR)/lighttpd
 LIGHTTPDMODSRC = $(SRCDIR)/lighttpd-cmpserver
 LIGHTTPDPATCH  = $(LIGHTTPDMODSRC)/lighttpd-build.patch
+LIGHTTPDPATCH1  = $(LIGHTTPDMODSRC)/lighttpd-1.4.29-automake-1.12.patch 
 
 OPENSSL_VERSION = 1.0.1e
 CRYPTLIB_VERSION = 340
@@ -207,10 +208,12 @@ $(LIGHTTPDSRC)/unzip-stamp: $(LIGHTTPD_TARBALL)
 	-rm $(LIGHTTPDSRC)
 	ln -s lighttpd-$(LIGHTTPD_VERSION) $(LIGHTTPDSRC)
 	patch -d $(LIGHTTPDSRC) -p1 < $(LIGHTTPDPATCH)
+	patch -d $(LIGHTTPDSRC) -p1 < $(LIGHTTPDPATCH1)
 	ln -s $(LIGHTTPDMODSRC)/*.c $(LIGHTTPDSRC)/src
 	ln -s $(LIGHTTPDMODSRC)/*.h $(LIGHTTPDSRC)/src
 	cd $(LIGHTTPDSRC) && \
-	autoreconf
+	autoreconf ;\
+	automake --add-missing
 	touch $(LIGHTTPDSRC)/unzip_stamp
 
 $(BIN_DIR)/lighttpd: openssl $(LIGHTTPDSRC)/unzip-stamp

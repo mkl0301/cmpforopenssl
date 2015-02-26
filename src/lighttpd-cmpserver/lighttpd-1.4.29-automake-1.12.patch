@@ -1,0 +1,31 @@
+commit 658d412208c3c0b647c14d710a35316da599dd40
+Author: Olivier Blin <olivier.blin@softathome.com>
+Date:   Thu Jul 5 11:10:21 2012 +0200
+
+    Fix build with automake 1.12 (#2419)
+    
+    AM_C_PROTOTYPES has been deprecated in automake 1.12.
+    AM_PROG_AR also needs to be run, to be able to link static .a files.
+
+diff --git a/configure.ac b/configure.ac
+index 751c32c..8f26958 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -12,6 +12,7 @@ AM_INIT_AUTOMAKE
+ # Checks for programs.
+ AC_PROG_CC
+ AM_PROG_CC_C_O
++m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+ AC_PROG_LD
+ AC_PROG_INSTALL
+ AC_PROG_AWK
+@@ -34,9 +35,6 @@ AM_CONDITIONAL(NO_RDYNAMIC, test x$NO_RDYNAMIC = xyes)
+ 
+ AC_EXEEXT
+ 
+-dnl more automake stuff
+-AM_C_PROTOTYPES
+-
+ dnl libtool
+ AC_DISABLE_STATIC	
+ AC_ENABLE_SHARED
