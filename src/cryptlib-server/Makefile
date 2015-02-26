@@ -8,7 +8,7 @@ FUNCTIONS=functions
 DEFINES=defines.h
 
 INCLUDEPATH=-I$(CLPATH)
-LDFL=-L$(CLPATH) -lcl -lresolv -lpthread
+LDFL=-L$(CLPATH) -lcl -lresolv -lpthread -ldl
 
 CASRC=$(CA).c
 CAOBJ=$(CA).o
