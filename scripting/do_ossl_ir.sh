@@ -7,6 +7,8 @@ if [ -z $1 ] || [ -z $2 ] || [ "$1" == "-help" ] || [ "$1" == "--help" ] || [ "$
         exit 1
 fi
 
+USR=$(echo "$1" | perl -ne 's/([0-9a-f]{2})/print chr hex $1/gie')
+PAS=$(echo "$2" | perl -ne 's/([0-9a-f]{2})/print chr hex $1/gie')
 set -x
 ${CMPCLIENT} --ir --server ${SERVER} \
                   --port ${PORT} \
@@ -14,8 +16,8 @@ ${CMPCLIENT} --ir --server ${SERVER} \
                   --newkey ${CLKEY} \
                   --newkeypass "password" \
                   --newclcert ${CLCERT} \
-                  --user "$1" \
-                  --password "$2"
+                  --user "$USR" \
+                  --password "$PAS"
 set +x
 
 # vi: ts=8 expandtab
