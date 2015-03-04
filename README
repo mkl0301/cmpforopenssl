@@ -107,7 +107,7 @@ This produces output like:
 	SUCCESS shutting down cryptlib
 
 Remember the Values from the "DECODED, HEX: User="- and the following
-"Password="-line, don't use the "DECODED" values!
+"Password="-line.
 
 Start the CA as daemon:
 
